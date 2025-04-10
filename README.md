@@ -39,7 +39,6 @@ You have two ways to use RepairAgent:
    git clone https://github.com/sola-st/RepairAgent.git
    cd RepairAgent
    cd repair_agent
-   rm -rf defects4j
    git clone https://github.com/rjust/defects4j.git
    cp -r ../data/buggy-lines defects4j
    cp -r ../data/buggy-methods defects4j

@@ -1,6 +1,16 @@
 import os
 
-with open("experimental_setups/experiments_list.txt", "r+") as expl:
+experiments_list = "experimental_setups/experiments_list.txt"
+        
+# Create experiments_list.txt if not yet created
+if not os.path.isfile(experiments_list):
+    try:
+        with open(experiments_list, "x"): 
+            pass
+    except FileExistsError:
+        pass
+
+with open(experiments_list, "r+") as expl:
     exps = expl.read().splitlines()
     #print(exps)
     if exps:

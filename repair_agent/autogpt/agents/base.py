@@ -189,7 +189,18 @@ class BaseAgent(metaclass=ABCMeta):
         self.auto_complete = True
         self. generated_methods= None
         self.dummy_fix = False
-        with open("experimental_setups/experiments_list.txt") as eht:
+
+        experiments_list = "experimental_setups/experiments_list.txt"
+        
+        # Create experiments_list.txt if not yet created
+        if not os.path.isfile(experiments_list):
+            try:
+                with open(experiments_list, "x"): 
+                    pass
+            except FileExistsError:
+                pass
+
+        with open(experiments_list) as eht:
             self.exps = eht.read().splitlines()
 
     def save_context(self,):

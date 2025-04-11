@@ -3,6 +3,15 @@ import re
 import tiktoken
 import statistics
 import matplotlib.pyplot as plt
+import argparse
+
+# Workaround to have access to the autogpt package
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent))
+
+from autogpt.llm.providers.openai import OPEN_AI_CHAT_MODELS
+
 
 def calculate_tokens(folder_path, fixed_file_path, model_name="gpt-3.5-turbo"):
     encoder = tiktoken.encoding_for_model(model_name)
@@ -92,8 +101,28 @@ def calculate_tokens(folder_path, fixed_file_path, model_name="gpt-3.5-turbo"):
             average_unmatched_tokens, median_unmatched_tokens, data)
 
 if __name__ == "__main__":
-    folder_path = "prompt_logs"  # Replace with the path to your folder
-    fixed_file_path = "fixed_so_far"  # Replace with the path to your fixed_so_far file
+
+    # Read in arguments from the script call.
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model_version", type=str, required=True, help="The GPT model used in the experiment. Can be the short name of the model or the full version name.")
+    parser.add_argument("--logs_folder", type=str, help="Path to the logs folder that contains the prompt logs")
+    parser.add_argument("--fixed_file_path", type=str, help="Path to the fixed_so_far file")
+    
+    args = parser.parse_args()
+
+    if args.logs_folder != None:
+        folder_path = args.logs_folder
+    else:
+        folder_path = "prompt_logs"
+    
+    if args.fixed_file_path != None:
+        fixed_file_path = args.fixed_file_path
+    else:
+        fixed_file_path = "fixed_so_far"
+
+    model = args.model_version
+
+    
 
     if not os.path.exists(folder_path):
         print(f"Error: The folder '{folder_path}' does not exist.")
@@ -104,7 +133,7 @@ if __name__ == "__main__":
          avg_input_tokens, avg_output_tokens, 
          med_input_tokens, med_output_tokens,
          avg_matched_tokens, med_matched_tokens,
-         avg_unmatched_tokens, med_unmatched_tokens, data) = calculate_tokens(folder_path, fixed_file_path)
+         avg_unmatched_tokens, med_unmatched_tokens, data) = calculate_tokens(folder_path, fixed_file_path, model_name=model)
 
         print(f"Total Input Tokens: {input_tokens_sum}")
         print(f"Total Output Tokens: {output_tokens_sum}")
@@ -147,10 +176,12 @@ if __name__ == "__main__":
 
         # Add a second y-axis for cost (simulating dual y-axis in the original plot)
         ax2 = ax.twinx()
-        ax2.set_ylabel("Cost of Querying GPT3.5 per bug in USD")
+        ax2.set_ylabel(f"Cost of Querying {model} per bug in USD")
+
+        prompt_token_cost = OPEN_AI_CHAT_MODELS[model].prompt_token_cost
 
         # Set the secondary y-axis limits to align with primary axis
-        ax2.set_ylim(ax.get_ylim()[0] * 0.0005, ax.get_ylim()[1] * 0.0005)  # Scale for cost (example)
+        ax2.set_ylim(ax.get_ylim()[0] * prompt_token_cost, ax.get_ylim()[1] * prompt_token_cost) 
 
         # Show the plot
         plt.show()

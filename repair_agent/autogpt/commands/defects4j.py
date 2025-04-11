@@ -14,7 +14,7 @@ import docker
 from docker.errors import DockerException, ImageNotFound
 from docker.models.containers import Container as DockerContainer
 
-from autogpt.agents.agent import Agent
+from autogpt.agents.agent import BaseAgent
 from autogpt.command_decorator import command
 from autogpt.logs import logger
 
@@ -101,7 +101,7 @@ def create_deletion_template(project_name, bug_number):
     return fix_template
 
 
-def run_checkout(project_name: str, bug_index:int, agent: Agent):
+def run_checkout(project_name: str, bug_index:int, agent: BaseAgent):
     cmd_temp = "defects4j checkout -p {} -v {}b -w {}"
     folder_name = "_".join([project_name.lower(), str(bug_index), "buggy"])
     if os.path.exists(os.path.join("auto_gpt_workspace", folder_name)):
@@ -113,7 +113,7 @@ def run_checkout(project_name: str, bug_index:int, agent: Agent):
     Args:
         project_name (str): The name of the project
         bug_index (int): The number of the target bug
-        agent (Agent): The agent piloting the execution 
+        agent (BaseAgent): The agent piloting the execution 
     Returns:
         str: The output of the checkout command
     """
@@ -157,7 +157,7 @@ def run_checkout(project_name: str, bug_index:int, agent: Agent):
         }
     },
 )"""
-def undo_changes(project_name: str, bug_index: int, agent: Agent) -> str:
+def undo_changes(project_name: str, bug_index: int, agent: BaseAgent) -> str:
     """Undo the changes that you made to the project and restore the original content of all files
 
     Args:
@@ -188,7 +188,7 @@ def undo_changes(project_name: str, bug_index: int, agent: Agent) -> str:
         }
     },
 )
-def run_tests(project_name: str, bug_index: int, agent: Agent) -> str:
+def run_tests(project_name: str, bug_index: int, agent: BaseAgent) -> str:
     """Create and execute a Python file in a Docker container and return the STDOUT of the
     executed code. If there is any data that needs to be captured use a print statement
 
@@ -202,7 +202,7 @@ def run_tests(project_name: str, bug_index: int, agent: Agent) -> str:
 
     return run_defects4j_tests(project_name, bug_index, agent)
 
-def run_defects4j_tests(project_name: str, bug_index:int, agent: Agent):
+def run_defects4j_tests(project_name: str, bug_index:int, agent: BaseAgent):
     cmd_temp = "cd {} && defects4j compile && defects4j test"
     folder_name = "_".join([project_name.lower(), str(bug_index), "buggy"])
     cmd = cmd_temp.format(folder_name)
@@ -353,7 +353,7 @@ def we_are_running_in_a_docker_container() -> bool:
         }
     },
 )
-def get_info(project_name: str, bug_index: int, agent: Agent) -> str:
+def get_info(project_name: str, bug_index: int, agent: BaseAgent) -> str:
     """Create and execute a Python file in a Docker container and return the STDOUT of the
     executed code. If there is any data that needs to be captured use a print statement
 
@@ -368,7 +368,7 @@ def get_info(project_name: str, bug_index: int, agent: Agent) -> str:
 
     return execute_get_info(project_name, bug_index, agent)
 
-def execute_get_info(project_name: str, bug_index:int, agent: Agent):
+def execute_get_info(project_name: str, bug_index:int, agent: BaseAgent):
     cmd_temp = "defects4j info -p {} -b {}"
     cmd = cmd_temp.format(project_name, bug_index)
 
@@ -377,7 +377,7 @@ def execute_get_info(project_name: str, bug_index:int, agent: Agent):
     Args:
         name (str): The name of the project
         index (int): The index number of the target bug
-        agent (Agent): The agent piloting the execution 
+        agent (BaseAgent): The agent piloting the execution 
     Returns:
         str: The output of the info command
     """
@@ -448,7 +448,7 @@ def execute_get_info(project_name: str, bug_index:int, agent: Agent):
         }
     },
 )
-def read_range(project_name:str, bug_index:str, filepath: str, startline: int, endline:int, agent: Agent) -> str:
+def read_range(project_name:str, bug_index:str, filepath: str, startline: int, endline:int, agent: BaseAgent) -> str:
     """Read a range of lines starting from line number startline and ending at line number endline
 
     Args:
@@ -489,7 +489,7 @@ def read_range(project_name:str, bug_index:str, filepath: str, startline: int, e
         },
     },
 )
-def try_fixes(project_name: str, bug_index:int, fixes_list, agent: Agent):
+def try_fixes(project_name: str, bug_index:int, fixes_list, agent: BaseAgent):
     fixes_feedback = ""
     sucessful_ones = []
     if len(fixes_list) == 0:
@@ -551,7 +551,7 @@ def try_fixes(project_name: str, bug_index:int, fixes_list, agent: Agent):
         }
     },
 )
-def write_range(project_name:str, bug_index:int, changes_dicts: list, agent: Agent) -> str:
+def write_range(project_name:str, bug_index:int, changes_dicts: list, agent: BaseAgent) -> str:
     """Write a list of lines into a file to replace all lines between startline and endline
 
     Args:
@@ -599,7 +599,7 @@ def write_range(project_name:str, bug_index:int, changes_dicts: list, agent: Age
         }
     },
 )
-def write_fix(project_name:str, bug_index:int, changes_dicts: list, agent: Agent) -> str:
+def write_fix(project_name:str, bug_index:int, changes_dicts: list, agent: BaseAgent) -> str:
     """Write a list of lines into a file to replace all lines between startline and endline
 
     Args:
@@ -649,7 +649,7 @@ def write_fix(project_name:str, bug_index:int, changes_dicts: list, agent: Agent
         return "Your fix did not target all the buggy lines. Here is the list of all the buggy lines: {}. To help you, you can fill out the following the template to generate your fix {}".format(buggy_lines, fix_template)
     run_ret = execute_write_range(project_name, bug_index, changes_dicts, agent)
     if 1 == 0:
-        validation_result = validate_fix_against_hypothesis(bug_report, hypothesis, fix)
+        validation_result = validate_fix_against_hypothesis(bug_report, hypothesis, fix, agent.config.fast_llm)
         return "First, we asked an expert about the fix you made and here is what the expert said:\n" + validation_result +\
         "\nSecond, we applied your suggested fix and here are the results:\n"+\
         run_ret+\
@@ -774,7 +774,7 @@ def extract_lines_range(name, index):
         }
     },
 )
-def get_classes_and_methods(project_name: str, bug_index: str, file_path: str, agent: Agent):
+def get_classes_and_methods(project_name: str, bug_index: str, file_path: str, agent: BaseAgent):
     """This function allows you to get all classes and methods names within a file. 
     It returns a dictinary where keys are classes names and values are list of methods names"""
     
@@ -854,7 +854,7 @@ def list_files(start_path='.'):
     },
 )
 
-def search_code_base(project_name:str, bug_index:str, key_words: list, agent: Agent):
+def search_code_base(project_name:str, bug_index:str, key_words: list, agent: BaseAgent):
     workspace = agent.config.workspace_path
     project_dir = "{}_{}_buggy".format(project_name.lower(), bug_index)
 
@@ -973,7 +973,7 @@ def extract_failing_test(output_message):
         }
     }
 )
-def extract_test_code(project_name:str, bug_index:str, test_file_path: str, agent:Agent):
+def extract_test_code(project_name:str, bug_index:str, test_file_path: str, agent:BaseAgent):
 
     workspace = agent.config.workspace_path
     project_dir = "{}_{}_buggy".format(project_name.lower(), bug_index)
@@ -1047,7 +1047,7 @@ def extract_test_code(project_name:str, bug_index:str, test_file_path: str, agen
         return file_content[:ind2+len("public void ")]
 
 
-def extract_fail_report(name: str, index: str, agent: Agent):
+def extract_fail_report(name: str, index: str, agent: BaseAgent):
     project_dir = "{}_{}_buggy".format(name.lower(), index)
     workspace = agent.config.workspace_path
 
@@ -1148,7 +1148,7 @@ def prepare_lsp_env(name, index, workspace):
 
 
 
-def lsp_hover(name:str, index:str, file_path:str, line_number:int, column:int, agent: Agent):
+def lsp_hover(name:str, index:str, file_path:str, line_number:int, column:int, agent: BaseAgent):
     base_dir = "home/isleem/research_projects_repos/AutoGPT"
     workspace = agent.config.workspace
     project_dir = "_".join([name.lower(), str(index), "buggy"])
@@ -1215,8 +1215,8 @@ from langchain.schema.messages import HumanMessage, SystemMessage, AIMessage
     }
 )
 """
-def ask_chatgpt(question: str, agent: Agent):
-    chat = ChatOpenAI(openai_api_key=OPENAI_API_KEY)
+def ask_chatgpt(question: str, agent: BaseAgent):
+    chat = ChatOpenAI(openai_api_key=OPENAI_API_KEY, model=agent.config.fast_llm)
 
     if not agent.ask_chatgpt:
         messages = [
@@ -1303,7 +1303,7 @@ def extract_function_calls(java_code):
     }
 )
 
-def extract_similar_functions_calls(project_name:str, bug_index: str, file_path: str, code_snippet: str, agent:Agent):
+def extract_similar_functions_calls(project_name:str, bug_index: str, file_path: str, code_snippet: str, agent:BaseAgent):
     workspace = agent.config.workspace_path
     project_dir = "{}_{}_buggy".format(project_name.lower(), bug_index)
     
@@ -1428,7 +1428,7 @@ class FunctionExtractor(JavaListener):
     }
 )
 
-def extract_method_code(project_name: str, bug_index: str, filepath: str, method_name:str, agent: Agent):
+def extract_method_code(project_name: str, bug_index: str, filepath: str, method_name:str, agent: BaseAgent):
     workspace = agent.config.workspace_path
     project_dir = "{}_{}_buggy".format(project_name.lower(), bug_index)
     
@@ -1482,7 +1482,7 @@ def extract_method_code(project_name: str, bug_index: str, filepath: str, method
 import tiktoken
 from unittest.mock import MagicMock
 
-def extract_function_def_context(project_name, bug_index, method_name, filepath, agent):
+def extract_function_def_context(project_name, bug_index, method_name, filepath, agent: BaseAgent):
     input_limit = 12000
     workspace = "./auto_gpt_workspace"
     project_dir = "{}_{}_buggy".format(project_name.lower(), bug_index)
@@ -1523,7 +1523,7 @@ def extract_function_def_context(project_name, bug_index, method_name, filepath,
     if start_index == -1:
         raise ValueError("METHOD BODY NOT FOUD, INDEX = -1, SHOULD NOT HAPPEN")
     context = file_content[:start_index]
-    enc = tiktoken.encoding_for_model("gpt-3.5-turbo")
+    enc = tiktoken.encoding_for_model(agent.config.fast_llm)
     encoded_context = enc.encode(context)
     if len(encoded_context) < input_limit:
         return context
@@ -1556,9 +1556,9 @@ def extract_function_def_context(project_name, bug_index, method_name, filepath,
         }
     }
 )
-def auto_complete_functions(project_name, bug_index, filepath, method_name, agent, model="gpt-3.5-turbo-0125"):
+def auto_complete_functions(project_name, bug_index, filepath, method_name, agent: BaseAgent):
     context = extract_function_def_context(project_name, bug_index, method_name, filepath, agent)
-    chat = ChatOpenAI(openai_api_key=OPENAI_API_KEY, model=model)
+    chat = ChatOpenAI(openai_api_key=OPENAI_API_KEY, model=agent.config.fast_llm)
     messages = [
             SystemMessage(
                 content="You are a code implementer and autocompletion engine. Basically, you would be given some already written code up to some line and you would be asked to implement the function/method that is declared at the last line. Always give full implementation of the method starting from declaration (public void myFunc(...)) to all the body. Take the given context into considration. Only give the implementation of the method and nothing else. If you want to add some explanation you can write it as comments above each line of code."),

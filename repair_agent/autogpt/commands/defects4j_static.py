@@ -6,7 +6,6 @@ import json
 from autogpt.logs import logger
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-STATIC_MODEL = "gpt-3.5-turbo-0125"
 
 def get_info(name: str, index: int, workspace) -> str:
     """Create and execute a Python file in a Docker container and return the STDOUT of the
@@ -329,8 +328,8 @@ def extract_fail_report(name: str, index: str, workspace):
 from langchain.chat_models import ChatOpenAI
 from langchain.schema.messages import HumanMessage, SystemMessage, AIMessage
 
-def query_for_fix(query, model=STATIC_MODEL):
-    chat = ChatOpenAI(openai_api_key=OPENAI_API_KEY, model=model)
+def query_for_fix(query, agent):
+    chat = ChatOpenAI(openai_api_key=OPENAI_API_KEY, model=agent.config.fast_llm)
 
     messages = [
         SystemMessage(
@@ -346,8 +345,8 @@ def query_for_fix(query, model=STATIC_MODEL):
 
     return response.content
 
-def query_for_mutants(query, model=STATIC_MODEL):
-    chat = ChatOpenAI(openai_api_key=OPENAI_API_KEY, model=model)
+def query_for_mutants(query, agent):
+    chat = ChatOpenAI(openai_api_key=OPENAI_API_KEY, model=agent.config.fast_llm)
 
     messages = [
         SystemMessage(
@@ -393,8 +392,8 @@ def construct_fix_command(fix_object, project_name, bug_index):
         }
 
 
-def query_for_commands(query, model=STATIC_MODEL):
-    chat = ChatOpenAI(openai_api_key=OPENAI_API_KEY, model=model)
+def query_for_commands(query, agent):
+    chat = ChatOpenAI(openai_api_key=OPENAI_API_KEY, model=agent.config.fast_llm)
 
     messages = [
         SystemMessage(
@@ -477,7 +476,7 @@ def extract_method_code(project_name, bug_index, method_name, file_path):
     return [b[1] for i, b in enumerate(extractor.matched_methods)]
     
 import tiktoken
-def extract_function_def_context(project_name, bug_index, method_name, file_path):
+def extract_function_def_context(project_name, bug_index, method_name, file_path, agent):
     input_limit = 12000
     extracted_methods = extract_method_code(project_name, bug_index, method_name, file_path)
     if len(extract_method_code) == 0:
@@ -492,16 +491,16 @@ def extract_function_def_context(project_name, bug_index, method_name, file_path
     if start_index == -1:
         raise ValueError("METHOD BODY NOT FOUD, INDEX = -1, SHOULD NOT HAPPEN")
     context = file_content[:start_index]
-    enc = tiktoken.encoding_for_model("gpt-3.5-turbo")
+    enc = tiktoken.encoding_for_model(agent.config.fast_llm)
     encoded_context = enc.encode(context)
     if len(encoded_context) < input_limit:
         return context
     else:
         return enc.decode(context[-input_limit:])
     
-def auto_complete_functions(project_name, bug_index, file_path, method_name, model=STATIC_MODEL):
-    context = extract_function_def_context(project_name, bug_index, method_name, file_path)
-    chat = ChatOpenAI(openai_api_key=OPENAI_API_KEY, model=model)
+def auto_complete_functions(project_name, bug_index, file_path, method_name, agent):
+    context = extract_function_def_context(project_name, bug_index, method_name, file_path, agent)
+    chat = ChatOpenAI(openai_api_key=OPENAI_API_KEY, model=agent.config.fast_llm)
     messages = [
             SystemMessage(
                 content="implement the code for the method {}, here is the code before the method:".format(method_name)),
@@ -659,10 +658,3 @@ def create_fix_template(project_name, bug_number):
 	fix_template_str = fix_template_str.replace('"deletions": []', '"deletions": [here put the lines number to delete...]')
 	fix_template_str = fix_template_str.replace('"insertions": []', '"insertions": [here put the list of insertion dictionaries. DO NOT REPEAT ALREADY EXISTING LINES!: {"line_numbe":..., "new_lines":[...]}, ...]')
 	return fix_template_str
-
-if __name__ =="__main__":
-    file_path = "src/com/google/javascript/jscomp/NodeUtil.java"
-    method_name = "mayBeString"
-    project_name = "Closure"
-    bug_index = "10"
-    print(auto_complete_functions(project_name, bug_index, file_path, method_name))

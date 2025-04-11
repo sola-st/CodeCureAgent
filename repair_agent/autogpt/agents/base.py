@@ -282,7 +282,7 @@ please use the indicated format and produce a list, like this:
     {"name":..., "args":...}
 ]"""
         try:
-            self.suggested_commands = json.loads(query_for_commands(query))
+            self.suggested_commands = json.loads(query_for_commands(query, self))
         except Exception as e:
             logger.info("EXCEPTION HAPPENED IN COMMANDS SUGGESTION-*-*-*-*-*-*-*-*-*-*-*-*-*-\n\n")
 
@@ -957,7 +957,7 @@ please use the indicated format and produce a list, like this:
         if self.hyperparams["external_fix_strategy"] != 0:
             if self.cycle_count % self.hyperparams["external_fix_strategy"] == 0:
                 query = self.construct_fix_query()
-                suggested_fixes = query_for_fix(query, )
+                suggested_fixes = query_for_fix(query, self)
                 self.save_to_json(os.path.join("experimental_setups", exps[-1], "external_fixes", "external_fixes_{}_{}.json".format(project_name, bug_index)), json.loads(suggested_fixes))
 
         raw_response = create_chat_completion(

@@ -8,7 +8,6 @@ from colorama import Back, Fore, Style
 
 from autogpt import utils
 from autogpt.config import Config
-from autogpt.config.config import GPT_3_MODEL, GPT_4_MODEL
 from autogpt.llm.api_manager import ApiManager
 from autogpt.logs import logger
 from autogpt.memory.vector import get_supported_memory_backends
@@ -23,8 +22,7 @@ def create_config(
     skip_reprompt: bool,
     speak: bool,
     debug: bool,
-    gpt3only: bool,
-    gpt4only: bool,
+    model_version: str,
     memory_type: str,
     browser_name: str,
     allow_downloads: bool,
@@ -40,8 +38,7 @@ def create_config(
         skip_reprompt (bool): Whether to skip the re-prompting messages at the beginning of the script
         speak (bool): Whether to enable speak mode
         debug (bool): Whether to enable debug mode
-        gpt3only (bool): Whether to enable GPT3.5 only mode
-        gpt4only (bool): Whether to enable GPT4 only mode
+        model_version (str): The GPT model to use. Has to be passed as command line argument
         memory_type (str): The type of memory backend to use
         browser_name (str): The name of the browser to use when using selenium to scrape the web
         allow_downloads (bool): Whether to allow Auto-GPT to download files natively
@@ -80,22 +77,15 @@ def create_config(
         logger.typewriter_log("Speak Mode: ", Fore.GREEN, "ENABLED")
         config.speak_mode = True
 
-    # Set the default LLM models
-    if gpt3only:
-        logger.typewriter_log("GPT3.5 Only Mode: ", Fore.GREEN, "ENABLED")
-        # --gpt3only should always use gpt-3.5-turbo, despite user's FAST_LLM config
-        config.fast_llm = GPT_3_MODEL
-        config.smart_llm = GPT_3_MODEL
-    elif (
-        gpt4only
-        and check_model(GPT_4_MODEL, model_type="smart_llm", config=config)
-        == GPT_4_MODEL
-    ):
-        logger.typewriter_log("GPT4 Only Mode: ", Fore.GREEN, "ENABLED")
-        # --gpt4only should always use gpt-4, despite user's SMART_LLM config
-        config.fast_llm = GPT_4_MODEL
-        config.smart_llm = GPT_4_MODEL
+    # Set the used LLM model
+    # If --model_version set, try to use this version of GPT model if available
+    if (check_model(model_version, model_type="fast_llm", config=config) == model_version):
+        logger.typewriter_log(f"LLM set to: {model_version}", Fore.GREEN, "ENABLED")
+        config.fast_llm = model_version
+        config.smart_llm = model_version
+
     else:
+        # Defaults to gpt-3.5-turbo-0125
         config.fast_llm = check_model(config.fast_llm, "fast_llm", config=config)
         config.smart_llm = check_model(config.smart_llm, "smart_llm", config=config)
 

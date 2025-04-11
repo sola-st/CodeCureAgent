@@ -39,8 +39,10 @@ class OpenAIModelName(str, enum.Enum):
     ADA = "text-embedding-ada-002"
     GPT3 = "gpt-3.5-turbo-0125"
     GPT3_16K = "gpt-3.5-turbo-0125"
-    GPT4 = "gpt-4-0301"
-    GPT4_32K = "gpt-4-32k-0301"
+    GPT4_turbo = "gpt-4-turbo-2024-04-09"
+    GPT4o_mini = "gpt-4o-mini-2024-07-18"
+    GPT4o = "gpt-4o-2024-08-06"
+
 
 
 OPEN_AI_EMBEDDING_MODELS = {
@@ -61,9 +63,9 @@ OPEN_AI_LANGUAGE_MODELS = {
         name=OpenAIModelName.GPT3,
         service=ModelProviderService.LANGUAGE,
         provider_name=ModelProviderName.OPENAI,
-        prompt_token_cost=0.0015,
-        completion_token_cost=0.002,
-        max_tokens=16000,
+        prompt_token_cost=0.0005,
+        completion_token_cost=0.0015,
+        max_tokens=16385,
     ),
     OpenAIModelName.GPT3_16K: LanguageModelProviderModelInfo(
         name=OpenAIModelName.GPT3,
@@ -73,21 +75,29 @@ OPEN_AI_LANGUAGE_MODELS = {
         completion_token_cost=0.002,
         max_tokens=16384,
     ),
-    OpenAIModelName.GPT4: LanguageModelProviderModelInfo(
-        name=OpenAIModelName.GPT4,
+    OpenAIModelName.GPT4_turbo: LanguageModelProviderModelInfo(
+        name=OpenAIModelName.GPT4_turbo,
         service=ModelProviderService.LANGUAGE,
         provider_name=ModelProviderName.OPENAI,
-        prompt_token_cost=0.03,
-        completion_token_cost=0.06,
-        max_tokens=8192,
+        prompt_token_cost=0.01,
+        completion_token_cost=0.03,
+        max_tokens=128000,
     ),
-    OpenAIModelName.GPT4_32K: LanguageModelProviderModelInfo(
-        name=OpenAIModelName.GPT4_32K,
+    OpenAIModelName.GPT4o_mini: LanguageModelProviderModelInfo(
+        name=OpenAIModelName.GPT4o_mini,
         service=ModelProviderService.LANGUAGE,
         provider_name=ModelProviderName.OPENAI,
-        prompt_token_cost=0.06,
-        completion_token_cost=0.12,
-        max_tokens=32768,
+        prompt_token_cost=0.00015,
+        completion_token_cost=0.0006,
+        max_tokens=128000,
+    ),
+    OpenAIModelName.GPT4o: LanguageModelProviderModelInfo(
+        name=OpenAIModelName.GPT4o,
+        service=ModelProviderService.LANGUAGE,
+        provider_name=ModelProviderName.OPENAI,
+        prompt_token_cost=0.0025,
+        completion_token_cost=0.01,
+        max_tokens=128000,
     ),
 }
 

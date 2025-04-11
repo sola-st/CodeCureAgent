@@ -21,8 +21,6 @@ AZURE_CONFIG_FILE = "azure.yaml"
 PLUGINS_CONFIG_FILE = "plugins_config.yaml"
 PROMPT_SETTINGS_FILE = "prompt_settings.yaml"
 
-GPT_4_MODEL = "gpt-4"
-GPT_3_MODEL = "gpt-3.5-turbo-0125"
 
 
 class Config(SystemSettings, arbitrary_types_allowed=True):
@@ -55,7 +53,7 @@ class Config(SystemSettings, arbitrary_types_allowed=True):
     file_logger_path: Optional[Path] = None
     # Model configuration
     fast_llm: str = "gpt-3.5-turbo-0125"
-    smart_llm: str = "gpt-4-0314"
+    smart_llm: str = "gpt-4-turbo-2024-04-09"
     temperature: float = 0
     openai_functions: bool = False
     embedding_model: str = "text-embedding-ada-002"
@@ -171,32 +169,14 @@ class Config(SystemSettings, arbitrary_types_allowed=True):
     def get_azure_credentials(self, model: str) -> dict[str, str]:
         """Get the kwargs for the Azure API."""
 
-        # Fix --gpt3only and --gpt4only in combination with Azure
-        fast_llm = (
-            self.fast_llm
-            if not (
-                self.fast_llm == self.smart_llm
-                and self.fast_llm.startswith(GPT_4_MODEL)
-            )
-            else f"not_{self.fast_llm}"
-        )
-        smart_llm = (
-            self.smart_llm
-            if not (
-                self.smart_llm == self.fast_llm
-                and self.smart_llm.startswith(GPT_3_MODEL)
-            )
-            else f"not_{self.smart_llm}"
-        )
-
         deployment_id = {
-            fast_llm: self.azure_model_to_deployment_id_map.get(
+            self.fast_llm: self.azure_model_to_deployment_id_map.get(
                 "fast_llm_deployment_id",
                 self.azure_model_to_deployment_id_map.get(
                     "fast_llm_model_deployment_id"  # backwards compatibility
                 ),
             ),
-            smart_llm: self.azure_model_to_deployment_id_map.get(
+            self.smart_llm: self.azure_model_to_deployment_id_map.get(
                 "smart_llm_deployment_id",
                 self.azure_model_to_deployment_id_map.get(
                     "smart_llm_model_deployment_id"  # backwards compatibility

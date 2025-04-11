@@ -25,44 +25,40 @@ from autogpt.models.command_registry import CommandRegistry
 OPEN_AI_CHAT_MODELS = {
     info.name: info
     for info in [
+        # prompt_token_cost and completion_token_cost is per 1000 tokens
         ChatModelInfo(
-            name="gpt-3.5-turbo-16k-0301 ",
+            name="gpt-3.5-turbo-16k-0301",
             prompt_token_cost=0.003,
             completion_token_cost=0.004,
             max_tokens=16384,
             supports_functions=True,
         ),
         ChatModelInfo(
-            name="gpt-4-0314",
-            prompt_token_cost=0.03,
-            completion_token_cost=0.06,
-            max_tokens=8192,
-        ),
-        ChatModelInfo(
-            name="gpt-4-0301",
-            prompt_token_cost=0.03,
-            completion_token_cost=0.06,
-            max_tokens=8191,
-            supports_functions=True,
-        ),
-        ChatModelInfo(
-            name="gpt-4-32k-0301",
-            prompt_token_cost=0.06,
-            completion_token_cost=0.12,
-            max_tokens=32768,
-        ),
-        ChatModelInfo(
-            name="gpt-4-32k-0301",
-            prompt_token_cost=0.06,
-            completion_token_cost=0.12,
-            max_tokens=32768,
+            name="gpt-4-turbo-2024-04-09",
+            prompt_token_cost=0.01,
+            completion_token_cost=0.03,
+            max_tokens=128000,
             supports_functions=True,
         ),
         ChatModelInfo(
             name="gpt-3.5-turbo-0125",
-            prompt_token_cost=0.001,
-            completion_token_cost=0.002,
-            max_tokens=16000,
+            prompt_token_cost=0.0005,
+            completion_token_cost=0.0015,
+            max_tokens=16385,
+            supports_functions=True,
+        ),
+        ChatModelInfo(
+            name="gpt-4o-mini-2024-07-18",
+            prompt_token_cost=0.00015,
+            completion_token_cost=0.0006,
+            max_tokens=128000,
+            supports_functions=True,
+        ),
+        ChatModelInfo(
+            name="gpt-4o-2024-08-06",
+            prompt_token_cost=0.0025,
+            completion_token_cost=0.01,
+            max_tokens=128000,
             supports_functions=True,
         )
 
@@ -71,9 +67,10 @@ OPEN_AI_CHAT_MODELS = {
 # Set aliases for rolling model IDs
 chat_model_mapping = {
     "gpt-3.5-turbo": "gpt-3.5-turbo-0125",
-    "gpt-3.5-turbo-16k": "gpt-3.5-turbo-0125",
-    "gpt-4": "gpt-4-0301",
-    "gpt-4-32k": "gpt-4-32k-0301",
+    "gpt-3.5-turbo-16k": "gpt-3.5-turbo-16k-0301",
+    "gpt-4-turbo": "gpt-4-turbo-2024-04-09",
+    "gpt-4o-mini": "gpt-4o-mini-2024-07-18",
+    "gpt-4o": "gpt-4o-2024-08-06",
 }
 for alias, target in chat_model_mapping.items():
     alias_info = ChatModelInfo(**OPEN_AI_CHAT_MODELS[target].__dict__)

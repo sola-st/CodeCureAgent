@@ -248,14 +248,19 @@ Within the `experimental_setups` folder, several scripts are available to post-p
   "external_fix_strategy": 0, // deafult for our experiment
   ```
 
-### 2. Switch Between GPT-3.5 and GPT-4
+### 2. Switching the used GPT model
 
-In the `run_on_defects4j.sh` file, locate the line:
+In the `run_on_defects4j.sh` file (and also in `run_continuous.sh`), locate the line:
 ```bash
-./run.sh --ai-settings ai_settings.yaml --gpt3only -c -l 40 -m json_file --experiment-file "$2"
+./run.sh --ai-settings ai_settings.yaml --model_version gpt-4o-mini-2024-07-18 -c -l 40 -m json_file --experiment-file "$2"
 ```
-- The `--gpt3only` flag enforces GPT-3.5 usage. Removing this flag switches RepairAgent to GPT-4.
-- Search the codebase for "gpt-3" and "gpt-4" to update version names accordingly.
+Change the model_version to one of the following supported models:  
+- gpt-3_5-turbo-0125
+- gpt-4-turbo-2024-04-09
+- gpt-4o-mini-2024-07-18
+- gpt-4o-2024-08-06
+
+Reasoning models are not supported by the used OpenAI API version.
 
 ---
 

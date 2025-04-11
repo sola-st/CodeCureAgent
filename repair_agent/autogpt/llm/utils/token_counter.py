@@ -43,16 +43,20 @@ def count_message_tokens(
         )
         tokens_per_name = -1  # if there's a name, the role is omitted
         encoding_model = "gpt-3.5-turbo"
-    elif model.startswith("gpt-4"):
+    elif model.startswith("gpt-4-"):
         tokens_per_message = 3
         tokens_per_name = 1
         encoding_model = "gpt-4"
+
+    # If the model is none of the above, use a safe upper estimate for the tokens 
+    # needed for the message context. 
+    # There is no newer information on the ChatML format than 
+    # "https://github.com/openai/openai-python/blob/120d225b91a8453e15240a49fb1c6794d8119326/chatml.md"
     else:
-        raise NotImplementedError(
-            f"count_message_tokens() is not implemented for model {model}.\n"
-            " See https://github.com/openai/openai-python/blob/main/chatml.md for"
-            " information on how messages are converted to tokens."
-        )
+        tokens_per_message = 4
+        tokens_per_name = 1
+        encoding_model = model
+        
     try:
         encoding = tiktoken.encoding_for_model(encoding_model)
     except KeyError:

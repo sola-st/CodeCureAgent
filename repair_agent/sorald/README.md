@@ -18,7 +18,7 @@ Sorald supports macOS, Linux, and Windows.
 
 For running Sorald, all you need is a Java 11+ runtime.
 
-For building Sorald from source, you need a Java 11+ JDK, Maven >=3.6.3, and Git.
+For building Sorald from source, you need a Java 11 JDK, Maven >=3.6.3, and Git.
 
 ### Running Sorald in 2 seconds
 

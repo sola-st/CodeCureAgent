@@ -1,0 +1,65 @@
+# Workflow for deploying Sorald
+#
+# Note that actions are specified by commit hash. This is to avoid the security
+# risk of someone injecting malicious code into a release and then simply
+# changing a tag.
+
+name: deploy
+
+on:
+  push:
+    branches: [ master ]
+
+env:
+  JAVA_DISTRIBUTION: 'adopt'
+
+jobs:
+  deploy:
+    if: ${{ github.repository == 'ASSERT-KTH/sorald' }}
+    runs-on: ubuntu-latest
+
+    environment: Deploy
+
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup for Java build
+        uses: actions/setup-java@0ab4596768b603586c0de567f2430c30f5b0d2b0 # v3.13.0
+        with:
+          java-version: 11
+          java-package: jdk
+          architecture: x64
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+
+      - name: Build
+        run: mvn -B install -DskipTests
+
+      - name: Get Sorald version
+        id: get-sorald-version
+        shell: bash
+        run: |
+          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout -pl sorald)
+          echo "::set-output name=version::$VERSION"
+
+      - name: Setup Java for deploy
+        uses: actions/setup-java@0ab4596768b603586c0de567f2430c30f5b0d2b0 # v3.13.0
+        with: # running setup-java again overwrites the settings.xml
+          java-version: 11
+          java-package: jdk
+          architecture: x64
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+
+          server-id: ossrh
+          server-username: OSSRH_USERNAME
+          server-password: OSSRH_CENTRAL_TOKEN
+          gpg-private-key: ${{ secrets.SORALD_SIGNING_KEY }}
+
+      - name: Publish to Maven Central
+        if: ${{ contains(steps.get-sorald-version.outputs.version, 'SNAPSHOT') }}
+        run: |
+          mvn -Prelease deploy -pl se.kth.castor:sorald-parent # Fully qualified artifact ID is required
+          mvn -Prelease deploy -pl sorald-api
+          mvn -Prelease deploy -pl sorald -DskipTests
+        env:
+          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          OSSRH_CENTRAL_TOKEN: ${{ secrets.OSSRH_PASSWORD }}

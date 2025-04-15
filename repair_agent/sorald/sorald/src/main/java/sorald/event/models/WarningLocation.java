@@ -10,6 +10,7 @@ public class WarningLocation {
     private final Integer startColumn;
     private final Integer endColumn;
     private final String violationSpecifier;
+    private final String specificMessage;
 
     public WarningLocation(RuleViolation violation, Path projectPath) {
         this.filePath = projectPath.relativize(violation.getAbsolutePath()).toString();
@@ -18,6 +19,7 @@ public class WarningLocation {
         this.startColumn = violation.getStartCol();
         this.endColumn = violation.getEndCol();
         this.violationSpecifier = violation.relativeSpecifier(projectPath);
+        this.specificMessage = violation.getMessage();
     }
 
     public String getFilePath() {
@@ -42,5 +44,9 @@ public class WarningLocation {
 
     public String getViolationSpecifier() {
         return violationSpecifier;
+    }
+
+    public String getSpecificMessage() {
+        return specificMessage;
     }
 }

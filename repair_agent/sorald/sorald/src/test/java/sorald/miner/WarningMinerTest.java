@@ -178,10 +178,15 @@ public class WarningMinerTest {
         assertThat(
                 executionInfo.getJSONArray(StatsMetadataKeys.ORIGINAL_ARGS).toList().size(),
                 greaterThan(0));
-        assertThat(jo.getLong(StatsMetadataKeys.TOTAL_MINING_TIME), greaterThan(0L));
-        assertThat(jo.getJSONArray(StatsMetadataKeys.MINED_RULES).toList().size(), greaterThan(0));
-        assertTrue(jo.has(StatsMetadataKeys.MINING_START_TIME));
-        assertTrue(jo.has(StatsMetadataKeys.MINING_END_TIME));
+                
+        
+        assertEquals(jo.getJSONArray(StatsMetadataKeys.MINED_REPOSITORIES).toList().size(), 1);
+
+        JSONObject first_mined_repo = jo.getJSONArray(StatsMetadataKeys.MINED_REPOSITORIES).getJSONObject(0);
+        assertThat(first_mined_repo.getLong(StatsMetadataKeys.TOTAL_MINING_TIME), greaterThan(0L));
+        assertThat(first_mined_repo.getJSONArray(StatsMetadataKeys.MINED_RULES).toList().size(), greaterThan(0));
+        assertTrue(first_mined_repo.has(StatsMetadataKeys.MINING_START_TIME));
+        assertTrue(first_mined_repo.has(StatsMetadataKeys.MINING_END_TIME));
     }
 
     @Test

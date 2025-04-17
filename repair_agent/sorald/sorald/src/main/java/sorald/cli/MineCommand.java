@@ -16,6 +16,8 @@ import sorald.FileUtils;
 import sorald.SoraldConfig;
 import sorald.event.StatsMetadataKeys;
 import sorald.event.collectors.MinerStatisticsCollector;
+import sorald.event.collectors.RepoMinerStatisticsCollector;
+import sorald.event.collectors.RepoMinerStatisticsCollectors;
 import sorald.event.models.ExecutionInfo;
 import sorald.miner.MineSonarWarnings;
 import sorald.rule.IRuleType;
@@ -109,32 +111,8 @@ class MineCommand extends BaseCommand {
             checks = ruleKeys.stream().map(SonarRule::new).collect(Collectors.toList());
         }
 
-        var statsCollector = new MinerStatisticsCollector();
 
-        var miner =
-                new MineSonarWarnings(
-                        statsOutputFile == null ? List.of() : List.of(statsCollector),
-                        createConfig());
-
-        if (statsOnGitRepos) {
-
-            // The file at reposListPath specifies one repo per line.
-            // Each line can either only specify the URL of the repository, 
-            // or it can also specify the commitID to checkout separated by a comma
-            List<String> repoListUnsplit = Files.readAllLines(this.reposListPath.toPath());
-            List<ImmutablePair<String,String>> reposList = new ArrayList<>();
-
-            for (String repoUnsplit : repoListUnsplit){
-                String[] repoSplit = repoUnsplit.split(",");
-                ImmutablePair<String,String> repoPair = 
-                        new ImmutablePair<>(repoSplit[0].trim(), repoSplit.length > 1 ? repoSplit[1].trim() : "");
-                reposList.add(repoPair);
-            }
-
-            miner.mineGitRepos(checks, minerOutputFile.getAbsolutePath(), reposList, tempDir);
-        } else {
-            miner.mineLocalProject(checks, source.toPath().normalize().toAbsolutePath().toString());
-        }
+        Map<String, Object> additionalStatData = null;
 
         if (statsOutputFile != null) {
             List<String> originalArgs;
@@ -147,7 +125,7 @@ class MineCommand extends BaseCommand {
             else {
                 originalArgs = spec.commandLine().getParseResult().originalArgs();
             }
-            Map<String, Object> additionalStatData =
+            additionalStatData =
                     Map.of(
                             StatsMetadataKeys.EXECUTION_INFO,
                             new ExecutionInfo(
@@ -156,12 +134,74 @@ class MineCommand extends BaseCommand {
                                             SoraldVersionProvider.DEFAULT_RESOURCE_NAME),
                                     System.getProperty(Constants.JAVA_VERSION_SYSTEM_PROPERTY),
                                     target));
+        }
 
-            FileUtils.writeJSON(statsOutputFile, statsCollector, additionalStatData);
+
+        if (statsOnGitRepos) {
+
+            mineGitRepos(checks, minerOutputFile.getAbsolutePath(), tempDir, additionalStatData);
+            
+        } else {
+
+            var statsCollector = new MinerStatisticsCollector();
+
+            var miner =
+                    new MineSonarWarnings(
+                            statsOutputFile == null ? List.of() : List.of(statsCollector),
+                            createConfig());
+
+            miner.mineLocalProject(checks, source.toPath().normalize().toAbsolutePath().toString());
+        
+
+            if (statsOutputFile != null) {
+                FileUtils.writeJSON(statsOutputFile, statsCollector, additionalStatData);
+            }
         }
 
         return 0;
     }
+
+
+    /**
+     * Separately mines each of the git repos specified with repoURL (and commit).
+     * The json report is built from separate Collectors per repository, to have the rules in the report separated by repository.
+     */
+    private void mineGitRepos(List<Rule> rules, String outputPath, File repoDir, Map<String, Object> additionalStatData) throws IOException {
+
+        // The file at reposListPath specifies one repo per line.
+        // Each line can either only specify the URL of the repository, 
+        // or it can also specify the commitID to checkout separated by a comma
+        List<String> repoListUnsplit = Files.readAllLines(this.reposListPath.toPath());
+        List<ImmutablePair<String,String>> reposList = new ArrayList<>();
+
+        for (String repoUnsplit : repoListUnsplit){
+            String[] repoSplit = repoUnsplit.split(",");
+            ImmutablePair<String,String> repoPair = 
+                    new ImmutablePair<>(repoSplit[0].trim(), repoSplit.length > 1 ? repoSplit[1].trim() : "");
+            reposList.add(repoPair);
+        }
+
+        List<RepoMinerStatisticsCollector> statsCollectors = new ArrayList<>();
+
+        for (ImmutablePair<String, String> repo : reposList) {
+            RepoMinerStatisticsCollector statsCollector = new RepoMinerStatisticsCollector(repo.left, repo.right.isEmpty() ? "MASTER" : repo.right);
+            statsCollectors.add(statsCollector);
+
+            var miner =
+                    new MineSonarWarnings(
+                            statsOutputFile == null ? List.of() : List.of(statsCollector),
+                            createConfig());
+
+            miner.mineGitRepo(rules, minerOutputFile.getAbsolutePath(), repo, tempDir);
+        }
+
+
+        if (statsOutputFile != null) {
+            FileUtils.writeJSON(statsOutputFile, new RepoMinerStatisticsCollectors(statsCollectors), additionalStatData);
+        }
+    }
+
+
 
     /** Perform validation on the parsed arguments. */
     private void validateArgs() {

@@ -33,4 +33,5 @@ public class StatsMetadataKeys {
     public static final String MINING_END_TIME = "miningEndTime";
     public static final String MINED_RULES = "minedRules";
     public static final String TOTAL_MINING_TIME = "totalMiningTime";
+    public static final String MINED_REPOSITORIES = "minedRepositories";
 }

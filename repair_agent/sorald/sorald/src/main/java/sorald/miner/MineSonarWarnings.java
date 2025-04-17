@@ -28,58 +28,70 @@ public class MineSonarWarnings {
         this.cliOptions = cliOptions;
     }
 
-    public void mineGitRepos(
-            List<Rule> rules, String outputPath, List<ImmutablePair<String,String>> reposList, File repoDir)
+    /**
+     * Mines a single git repository. For that it clones the repository,
+     * checks out the specified commit if the commit isn't empty 
+     * and then runs the analysis if cloning was successful.
+     * 
+     * @param rules list of rules to analyze
+     * @param outputPath Path where the overview of found warnings is written
+     * @param repo A Pair of repoPath and commitId. The repoPath must be a correct URL to the repository. 
+     * The commitId must be a valid commit in the tree of the repository, 
+     * or it can be an empty string. Then the master branch is used. 
+     * @param repoDir The working directory where the repository can be cloned to temporarily
+     * @throws IOException
+     */
+    public void mineGitRepo(
+            List<Rule> rules, String outputPath, ImmutablePair<String,String> repo, File repoDir)
             throws IOException {
-        // stats on a list of git repos
-        for (ImmutablePair<String,String> repo : reposList) {
-            String repoPath = repo.left;
-            String repoName = repoPath.substring(repoPath.lastIndexOf('/') + 1, repoPath.lastIndexOf("."));
 
-            org.apache.commons.io.FileUtils.cleanDirectory(repoDir);
+        String repoPath = repo.left;
+        String repoName = repoPath.substring(repoPath.lastIndexOf('/') + 1, repoPath.lastIndexOf("."));
 
-            boolean isCloned = false;
+        org.apache.commons.io.FileUtils.cleanDirectory(repoDir);
 
-            try {
-                Git git = Git.cloneRepository().setURI(repoPath).setDirectory(repoDir).call();
-                
-                // If a commitId was provided checkout the respective commit
-                String commitId = repo.right;
-                if (!commitId.isEmpty()){
-                    git.checkout().setName(commitId).call();
-                }
+        boolean isCloned = false;
 
-                git.close();
-                isCloned = true;
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
+        try {
+            Git git = Git.cloneRepository().setURI(repoPath).setDirectory(repoDir).call();
             
-
-
-            Map<String, Integer> warnings = null;
-            // Only analyze the repoDir if the new repo was succesfully cloned
-            if (isCloned){
-
-                warnings = extractWarnings(repoDir.getAbsolutePath(), rules);
+            // If a commitId was provided checkout the respective commit
+            String commitId = repo.right;
+            if (!commitId.isEmpty()){
+                git.checkout().setName(commitId).call();
             }
 
-            PrintWriter pw = new PrintWriter(new FileWriter(outputPath, true));
-
-            if (isCloned) {
-                pw.println("RepoName: " + repoName);
-
-                warnings.entrySet().stream()
-                        .sorted(Collections.reverseOrder(Map.Entry.comparingByValue()))
-                        .forEach(pw::println);
-            } else {
-                pw.println("RepoName: " + repoName + " not_cloned");
-            }
-
-            pw.flush();
-            pw.close();
+            git.close();
+            isCloned = true;
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+
+        
+
+
+        Map<String, Integer> warnings = null;
+        // Only analyze the repoDir if the new repo was succesfully cloned
+        if (isCloned){
+
+            warnings = extractWarnings(repoDir.getAbsolutePath(), rules);
+        }
+
+        PrintWriter pw = new PrintWriter(new FileWriter(outputPath, true));
+
+        if (isCloned) {
+            pw.println("RepoName: " + repoName);
+
+            warnings.entrySet().stream()
+                    .sorted(Collections.reverseOrder(Map.Entry.comparingByValue()))
+                    .forEach(pw::println);
+        } else {
+            pw.println("RepoName: " + repoName + " not_cloned");
+        }
+
+        pw.flush();
+        pw.close();
+        
     }
 
     public void mineLocalProject(List<Rule> rules, String projectPath) {

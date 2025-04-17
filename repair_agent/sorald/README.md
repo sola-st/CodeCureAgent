@@ -137,8 +137,9 @@ $ sorald mine --stats-on-git-repos --git-repos-list repos.txt --stats-output-fil
 ```
 
 The `--gitReposList` should be a plain text file with one remote repository url
-(e.g. `https://github.com/SpoonLabs/sorald.git`) per line. Sorald clones each
-repository and runs Sonar checks on the head of the default branch.
+(e.g. `https://github.com/SpoonLabs/sorald.git`) per line.  
+Alternatively lines can also contain a repository url and a specific commitID, separated by a comma (e.g. `https://github.com/SpoonLabs/sorald.git`,2d2ca6d879f27a6abcf019df0ebd72633396cca4).  
+Sorald clones each repository and runs Sonar checks on the head of the default branch, or if the commitID is specified on this specific commit.
 
 The full list of options documented [here](/docs/usage/mine.adoc)
 (and can also be found by running `sorald mine --help`).

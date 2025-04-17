@@ -15,6 +15,7 @@ import sorald.rule.Rule;
 import sorald.rule.RuleViolation;
 import sorald.sonar.ProjectScanner;
 import sorald.sonar.SonarRule;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 
 public class MineSonarWarnings {
     final List<SoraldEventHandler> eventHandlers;
@@ -28,25 +29,41 @@ public class MineSonarWarnings {
     }
 
     public void mineGitRepos(
-            List<Rule> rules, String outputPath, List<String> reposList, File repoDir)
+            List<Rule> rules, String outputPath, List<ImmutablePair<String,String>> reposList, File repoDir)
             throws IOException {
         // stats on a list of git repos
-        for (String repo : reposList) {
-            String repoName = repo.substring(repo.lastIndexOf('/') + 1, repo.lastIndexOf("."));
+        for (ImmutablePair<String,String> repo : reposList) {
+            String repoPath = repo.left;
+            String repoName = repoPath.substring(repoPath.lastIndexOf('/') + 1, repoPath.lastIndexOf("."));
 
             org.apache.commons.io.FileUtils.cleanDirectory(repoDir);
 
             boolean isCloned = false;
 
             try {
-                Git git = Git.cloneRepository().setURI(repo).setDirectory(repoDir).call();
+                Git git = Git.cloneRepository().setURI(repoPath).setDirectory(repoDir).call();
+                
+                // If a commitId was provided checkout the respective commit
+                String commitId = repo.right;
+                if (!commitId.isEmpty()){
+                    git.checkout().setName(commitId).call();
+                }
+
                 git.close();
                 isCloned = true;
             } catch (Exception e) {
                 e.printStackTrace();
             }
 
-            Map<String, Integer> warnings = extractWarnings(repoDir.getAbsolutePath(), rules);
+            
+
+
+            Map<String, Integer> warnings = null;
+            // Only analyze the repoDir if the new repo was succesfully cloned
+            if (isCloned){
+
+                warnings = extractWarnings(repoDir.getAbsolutePath(), rules);
+            }
 
             PrintWriter pw = new PrintWriter(new FileWriter(outputPath, true));
 

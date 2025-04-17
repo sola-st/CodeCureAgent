@@ -24,6 +24,7 @@ import sorald.rule.RuleProvider;
 import sorald.sonar.SonarRule;
 import sorald.sonar.SonarRuleType;
 import sorald.util.MavenUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 
 /** CLI Command for Sorald's mining functionality. */
 @Mojo(name = Constants.MINE_COMMAND_NAME)
@@ -52,7 +53,7 @@ class MineCommand extends BaseCommand {
     @CommandLine.Option(
             names = Constants.ARG_GIT_REPOS_LIST,
             description = "The path to the repos list.")
-    File reposList;
+    File reposListPath;
 
     @CommandLine.Option(
             names = Constants.ARG_TEMP_DIR,
@@ -116,7 +117,20 @@ class MineCommand extends BaseCommand {
                         createConfig());
 
         if (statsOnGitRepos) {
-            List<String> reposList = Files.readAllLines(this.reposList.toPath());
+
+            // The file at reposListPath specifies one repo per line.
+            // Each line can either only specify the URL of the repository, 
+            // or it can also specify the commitID to checkout separated by a comma
+            List<String> repoListUnsplit = Files.readAllLines(this.reposListPath.toPath());
+            List<ImmutablePair<String,String>> reposList = new ArrayList<>();
+
+            for (String repoUnsplit : repoListUnsplit){
+                String[] repoSplit = repoUnsplit.split(",");
+                ImmutablePair<String,String> repoPair = 
+                        new ImmutablePair<>(repoSplit[0].trim(), repoSplit.length > 1 ? repoSplit[1].trim() : "");
+                reposList.add(repoPair);
+            }
+
             miner.mineGitRepos(checks, minerOutputFile.getAbsolutePath(), reposList, tempDir);
         } else {
             miner.mineLocalProject(checks, source.toPath().normalize().toAbsolutePath().toString());

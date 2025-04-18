@@ -1,5 +1,8 @@
 import subprocess
 import os
+import json
+from autogpt.logs import logger
+from autogpt.agents import BaseAgent
 
 SORALD_JAR_PATH = "/workspaces/master-thesis-pascal-joos/repair_agent/sorald/sorald.jar"
 
@@ -8,24 +11,29 @@ SORALD_JAR_PATH = "/workspaces/master-thesis-pascal-joos/repair_agent/sorald/sor
 Analyze a file with SonarQube (via Sorald miner). Creates the analysis report json.
 
 Args:
+        agent (BaseAgent): The agent with its configuration
         file_relative_path (str): Path to the file to analyze. (Relative to the repository under analysis)
         rules (list[str]): SonarQube rules to check (list of SIds). If the list is empty all rules are checked.
-        workspace (str): Absolute path to the auto_gpt_workspace
         repo_name (str): Name of the repository under analysis
         analysis_report_relative_path (src): Path where the analysis report should be saved to. (Relative from workspace)
     Returns:
         subprocess.CompletedProcess[str]: Result of running the mining suprocess. If subprocess was succesful then the property "returncode" is 0.
 """
-def analyze_file(file__relative_path: str, rules: list[str], workspace: str, repo_name: str, analysis_report_relative_path: str) -> subprocess.CompletedProcess[str]:
+def analyze_file(agent: BaseAgent, file_relative_path: str, rules: list[str], repo_name: str, analysis_report_relative_path: str) -> subprocess.CompletedProcess[str]:
 
-    #workspace = agent.config.workspace_path
+    workspace = agent.config.workspace_path
 
     # Prepare the paths
-    project_dir = os.path.join(workspace, repo_name)
-    file__relative_path = preprocess_paths(workspace, repo_name, file__relative_path)
-    file_full_path = os.path.join(project_dir, file__relative_path)
+    file_relative_path = preprocess_paths(workspace, repo_name, file_relative_path)
+    file_path = os.path.join(workspace, repo_name, file_relative_path)
+
+    analysis_report_path = os.path.join(workspace, analysis_report_relative_path)
+
     
-    analysis_report_full_path = os.path.join(workspace, analysis_report_relative_path)
+
+    logger.info(
+            f"Running SonarQube analysis on file '{file_path}'. \nThe report will be saved to '{analysis_report_path}'"
+        )
 
 
     # Create mining command
@@ -34,21 +42,45 @@ def analyze_file(file__relative_path: str, rules: list[str], workspace: str, rep
     if len(rules) > 0:
         cmd_temp = cmd_temp + " --rule-keys " + ",".join(rules)
     
-    cmd = cmd_temp.format(SORALD_JAR_PATH, file_full_path, analysis_report_full_path)
+    cmd = cmd_temp.format(SORALD_JAR_PATH, file_path, analysis_report_path)
+
+    logger.debug(
+            f"The SonarQube analysis on file '{file_path}' is run with the following command: {cmd}"
+        )
 
 
     result = subprocess.run(
             [cmd],
             capture_output=True,
             encoding="utf8",
-            cwd=workspace,
             shell=True
         )
     return result
     
 
-def parse_analysis_report(workspace: str, analysis_report_path: str):
-    pass
+def parse_analysis_report(agent: BaseAgent, analysis_report_relative_path: str):
+    workspace = agent.config.workspace_path
+
+    analysis_report_path = os.path.join(workspace, analysis_report_relative_path)
+    with open(analysis_report_path, "r") as analysis_report_file:
+        analysis_report = json.load(analysis_report_file)
+
+    return analysis_report
+
+
+
+def analyze_and_parse_report(agent: BaseAgent, file_relative_path: str, rules: list[str], repo_name: str, analysis_report_relative_path: str) -> str:
+
+    result = analyze_file(agent, file_relative_path, rules, repo_name, analysis_report_relative_path)
+
+    if result.returncode == 0:
+        logger.info(
+            f"Running SonarQube analysis was successful."
+        )
+        return parse_analysis_report(agent, analysis_report_relative_path)
+    else:
+        logger.error("Running SonarQube analysis failed with error: " + result.stderr)
+        return f"Error: {result.stderr}"
 
 
 
@@ -93,17 +125,6 @@ def list_java_files(main_dir) -> list:
 
 
 
-if __name__ == "__main__":
-    # Example parameters for testing
-    file_relative_path = "src/java/org/apache/commons/codec/BinaryDecoder.java"
-    rules = ["S1120", "S1106"]
-    workspace = "/workspaces/master-thesis-pascal-joos/repair_agent/auto_gpt_workspace/"
-    repo_name = "codec_4_buggy"
-    analysis_report_relative_path = "analysis_report.json"
-
-    # Call the analyze_file function
-    result = analyze_file(file_relative_path, rules, workspace, repo_name, analysis_report_relative_path)
-    print(result)
 
 
 

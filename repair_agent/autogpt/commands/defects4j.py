@@ -25,7 +25,7 @@ ALLOWLIST_CONTROL = "allowlist"
 DENYLIST_CONTROL = "denylist"
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-def preprocess_paths(agent, project_name, bug_index, filepath):
+def preprocess_paths(agent: BaseAgent, project_name, bug_index, filepath):
     workspace = agent.config.workspace_path
     project_dir = os.path.join(workspace, project_name.lower()+"_"+str(bug_index)+"_buggy")
     
@@ -1150,7 +1150,7 @@ def prepare_lsp_env(name, index, workspace):
 
 def lsp_hover(name:str, index:str, file_path:str, line_number:int, column:int, agent: BaseAgent):
     base_dir = "home/isleem/research_projects_repos/AutoGPT"
-    workspace = agent.config.workspace
+    workspace = agent.config.workspace_path
     project_dir = "_".join([name.lower(), str(index), "buggy"])
     id = random.randint(100, 9999999999)
     hover_request = {

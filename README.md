@@ -69,7 +69,8 @@ The script will prompt you to paste your API token.
 By default, RepairAgent is configured to run on Defects4J bugs. To specify which bugs to run on:
 
 1. Create a text file named, for example, `bugs_list`. A sample file exists in the repository at `experimental_setups/bugs_list`.
-2. Run the following command:
+2. Make sure that you are in the folder `repair_agent`. The script can only run from there.
+3. Run the following command:
 
    ```bash
    ./run_on_defects4j.sh experimental_setups/bugs_list hyperparams.json

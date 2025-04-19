@@ -11,6 +11,7 @@ import sorald.sonar.SonarRule;
 public class MinedViolationEvent implements SoraldEvent {
     private final String ruleKey;
     private final String ruleName;
+    private final String ruleType;
     private final WarningLocation warningLocation;
 
     /**
@@ -21,7 +22,9 @@ public class MinedViolationEvent implements SoraldEvent {
      */
     public MinedViolationEvent(RuleViolation violation, Path projectPath) {
         this.ruleKey = violation.getRuleKey();
-        this.ruleName = new SonarRule(violation.getRuleKey()).getName();
+        SonarRule sonarRule = new SonarRule(violation.getRuleKey());
+        this.ruleName = sonarRule.getName();
+        this.ruleType = sonarRule.getType().getName();
         this.warningLocation = new WarningLocation(violation, projectPath);
     }
 
@@ -31,6 +34,10 @@ public class MinedViolationEvent implements SoraldEvent {
 
     public String getRuleName() {
         return ruleName;
+    }
+
+    public String getRuleType() {
+        return ruleType;
     }
 
     @Override

@@ -73,11 +73,12 @@ public class MinerStatisticsCollector implements SoraldEventHandler {
                                 new MinedRule(
                                         e.getKey().split(RULE_ID_SEPARATOR)[0],
                                         e.getKey().split(RULE_ID_SEPARATOR)[1],
+                                        e.getKey().split(RULE_ID_SEPARATOR)[2],
                                         e.getValue()))
                 .collect(Collectors.toList());
     }
 
     private String violationToRuleId(MinedViolationEvent violation) {
-        return violation.getRuleKey() + RULE_ID_SEPARATOR + violation.getRuleName();
+        return violation.getRuleKey() + RULE_ID_SEPARATOR + violation.getRuleName() + RULE_ID_SEPARATOR + violation.getRuleType();
     }
 }

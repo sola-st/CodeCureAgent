@@ -12,6 +12,8 @@ from autogpt.llm.api_manager import ApiManager
 from autogpt.logs import logger
 from autogpt.memory.vector import get_supported_memory_backends
 
+from pathlib import Path
+
 
 def create_config(
     config: Config,
@@ -27,6 +29,7 @@ def create_config(
     browser_name: str,
     allow_downloads: bool,
     skip_news: bool,
+    sorald_jar_path: str | None,
 ) -> None:
     """Updates the config object with the given arguments.
 
@@ -43,6 +46,7 @@ def create_config(
         browser_name (str): The name of the browser to use when using selenium to scrape the web
         allow_downloads (bool): Whether to allow Auto-GPT to download files natively
         skips_news (bool): Whether to suppress the output of latest news on startup
+        sorald_jar_path: (Path): The path to the sorald executable for mining SonarQube warnings
     """
     config.debug_mode = False
     config.continuous_mode = False
@@ -153,6 +157,9 @@ def create_config(
 
     if skip_news:
         config.skip_news = True
+
+    if sorald_jar_path:
+        config.sorald_jar_path = Path(sorald_jar_path)
 
 
 def check_model(

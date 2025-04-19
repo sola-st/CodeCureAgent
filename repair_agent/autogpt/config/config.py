@@ -51,6 +51,7 @@ class Config(SystemSettings, arbitrary_types_allowed=True):
     workdir: Path = None
     workspace_path: Optional[Path] = None
     file_logger_path: Optional[Path] = None
+    sorald_jar_path: Path = None
     # Model configuration
     fast_llm: str = "gpt-3.5-turbo-0125"
     smart_llm: str = "gpt-4-turbo-2024-04-09"
@@ -207,6 +208,7 @@ class ConfigBuilder(Configurable[Config]):
         """Initialize the Config class"""
         config_dict = {
             "workdir": workdir,
+            "sorald_jar_path": os.getenv("SORALD_JAR_PATH"),
             "authorise_key": os.getenv("AUTHORISE_COMMAND_KEY"),
             "exit_key": os.getenv("EXIT_KEY"),
             "plain_output": os.getenv("PLAIN_OUTPUT", "False") == "True",

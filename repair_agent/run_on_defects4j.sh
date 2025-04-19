@@ -24,5 +24,5 @@ do
     echo ${tuple[0]}, ${tuple[1]}
     python3 prepare_ai_settings.py "${tuple[0]}" "${tuple[1]}"
     python3 checkout_py.py "${tuple[0]}" "${tuple[1]}"
-    ./run.sh --ai-settings ai_settings.yaml --model_version gpt-4o-mini-2024-07-18 -c -l 40 -m json_file --experiment-file "$2"
+    ./run.sh --ai-settings ai_settings.yaml --model-version gpt-4o-mini-2024-07-18 -c -l 40 -m json_file --experiment-file "$2"
 done < "$input"

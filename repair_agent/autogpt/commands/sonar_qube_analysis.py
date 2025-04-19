@@ -4,7 +4,6 @@ import json
 from autogpt.logs import logger
 from autogpt.agents import BaseAgent
 
-SORALD_JAR_PATH = "/workspaces/master-thesis-pascal-joos/repair_agent/sorald/sorald.jar"
 
 
 """
@@ -42,7 +41,7 @@ def analyze_file(agent: BaseAgent, file_relative_path: str, rules: list[str], re
     if len(rules) > 0:
         cmd_temp = cmd_temp + " --rule-keys " + ",".join(rules)
     
-    cmd = cmd_temp.format(SORALD_JAR_PATH, file_path, analysis_report_path)
+    cmd = cmd_temp.format(agent.config.sorald_jar_path, file_path, analysis_report_path)
 
     logger.debug(
             f"The SonarQube analysis on file '{file_path}' is run with the following command: {cmd}"

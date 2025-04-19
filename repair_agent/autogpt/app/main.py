@@ -7,6 +7,8 @@ import sys
 from pathlib import Path
 from types import FrameType
 from typing import Optional
+import os
+
 
 from colorama import Fore, Style
 
@@ -33,6 +35,8 @@ from autogpt.speech import say_text
 from autogpt.workspace import Workspace
 from scripts.install_plugin_deps import install_plugin_dependencies
 
+DEFAULT_SORALD_JAR_PATH = "sorald/sorald.jar"
+
 
 def run_auto_gpt(
     continuous: bool,
@@ -49,6 +53,7 @@ def run_auto_gpt(
     skip_news: bool,
     working_directory: Path,
     workspace_directory: str | Path,
+    sorald_jar_path: str | None,
     install_plugin_deps: bool,
     ai_name: Optional[str] = None,
     ai_role: Optional[str] = None,
@@ -83,6 +88,7 @@ def run_auto_gpt(
         browser_name,
         allow_downloads,
         skip_news,
+        sorald_jar_path,
     )
 
     if config.continuous_mode:
@@ -133,6 +139,10 @@ def run_auto_gpt(
 
     # HACK: doing this here to collect some globals that depend on the workspace.
     config.file_logger_path = Workspace.build_file_logger_path(config.workspace_path)
+
+    # Set sorald_jar_path to default if not specified via the cli or environment variable
+    if not config.sorald_jar_path:
+        config.sorald_jar_path = os.path.join(config.workdir, DEFAULT_SORALD_JAR_PATH)
 
     config.plugins = scan_plugins(config, config.debug_mode)
 

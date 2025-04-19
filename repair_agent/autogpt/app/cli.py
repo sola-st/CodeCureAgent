@@ -36,7 +36,7 @@ import click
 @click.option("--debug", is_flag=True, help="Enable Debug Mode")
 
 
-@click.option("--model_version", type=str, required=True, help="GPT model to use.")
+@click.option("--model-version", type=str, required=True, help="GPT model to use.")
 
 @click.option(
     "--use-memory",
@@ -95,6 +95,11 @@ import click
     multiple=False,
     help="the path to the file containing the configuration of the agent for the experiment.",
 )
+@click.option(
+    "--sorald-jar-path",
+    type=str,
+    help="Override path to the sorald executable for mining SonarQube warnings."
+)
 @click.pass_context
 def main(
     ctx: click.Context,
@@ -111,6 +116,7 @@ def main(
     allow_downloads: bool,
     skip_news: bool,
     workspace_directory: str,
+    sorald_jar_path: str | None,
     install_plugin_deps: bool,
     ai_name: Optional[str],
     ai_role: Optional[str],
@@ -143,6 +149,7 @@ def main(
                 __file__
             ).parent.parent.parent,  # TODO: make this an option
             workspace_directory=workspace_directory,
+            sorald_jar_path= sorald_jar_path,
             install_plugin_deps=install_plugin_deps,
             ai_name=ai_name,
             ai_role=ai_role,

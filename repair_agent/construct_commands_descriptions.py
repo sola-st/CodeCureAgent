@@ -30,6 +30,8 @@ generate_method_desc = "AI_generates_method_code: This function allows to use an
 ## collect information to understand the bug
 extract_test_desc = """extract_test_code: This function allows you to extract the code of the failing test cases which will help you understand the test case that led to failure for example by looking at the assertions and the given input and expected output, params: (project_name: string, bug_index: integer, test_file_path: string). You are allowed to execute this command for once only, unless it returns an error message, in which case you can try again with different arguments."""
 
+analyze_file_desc = """ analyze_file: This function allows to run a SonarQube analysis on the provided file. This has to be executed as the very first step! So call this function! params: (filepath: string)"""
+
 ### also read range
 
 express_hypo_desc = """ express_hypothesis: This command allows to express a hypothesis about what exactly is the bug. Call this command after you have collected enough information about the bug in the project, params: (hypothesis: string). By calling this command, you also automatically switch to the state 'collect information to fix the bug'. Before delving into fixing, you should always express a hypothesis."""
@@ -40,7 +42,7 @@ commands_dict = {
     "collect information to fix the bug": "\n".join(["{}. {}".format(i+1, t) for i, t in enumerate(
         [search_code_desc, get_classes_desc, get_similar_desc, extract_method_desc, write_fix_desc, read_range_desc, generate_method_desc])]),
     "collect information to understand the bug": "\n".join(["{}. {}".format(i+1, t) for i, t in enumerate(
-        [extract_test_desc, express_hypo_desc, read_range_desc])])
+        [extract_test_desc, express_hypo_desc, read_range_desc, analyze_file_desc])])
 }
 
 with open("commands_by_state.json", "w") as cbs:

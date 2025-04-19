@@ -26,5 +26,5 @@ if __name__ == "__main__":
     analysis_report_relative_path = "analysis_report.json"
 
     # Call the analyze_file function
-    report = analyze_and_parse_report(agent, file_relative_path, rules, repo_name, analysis_report_relative_path)
+    report = analyze_and_parse_report(file_relative_path, rules, repo_name, analysis_report_relative_path, agent)
     print(report)

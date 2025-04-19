@@ -13,7 +13,7 @@ SORALD_JAR_PATH="/workspaces/master-thesis-pascal-joos/repair_agent/sorald/soral
 echo Mining start: Specific commit, handled rules
 rm ./mining_results/specific_commit_handled_rules_out.txt
 java -jar $SORALD_JAR_PATH mine --git-repos-list ./sampled_repos_specific_commit.txt --miner-output-file ./mining_results/specific_commit_handled_rules_out.txt \
-    --stats-output-file ./mining_results/specific_commit_handled_rules_mining_result.json --temp-dir ./temp --stats-on-git-repos --handled-rules
+    --stats-output-file ./mining_results/specific_commit_handled_rules_mining_result.json --temp-dir ./temp --stats-on-git-repos --rule-parameters ./rule_configuration.json --handled-rules
 echo Mining end: Specific commit, handled rules
 
 # Use the commit that was used for Soralds experiments.
@@ -21,7 +21,7 @@ echo Mining end: Specific commit, handled rules
 echo Mining start: Specific commit, all rules
 rm ./mining_results/specific_commit_all_rules_out.txt
 java -jar $SORALD_JAR_PATH mine --git-repos-list ./sampled_repos_specific_commit.txt --miner-output-file ./mining_results/specific_commit_all_rules_out.txt \
-    --stats-output-file ./mining_results/specific_commit_all_rules_mining_result.json --temp-dir ./temp --stats-on-git-repos
+    --stats-output-file ./mining_results/specific_commit_all_rules_mining_result.json --temp-dir ./temp --stats-on-git-repos --rule-parameters ./rule_configuration.json
 echo Mining end: Specific commit, all rules
 
 # Use the newest commit for each repo.
@@ -29,7 +29,7 @@ echo Mining end: Specific commit, all rules
 echo Mining start: Newest commit, handled rules
 rm ./mining_results/newest_commit_handled_rules_out.txt
 java -jar $SORALD_JAR_PATH mine --git-repos-list ./sampled_repos.txt --miner-output-file ./mining_results/newest_commit_handled_rules_out.txt \
-    --stats-output-file ./mining_results/newest_commit_handled_rules_mining_result.json --temp-dir ./temp --stats-on-git-repos --handled-rules
+    --stats-output-file ./mining_results/newest_commit_handled_rules_mining_result.json --temp-dir ./temp --stats-on-git-repos --rule-parameters ./rule_configuration.json --handled-rules
 echo Mining end: Newest commit, handled rules
 
 # Use the newest commit for each repo.
@@ -37,5 +37,5 @@ echo Mining end: Newest commit, handled rules
 echo Mining start: Newest commit, all rules
 rm ./mining_results/newest_commit_all_rules_out.txt
 java -jar $SORALD_JAR_PATH mine --git-repos-list ./sampled_repos.txt --miner-output-file ./mining_results/newest_commit_all_rules_out.txt \
-    --stats-output-file ./mining_results/newest_commit_all_rules_mining_result.json --temp-dir ./temp --stats-on-git-repos
+    --stats-output-file ./mining_results/newest_commit_all_rules_mining_result.json --temp-dir ./temp --stats-on-git-repos --rule-parameters ./rule_configuration.json
 echo Mining end: Newest commit, all rules

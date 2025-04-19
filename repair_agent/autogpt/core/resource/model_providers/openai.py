@@ -42,6 +42,9 @@ class OpenAIModelName(str, enum.Enum):
     GPT4_turbo = "gpt-4-turbo-2024-04-09"
     GPT4o_mini = "gpt-4o-mini-2024-07-18"
     GPT4o = "gpt-4o-2024-08-06"
+    GPT4_1_nano = "gpt-4.1-nano-2025-04-14"
+    GPT4_1_mini = "gpt-4.1-mini-2025-04-14"
+    GPT4_1 = "gpt-4.1-2025-04-14"
 
 
 
@@ -98,6 +101,30 @@ OPEN_AI_LANGUAGE_MODELS = {
         prompt_token_cost=0.0025,
         completion_token_cost=0.01,
         max_tokens=128000,
+    ),
+    OpenAIModelName.GPT4_1_nano: LanguageModelProviderModelInfo(
+        name=OpenAIModelName.GPT4_1_nano,
+        service=ModelProviderService.LANGUAGE,
+        provider_name=ModelProviderName.OPENAI,
+        prompt_token_cost=0.0001,
+        completion_token_cost=0.0004,
+        max_tokens=1047576,
+    ),
+    OpenAIModelName.GPT4_1_mini: LanguageModelProviderModelInfo(
+        name=OpenAIModelName.GPT4_1_mini,
+        service=ModelProviderService.LANGUAGE,
+        provider_name=ModelProviderName.OPENAI,
+        prompt_token_cost=0.0004,
+        completion_token_cost=0.0016,
+        max_tokens=1047576,
+    ),
+    OpenAIModelName.GPT4_1: LanguageModelProviderModelInfo(
+        name=OpenAIModelName.GPT4_1,
+        service=ModelProviderService.LANGUAGE,
+        provider_name=ModelProviderName.OPENAI,
+        prompt_token_cost=0.002,
+        completion_token_cost=0.008,
+        max_tokens=1047576,
     ),
 }
 

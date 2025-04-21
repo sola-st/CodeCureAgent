@@ -77,23 +77,23 @@ def analyze_file(file_relative_path: str, rules: list[str], repo_name: str, anal
 
 
     # Create mining command
-    cmd_temp = "java -jar {} mine --source {} --stats-output-file {}"
+    cmd = ["java", "-jar", agent.config.sorald_jar_path, "mine", "--source", file_path, "--stats-output-file", analysis_report_path]
 
-    if not rules is None and len(rules) > 0:
-        cmd_temp = cmd_temp + " --rule-keys " + ",".join(rules)
+    if rules is not None and len(rules) > 0:
+        cmd.append("--rule-keys")
+        cmd.append(",".join(rules))
     
-    cmd = cmd_temp.format(agent.config.sorald_jar_path, file_path, analysis_report_path)
 
     logger.debug(
-            f"The SonarQube analysis on file '{file_path}' is run with the following command: {cmd}"
+            f"The SonarQube analysis on file '{file_path}' is run with the following command: {' '.join(cmd)}"
         )
 
 
     result = subprocess.run(
-            [cmd],
+            cmd,
             capture_output=True,
             encoding="utf8",
-            shell=True
+            shell=False
         )
     return result
     

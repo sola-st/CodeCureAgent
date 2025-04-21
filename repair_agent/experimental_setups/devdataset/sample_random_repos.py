@@ -30,6 +30,6 @@ with open(input_csv_path, "r") as csv_file:
 # Write the sampled rows to a new file
 output_csv_path = os.path.join(os.path.dirname(__file__), "sampled_repos.csv")
 with open(output_csv_path, "w", newline="") as csv_file:
-    csv_writer = csv.writer(csv_file)
+    csv_writer = csv.writer(csv_file, dialect=csv.unix_dialect)
     csv_writer.writerow(["original_row_number", "repository_url", "commit_id"]) 
     csv_writer.writerows(rows_to_write)

@@ -172,6 +172,58 @@ def generate_aiconfig_manual(
             "Develop and manage multiple businesses autonomously",
         ]
 
+    if ai_config_template and ai_config_template.warning_repository_URL:
+        warning_repository_URL = ai_config_template.warning_repository_URL
+    else:
+        # Get repository URL from User
+        logger.typewriter_log(
+            "Give the Git repository URL of the project with the warning to fix: ",
+            Fore.GREEN, speak_text=False
+        )
+        warning_repository_URL = utils.clean_input(config, "Repository URL is: ")
+
+    if ai_config_template and ai_config_template.warning_repository_commit:
+        warning_repository_commit = ai_config_template.warning_repository_commit
+    else:
+        # Get repository Commit from User
+        logger.typewriter_log(
+            "Give the Git repository Commit of the project to use: ",
+            Fore.GREEN, speak_text=False
+        )
+        warning_repository_commit = utils.clean_input(config, "Repository Commit is: ")
+    
+    if ai_config_template and ai_config_template.warning_file_path:
+        warning_file_path = ai_config_template.warning_file_path
+    else:
+        # Get warning file path from User
+        logger.typewriter_log(
+            "Give the File path of the file with warning to fix: ",
+            Fore.GREEN, speak_text=False
+        )
+        warning_file_path = utils.clean_input(config, "File path: ")
+
+    if ai_config_template and ai_config_template.warning_rule_key:
+        warning_rule_key = ai_config_template.warning_rule_key
+    else:
+        # Get rule key from User
+        logger.typewriter_log(
+            "Give the SonarQube rule key of the warning to fix: ",
+            Fore.GREEN, speak_text=False
+        )
+        warning_rule_key = utils.clean_input(config, "Rule key: ")
+
+    if ai_config_template and ai_config_template.warning_rule_name:
+        warning_rule_name = ai_config_template.warning_rule_name
+    else:
+        # Get repository URL from User
+        logger.typewriter_log(
+            "Give the rule name (short description) of the warning to fix: ",
+            Fore.GREEN, speak_text=False
+        )
+        warning_rule_name = utils.clean_input(config, "Rule name: ")
+
+
+
     # Get API Budget from User
     logger.typewriter_log(
         "Enter your budget for API calls: ",
@@ -193,7 +245,7 @@ def generate_aiconfig_manual(
             )
             api_budget = 0.0
 
-    return AIConfig(ai_name, ai_role, ai_goals, api_budget)
+    return AIConfig(ai_name, ai_role, ai_goals, warning_repository_URL, warning_repository_commit, warning_file_path, warning_rule_key, warning_rule_name, api_budget)
 
 
 def generate_aiconfig_automatic(user_prompt: str, config: Config) -> AIConfig:

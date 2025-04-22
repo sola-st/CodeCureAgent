@@ -84,6 +84,31 @@ import click
     help="AI role override",
 )
 @click.option(
+    "--warning-repository-url",
+    type=str,
+    help="The Git repository with the SonarQube warning to fix"
+)
+@click.option(
+    "--warning-repository-commit",
+    type=str,
+    help="The commit of the Git repo to fix the warning on. Can be a commitId or 'MASTER' for the most current commit."
+)
+@click.option(
+    "--warning-file-path",
+    type=str,
+    help="The file path to the file with the SonarQube warning. This has to be the relative path from the repository."
+)
+@click.option(
+    "--warning-rule-key",
+    type=str,
+    help="The rule identifier of the SonarQube warning to fix. (Squid)"
+)
+@click.option(
+    "--warning-rule-name",
+    type=str,
+    help="The name of the SonarQube warning to fix (short description)"
+)
+@click.option(
     "--ai-goal",
     type=str,
     multiple=True,
@@ -120,6 +145,11 @@ def main(
     install_plugin_deps: bool,
     ai_name: Optional[str],
     ai_role: Optional[str],
+    warning_repository_url: Optional[str],
+    warning_repository_commit: Optional[str],
+    warning_file_path: Optional[str],
+    warning_rule_key: Optional[str],
+    warning_rule_name: Optional[str],
     ai_goal: tuple[str],
     experiment_file: str
 ) -> None:
@@ -153,6 +183,11 @@ def main(
             install_plugin_deps=install_plugin_deps,
             ai_name=ai_name,
             ai_role=ai_role,
+            warning_repository_URL=warning_repository_url,
+            warning_repository_commit=warning_repository_commit,
+            warning_file_path=warning_file_path,
+            warning_rule_key=warning_rule_key,
+            warning_rule_name=warning_rule_name,
             ai_goals=ai_goal,
             experiment_file=experiment_file
         )

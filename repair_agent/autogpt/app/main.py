@@ -489,10 +489,6 @@ def construct_main_ai_config(
     if goals:
         ai_config.ai_goals = list(goals)
 
-    logger.typewriter_log("test", Fore.GREEN, "FOund")
-    logger.typewriter_log(ai_config.warning_repository_URL, Fore.GREEN, "FOund")
-    logger.typewriter_log(ai_config.warning_repository_commit, Fore.GREEN, "FOund")
-    logger.typewriter_log("test", Fore.GREEN, "FOund")
 
     if (
         all([name, role, goals, ai_config.warning_repository_URL, ai_config.warning_repository_commit, ai_config.warning_file_path, ai_config.warning_rule_key, ai_config.warning_rule_name])

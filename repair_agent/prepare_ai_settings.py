@@ -16,11 +16,11 @@ ai_role: |
    * 'collect information to fix the bug', where you gather information to fix the bug;
    * 'trying out candidate fixes', where you suggest bug fixes that will be validated by a test suite.
 api_budget: 0.0
-warning_repository_URL: {warning_repository_URL}
-warning_repository_commit: {warning_repository_commit}
-warning_file_path: {warning_file_path}
-warning_rule_key: {warning_rule_key}
-warning_rule_name: {warning_rule_name}
+warning_repository_URL: '{warning_repository_URL}'
+warning_repository_commit: '{warning_repository_commit}'
+warning_file_path: '{warning_file_path}'
+warning_rule_key: '{warning_rule_key}'
+warning_rule_name: '{warning_rule_name}'
 """
 
 parser = argparse.ArgumentParser()

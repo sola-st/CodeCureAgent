@@ -20,7 +20,7 @@ Before you start using RepairAgent, ensure that your system meets the following 
 
 ---
 
-## ⚙️ II. How to Use RepairAgent?
+## ⚙️ II. Setup RepairAgent
 
 You have two ways to use RepairAgent:
 
@@ -47,7 +47,8 @@ You have two ways to use RepairAgent:
 
 3. Open the repository folder in VS Code.
 
-4. When prompted by VS Code to "Reopen in Container," click it. If not prompted, open the Command Palette (Ctrl+Shift+P) and select "Dev Containers: Reopen in Container." VS Code will now build and start the DevContainer, setting up the environment for you.
+4. When prompted by VS Code to "Reopen in Container," click it. If not prompted, open the Command Palette (Ctrl+Shift+P) and select "Dev Containers: Reopen in Container."  
+VS Code will now build and start the DevContainer, setting up the environment for you. This will take a while.
 
 5. Within your VS Code terminal, move to the folder repair_agent
     ```bash
@@ -63,23 +64,6 @@ python3.10 set_api_key.py
 ```
 
 The script will prompt you to paste your API token.
-
-### **STEP 3: Start RepairAgent**
-
-By default, RepairAgent is configured to run on Defects4J bugs. To specify which bugs to run on:
-
-1. Create a text file named, for example, `bugs_list`. A sample file exists in the repository at `experimental_setups/bugs_list`.
-2. Make sure that you are in the folder `repair_agent`. The script can only run from there.
-3. Run the following command:
-
-   ```bash
-   ./run_on_defects4j.sh experimental_setups/bugs_list hyperparams.json
-   ```
-
-You can open the `hyperparams.json` file to review or customize its parameters (explained further in the customization section).
-
-
-**If you went with this option, you can jump to section `4.1 What Happens When You Start RepairAgent?` to see more details on the results of running RepairAgent.**
 
 ---
 
@@ -117,26 +101,63 @@ python3.10 set_api_key.py
 
 The script will prompt you to paste your API token.
 
-### **STEP 4: Start RepairAgent**
+## III. Run RepairAgent
 
-By default, RepairAgent is configured to run on Defects4J bugs. To specify which bugs to run on:
+RepairAgent takes a csv file as input where each line specifies a SonarQube rule violated in a single java file in a single Git repository.  
+RepairAgent tries to fix all occurences of the violated rule in the file.  
 
-1. Create a text file named, for example, `bugs_list`. A sample file exists in the repository and Docker image at `experimental_setups/bugs_list`.
-2. Run the following command:
+For an example on how the input file has to look like see `repair_agent/experimental_setups/devdataset/mining_results/specific_commit_handled_rules_input_file.csv`.  
+Only the first 5 columns are required.  
+You can create your own by following the steps described further down below in this paragraph.
 
-   ```bash
-   ./run_on_defects4j.sh experimental_setups/bugs_list hyperparams.json
+To execute RepairAgent on an input file run the following, from the `repair_agent` folder:
+
+  ```bash
+   ./run_on_dataset.sh ./experimental_setups/devdataset/mining_results/specific_commit_handled_rules_input_file.csv hyperparams.json
    ```
 
-You can open the `hyperparams.json` file to review or customize its parameters (explained further in the customization section).
+The first argument is the csv input file to run on. The second argument specifies hyperparameter settings.  
+You can open the `hyperparams.json` file to review or customize its parameters (explained further in the customization section).  
 
-#### **4.1 What Happens When You Start RepairAgent?**
+#### **What Happens When You Start RepairAgent?**
 
-- RepairAgent checks out the project with the given bug ID.
-- It initiates the autonomous repair process.
+- RepairAgent goes through the input file line by line
+- For each line RepairAgent checks out the project with the given URL and commit.
+- It initiates the autonomous repair process, trying to fix occurences of the given warning type in the given file.
 - Logs detailing each step performed will be displayed in your terminal.
 
-#### **4.2 Retrieve Repair Logs and History**
+
+#### **Creating your own csv input file, based on repositories you want to run RepairAgent on**
+
+1. Create a .txt file with the URLs to the git repositories to use in each line. If you want to run on specific commits of the repositories you can add the commitID after the URL, separated by a comma.  
+For an example see `repair_agent/experimental_setups/devdataset/sampled_repos_specific_commit.txt`.  
+
+2. Use the Sorald mining tool to mine SonarQube warnings on the repositories specified in the file.  
+Example usage (run from `repair_agent` on the `sampled_repos_specific_commit.txt` file): 
+   ```bash
+   java -jar ./sorald/sorald.jar mine \
+      --git-repos-list ./experimental_setups/devdataset/sampled_repos_specific_commit.txt \
+      --miner-output-file ./experimental_setups/devdataset/mining_results/specific_commit_handled_rules_out.txt \
+      --stats-output-file ./experimental_setups/devdataset/mining_results/specific_commit_handled_rules_mining_result.json \
+      --temp-dir ./experimental_setups/devdataset/temp \
+      --stats-on-git-repos \
+      --rule-parameters ./experimental_setups/devdataset/rule_configuration.json \
+      --handled-rules
+   ``` 
+   Remove the --handled-rules flag if you want to mine all warnings supported by the used SonarQube version.  
+   If you only want to mine specific rules, pass the IDs of the rules via --rule-keys, or to only mine for specific types of rules use --rule-types.  
+   After running the mining tool the output is saved in a json file. In the example this is `specific_commit_handled_rules_mining_result.json`.
+
+3. Finally you can create your csv input file from the json report by using `repair_agent/experimental_setups/prepare_experiment_input_file.py`.  
+To this script provide the previously created json report as the first argument. Additionally you can provide the path, the csv-file is to be saved to via --target-csv-file-path.  
+Example: 
+  ```bash
+    python3 ./experimental_setups/prepare_experiment_input_file.py ./experimental_setups/devdataset/mining_results/specific_commit_handled_rules_mining_result.json \
+      --target-csv-file-path ./experimental_setups/devdataset/mining_results/specific_commit_handled_rules_input_file.csv
+  ```
+
+
+#### **Retrieve Repair Logs and History**
 
 RepairAgent saves the output in multiple files.
 
@@ -148,7 +169,7 @@ RepairAgent saves the output in multiple files.
   - **mutations_history**: Suggested fixes derived by mutating prior suggestions (one file per bug).
   - **responses**: Responses from the agent (LLM) at each cycle (one file per bug).
 
-#### **4.3 Analyze Logs**
+#### **Analyze Logs**
 
 Within the `experimental_setups` folder, several scripts are available to post-process the logs:
 
@@ -214,7 +235,7 @@ Within the `experimental_setups` folder, several scripts are available to post-p
   ```
 ---
 
-## ✨ III. Customize RepairAgent
+## ✨ IV. Customize RepairAgent
 
 ### 1. Modify `hyperparams.json`
 
@@ -251,7 +272,7 @@ Within the `experimental_setups` folder, several scripts are available to post-p
 
 ### 2. Switching the used GPT model
 
-In the `run_on_defects4j.sh` file (and also in `run_continuous.sh`), locate the line:
+In the `run_on_dataset.sh` file, locate the line:
 ```bash
 ./run.sh --ai-settings ai_settings.yaml --model_version gpt-4o-mini-2024-07-18 -c -l 40 -m json_file --experiment-file "$2"
 ```
@@ -272,7 +293,7 @@ Reasoning models are not supported by the used OpenAI API version.
 
 ---
 
-## 📊 IV. Our Data
+## 📊 V. Our Data
 
 In our experiments, we utilized RepairAgent on the Defects4J dataset, successfully fixing 164 bugs. You can check our data under the folder data.
 - The list of fixed bugs [here](./data/final_list_of_fixed_bugs). The list allows to compare with prior and future work.
@@ -291,7 +312,7 @@ Note: RepairAgent encountered exceptions due to Middleware errors in 29 bugs, wh
 
 ---
 
-## 🧫 V. Replicate Experiments
+## 🧫 VI. Replicate Experiments
 This part is about running RepairAgent on full evaluation datasets to replicate our experiments. The process is the same as above; We just provide ready-to-use input files and instructions for replication.
 
 ### Replicate Defects4J experiments
@@ -327,10 +348,10 @@ GitBugsJava is another dataset for program repair evaluation.
 
  4. Use the same analysis scripts as part 1 (D4j replication) to analyse the results of the experiments.
 
-## 💬 VI. Help Us Improve RepairAgent
+## 💬 VII. Help Us Improve RepairAgent
 
 If you use RepairAgent, we encourage you to report any issues, bugs, or documentation gaps. We are committed to addressing your concerns promptly.
 
-You can raise an issue directly in this repository, or for any queries, feel free to [email me](mailto:fi_bouzenia@esi.dz).
+You can raise an issue directly in this repository.
 
 --- 

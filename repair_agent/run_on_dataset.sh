@@ -30,11 +30,11 @@ while IFS= read -r line; do
         ((skip_header--))
     else
         csv -a fields "$line"
-        echo "Current run input: " ${fields[0]}, ${fields[1]}, ${fields[2]}, ${fields[3]}, ${fields[4]}, ${fields[5]}, ${fields[6]}
+        echo "Current run input: " ${fields[0]}, ${fields[1]}, ${fields[2]}, ${fields[3]}, ${fields[4]}
         python3 prepare_ai_settings.py "Codec" "4" "${fields[0]}" "${fields[1]}" "${fields[3]}" "${fields[2]}" "${fields[4]}"
         # TODO: To be replaced or removed as soon as we implemented our own setup procedure
         python3 checkout_py.py "Codec" "4"
-        
+
         ./run.sh --ai-settings ai_settings.yaml --model-version gpt-4o-mini-2024-07-18 -c -l 40 -m json_file --experiment-file "$2"
     fi
 done <"$input"

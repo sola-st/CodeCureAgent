@@ -43,7 +43,7 @@ while ( not success and made_retries < max_retries):
     except FileExistsError:
         made_retries += 1
         print("A concurrent write of one of the files was made. Another thread was faster in creating the experiment " + str(last_exp+1) + " files. Left retries: " + str(max_retries - made_retries), file=sys.stderr)
-        time.sleep(5)
+        time.sleep(1)
     
     
 

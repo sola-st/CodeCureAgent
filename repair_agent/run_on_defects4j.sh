@@ -18,11 +18,17 @@ python3 experimental_setups/increment_experiment.py
 python3 construct_commands_descriptions.py
 input="$1"
 dos2unix "$input"  # Convert file to Unix line endings (if needed)
-while IFS= read -r line || [ -n "$line" ]
+
+# Open the input file with a file descriptor
+exec 3< "$input"
+while IFS= read -r line <&3 || [ -n "$line" ]
 do
     tuple=($line)
     echo ${tuple[0]}, ${tuple[1]}
     python3 prepare_ai_settings.py "${tuple[0]}" "${tuple[1]}"
     python3 checkout_py.py "${tuple[0]}" "${tuple[1]}"
     ./run.sh --ai-settings ai_settings.yaml --model-version gpt-4o-mini-2024-07-18 -c -l 40 -m json_file --experiment-file "$2"
-done < "$input"
+done
+
+# Close the file descriptor
+exec 3<&-

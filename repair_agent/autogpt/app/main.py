@@ -522,7 +522,7 @@ Continue ({config.authorise_key}/{config.exit_key}): """,
             ai_config = AIConfig()
 
     if any([not ai_config.ai_name, not ai_config.ai_role, not ai_config.ai_goals, not ai_config.warning_repository_URL, not ai_config.warning_repository_commit, not ai_config.warning_file_path, not ai_config.warning_rule_key, not ai_config.warning_rule_name]):
-        ai_config = prompt_user(config)
+        ai_config = prompt_user(config, ai_config)
         ai_config.save(config.workdir / config.ai_settings_file)
 
     if config.restrict_to_workspace:

@@ -25,7 +25,12 @@ dos2unix "$input" # Convert file to Unix line endings (if needed)
 
 skip_header=1
 
-while IFS= read -r line; do
+
+# Open the input file with a file descriptor. 
+# Using a file descriptor instead of redirecting stdout ensures that autogpt runs in an interactive shell, 
+# so if needed, the user could be asked for input.
+exec 3< "$input"
+while IFS= read -r line <&3; do
     if ((skip_header)); then
         ((skip_header--))
     else
@@ -37,4 +42,7 @@ while IFS= read -r line; do
 
         ./run.sh --ai-settings ai_settings.yaml --model-version gpt-4o-mini-2024-07-18 -c -l 40 -m json_file --experiment-file "$2"
     fi
-done <"$input"
+done
+
+# Close the file descriptor
+exec 3<&-

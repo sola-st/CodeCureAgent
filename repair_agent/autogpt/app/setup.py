@@ -44,6 +44,11 @@ def prompt_user(
             ai_config_template.ai_goals,
             ai_config_template.ai_name,
             ai_config_template.ai_role,
+            ai_config_template.warning_repository_URL,
+            ai_config_template.warning_repository_commit,
+            ai_config_template.warning_file_path,
+            ai_config_template.warning_rule_key,
+            ai_config_template.warning_rule_name
         ]
     )
 

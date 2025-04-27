@@ -336,7 +336,7 @@ def we_are_running_in_a_docker_container() -> bool:
 
 
 
-@command(
+"""@command(
     "get_info",
     "Gets info about a specific bug in a specific project. This command should be executed only once meaning that if the command was executed before according to the history of commands, you should not call it again.",
     {
@@ -352,7 +352,7 @@ def we_are_running_in_a_docker_container() -> bool:
 
         }
     },
-)
+)"""
 def get_info(project_name: str, bug_index: int, agent: BaseAgent) -> str:
     """Create and execute a Python file in a Docker container and return the STDOUT of the
     executed code. If there is any data that needs to be captured use a print statement
@@ -465,11 +465,11 @@ def read_range(project_name:str, bug_index:str, filepath: str, startline: int, e
 
     return execute_read_range(project_name, bug_index, filepath, startline, endline, agent)
 
-@command(
+"""@command(
     "try_fixes",
-    """This is a very useful command when you want to try multiple fixes quickly. This function allows you to try a list of fixes, the function will execute related tests to see if any of the fixes work.
+    "This is a very useful command when you want to try multiple fixes quickly. This function allows you to try a list of fixes, the function will execute related tests to see if any of the fixes work.
     The list that you pass this function should be of the form:
-    fixes_list: [{"project_name":"project name", "bug_index":"bug index", "filepath":"path to file to edit", "changed_lines":{"162": "new code here ..."}}, {...}, ...]""",
+    fixes_list: [{"project_name":"project name", "bug_index":"bug index", "filepath":"path to file to edit", "changed_lines":{"162": "new code here ..."}}, {...}, ...]",
     {
         "project_name": {
             "type": "string",
@@ -488,7 +488,7 @@ def read_range(project_name:str, bug_index:str, filepath: str, startline: int, e
             "required": True,
         },
     },
-)
+)"""
 def try_fixes(project_name: str, bug_index:int, fixes_list, agent: BaseAgent):
     fixes_feedback = ""
     sucessful_ones = []
@@ -523,7 +523,7 @@ def try_fixes(project_name: str, bug_index:int, fixes_list, agent: BaseAgent):
           Here are more details:\n".format(len(sucessful_ones), sucessful_ones) +\
         fixes_feedback
 
-@command(
+"""@command(
     "write_range",
     "Write a list of lines into a file, the parameter changed_lines is a dictionary that contains lines numbers as keys and the new content of that line as value (only include changed lines). The test cases are run automatically after running the changes. The changes are reverted automatically if the the test cases fail.",
     {
@@ -550,7 +550,7 @@ def try_fixes(project_name: str, bug_index:int, fixes_list, agent: BaseAgent):
 
         }
     },
-)
+)"""
 def write_range(project_name:str, bug_index:int, changes_dicts: list, agent: BaseAgent) -> str:
     """Write a list of lines into a file to replace all lines between startline and endline
 

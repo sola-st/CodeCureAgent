@@ -29,6 +29,9 @@ from autogpt.commands.defects4j_static import query_for_mutants, construct_fix_c
 
 from .base import AgentThoughts, BaseAgent, CommandArgs, CommandName
 
+from autogpt.commands.sonar_qube_analysis import analyze_and_parse_report
+import autogpt.commands.repository_operations as repository_operations
+
 
 class Agent(BaseAgent):
     """Agent class for interacting with Auto-GPT."""
@@ -315,6 +318,29 @@ class Agent(BaseAgent):
             NEXT_ACTION_FILE_NAME,
         )
         return response
+    
+
+    '''
+    Clone and checkout the target project.
+    Then run the initial analysis on the target file.
+    Validate that the expected rule is present in the analysis report.
+    Then build the project to validate that it can be built succesfully.
+    '''
+    def prepare_target_project(self) -> None:
+        
+        repository_operations.checkout_project(self)
+
+        # TODO: Give output file a unique name and (additionally) save in the experiment folder (maybe)
+        analysis_report = analyze_and_parse_report(self.ai_config.warning_file_path, None, self.ai_config.warning_repository_name, "initial_analysis_report.json", self.config)
+
+        #TODO: Validate that the expected rule is present in the analysis report here.
+
+        # TODO: Implement building the project
+        # Idea:
+        # If building fails set a flag and skip this step in validating a write_fix
+        # repository_operations.build_project()
+
+
 
 
 def extract_command(

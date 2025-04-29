@@ -193,6 +193,10 @@ def run_auto_gpt(
         experiment_file = experiment_file
     )
 
+
+    agent.prepare_target_project()
+
+
     run_interaction_loop(agent)
 
 
@@ -551,6 +555,7 @@ Continue ({config.authorise_key}/{config.exit_key}): """,
         logger.typewriter_log("-", Fore.GREEN, goal, speak_text=False)
     logger.typewriter_log("Warning Repository URL: ", Fore.GREEN, ai_config.warning_repository_URL)
     logger.typewriter_log("Warning Repository Commit: ", Fore.GREEN, ai_config.warning_repository_commit)
+    logger.typewriter_log("Warning Repository Name", Fore.GREEN, ai_config.warning_repository_name)
     logger.typewriter_log("Warning File Path: ", Fore.GREEN, ai_config.warning_file_path)
     logger.typewriter_log("Warning Rule Key: ", Fore.GREEN, ai_config.warning_rule_key)
     logger.typewriter_log("Warning Rule Name: ", Fore.GREEN, ai_config.warning_rule_name)

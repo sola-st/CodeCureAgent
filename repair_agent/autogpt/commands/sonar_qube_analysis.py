@@ -2,7 +2,7 @@ import subprocess
 import os
 import json
 from autogpt.logs import logger
-from autogpt.agents import BaseAgent
+from autogpt.config import Config
 from autogpt.command_decorator import command
 
 COMMAND_CATEGORY = "sonarQubeAnalysis"
@@ -23,24 +23,23 @@ DENYLIST_CONTROL = "denylist"
         }
     },
 )
-def analyze_file_command(filepath: str, agent: BaseAgent):
+def analyze_file_command(filepath: str, config: Config):
     # TODO: will need to get the repo_name from the experiment input
-    return analyze_and_parse_report(filepath, None, "codec_4_buggy", "analysis_report.json", agent)
+    return analyze_and_parse_report(filepath, None, "codec_4_buggy", "analysis_report.json", config)
 
 
 
-def analyze_and_parse_report(file_relative_path: str, rules: list[str], repo_name: str, analysis_report_relative_path: str, agent: BaseAgent) -> str:
-    logger.warn(file_relative_path)
+def analyze_and_parse_report(file_relative_path: str, rules: list[str], repo_name: str, analysis_report_relative_path: str, config: Config) -> str:
 
-    result = analyze_file(file_relative_path, rules, repo_name, analysis_report_relative_path, agent)
+    result = analyze_file(file_relative_path, rules, repo_name, analysis_report_relative_path, config)
 
     if result.returncode == 0:
-        logger.info(
+        logger.info("",
             f"Running SonarQube analysis was successful."
         )
-        return parse_analysis_report(analysis_report_relative_path, agent)
+        return parse_analysis_report(analysis_report_relative_path, config)
     else:
-        logger.error("Running SonarQube analysis failed with error: " + result.stderr)
+        logger.error("Error", "Running SonarQube analysis failed with error: " + result.stderr)
         return f"Error: {result.stderr}"
     
 
@@ -59,9 +58,9 @@ Args:
     Returns:
         subprocess.CompletedProcess[str]: Result of running the mining suprocess. If subprocess was succesful then the property "returncode" is 0.
 """
-def analyze_file(file_relative_path: str, rules: list[str], repo_name: str, analysis_report_relative_path: str, agent: BaseAgent) -> subprocess.CompletedProcess[str]:
+def analyze_file(file_relative_path: str, rules: list[str], repo_name: str, analysis_report_relative_path: str, config: Config) -> subprocess.CompletedProcess[str]:
 
-    workspace = agent.config.workspace_path
+    workspace = config.workspace_path
 
     # Prepare the paths
     file_relative_path = preprocess_paths(workspace, repo_name, file_relative_path)
@@ -71,20 +70,20 @@ def analyze_file(file_relative_path: str, rules: list[str], repo_name: str, anal
 
     
 
-    logger.info(
+    logger.info("",
             f"Running SonarQube analysis on file '{file_path}'. \nThe report will be saved to '{analysis_report_path}'"
         )
 
 
     # Create mining command
-    cmd = ["java", "-jar", agent.config.sorald_jar_path, "mine", "--source", file_path, "--stats-output-file", analysis_report_path]
+    cmd = ["java", "-jar", config.sorald_jar_path, "mine", "--source", file_path, "--stats-output-file", analysis_report_path]
 
     if rules is not None and len(rules) > 0:
         cmd.append("--rule-keys")
         cmd.append(",".join(rules))
     
 
-    logger.debug(
+    logger.debug("",
             f"The SonarQube analysis on file '{file_path}' is run with the following command: {' '.join(cmd)}"
         )
 
@@ -98,8 +97,8 @@ def analyze_file(file_relative_path: str, rules: list[str], repo_name: str, anal
     return result
     
 
-def parse_analysis_report(analysis_report_relative_path: str, agent: BaseAgent):
-    workspace = agent.config.workspace_path
+def parse_analysis_report(analysis_report_relative_path: str, config: Config):
+    workspace = config.workspace_path
 
     analysis_report_path = os.path.join(workspace, analysis_report_relative_path)
     with open(analysis_report_path, "r") as analysis_report_file:

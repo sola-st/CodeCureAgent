@@ -14,6 +14,8 @@ if TYPE_CHECKING:
 
     from .config import Config
 
+from autogpt.logs.logger import logger
+
 
 class AIConfig:
     """
@@ -70,6 +72,23 @@ class AIConfig:
         self.api_budget = api_budget
         self.prompt_generator: PromptGenerator | None = None
         self.command_registry: CommandRegistry | None = None
+
+        # Retrieve the repository name from the repository URL
+        if warning_repository_URL:
+            last_forward_slash_index = warning_repository_URL.rfind("/")
+            suffix_index = warning_repository_URL.rfind(".git")
+
+            if suffix_index < 0:
+                suffix_index = len(warning_repository_URL)
+
+            if last_forward_slash_index < 0 or suffix_index <= last_forward_slash_index:
+                logger.error("Couldn't extract repository name from warning_repository_URL", 
+                            f"The ai_config.warning_repository_URL was {warning_repository_URL}. The last forward slash was at {last_forward_slash_index}. The suffix_index at {suffix_index}.")
+                logger.warn("Falling back to warning_repository_name 'unknown_repo'. However cloning the repo will likely also fail.")
+                self.warning_repository_name = "unknown_repo"
+            
+            else:
+                self.warning_repository_name = warning_repository_URL[last_forward_slash_index + 1:suffix_index]
 
     @staticmethod
     def load(ai_settings_file: str | Path) -> "AIConfig":

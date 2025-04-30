@@ -23,13 +23,13 @@ DENYLIST_CONTROL = "denylist"
         }
     },
 )
-def analyze_file_command(filepath: str, config: Config):
+def analyze_file_command(filepath: str, agent):
     # TODO: will need to get the repo_name from the experiment input
-    return analyze_and_parse_report(filepath, None, "codec_4_buggy", "analysis_report.json", config)
+    return analyze_file_and_parse_report(filepath, None, agent.ai_config.warning_repository_name, "analysis_report.json", agent.config)
 
 
 
-def analyze_and_parse_report(file_relative_path: str, rules: list[str], repo_name: str, analysis_report_relative_path: str, config: Config) -> str:
+def analyze_file_and_parse_report(file_relative_path: str, rules: list[str], repo_name: str, analysis_report_relative_path: str, config: Config) -> dict:
 
     result = analyze_file(file_relative_path, rules, repo_name, analysis_report_relative_path, config)
 
@@ -40,7 +40,7 @@ def analyze_and_parse_report(file_relative_path: str, rules: list[str], repo_nam
         return parse_analysis_report(analysis_report_relative_path, config)
     else:
         logger.error("Error", "Running SonarQube analysis failed with error: " + result.stderr)
-        return f"Error: {result.stderr}"
+        raise Exception(f"Error: {result.stderr}")
     
 
 
@@ -97,7 +97,7 @@ def analyze_file(file_relative_path: str, rules: list[str], repo_name: str, anal
     return result
     
 
-def parse_analysis_report(analysis_report_relative_path: str, config: Config):
+def parse_analysis_report(analysis_report_relative_path: str, config: Config) -> dict:
     workspace = config.workspace_path
 
     analysis_report_path = os.path.join(workspace, analysis_report_relative_path)

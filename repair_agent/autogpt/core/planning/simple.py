@@ -66,7 +66,7 @@ class SimplePlanner(Configurable):
                     temperature=0.9,
                 ),
                 LanguageModelClassification.SMART_MODEL: LanguageModelConfiguration(
-                    model_name=OpenAIModelName.GPT4,
+                    model_name=OpenAIModelName.GPT4_turbo,
                     provider_name=ModelProviderName.OPENAI,
                     temperature=0.9,
                 ),

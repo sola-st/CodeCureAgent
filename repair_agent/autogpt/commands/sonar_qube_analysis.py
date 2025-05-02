@@ -12,6 +12,13 @@ ALLOWLIST_CONTROL = "allowlist"
 DENYLIST_CONTROL = "denylist"
 
 
+class AnalysisError(Exception):
+    def __init__(self, msg):
+        super().__init__(msg)
+
+
+
+
 @command(
     "analyze_file",
     "Run SonarQube analysis on a file",
@@ -40,7 +47,7 @@ def analyze_file_and_parse_report(file_relative_path: str, rules: list[str], rep
         return parse_analysis_report(analysis_report_relative_path, config)
     else:
         logger.error("Error", "Running SonarQube analysis failed with error: " + result.stderr)
-        raise Exception(f"Error: {result.stderr}")
+        raise AnalysisError(f"Error: {result.stderr}")
     
 
 

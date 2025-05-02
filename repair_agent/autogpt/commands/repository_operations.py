@@ -9,7 +9,7 @@ from autogpt.logs.logger import logger
 '''
 Clone targeted repository and checkout targeted commit.
 If the target project folder already exists it is first removed.
-Exits if cloning or checking out fails.
+Throws a GitError if cloning or checking out fails.
 '''
 def checkout_project(agent: BaseAgent):
     repo_path = os.path.join(agent.config.workspace_path, agent.ai_config.warning_repository_name)
@@ -29,7 +29,7 @@ def checkout_project(agent: BaseAgent):
 
     except GitError as e:
         logger.error("Git Cloning failed", f"Error: {e}")
-        exit(1)
+        raise
 
     if agent.ai_config.warning_repository_commit.lower() == "master":
         logger.debug("", f"Skipped checking out a commit, because ai_config.warning_repository_commit is '{agent.ai_config.warning_repository_commit}'.")
@@ -40,4 +40,4 @@ def checkout_project(agent: BaseAgent):
 
         except GitError as e:
             logger.error("Git Checkout failed", f"Error: {e}")
-            exit(1)
+            raise

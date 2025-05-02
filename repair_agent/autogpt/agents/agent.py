@@ -30,7 +30,10 @@ from autogpt.commands.defects4j_static import query_for_mutants, construct_fix_c
 from .base import AgentThoughts, BaseAgent, CommandArgs, CommandName
 
 from autogpt.commands.sonar_qube_analysis import analyze_file_and_parse_report
+from autogpt.commands.sonar_qube_analysis import AnalysisError
 import autogpt.commands.repository_operations as repository_operations
+
+from git.exc import GitError
 
 
 class Agent(BaseAgent):
@@ -328,21 +331,24 @@ class Agent(BaseAgent):
     '''
     def prepare_target_project(self) -> None:
         
-        repository_operations.checkout_project(self)
-
-        # TODO: Give output file a unique name and (additionally) save in the experiment folder (maybe)
         try:
+            repository_operations.checkout_project(self)
+
+            # TODO: Give output file a unique name and (additionally) save in the experiment folder (maybe)
             analysis_report = analyze_file_and_parse_report(self.ai_config.warning_file_path, None, self.ai_config.warning_repository_name, "initial_analysis_report.json", self.config)
-        except:
-            logger.error("Aborting", "Running initial SonarQube analysis on the target file failed. Therefore aborting the execution.")
+
+            #TODO: Validate that the expected rule is present in the analysis report here.
+
+            # TODO: Implement building the project
+            # Idea:
+            # If building fails set a flag and skip this step in validating a write_fix
+            # repository_operations.build_project()
+
+        except (AnalysisError, GitError):
+            logger.error("Aborting", "Preparing the target project failed. Therefore aborting the execution.")
             exit(1)
 
-        #TODO: Validate that the expected rule is present in the analysis report here.
-
-        # TODO: Implement building the project
-        # Idea:
-        # If building fails set a flag and skip this step in validating a write_fix
-        # repository_operations.build_project()
+        
 
 
 

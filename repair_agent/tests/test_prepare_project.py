@@ -5,6 +5,8 @@ import unittest
 import os
 import shutil
 
+from git.exc import GitCommandError
+
 
 # File for testing the implemented commands statically
 
@@ -115,13 +117,31 @@ class CheckoutProjectTestCase(unittest.TestCase):
         agent = Agent(warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_rule_name)
 
         self.assertFalse(os.path.exists(os.path.join(agent.config.workspace_path, warning_repository_name)))
-        with self.assertRaises(SystemExit, msg="Should have called a SystemExit, because the repository to check out doesn't exist.") as se:
+        with self.assertRaises(GitCommandError, msg="Should have raised a GitError, because the repository to check out doesn't exist.") as se:
             checkout_project(agent)
+        self.assertEqual(se.exception.status, 128)
 
-        self.assertEqual(se.exception.code, 1)
+        self.assertFalse(os.path.exists(os.path.join(agent.config.workspace_path, warning_repository_name)), f"Project folder '{warning_repository_name}' was created, but shouldn't have.")
+        self.assertFalse(os.path.exists(os.path.join(agent.config.workspace_path, warning_repository_name, warning_file_path)), f"File '{warning_file_path} was present in the checked out repository '{warning_repository_name}', but shouldn't have.")
 
-        self.assertFalse(os.path.exists(os.path.join(agent.config.workspace_path, warning_repository_name)), f"Expected project folder '{warning_repository_name}' was not created.")
-        self.assertFalse(os.path.exists(os.path.join(agent.config.workspace_path, warning_repository_name, warning_file_path)), f"Expected file '{warning_file_path} was not present in the checked out repository '{warning_repository_name}'")
+    def test_checkout_project_wrong_commit(self):
+
+        warning_repository_URL = "https://github.com/argparse4j/argparse4j.git"
+        warning_repository_commit = "not_a_commit"
+        warning_repository_name = "argparse4"
+        warning_file_path = "main/src/main/java/net/sourceforge/argparse4j/internal/TerminalWidth.java"
+        warning_rule_key = "S2142"
+        warning_rule_name = "'InterruptedException' should not be ignored"
+
+        agent = Agent(warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_rule_name)
+
+        self.assertFalse(os.path.exists(os.path.join(agent.config.workspace_path, warning_repository_name)))
+        with self.assertRaises(GitCommandError, msg="Should have raised a GitError, because the repository to check out doesn't exist.") as se:
+            checkout_project(agent)
+        self.assertEqual(se.exception.status, 1)
+
+        self.assertTrue(os.path.exists(os.path.join(agent.config.workspace_path, warning_repository_name)), f"Expected project folder '{warning_repository_name}' was not created.")
+        self.assertTrue(os.path.exists(os.path.join(agent.config.workspace_path, warning_repository_name, warning_file_path)), f"Expected file '{warning_file_path} was not present in the checked out repository '{warning_repository_name}'")
 
 
 

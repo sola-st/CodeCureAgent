@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import time
 import os
 from datetime import datetime
@@ -349,7 +350,7 @@ class Agent(BaseAgent):
 
             repository_operations.build_project(self)
 
-        except (sonar_qube_analysis.AnalysisError, GitError, repository_operations.BuildError):
+        except (sonar_qube_analysis.AnalysisError, GitError, repository_operations.BuildError, subprocess.TimeoutExpired):
             logger.error("Aborting", "Preparing the target project failed. Therefore aborting the execution.")
             exit(1)
 

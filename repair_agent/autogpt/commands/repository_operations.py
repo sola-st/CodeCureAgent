@@ -55,28 +55,35 @@ def build_project(agent: BaseAgent) -> None:
 
     logger.info("",
             f"Building the target project {agent.ai_config.warning_repository_name} with maven."
-        )
+        )  
 
 
-    result = subprocess.run(
-            ["mvn", "package", "-DskipTests"],
-            capture_output=True,
-            encoding="utf8",
-            cwd=repo_path,
-            shell=False
-        )
+    timeout_ten_minutes = 10*60
+
+    try:
+        result = subprocess.run(
+                ["mvn", "clean", "package", "-DskipTests", "--no-transfer-progress", "--batch-mode"],
+                capture_output=True,
+                encoding="utf8",
+                cwd=repo_path,
+                shell=False,
+                timeout=timeout_ten_minutes
+            )
+        
+    except subprocess.TimeoutExpired as te:
+        logger.error("TimeoutExpired", f"Build ran into timeout after {te.timeout / 60} minutes.")
+        raise
     
     if result.returncode == 0:
         logger.info("", f"Build was successful.")
     else:
         logger.error("Error", f"Build failed with returncode {result.returncode}, stdout: \n{result.stdout}\n stderr: {result.stderr}")
-        raise BuildError(result.returncode, result.stderr, result.stdout)
+        raise BuildError(result.returncode, result.stdout)
     
 
 
 class BuildError(Exception):
-    def __init__(self, returncode, stderr, stdout):
+    def __init__(self, returncode, stderr):
         self.returncode = returncode
         self.stderr = stderr
-        self.stdout = stdout
         super().__init__(stderr)

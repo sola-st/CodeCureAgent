@@ -557,6 +557,7 @@ Continue ({config.authorise_key}/{config.exit_key}): """,
     logger.typewriter_log("Warning Repository Commit: ", Fore.GREEN, ai_config.warning_repository_commit)
     logger.typewriter_log("Warning Repository Name", Fore.GREEN, ai_config.warning_repository_name)
     logger.typewriter_log("Warning File Path: ", Fore.GREEN, ai_config.warning_file_path)
+    logger.typewriter_log("Warning File Name: ", Fore.GREEN, ai_config.warning_file_name)
     logger.typewriter_log("Warning Rule Key: ", Fore.GREEN, ai_config.warning_rule_key)
     logger.typewriter_log("Warning Rule Name: ", Fore.GREEN, ai_config.warning_rule_name)
     logger.typewriter_log(

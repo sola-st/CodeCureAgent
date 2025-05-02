@@ -30,6 +30,7 @@ class Agent():
     def __init__(self, warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_rule_name):
         self.config = Config("auto_gpt_workspace/")
         self.ai_config = AIConfig(warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_rule_name)
+        self.exps = ["experiment_test"]
 
 
 
@@ -152,6 +153,9 @@ class AnalyzeFileTestCase(unittest.TestCase):
             shutil.rmtree(auto_gpt_workspace)
         os.mkdir(auto_gpt_workspace)
 
+        os.mkdir("experimental_setups/experiment_test")
+        os.mkdir("experimental_setups/experiment_test/initial_analysis_reports")
+
         warning_repository_URL = "https://github.com/argparse4j/argparse4j.git"
         warning_repository_commit = "a0cef432451487d513382297cec2c5b14c147a30"
         warning_repository_name = "argparse4j"
@@ -169,6 +173,7 @@ class AnalyzeFileTestCase(unittest.TestCase):
         if os.path.exists(auto_gpt_workspace):
             shutil.rmtree(auto_gpt_workspace)
         os.mkdir(auto_gpt_workspace)
+        shutil.rmtree("experimental_setups/experiment_test")
 
 
     def test_analyze_file_and_parser_report_single_rule(self):
@@ -176,7 +181,7 @@ class AnalyzeFileTestCase(unittest.TestCase):
         analysis_report_relative_path = "analysis_report.json"
 
         # Call the analyze_file function
-        report = analyze_file_and_parse_report(self.agent.ai_config.warning_file_path, rules, self.agent.ai_config.warning_repository_name, analysis_report_relative_path, self.agent.config)
+        report = analyze_file_and_parse_report(self.agent.ai_config.warning_file_path, rules, self.agent.ai_config.warning_repository_name, analysis_report_relative_path, self.agent)
         
         self.assertIsNotNone(report)
         self.assertIsNotNone(report["minedRules"])
@@ -194,7 +199,7 @@ class AnalyzeFileTestCase(unittest.TestCase):
         analysis_report_relative_path = "analysis_report.json"
 
         # Call the analyze_file function
-        report = analyze_file_and_parse_report(self.agent.ai_config.warning_file_path, rules, self.agent.ai_config.warning_repository_name, analysis_report_relative_path, self.agent.config)
+        report = analyze_file_and_parse_report(self.agent.ai_config.warning_file_path, rules, self.agent.ai_config.warning_repository_name, analysis_report_relative_path, self.agent)
         
         self.assertIsNotNone(report)
         self.assertIsNotNone(report["minedRules"])
@@ -209,7 +214,7 @@ class AnalyzeFileTestCase(unittest.TestCase):
 
         # Call the analyze_file function
         with self.assertRaises(Exception) as e:
-            report = analyze_file_and_parse_report("main/src/main/java/net/sourceforge/argparse4j/internal/SomeNonExistingFile.java", rules, self.agent.ai_config.warning_repository_name, analysis_report_relative_path, self.agent.config)
+            report = analyze_file_and_parse_report("main/src/main/java/net/sourceforge/argparse4j/internal/SomeNonExistingFile.java", rules, self.agent.ai_config.warning_repository_name, analysis_report_relative_path, self.agent)
 
         self.assertRegex(str(e.exception), "Error: java.lang.IllegalArgumentException*")
         

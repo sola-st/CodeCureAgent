@@ -172,6 +172,10 @@ class BaseAgent(metaclass=ABCMeta):
 
         }
 
+        self.initial_analysis_report = {
+
+        }
+
         self.buggy_lines = ""
         self.similar_calls = None
 
@@ -230,7 +234,8 @@ class BaseAgent(metaclass=ABCMeta):
             "extracted_methods": self.extracted_methods,
             "experiment_file": self.experiment_file,
             "hyperparams": self.hyperparams,
-            "history": [{"role": msg.role, "content": msg.content} for _, msg in enumerate(self.history)]
+            "history": [{"role": msg.role, "content": msg.content} for _, msg in enumerate(self.history)],
+            "initial_analysis_report": self.initial_analysis_report
         }
 
         #with open("experimental_setups/experiments_list.txt") as eht:
@@ -329,6 +334,7 @@ please use the indicated format and produce a list, like this:
         self.experiment_file = context["experiment_file"]
         self.hyperparams = context["hyperparams"]
         self.history = context["history"]
+        self.initial_analysis_report = context["initial_analysis_report"]
         
     def construct_fix_query(self,):
         

@@ -1,8 +1,18 @@
+from __future__ import annotations
+
+
 import subprocess
 import os
+import shutil
 import json
 from autogpt.logs import logger
-from autogpt.config import Config
+
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from autogpt.agents import BaseAgent
+
 from autogpt.command_decorator import command
 
 COMMAND_CATEGORY = "sonarQubeAnalysis"
@@ -30,24 +40,29 @@ class AnalysisError(Exception):
         }
     },
 )
-def analyze_file_command(filepath: str, agent):
+def analyze_file_command(filepath: str, agent: BaseAgent):
     # TODO: will need to get the repo_name from the experiment input
-    return analyze_file_and_parse_report(filepath, None, agent.ai_config.warning_repository_name, "analysis_report.json", agent.config)
+    return analyze_file_and_parse_report(filepath, None, agent.ai_config.warning_repository_name, "analysis_report.json", agent)
 
 
 
-def analyze_file_and_parse_report(file_relative_path: str, rules: list[str], repo_name: str, analysis_report_relative_path: str, config: Config) -> dict:
+def analyze_file_and_parse_report(file_relative_path: str, rules: list[str], repo_name: str, analysis_report_file_name: str, agent: BaseAgent) -> dict:
 
-    result = analyze_file(file_relative_path, rules, repo_name, analysis_report_relative_path, config)
+    result = analyze_file(file_relative_path, rules, repo_name, analysis_report_file_name, agent)
 
     if result.returncode == 0:
         logger.info("",
             f"Running SonarQube analysis was successful."
         )
-        return parse_analysis_report(analysis_report_relative_path, config)
+        return parse_analysis_report(analysis_report_file_name, agent)
     else:
         logger.error("Error", "Running SonarQube analysis failed with error: " + result.stderr)
         raise AnalysisError(f"Error: {result.stderr}")
+    
+
+def rule_present_in_analysis_report(analysis_report: dict, rule_key: str) -> bool:
+    mined_rules = analysis_report["minedRules"]
+    return any(map(lambda mined_rule: mined_rule["ruleKey"] == rule_key, mined_rules))
     
 
 
@@ -61,19 +76,19 @@ Args:
         file_relative_path (str): Path to the file to analyze. (Relative to the repository under analysis)
         rules (list[str]): SonarQube rules to check (list of SIds). If the list is empty all rules are checked.
         repo_name (str): Name of the repository under analysis
-        analysis_report_relative_path (src): Path where the analysis report should be saved to. (Relative from workspace)
+        analysis_report_file_name (src): Name of the analysis report file to be saved.
     Returns:
         subprocess.CompletedProcess[str]: Result of running the mining suprocess. If subprocess was succesful then the property "returncode" is 0.
 """
-def analyze_file(file_relative_path: str, rules: list[str], repo_name: str, analysis_report_relative_path: str, config: Config) -> subprocess.CompletedProcess[str]:
+def analyze_file(file_relative_path: str, rules: list[str], repo_name: str, analysis_report_file_name: str, agent: BaseAgent) -> subprocess.CompletedProcess[str]:
 
-    workspace = config.workspace_path
+    workspace = agent.config.workspace_path
 
     # Prepare the paths
     file_relative_path = preprocess_paths(workspace, repo_name, file_relative_path)
     file_path = os.path.join(workspace, repo_name, file_relative_path)
 
-    analysis_report_path = os.path.join(workspace, analysis_report_relative_path)
+    analysis_report_path = os.path.join(workspace, analysis_report_file_name)
 
     
 
@@ -83,7 +98,7 @@ def analyze_file(file_relative_path: str, rules: list[str], repo_name: str, anal
 
 
     # Create mining command
-    cmd = ["java", "-jar", config.sorald_jar_path, "mine", "--source", file_path, "--stats-output-file", analysis_report_path]
+    cmd = ["java", "-jar", agent.config.sorald_jar_path, "mine", "--source", file_path, "--stats-output-file", analysis_report_path]
 
     if rules is not None and len(rules) > 0:
         cmd.append("--rule-keys")
@@ -104,12 +119,14 @@ def analyze_file(file_relative_path: str, rules: list[str], repo_name: str, anal
     return result
     
 
-def parse_analysis_report(analysis_report_relative_path: str, config: Config) -> dict:
-    workspace = config.workspace_path
+def parse_analysis_report(analysis_report_file_name: str, agent: BaseAgent) -> dict:
+    workspace = agent.config.workspace_path
 
-    analysis_report_path = os.path.join(workspace, analysis_report_relative_path)
+    analysis_report_path = os.path.join(workspace, analysis_report_file_name)
     with open(analysis_report_path, "r") as analysis_report_file:
         analysis_report = json.load(analysis_report_file)
+
+    shutil.copy(analysis_report_path, os.path.join("experimental_setups", agent.exps[-1], "initial_analysis_reports", analysis_report_file_name))
 
     return analysis_report
 

@@ -90,6 +90,11 @@ class AIConfig:
             else:
                 self.warning_repository_name = warning_repository_URL[last_forward_slash_index + 1:suffix_index]
 
+        # Retrieve the target file name from the file path
+        if warning_file_path:
+            self.warning_file_name = warning_file_path.split("/")[-1]
+
+
     @staticmethod
     def load(ai_settings_file: str | Path) -> "AIConfig":
         """

@@ -18,7 +18,7 @@ import csv
 
 
 
-SORALD_JAR_PATH = "/workspaces/master-thesis-pascal-joos/repair_agent/sorald/sorald.jar"
+SORALD_JAR_PATH = "/workspaces/master-thesis-pascal-joos/code_cure_agent/sorald/sorald.jar"
 
 class Config():
     def __init__(self, workspace_path):

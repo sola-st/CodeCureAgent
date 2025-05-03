@@ -1,44 +1,42 @@
-# 🛠️ RepairAgent
+# CodeCureAgent
 
-RepairAgent is an autonomous LLM-based agent designed for automated program repair. For a comprehensive understanding of its workings and development, you can check out our [research paper here](https://arxiv.org/abs/2403.17134).
+CodeCureAgent is an autonomous LLM-based agent designed for automated static analysis warning repair.  
+It can fix arbitrary SonarQube rule violations in Java code.
+
+<div style="text-align: left;">
+  <img src="./code_cure_agent/code_cure_agent_project_image.png" alt="Alt text" width="300" height="300">
+</div>
 
 ---
 
 ## 📋 I. Requirements
 
-Before you start using RepairAgent, ensure that your system meets the following requirements:
+Before you start using CodeCureAgent, ensure that your system meets the following requirements:
 
 - **Docker**: Version 20.04 or higher. For installation instructions, see the [Docker documentation](https://docs.docker.com/get-docker).
-- **VS Code**: Not a hard requirement but highly recommended. VS Code provides an easy way to interact with RepairAgent using DevContainers (see the instructions below).
+- **VS Code**: Not a hard requirement but highly recommended. VS Code provides an easy way to interact with CodeCureAgent using DevContainers (see the instructions below).
 - **OpenAI Token and Credits**:
   - Create an account on the OpenAI website and purchase credits to use the API.
   - Generate an API token on the same website.
 - **Disk Space**:
     - At least 40GB of available disk space on your machine. The code itself does not take 40GB. However, the dependencies might take up to 8GB, and files generated from running on different instances may use more. 40GB is a safe estimate.
     - If you are using VS Code DevContainers, you can avoid pulling the heavy Docker image (~22GB).
-- **Internet Access**: Required while running RepairAgent to connect to OpenAI's API.
+- **Internet Access**: Required while running CodeCureAgent to connect to OpenAI's API.
 
 ---
 
-## ⚙️ II. Setup RepairAgent
+## ⚙️ II. Setup CodeCureAgent
 
-You have two ways to use RepairAgent:
-
-1. **Start a VS Code DevContainer**: The easiest method, as it avoids pulling the large Docker image.
-2. **Use the Docker Image**: Suitable for users familiar with Docker.
-
-### 🚀 Option 1: Using a VS Code DevContainer
-
-### **STEP 1: Open RepairAgent in a DevContainer**
+### **STEP 1: Open CodeCureAgent in a DevContainer**
 
 1. Ensure you have the **Dev Containers** extension installed in VS Code. You can install it from the [Visual Studio Code Marketplace](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers).
 
-2. Clone the RepairAgent repository:
+2. Clone the CodeCureAgent repository:
 
    ```bash
-   git clone https://github.com/sola-st/RepairAgent.git
-   cd RepairAgent
-   cd repair_agent
+   git clone https://github.com/sola-st/master-thesis-pascal-joos.git
+   cd master-thesis-pascal-joos
+   cd code_cure_agent
    git clone https://github.com/rjust/defects4j.git
    cp -r ../data/buggy-lines defects4j
    cp -r ../data/buggy-methods defects4j
@@ -50,9 +48,9 @@ You have two ways to use RepairAgent:
 4. When prompted by VS Code to "Reopen in Container," click it. If not prompted, open the Command Palette (Ctrl+Shift+P) and select "Dev Containers: Reopen in Container."  
 VS Code will now build and start the DevContainer, setting up the environment for you. This will take a while.
 
-5. Within your VS Code terminal, move to the folder repair_agent
+5. Within your VS Code terminal, move to the folder code_cure_agent
     ```bash
-    cd repair_agent
+    cd code_cure_agent
     ```
 
 ### **STEP 2: Set the OpenAI API Key**
@@ -67,50 +65,17 @@ The script will prompt you to paste your API token.
 
 ---
 
-### 🚀 Option 2: Using the Docker Image
 
-### **STEP 1: Pull the Docker Image**
+## III. Run CodeCureAgent
 
-Run the following commands in your terminal to retrieve and start our Docker image:
+CodeCureAgent takes a csv file as input where each line specifies a SonarQube rule violated in a single java file in a single Git repository.  
+CodeCureAgent tries to fix all occurences of the violated rule in the file.  
 
-```bash
-# Pull the image from DockerHub
-docker pull islemdockerdev/repair-agent:v1
-
-# Run the image inside a container
-docker run -itd --name apr-agent islemdockerdev/repair-agent:v1
-
-# Start the container
-docker start -i apr-agent
-```
-
-### **STEP 2: Attach the Container to VS Code**
-
-- After starting the container, open VS Code and navigate to the **Containers** icon on the left panel. Ensure you have the **Remote Explorer** extension installed.
-- Under the **Dev Containers** tab, find the name of the container you just started (e.g., `apr-agent`).
-- Attach the container to a new window by clicking the "+" sign to the right of the container name, then navigate to the `workdir` folder in the VS Code window (**the workdir is `/app/AutoGPT`**).
-- **Tutorial Reference**: For detailed steps on attaching a Docker container in VS Code, check out this [video tutorial (1min 38 sec)](https://www.youtube.com/watch?v=8gUtN5j4QnY&t).
-
-### **STEP 3: Set the OpenAI API Key**
-
-Inside the Docker container, configure your OpenAI API key by running:
-
-```bash
-python3.10 set_api_key.py
-```
-
-The script will prompt you to paste your API token.
-
-## III. Run RepairAgent
-
-RepairAgent takes a csv file as input where each line specifies a SonarQube rule violated in a single java file in a single Git repository.  
-RepairAgent tries to fix all occurences of the violated rule in the file.  
-
-For an example on how the input file has to look like see `repair_agent/experimental_setups/dev_dataset/mining_results/specific_commit_handled_rules_input_file.csv`.  
+For an example on how the input file has to look like see [specific_commit_handled_rules_input_file.csv](code_cure_agent/experimental_setups/dev_dataset/mining_results/specific_commit_handled_rules_input_file.csv).  
 Only the first 5 columns are required.  
 You can create your own by following the steps described further down below in this paragraph.
 
-To execute RepairAgent on an input file run the following, from the `repair_agent` folder:
+To execute CodeCureAgent on an input file, run the following from the `code_cure_agent` folder:
 
   ```bash
    ./run_on_dataset.sh ./experimental_setups/dev_dataset/mining_results/specific_commit_handled_rules_input_file.csv hyperparams.json
@@ -119,21 +84,21 @@ To execute RepairAgent on an input file run the following, from the `repair_agen
 The first argument is the csv input file to run on. The second argument specifies hyperparameter settings.  
 You can open the `hyperparams.json` file to review or customize its parameters (explained further in the customization section).  
 
-#### **What Happens When You Start RepairAgent?**
+#### **What Happens When You Start CodeCureAgent?**
 
-- RepairAgent goes through the input file line by line
-- For each line RepairAgent checks out the project with the given URL and commit.
+- CodeCureAgent goes through the input file line by line
+- For each line CodeCureAgent checks out the project with the given URL and commit.
 - It initiates the autonomous repair process, trying to fix occurences of the given warning type in the given file.
 - Logs detailing each step performed will be displayed in your terminal.
 
 
-#### **Creating your own csv input file, based on repositories you want to run RepairAgent on**
+#### **Creating your own csv input file, based on repositories you want to run CodeCureAgent on**
 
 1. Create a .txt file with the URLs to the git repositories to use in each line. If you want to run on specific commits of the repositories you can add the commitID after the URL, separated by a comma.  
-For an example see `repair_agent/experimental_setups/dev_dataset/sampled_repos_specific_commit.txt`.  
+For an example see [sampled_repos_specific_commit.txt](code_cure_agent/experimental_setups/dev_dataset/sampled_repos_specific_commit.txt).  
 
 2. Use the Sorald mining tool to mine SonarQube warnings on the repositories specified in the file.  
-Example usage (run from `repair_agent` on the `sampled_repos_specific_commit.txt` file): 
+Example usage (run from `code_cure_agent` on the `sampled_repos_specific_commit.txt` file): 
    ```bash
    java -jar ./sorald/sorald.jar mine \
       --git-repos-list ./experimental_setups/dev_dataset/sampled_repos_specific_commit.txt \
@@ -148,7 +113,7 @@ Example usage (run from `repair_agent` on the `sampled_repos_specific_commit.txt
    If you only want to mine specific rules, pass the IDs of the rules via --rule-keys, or to only mine for specific types of rules use --rule-types.  
    After running the mining tool the output is saved in a json file. In the example this is `specific_commit_handled_rules_mining_result.json`.
 
-3. Finally you can create your csv input file from the json report by using `repair_agent/experimental_setups/prepare_experiment_input_file.py`.  
+3. Finally you can create your csv input file from the json report by using `code_cure_agent/experimental_setups/prepare_experiment_input_file.py`.  
 To this script provide the previously created json report as the first argument. Additionally you can provide the path, the csv-file is to be saved to via --target-csv-file-path.  
 Example: 
   ```bash
@@ -156,12 +121,11 @@ Example:
       --target-csv-file-path ./experimental_setups/dev_dataset/mining_results/specific_commit_handled_rules_input_file.csv
   ```
 
-
 #### **Retrieve Repair Logs and History**
 
-RepairAgent saves the output in multiple files.
+CodeCureAgent saves the output in multiple files.
 
-- The primary logs are located in the folder `experimental_setups/experiment_X`, where `experiment_X` increments automatically with each run of the command `./run_on_defects_4j.sh`.
+- The primary logs are located in the folder `experimental_setups/experiment_X`, where `experiment_X` increments automatically with each run of the command `./run_on_dataset.sh`.
 
 - Within this folder, you may find several subfolders:
   - **logs**: Full chat history (prompts) and command outputs (one file per bug).
@@ -235,7 +199,7 @@ Within the `experimental_setups` folder, several scripts are available to post-p
   ```
 ---
 
-## ✨ IV. Customize RepairAgent
+## ✨ IV. Customize CodeCureAgent
 
 ### 1. Modify `hyperparams.json`
 
@@ -293,18 +257,18 @@ Reasoning models are not supported by the used OpenAI API version.
 
 ---
 
-## 📊 V. Our Data
+## 📊 V. RepairAgent Data
 
-In our experiments, we utilized RepairAgent on the Defects4J dataset, successfully fixing 164 bugs. You can check our data under the folder data.
+In RepairAgent for our experiments, we utilized RepairAgent on the Defects4J dataset, successfully fixing 164 bugs. You can check our data under the folder data.
 - The list of fixed bugs [here](./data/final_list_of_fixed_bugs). The list allows to compare with prior and future work.
   * For example, we compare to ChatRepair, SelfAPR, and ITER. The venn diagram of Figure 6 is produced using the command:
     ```bash
     python3.10 draw_venn_chatrepair_clean.py
     ```
-  * The file [d4j12.csv](./repair_agent/experimental_setups/d4j12.csv) contains the list of bugs fixed by previous work. The script draw_venn_chatrepair_clean.py contains the list of fixes that we compare to.
+  * The file [d4j12.csv](./code_cure_agent/experimental_setups/d4j12.csv) contains the list of bugs fixed by previous work. The script draw_venn_chatrepair_clean.py contains the list of fixes that we compare to.
 - The implementation details of the patches in [this file](./data/fixes_implementation).
  
-- The folder **data/root_patches** contains patches produced by RepairAgent in the main phase
+- The folder **data/root_patches** contains patches produced by CodeCureAgent in the main phase
 - The folder **data/derivated_pathces** contains patches obtained by mutating **root_patches**
 
 
@@ -348,10 +312,5 @@ GitBugsJava is another dataset for program repair evaluation.
 
  4. Use the same analysis scripts as part 1 (D4j replication) to analyse the results of the experiments.
 
-## 💬 VII. Help Us Improve RepairAgent
-
-If you use RepairAgent, we encourage you to report any issues, bugs, or documentation gaps. We are committed to addressing your concerns promptly.
-
-You can raise an issue directly in this repository.
 
 --- 

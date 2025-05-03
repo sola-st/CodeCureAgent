@@ -6,7 +6,7 @@
 
 cd "$(dirname "$0")"
 
-SORALD_JAR_PATH="/workspaces/master-thesis-pascal-joos/repair_agent/sorald/sorald.jar"
+SORALD_JAR_PATH="/workspaces/master-thesis-pascal-joos/code_cure_agent/sorald/sorald.jar"
 
 
 # Use the commit that was used for Soralds experiments.

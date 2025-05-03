@@ -194,7 +194,7 @@ class Agent(BaseAgent):
             assistant_reply_dict["command"] = {"name": "missing_command", "args":{}}
         command_dict = assistant_reply_dict["command"]
 
-        with open("commands_interface.json") as cif:
+        with open("agent_config_and_prompt_files/commands_interface.json") as cif:
             commands_interface = json.load(cif)
 
         if command_dict.get("name", "") in list(commands_interface.keys()):

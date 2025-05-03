@@ -36,5 +36,5 @@ args = parser.parse_args()
 settings = template.format(name=args.name, bug_index=args.index, warning_repository_URL=args.warning_repository_URL, warning_repository_commit=args.warning_repository_commit,
                            warning_file_path=args.warning_file_path, warning_rule_key=args.warning_rule_key, warning_rule_name=args.warning_rule_name)
 
-with open("ai_settings.yaml", "w") as set_yaml:
+with open("agent_config_and_prompt_files/ai_settings.yaml", "w") as set_yaml:
     set_yaml.write(settings)

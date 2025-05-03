@@ -44,5 +44,5 @@ commands_dict = {
         [extract_test_desc, express_hypo_desc, read_range_desc])])
 }
 
-with open("commands_by_state.json", "w") as cbs:
+with open("agent_config_and_prompt_files/commands_by_state.json", "w") as cbs:
     json.dump(commands_dict, cbs)

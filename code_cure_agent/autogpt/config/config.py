@@ -16,10 +16,10 @@ from autogpt.core.configuration.schema import Configurable, SystemSettings
 from autogpt.llm.providers.openai import OPEN_AI_CHAT_MODELS
 from autogpt.plugins.plugins_config import PluginsConfig
 
-AI_SETTINGS_FILE = "ai_settings.yaml"
-AZURE_CONFIG_FILE = "azure.yaml"
-PLUGINS_CONFIG_FILE = "plugins_config.yaml"
-PROMPT_SETTINGS_FILE = "prompt_settings.yaml"
+AI_SETTINGS_FILE = "agent_config_and_prompt_files/ai_settings.yaml"
+AZURE_CONFIG_FILE = "agent_config_and_prompt_files/azure.yaml"
+PLUGINS_CONFIG_FILE = "agent_config_and_prompt_files/plugins_config.yaml"
+PROMPT_SETTINGS_FILE = "agent_config_and_prompt_files/prompt_settings.yaml"
 
 
 

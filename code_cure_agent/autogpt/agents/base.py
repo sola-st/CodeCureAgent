@@ -75,10 +75,10 @@ class BaseAgent(metaclass=ABCMeta):
         self.cycle_count = 0
         """The number of cycles that the agent has run since its initialization."""
         
-        with open("commands_by_state.json") as cbs:
+        with open("agent_config_and_prompt_files/commands_by_state.json") as cbs:
             self.cmds_by_state = json.load(cbs)
 
-        with open("states_description.json") as sdj:
+        with open("agent_config_and_prompt_files/states_description.json") as sdj:
             self.descriptions = json.load(sdj)
 
         self.current_state = "collect information to understand the bug"
@@ -354,7 +354,7 @@ please use the indicated format and produce a list, like this:
         return context_prompt
 
     def validate_command_parsing(self, command_dict):
-        with open("commands_interface.json") as cif:
+        with open("agent_config_and_prompt_files/commands_interface.json") as cif:
             commands_interface = json.load(cif)
 
         command_dict = command_dict.get("command", {"name": "", "args": {}})
@@ -868,7 +868,7 @@ please use the indicated format and produce a list, like this:
         context_prompt += "\n".join(info_sections)
         context_prompt += "\n" + "\n".join(self.prompt_dictionary["fix format"])
         #context_prompt += "\n" + "For reference, here is a patch that you can start mutating from (if not available create your own):\n" + str(last_patch) +"\n\n"
-        with open("prompt_files/hints.txt") as htt:
+        with open("agent_config_and_prompt_files/hints.txt") as htt:
             hints = htt.read()
 
         list_example = '[{"file_name": "org/apache/commons/codec/binary/Base64.java", "insertions": [], "deletions": [], "modifications": [{"line_number": 225, "modified_line": "        this(true);"}]}, {"file_name": "org/apache/commons/codec/binary/Base64.java", "insertions": [], "deletions": [], "modifications": [{"line_number": 225, "modified_line": "        this(null);"}]}, {"file_name": "org/apache/commons/codec/binary/Base64.java", "insertions": [], "deletions": [], "modifications": [{"line_number": 225, "modified_line": "        this(1==0);"}]}, {"file_name": "org/apache/commons/codec/binary/Base64.java", "insertions": [], "deletions": [], "modifications": [{"line_number": 225, "modified_line": "        this(1 - 2);"}]}, ...]'
@@ -1057,7 +1057,7 @@ please use the indicated format and produce a list, like this:
         self.construct_extracted_methods()
         self.save_context()
 
-        with open("prompt_files/cycle_instruction_text.txt") as cit:
+        with open("agent_config_and_prompt_files/cycle_instruction_text.txt") as cit:
             cycle_instruction = cit.read()
 
         if self.hyperparams["budget_control"]["name"] == "NO-TRACK":

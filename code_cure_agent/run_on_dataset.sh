@@ -19,7 +19,7 @@ done
 export LC_COLLATE=C
 
 python3 experimental_setups/increment_experiment.py
-python3 construct_commands_descriptions.py
+python3 scripts/construct_commands_descriptions.py
 input="$1"
 dos2unix "$input" # Convert file to Unix line endings (if needed)
 
@@ -36,11 +36,11 @@ while IFS= read -r line <&3; do
     else
         csv -a fields "$line"
         echo "Current run input: " ${fields[0]}, ${fields[1]}, ${fields[2]}, ${fields[3]}, ${fields[4]}
-        python3 prepare_ai_settings.py "Codec" "4" "${fields[0]}" "${fields[1]}" "${fields[3]}" "${fields[2]}" "${fields[4]}"
+        python3 scripts/prepare_ai_settings.py "Codec" "4" "${fields[0]}" "${fields[1]}" "${fields[3]}" "${fields[2]}" "${fields[4]}"
         # TODO: To be replaced or removed as soon as we implemented our own setup procedure
-        python3 checkout_py.py "Codec" "4"
+        python3 scripts/checkout_py.py "Codec" "4"
 
-        ./run.sh --ai-settings ai_settings.yaml --model-version gpt-4o-mini-2024-07-18 -c -l 40 -m json_file --experiment-file "$2" --debug
+        ./run.sh --ai-settings agent_config_and_prompt_files/ai_settings.yaml --model-version gpt-4o-mini-2024-07-18 -c -l 40 -m json_file --experiment-file "$2" --debug
     fi
 done
 

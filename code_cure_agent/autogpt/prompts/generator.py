@@ -101,7 +101,7 @@ class PromptGenerator:
         Returns:
             str: The generated prompt string.
         """
-        with open("prompt_files/fix_format.txt") as ffmt:
+        with open("agent_config_and_prompt_files/fix_format.txt") as ffmt:
             fix_format = ffmt.read()
         return {
             "commands": [

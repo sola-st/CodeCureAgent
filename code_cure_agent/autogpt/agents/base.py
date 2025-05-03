@@ -868,7 +868,7 @@ please use the indicated format and produce a list, like this:
         context_prompt += "\n".join(info_sections)
         context_prompt += "\n" + "\n".join(self.prompt_dictionary["fix format"])
         #context_prompt += "\n" + "For reference, here is a patch that you can start mutating from (if not available create your own):\n" + str(last_patch) +"\n\n"
-        with open("hints.txt") as htt:
+        with open("prompt_files/hints.txt") as htt:
             hints = htt.read()
 
         list_example = '[{"file_name": "org/apache/commons/codec/binary/Base64.java", "insertions": [], "deletions": [], "modifications": [{"line_number": 225, "modified_line": "        this(true);"}]}, {"file_name": "org/apache/commons/codec/binary/Base64.java", "insertions": [], "deletions": [], "modifications": [{"line_number": 225, "modified_line": "        this(null);"}]}, {"file_name": "org/apache/commons/codec/binary/Base64.java", "insertions": [], "deletions": [], "modifications": [{"line_number": 225, "modified_line": "        this(1==0);"}]}, {"file_name": "org/apache/commons/codec/binary/Base64.java", "insertions": [], "deletions": [], "modifications": [{"line_number": 225, "modified_line": "        this(1 - 2);"}]}, ...]'
@@ -1057,7 +1057,7 @@ please use the indicated format and produce a list, like this:
         self.construct_extracted_methods()
         self.save_context()
 
-        with open("cycle_instruction_text.txt") as cit:
+        with open("prompt_files/cycle_instruction_text.txt") as cit:
             cycle_instruction = cit.read()
 
         if self.hyperparams["budget_control"]["name"] == "NO-TRACK":

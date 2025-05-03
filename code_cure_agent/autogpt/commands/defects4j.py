@@ -19,11 +19,20 @@ from autogpt.command_decorator import command
 from autogpt.logs import logger
 
 import javalang
-from create_files_index import list_java_files
 
 ALLOWLIST_CONTROL = "allowlist"
 DENYLIST_CONTROL = "denylist"
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+def list_java_files(main_dir) -> list:
+    directory = main_dir
+    java_files = []
+    for root, dirs, files in os.walk(directory):
+        for file in files:
+            if file.endswith(".java"):
+                java_files.append(os.path.join(root.replace("{}/".format(main_dir), ""), file))
+
+    return java_files
 
 def preprocess_paths(agent: BaseAgent, project_name, bug_index, filepath):
     workspace = agent.config.workspace_path
@@ -1379,9 +1388,9 @@ def get_localization(name, index):
 
 
 from antlr4 import FileStream, CommonTokenStream
-from JavaLexer import JavaLexer
-from JavaParser import JavaParser
-from JavaListener import JavaListener
+from java_antlr.JavaLexer import JavaLexer
+from java_antlr.JavaParser import JavaParser
+from java_antlr.JavaListener import JavaListener
 from antlr4 import ParseTreeWalker
 
 class FunctionExtractor(JavaListener):

@@ -22,7 +22,7 @@ class FunctionExtractor(JavaListener):
             print(e)
 
 if __name__ == "__main__":
-    file_path = "auto_gpt_workspace/closure_10_buggy/src/com/google/javascript/jscomp/AbstractCommandLineRunner.java"
+    file_path = "../auto_gpt_workspace/closure_10_buggy/src/com/google/javascript/jscomp/AbstractCommandLineRunner.java"
     input_stream = FileStream(file_path)
     
     lexer = JavaLexer(input_stream)

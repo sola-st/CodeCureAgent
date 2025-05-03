@@ -419,9 +419,9 @@ def list_java_files(main_dir) -> list:
     return java_files
 
 from antlr4 import FileStream, CommonTokenStream
-from JavaLexer import JavaLexer
-from JavaParser import JavaParser
-from JavaListener import JavaListener
+from java_antlr.JavaLexer import JavaLexer
+from java_antlr.JavaParser import JavaParser
+from java_antlr.JavaListener import JavaListener
 from antlr4 import ParseTreeWalker
 
 class FunctionExtractor(JavaListener):

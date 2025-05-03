@@ -106,14 +106,14 @@ The script will prompt you to paste your API token.
 RepairAgent takes a csv file as input where each line specifies a SonarQube rule violated in a single java file in a single Git repository.  
 RepairAgent tries to fix all occurences of the violated rule in the file.  
 
-For an example on how the input file has to look like see `repair_agent/experimental_setups/devdataset/mining_results/specific_commit_handled_rules_input_file.csv`.  
+For an example on how the input file has to look like see `repair_agent/experimental_setups/dev_dataset/mining_results/specific_commit_handled_rules_input_file.csv`.  
 Only the first 5 columns are required.  
 You can create your own by following the steps described further down below in this paragraph.
 
 To execute RepairAgent on an input file run the following, from the `repair_agent` folder:
 
   ```bash
-   ./run_on_dataset.sh ./experimental_setups/devdataset/mining_results/specific_commit_handled_rules_input_file.csv hyperparams.json
+   ./run_on_dataset.sh ./experimental_setups/dev_dataset/mining_results/specific_commit_handled_rules_input_file.csv hyperparams.json
    ```
 
 The first argument is the csv input file to run on. The second argument specifies hyperparameter settings.  
@@ -130,18 +130,18 @@ You can open the `hyperparams.json` file to review or customize its parameters (
 #### **Creating your own csv input file, based on repositories you want to run RepairAgent on**
 
 1. Create a .txt file with the URLs to the git repositories to use in each line. If you want to run on specific commits of the repositories you can add the commitID after the URL, separated by a comma.  
-For an example see `repair_agent/experimental_setups/devdataset/sampled_repos_specific_commit.txt`.  
+For an example see `repair_agent/experimental_setups/dev_dataset/sampled_repos_specific_commit.txt`.  
 
 2. Use the Sorald mining tool to mine SonarQube warnings on the repositories specified in the file.  
 Example usage (run from `repair_agent` on the `sampled_repos_specific_commit.txt` file): 
    ```bash
    java -jar ./sorald/sorald.jar mine \
-      --git-repos-list ./experimental_setups/devdataset/sampled_repos_specific_commit.txt \
-      --miner-output-file ./experimental_setups/devdataset/mining_results/specific_commit_handled_rules_out.txt \
-      --stats-output-file ./experimental_setups/devdataset/mining_results/specific_commit_handled_rules_mining_result.json \
-      --temp-dir ./experimental_setups/devdataset/temp \
+      --git-repos-list ./experimental_setups/dev_dataset/sampled_repos_specific_commit.txt \
+      --miner-output-file ./experimental_setups/dev_dataset/mining_results/specific_commit_handled_rules_out.txt \
+      --stats-output-file ./experimental_setups/dev_dataset/mining_results/specific_commit_handled_rules_mining_result.json \
+      --temp-dir ./experimental_setups/dev_dataset/temp \
       --stats-on-git-repos \
-      --rule-parameters ./experimental_setups/devdataset/rule_configuration.json \
+      --rule-parameters ./experimental_setups/dev_dataset/rule_configuration.json \
       --handled-rules
    ``` 
    Remove the --handled-rules flag if you want to mine all warnings supported by the used SonarQube version.  
@@ -152,8 +152,8 @@ Example usage (run from `repair_agent` on the `sampled_repos_specific_commit.txt
 To this script provide the previously created json report as the first argument. Additionally you can provide the path, the csv-file is to be saved to via --target-csv-file-path.  
 Example: 
   ```bash
-    python3 ./experimental_setups/prepare_experiment_input_file.py ./experimental_setups/devdataset/mining_results/specific_commit_handled_rules_mining_result.json \
-      --target-csv-file-path ./experimental_setups/devdataset/mining_results/specific_commit_handled_rules_input_file.csv
+    python3 ./experimental_setups/prepare_experiment_input_file.py ./experimental_setups/dev_dataset/mining_results/specific_commit_handled_rules_mining_result.json \
+      --target-csv-file-path ./experimental_setups/dev_dataset/mining_results/specific_commit_handled_rules_input_file.csv
   ```
 
 

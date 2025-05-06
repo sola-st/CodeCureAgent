@@ -59,10 +59,14 @@ def analyze_file_and_parse_report(file_relative_path: str, rules: list[str], rep
         logger.error("Error", "Running SonarQube analysis failed with error: " + result.stderr)
         raise AnalysisError(f"Error: {result.stderr}")
     
-
-def rule_present_in_analysis_report(analysis_report: dict, rule_key: str) -> bool:
+# Checks whether the expected rule violation is present in the analysis report
+def rule_violation_present_in_analysis_report(analysis_report: dict, warning_rule_key: str, warning_start_line: int) -> bool:
     mined_rules = analysis_report["minedRules"]
-    return any(map(lambda mined_rule: mined_rule["ruleKey"] == rule_key, mined_rules))
+    return any(map(lambda mined_rule: mined_rule["ruleKey"] == warning_rule_key and ___warning_locations_contains_start_line(mined_rule["warningLocations"], warning_start_line), mined_rules))
+
+
+def ___warning_locations_contains_start_line(warning_locations: dict, warning_start_line: int) -> bool:
+    return any(map(lambda warning_location: warning_location["startLine"] == warning_start_line, warning_locations))
     
 
 

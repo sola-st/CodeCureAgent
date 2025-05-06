@@ -337,13 +337,13 @@ class Agent(BaseAgent):
 
             sanitized_warning_file_path = self.ai_config.warning_file_path.replace("/", ".")
             initial_analysis_report = sonar_qube_analysis.analyze_file_and_parse_report(self.ai_config.warning_file_path, None, self.ai_config.warning_repository_name, 
-                                                                    f"{self.ai_config.warning_repository_name}_{sanitized_warning_file_path}_{self.ai_config.warning_rule_key}_initial_analysis_report.json", self)
+                                                                    f"{self.ai_config.warning_repository_name}_{sanitized_warning_file_path}_{self.ai_config.warning_rule_key}_{str(self.ai_config.warning_start_line)}_initial_analysis_report.json", self)
 
             self.initial_analysis_report = initial_analysis_report
 
-            # Validate that the expected rule is present in the analysis report
-            if not sonar_qube_analysis.rule_present_in_analysis_report(initial_analysis_report, self.ai_config.warning_rule_key):
-                logger.error("Error", f"The rule {self.ai_config.warning_rule_key} whos violations are to fix wasn't part of the analysis report created by running Sorald on the file.")
+            # Validate that the expected rule violation is present in the analysis report
+            if not sonar_qube_analysis.rule_violation_present_in_analysis_report(initial_analysis_report, self.ai_config.warning_rule_key, self.ai_config.warning_start_line):
+                logger.error("Error", f"The rule {self.ai_config.warning_rule_key} at line {str(self.ai_config.warning_start_line)} which was to fix wasn't part of the analysis report created by running Sorald on the file.")
                 logger.error("Aborting", "Preparing the target project failed. Therefore aborting the execution.")
                 exit(1)
 

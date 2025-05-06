@@ -71,14 +71,13 @@ The script will prompt you to paste your API token.
 CodeCureAgent takes a csv file as input where each line specifies a SonarQube rule violated in a single java file in a single Git repository.  
 CodeCureAgent tries to fix all occurences of the violated rule in the file.  
 
-For an example on how the input file has to look like see [specific_commit_handled_rules_input_file.csv](code_cure_agent/experimental_setups/dev_dataset/mining_results/specific_commit_handled_rules_input_file.csv).  
-Only the first 5 columns are required.  
+For an example on how the input file has to look like see [specific_commit_handled_rules_input_file_single_rule_violations.csv](code_cure_agent/experimental_setups/dev_dataset/mining_results/specific_commit_handled_rules_input_file_single_rule_violations.csv).  
 You can create your own by following the steps described further down below in this paragraph.
 
 To execute CodeCureAgent on an input file, run the following from the `code_cure_agent` folder:
 
   ```bash
-   ./run_on_dataset.sh ./experimental_setups/dev_dataset/mining_results/specific_commit_handled_rules_input_file.csv hyperparams.json
+   ./run_on_dataset.sh ./experimental_setups/dev_dataset/mining_results/specific_commit_handled_rules_input_file_single_rule_violations.csv hyperparams.json
    ```
 
 The first argument is the csv input file to run on. The second argument specifies hyperparameter settings.  
@@ -114,11 +113,12 @@ Example usage (run from `code_cure_agent` on the `sampled_repos_specific_commit.
    After running the mining tool the output is saved in a json file. In the example this is `specific_commit_handled_rules_mining_result.json`.
 
 3. Finally you can create your csv input file from the json report by using `code_cure_agent/experimental_setups/prepare_experiment_input_file.py`.  
-To this script provide the previously created json report as the first argument. Additionally you can provide the path, the csv-file is to be saved to via --target-csv-file-path.  
+To this script provide the previously created json report as the first argument. Also --rule-violations-mode must be set to single.  
+Additionally you can provide the path, the csv-file is to be saved to via --target-csv-file-path.  
 Example: 
   ```bash
     python3 ./experimental_setups/prepare_experiment_input_file.py ./experimental_setups/dev_dataset/mining_results/specific_commit_handled_rules_mining_result.json \
-      --target-csv-file-path ./experimental_setups/dev_dataset/mining_results/specific_commit_handled_rules_input_file.csv
+      --target-csv-file-path ./experimental_setups/dev_dataset/mining_results/specific_commit_handled_rules_input_file_single_rule_violations.csv --rule-violations-mode single
   ```
 
 #### **Retrieve Repair Logs and History**

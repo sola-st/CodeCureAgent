@@ -16,7 +16,8 @@ rm ./mining_results/specific_commit_handled_rules_out.txt
 java -jar $SORALD_JAR_PATH mine --git-repos-list ./sampled_repos_specific_commit.txt --miner-output-file ./mining_results/specific_commit_handled_rules_out.txt \
     --stats-output-file ./mining_results/specific_commit_handled_rules_mining_result.json --temp-dir ./temp --stats-on-git-repos --rule-parameters ./rule_configuration.json --handled-rules
 
-python3 ./../prepare_experiment_input_file.py ./mining_results/specific_commit_handled_rules_mining_result.json --target-csv-file-path ./mining_results/specific_commit_handled_rules_input_file.csv
+python3 ./../prepare_experiment_input_file.py ./mining_results/specific_commit_handled_rules_mining_result.json --target-csv-file-path ./mining_results/specific_commit_handled_rules_input_file_aggregated_rule_violations.csv --rule-violations-mode all
+python3 ./../prepare_experiment_input_file.py ./mining_results/specific_commit_handled_rules_mining_result.json --target-csv-file-path ./mining_results/specific_commit_handled_rules_input_file_single_rule_violations.csv --rule-violations-mode single
 echo Mining end: Specific commit, handled rules
 
 # Use the commit that was used for Soralds experiments.
@@ -26,7 +27,8 @@ rm ./mining_results/specific_commit_all_rules_out.txt
 java -jar $SORALD_JAR_PATH mine --git-repos-list ./sampled_repos_specific_commit.txt --miner-output-file ./mining_results/specific_commit_all_rules_out.txt \
     --stats-output-file ./mining_results/specific_commit_all_rules_mining_result.json --temp-dir ./temp --stats-on-git-repos --rule-parameters ./rule_configuration.json
 
-python3 ./../prepare_experiment_input_file.py ./mining_results/specific_commit_all_rules_mining_result.json --target-csv-file-path ./mining_results/specific_commit_all_rules_input_file.csv
+python3 ./../prepare_experiment_input_file.py ./mining_results/specific_commit_all_rules_mining_result.json --target-csv-file-path ./mining_results/specific_commit_all_rules_input_file_aggregated_rule_violations.csv --rule-violations-mode all
+python3 ./../prepare_experiment_input_file.py ./mining_results/specific_commit_all_rules_mining_result.json --target-csv-file-path ./mining_results/specific_commit_all_rules_input_file_single_rule_violations.csv --rule-violations-mode single
 echo Mining end: Specific commit, all rules
 
 # Use the newest commit for each repo.
@@ -36,7 +38,8 @@ rm ./mining_results/newest_commit_handled_rules_out.txt
 java -jar $SORALD_JAR_PATH mine --git-repos-list ./sampled_repos.txt --miner-output-file ./mining_results/newest_commit_handled_rules_out.txt \
     --stats-output-file ./mining_results/newest_commit_handled_rules_mining_result.json --temp-dir ./temp --stats-on-git-repos --rule-parameters ./rule_configuration.json --handled-rules
 
-python3 ./../prepare_experiment_input_file.py ./mining_results/newest_commit_handled_rules_mining_result.json --target-csv-file-path ./mining_results/newest_commit_handled_rules_input_file.csv
+python3 ./../prepare_experiment_input_file.py ./mining_results/newest_commit_handled_rules_mining_result.json --target-csv-file-path ./mining_results/newest_commit_handled_rules_input_file_aggregated_rule_violations.csv --rule-violations-mode all
+python3 ./../prepare_experiment_input_file.py ./mining_results/newest_commit_handled_rules_mining_result.json --target-csv-file-path ./mining_results/newest_commit_handled_rules_input_file_single_rule_violations.csv --rule-violations-mode single
 echo Mining end: Newest commit, handled rules
 
 # Use the newest commit for each repo.
@@ -46,5 +49,6 @@ rm ./mining_results/newest_commit_all_rules_out.txt
 java -jar $SORALD_JAR_PATH mine --git-repos-list ./sampled_repos.txt --miner-output-file ./mining_results/newest_commit_all_rules_out.txt \
     --stats-output-file ./mining_results/newest_commit_all_rules_mining_result.json --temp-dir ./temp --stats-on-git-repos --rule-parameters ./rule_configuration.json
 
-python3 ./../prepare_experiment_input_file.py ./mining_results/newest_commit_all_rules_mining_result.json --target-csv-file-path ./mining_results/newest_commit_all_rules_input_file.csv
+python3 ./../prepare_experiment_input_file.py ./mining_results/newest_commit_all_rules_mining_result.json --target-csv-file-path ./mining_results/newest_commit_all_rules_input_file_aggregated_rule_violations.csv --rule-violations-mode all
+python3 ./../prepare_experiment_input_file.py ./mining_results/newest_commit_all_rules_mining_result.json --target-csv-file-path ./mining_results/newest_commit_all_rules_input_file_single_rule_violations.csv --rule-violations-mode single
 echo Mining end: Newest commit, all rules

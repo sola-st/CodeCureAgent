@@ -14,6 +14,12 @@ import click
     help="Skips the re-prompting messages at the beginning of the script",
 )
 @click.option(
+    "--none-interactive",
+    "-n",
+    is_flag=True,
+    help="If set the user will not be prompted for input when the last cycle was reached. This allows for running the agent without needing manual user feedback.",
+)
+@click.option(
     "--ai-settings",
     "-C",
     help=(
@@ -26,6 +32,7 @@ import click
     "-P",
     help="Specifies which prompt_settings.yaml file to use.",
 )
+# We don't use this flag but instead set the commands_limit via the hyperparams.json file and overwrite this parameter with that value
 @click.option(
     "-l",
     "--continuous-limit",
@@ -133,6 +140,7 @@ def main(
     ai_settings: str,
     prompt_settings: str,
     skip_reprompt: bool,
+    none_interactive: bool,
     speak: bool,
     debug: bool,
     model_version: str,
@@ -168,6 +176,7 @@ def main(
             ai_settings=ai_settings,
             prompt_settings=prompt_settings,
             skip_reprompt=skip_reprompt,
+            none_interactive=none_interactive,
             speak=speak,
             debug=debug,
             model_version=model_version,

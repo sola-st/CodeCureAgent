@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from abc import ABCMeta, abstractmethod
 from typing import TYPE_CHECKING, Any, Literal, Optional
+from colorama import Fore
 import json
 import os
 
@@ -74,6 +75,15 @@ class BaseAgent(metaclass=ABCMeta):
 
         self.cycle_count = 0
         """The number of cycles that the agent has run since its initialization."""
+
+        with open(experiment_file) as hper:
+            self.hyperparams = json.load(hper)
+
+        # Overwrite the continuos_limit with the commands_limit specified in hyperparams.json
+        self.config.continuous_limit = self.hyperparams["commands_limit"]
+        logger.typewriter_log(
+                "Continuous Limit: ", Fore.GREEN, f"{self.config.continuous_limit}"
+        )
         
         with open("agent_config_and_prompt_files/commands_by_state.json") as cbs:
             self.cmds_by_state = json.load(cbs)
@@ -179,8 +189,7 @@ class BaseAgent(metaclass=ABCMeta):
         self.buggy_lines = ""
         self.similar_calls = None
 
-        with open(experiment_file) as hper:
-            self.hyperparams = json.load(hper)
+        
 
         self.extracted_methods = []
 

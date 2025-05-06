@@ -22,6 +22,7 @@ def create_config(
     ai_settings_file: str,
     prompt_settings_file: str,
     skip_reprompt: bool,
+    none_interactive: bool,
     speak: bool,
     debug: bool,
     model_version: str,
@@ -39,6 +40,7 @@ def create_config(
         ai_settings_file (str): The path to the ai_settings.yaml file
         prompt_settings_file (str): The path to the prompt_settings.yaml file
         skip_reprompt (bool): Whether to skip the re-prompting messages at the beginning of the script
+        none_interactive (bool): If set the user will not be prompted for input when the last cycle was reached. This allows for running the agent without needing manual user feedback.
         speak (bool): Whether to enable speak mode
         debug (bool): Whether to enable debug mode
         model_version (str): The GPT model to use. Has to be passed as command line argument
@@ -109,6 +111,10 @@ def create_config(
     if skip_reprompt:
         logger.typewriter_log("Skip Re-prompt: ", Fore.GREEN, "ENABLED")
         config.skip_reprompt = True
+
+    if none_interactive:
+        logger.typewriter_log("None-Interactive mode: ", Fore.GREEN, "ENABLED")
+        config.none_interactive = True
 
     if ai_settings_file:
         file = ai_settings_file

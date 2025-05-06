@@ -238,7 +238,7 @@ Within the `experimental_setups` folder, several scripts are available to post-p
 
 In the `run_on_dataset.sh` file, locate the line:
 ```bash
-./run.sh --ai-settings agent_config_and_prompt_files/ai_settings.yaml --model-version gpt-4o-mini-2024-07-18 -c -l 40 -m json_file --experiment-file "$2"
+./run.sh --ai-settings agent_config_and_prompt_files/ai_settings.yaml --model-version gpt-4o-mini-2024-07-18 -c --none-interactive -m json_file --experiment-file "$2" --debug
 ```
 Change the model_version to one of the following supported models:  
 

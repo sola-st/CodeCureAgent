@@ -31,6 +31,7 @@ class Config(SystemSettings, arbitrary_types_allowed=True):
     ########################
     skip_news: bool = False
     skip_reprompt: bool = False
+    none_interactive: bool = False
     authorise_key: str = "y"
     exit_key: str = "n"
     debug_mode: bool = False

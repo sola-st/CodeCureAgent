@@ -40,7 +40,7 @@ while IFS= read -r line <&3; do
         # TODO: To be replaced or removed as soon as we implemented our own setup procedure
         python3 scripts/checkout_py.py "Codec" "4"
 
-        ./run.sh --ai-settings agent_config_and_prompt_files/ai_settings.yaml --model-version gpt-4o-mini-2024-07-18 -c -l 40 -m json_file --experiment-file "$2" --debug
+        ./run.sh --ai-settings agent_config_and_prompt_files/ai_settings.yaml --model-version gpt-4o-mini-2024-07-18 -c --none-interactive -m json_file --experiment-file "$2" --debug
     fi
 done
 

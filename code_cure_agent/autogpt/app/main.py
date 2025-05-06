@@ -44,6 +44,7 @@ def run_auto_gpt(
     ai_settings: str,
     prompt_settings: str,
     skip_reprompt: bool,
+    none_interactive: bool,
     speak: bool,
     debug: bool,
     model_version: str,
@@ -86,6 +87,7 @@ def run_auto_gpt(
         ai_settings,
         prompt_settings,
         skip_reprompt,
+        none_interactive,
         speak,
         debug,
         model_version,
@@ -286,43 +288,50 @@ def run_interaction_loop(
         # Print the assistant's thoughts and the next command to the user.
         update_user(config, ai_config, command_name, command_args, assistant_reply_dict)
 
-        ##################
-        # Get user input #
-        ##################
+        
         if cycles_remaining == 1:  # Last cycle
-            user_feedback, user_input, new_cycles_remaining = get_user_feedback(
-                config,
-                ai_config,
-            )
 
-            if user_feedback == UserFeedback.AUTHORIZE:
-                if new_cycles_remaining is not None:
-                    # Case 1: User is altering the cycle budget.
-                    if cycle_budget > 1:
-                        cycle_budget = new_cycles_remaining + 1
-                    # Case 2: User is running iteratively and
-                    #   has initiated a one-time continuous cycle
-                    cycles_remaining = new_cycles_remaining + 1
-                else:
-                    # Case 1: Continuous iteration was interrupted -> resume
-                    if cycle_budget > 1:
-                        logger.typewriter_log(
-                            "RESUMING CONTINUOUS EXECUTION: ",
-                            Fore.MAGENTA,
-                            f"The cycle budget is {cycle_budget}.",
-                        )
-                    # Case 2: The agent used up its cycle budget -> reset
-                    cycles_remaining = cycle_budget + 1
-                logger.typewriter_log(
-                    "-=-=-=-=-=-=-= COMMAND AUTHORISED BY USER -=-=-=-=-=-=-=",
-                    Fore.MAGENTA,
-                    "",
-                )
-            elif user_feedback == UserFeedback.EXIT:
+        ###############################
+        # Terminate or get User Input #
+        ###############################
+
+            if config.none_interactive:
                 logger.typewriter_log("Exiting...", Fore.YELLOW)
                 exit()
-            else:  # user_feedback == UserFeedback.TEXT
-                command_name = "human_feedback"
+            else:
+                user_feedback, user_input, new_cycles_remaining = get_user_feedback(
+                    config,
+                    ai_config,
+                )
+
+                if user_feedback == UserFeedback.AUTHORIZE:
+                    if new_cycles_remaining is not None:
+                        # Case 1: User is altering the cycle budget.
+                        if cycle_budget > 1:
+                            cycle_budget = new_cycles_remaining + 1
+                        # Case 2: User is running iteratively and
+                        #   has initiated a one-time continuous cycle
+                        cycles_remaining = new_cycles_remaining + 1
+                    else:
+                        # Case 1: Continuous iteration was interrupted -> resume
+                        if cycle_budget > 1:
+                            logger.typewriter_log(
+                                "RESUMING CONTINUOUS EXECUTION: ",
+                                Fore.MAGENTA,
+                                f"The cycle budget is {cycle_budget}.",
+                            )
+                        # Case 2: The agent used up its cycle budget -> reset
+                        cycles_remaining = cycle_budget + 1
+                    logger.typewriter_log(
+                        "-=-=-=-=-=-=-= COMMAND AUTHORISED BY USER -=-=-=-=-=-=-=",
+                        Fore.MAGENTA,
+                        "",
+                    )
+                elif user_feedback == UserFeedback.EXIT:
+                    logger.typewriter_log("Exiting...", Fore.YELLOW)
+                    exit()
+                else:  # user_feedback == UserFeedback.TEXT
+                    command_name = "human_feedback"
         else:
             user_input = None
             # First log new-line so user can differentiate sections better in console

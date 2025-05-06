@@ -48,7 +48,9 @@ def prompt_user(
             ai_config_template.warning_repository_commit,
             ai_config_template.warning_file_path,
             ai_config_template.warning_rule_key,
-            ai_config_template.warning_rule_name
+            ai_config_template.warning_start_line,
+            ai_config_template.warning_rule_name,
+            ai_config_template.warning_specific_message
         ]
     )
 
@@ -217,6 +219,16 @@ def generate_aiconfig_manual(
         )
         warning_rule_key = utils.clean_input(config, "Rule key: ")
 
+    if ai_config_template and ai_config_template.warning_start_line:
+        warning_start_line = ai_config_template.warning_start_line
+    else:
+        # Get repository URL from User
+        logger.typewriter_log(
+            "Give the start line of the rule violation: ",
+            Fore.GREEN, speak_text=False
+        )
+        warning_start_line = int(utils.clean_input(config, "Rule violation start line: "))
+
     if ai_config_template and ai_config_template.warning_rule_name:
         warning_rule_name = ai_config_template.warning_rule_name
     else:
@@ -226,6 +238,16 @@ def generate_aiconfig_manual(
             Fore.GREEN, speak_text=False
         )
         warning_rule_name = utils.clean_input(config, "Rule name: ")
+
+    if ai_config_template and ai_config_template.warning_specific_message:
+        warning_specific_message = ai_config_template.warning_specific_message
+    else:
+        # Get repository URL from User
+        logger.typewriter_log(
+            "Give the rule violations specific message: ",
+            Fore.GREEN, speak_text=False
+        )
+        warning_specific_message = utils.clean_input(config, "Specific message: ")
 
 
 
@@ -250,7 +272,7 @@ def generate_aiconfig_manual(
             )
             api_budget = 0.0
 
-    return AIConfig(ai_name, ai_role, ai_goals, warning_repository_URL, warning_repository_commit, warning_file_path, warning_rule_key, warning_rule_name, api_budget)
+    return AIConfig(ai_name, ai_role, ai_goals, warning_repository_URL, warning_repository_commit, warning_file_path, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message, api_budget)
 
 
 def generate_aiconfig_automatic(user_prompt: str, config: Config) -> AIConfig:

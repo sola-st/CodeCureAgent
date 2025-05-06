@@ -62,7 +62,9 @@ def run_auto_gpt(
     warning_repository_commit: Optional[str] = None,
     warning_file_path: Optional[str] = None,
     warning_rule_key: Optional[str] = None,
+    warning_start_line: Optional[int] = None,
     warning_rule_name: Optional[str] = None,
+    warning_specific_message: Optional[str] = None,
     ai_goals: tuple[str] = tuple(),
     experiment_file: str = None
 ):
@@ -164,7 +166,9 @@ def run_auto_gpt(
         warning_repository_commit=warning_repository_commit,
         warning_file_path=warning_file_path,
         warning_rule_key=warning_rule_key,
+        warning_start_line=warning_start_line,
         warning_rule_name=warning_rule_name,
+        warning_specific_message=warning_specific_message,
         goals=ai_goals,
     )
     ai_config.command_registry = command_registry
@@ -474,7 +478,9 @@ def construct_main_ai_config(
     warning_repository_commit: Optional[str] = None,
     warning_file_path: Optional[str] = None,
     warning_rule_key: Optional[str] = None,
+    warning_start_line: Optional[int] = None,
     warning_rule_name: Optional[str] = None,
+    warning_specific_message: Optional[str] = None,
     goals: tuple[str] = tuple(),
 ) -> AIConfig:
     """Construct the prompt for the AI to respond to
@@ -497,20 +503,24 @@ def construct_main_ai_config(
         ai_config.warning_file_path = warning_file_path
     if warning_rule_key:
         ai_config.warning_rule_key = warning_rule_key
+    if warning_start_line:
+        ai_config.warning_start_line = warning_start_line
     if warning_rule_name:
         ai_config.warning_rule_name = warning_rule_name
+    if warning_specific_message:
+        ai_config.warning_specific_message = warning_specific_message
     if goals:
         ai_config.ai_goals = list(goals)
 
 
     if (
-        all([name, role, goals, ai_config.warning_repository_URL, ai_config.warning_repository_commit, ai_config.warning_file_path, ai_config.warning_rule_key, ai_config.warning_rule_name])
+        all([name, role, goals, ai_config.warning_repository_URL, ai_config.warning_repository_commit, ai_config.warning_file_path, ai_config.warning_rule_key, ai_config.warning_start_line, ai_config.warning_rule_name, ai_config.warning_specific_message])
         or (config.skip_reprompt
-        and all([ai_config.ai_name, ai_config.ai_role, ai_config.ai_goals, ai_config.warning_repository_URL, ai_config.warning_repository_commit, ai_config.warning_file_path, ai_config.warning_rule_key, ai_config.warning_rule_name]))
+        and all([ai_config.ai_name, ai_config.ai_role, ai_config.ai_goals, ai_config.warning_repository_URL, ai_config.warning_repository_commit, ai_config.warning_file_path, ai_config.warning_rule_key, ai_config.warning_start_line, ai_config.warning_rule_name, ai_config.warning_specific_message]))
     ):
         logger.typewriter_log("ai_config found: ", Fore.GREEN, "The complete ai_config was successfully loaded from the ai_settings_file.")
         
-    elif all([ai_config.ai_name, ai_config.ai_role, ai_config.ai_goals, ai_config.warning_repository_URL, ai_config.warning_repository_commit, ai_config.warning_file_path, ai_config.warning_rule_key, ai_config.warning_rule_name]):
+    elif all([ai_config.ai_name, ai_config.ai_role, ai_config.ai_goals, ai_config.warning_repository_URL, ai_config.warning_repository_commit, ai_config.warning_file_path, ai_config.warning_rule_key, ai_config.warning_start_line, ai_config.warning_rule_name, ai_config.warning_specific_message]):
         logger.typewriter_log(
             "Welcome back! ",
             Fore.GREEN,
@@ -527,14 +537,16 @@ Warning Repository URL: {ai_config.warning_repository_URL}
 Warning Repository Commit: {ai_config.warning_repository_commit}
 Warning File Path: {ai_config.warning_file_path}
 Warning Rule Key: {ai_config.warning_rule_key}
+Warning Start Line: {str(ai_config.warning_start_line)}
 Warning Rule Name: {ai_config.warning_rule_name}
+Warning Specific Message: {ai_config.warning_specific_message}
 API Budget: {"infinite" if ai_config.api_budget <= 0 else f"${ai_config.api_budget}"}
 Continue ({config.authorise_key}/{config.exit_key}): """,
         )
         if should_continue.lower() == config.exit_key:
             ai_config = AIConfig()
 
-    if any([not ai_config.ai_name, not ai_config.ai_role, not ai_config.ai_goals, not ai_config.warning_repository_URL, not ai_config.warning_repository_commit, not ai_config.warning_file_path, not ai_config.warning_rule_key, not ai_config.warning_rule_name]):
+    if any([not ai_config.ai_name, not ai_config.ai_role, not ai_config.ai_goals, not ai_config.warning_repository_URL, not ai_config.warning_repository_commit, not ai_config.warning_file_path, not ai_config.warning_rule_key, not ai_config.warning_start_line, not ai_config.warning_rule_name, not ai_config.warning_specific_message]):
         ai_config = prompt_user(config, ai_config)
         ai_config.save(config.workdir / config.ai_settings_file)
 
@@ -568,7 +580,9 @@ Continue ({config.authorise_key}/{config.exit_key}): """,
     logger.typewriter_log("Warning File Path: ", Fore.GREEN, ai_config.warning_file_path)
     logger.typewriter_log("Warning File Name: ", Fore.GREEN, ai_config.warning_file_name)
     logger.typewriter_log("Warning Rule Key: ", Fore.GREEN, ai_config.warning_rule_key)
+    logger.typewriter_log("Warning Start Line: ", Fore.GREEN, str(ai_config.warning_start_line))
     logger.typewriter_log("Warning Rule Name: ", Fore.GREEN, ai_config.warning_rule_name)
+    logger.typewriter_log("Warning Specific Message: ", Fore.GREEN, ai_config.warning_specific_message)
     logger.typewriter_log(
         "API Budget:",
         Fore.GREEN,

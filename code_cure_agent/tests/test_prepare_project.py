@@ -18,18 +18,21 @@ class Config():
         self.sorald_jar_path = SORALD_JAR_PATH
 
 class AIConfig():
-    def __init__(self, warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_rule_name):
+    def __init__(self, warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message):
         self.warning_repository_URL = warning_repository_URL
         self.warning_repository_commit = warning_repository_commit
         self.warning_file_path = warning_file_path
-        self.warning_repository_name = warning_repository_name
         self.warning_rule_key = warning_rule_key
+        self.warning_start_line = warning_start_line
         self.warning_rule_name = warning_rule_name
+        self.warning_specific_message = warning_specific_message
+
+        self.warning_repository_name = warning_repository_name
 
 class Agent():
-    def __init__(self, warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_rule_name):
+    def __init__(self, warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message):
         self.config = Config("auto_gpt_workspace/")
-        self.ai_config = AIConfig(warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_rule_name)
+        self.ai_config = AIConfig(warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message)
         self.exps = ["experiment_test"]
 
 
@@ -57,9 +60,11 @@ class CheckoutProjectTestCase(unittest.TestCase):
         warning_repository_name = "argparse4j"
         warning_file_path = "main/src/main/java/net/sourceforge/argparse4j/internal/TerminalWidth.java"
         warning_rule_key = "S2142"
+        warning_start_line = 94
         warning_rule_name = "'InterruptedException' should not be ignored"
+        warning_specific_message = "Either re-interrupt this method or rethrow the ""InterruptedException"" that can be caught here."
 
-        agent = Agent(warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_rule_name)
+        agent = Agent(warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message)
 
         self.assertFalse(os.path.exists(os.path.join(agent.config.workspace_path, warning_repository_name)))
 
@@ -75,9 +80,11 @@ class CheckoutProjectTestCase(unittest.TestCase):
         warning_repository_name = "argparse4j"
         warning_file_path = "main/src/main/java/net/sourceforge/argparse4j/internal/TerminalWidth.java"
         warning_rule_key = "S2142"
+        warning_start_line = 94
         warning_rule_name = "'InterruptedException' should not be ignored"
+        warning_specific_message = "Either re-interrupt this method or rethrow the ""InterruptedException"" that can be caught here."
 
-        agent = Agent(warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_rule_name)
+        agent = Agent(warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message)
 
         self.assertFalse(os.path.exists(os.path.join(agent.config.workspace_path, warning_repository_name)))
 
@@ -94,9 +101,11 @@ class CheckoutProjectTestCase(unittest.TestCase):
         warning_repository_name = "unknown_repo"
         warning_file_path = "main/src/main/java/net/sourceforge/argparse4j/internal/TerminalWidth.java"
         warning_rule_key = "S2142"
+        warning_start_line = 94
         warning_rule_name = "'InterruptedException' should not be ignored"
+        warning_specific_message = "Either re-interrupt this method or rethrow the ""InterruptedException"" that can be caught here."
 
-        agent = Agent(warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_rule_name)
+        agent = Agent(warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message)
 
         self.assertFalse(os.path.exists(os.path.join(agent.config.workspace_path, warning_repository_name)))
 
@@ -113,9 +122,11 @@ class CheckoutProjectTestCase(unittest.TestCase):
         warning_repository_name = "argparse4"
         warning_file_path = "main/src/main/java/net/sourceforge/argparse4j/internal/TerminalWidth.java"
         warning_rule_key = "S2142"
+        warning_start_line = 94
         warning_rule_name = "'InterruptedException' should not be ignored"
+        warning_specific_message = "Either re-interrupt this method or rethrow the ""InterruptedException"" that can be caught here."
 
-        agent = Agent(warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_rule_name)
+        agent = Agent(warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message)
 
         self.assertFalse(os.path.exists(os.path.join(agent.config.workspace_path, warning_repository_name)))
         with self.assertRaises(GitCommandError, msg="Should have raised a GitError, because the repository to check out doesn't exist.") as se:
@@ -132,9 +143,11 @@ class CheckoutProjectTestCase(unittest.TestCase):
         warning_repository_name = "argparse4"
         warning_file_path = "main/src/main/java/net/sourceforge/argparse4j/internal/TerminalWidth.java"
         warning_rule_key = "S2142"
+        warning_start_line = 94
         warning_rule_name = "'InterruptedException' should not be ignored"
+        warning_specific_message = "Either re-interrupt this method or rethrow the ""InterruptedException"" that can be caught here."
 
-        agent = Agent(warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_rule_name)
+        agent = Agent(warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message)
 
         self.assertFalse(os.path.exists(os.path.join(agent.config.workspace_path, warning_repository_name)))
         with self.assertRaises(GitCommandError, msg="Should have raised a GitError, because the repository to check out doesn't exist.") as se:
@@ -153,6 +166,8 @@ class AnalyzeFileTestCase(unittest.TestCase):
             shutil.rmtree(auto_gpt_workspace)
         os.mkdir(auto_gpt_workspace)
 
+        if os.path.exists("experimental_setups/experiment_test"):
+            shutil.rmtree("experimental_setups/experiment_test")
         os.mkdir("experimental_setups/experiment_test")
         os.mkdir("experimental_setups/experiment_test/initial_analysis_reports")
 
@@ -161,9 +176,11 @@ class AnalyzeFileTestCase(unittest.TestCase):
         warning_repository_name = "argparse4j"
         warning_file_path = "main/src/main/java/net/sourceforge/argparse4j/internal/TerminalWidth.java"
         warning_rule_key = "S2142"
+        warning_start_line = 94
         warning_rule_name = "'InterruptedException' should not be ignored"
+        warning_specific_message = "Either re-interrupt this method or rethrow the ""InterruptedException"" that can be caught here."
 
-        self.agent = Agent(warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_rule_name)
+        self.agent = Agent(warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message)
 
 
         checkout_project(self.agent)
@@ -191,7 +208,7 @@ class AnalyzeFileTestCase(unittest.TestCase):
         self.assertIsNotNone(report["minedRules"][0]["warningLocations"])
         self.assertEqual(len(report["minedRules"][0]["warningLocations"]), 1)
         self.assertIsNotNone(report["minedRules"][0]["warningLocations"][0]["startLine"])
-        self.assertEqual(report["minedRules"][0]["warningLocations"][0]["startLine"], 94)
+        self.assertEqual(report["minedRules"][0]["warningLocations"][0]["startLine"], self.agent.ai_config.warning_start_line)
 
 
     def test_analyze_file_and_parser_report_all_rules(self):

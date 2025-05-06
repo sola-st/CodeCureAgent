@@ -35,8 +35,8 @@ while IFS= read -r line <&3; do
         ((skip_header--))
     else
         csv -a fields "$line"
-        echo "Current run input: " ${fields[0]}, ${fields[1]}, ${fields[2]}, ${fields[3]}, ${fields[4]}
-        python3 scripts/prepare_ai_settings.py "Codec" "4" "${fields[0]}" "${fields[1]}" "${fields[3]}" "${fields[2]}" "${fields[4]}"
+        echo "Current run input: " ${fields[0]}, ${fields[1]}, ${fields[2]}, ${fields[3]}, ${fields[4]}, ${fields[5]}, ${fields[6]}
+        python3 scripts/prepare_ai_settings.py "Codec" "4" "${fields[0]}" "${fields[1]}" "${fields[2]}" "${fields[3]}" "${fields[4]}" "${fields[5]}" "${fields[6]}"
         # TODO: To be replaced or removed as soon as we implemented our own setup procedure
         python3 scripts/checkout_py.py "Codec" "4"
 

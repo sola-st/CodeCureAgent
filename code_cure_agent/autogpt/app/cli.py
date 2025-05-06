@@ -111,9 +111,19 @@ import click
     help="The rule identifier of the SonarQube warning to fix. (Squid)"
 )
 @click.option(
+    "--warning-start-line",
+    type=int,
+    help="The line where the SonarQube warning is located."
+)
+@click.option(
     "--warning-rule-name",
     type=str,
     help="The name of the SonarQube warning to fix (short description)"
+)
+@click.option(
+    "--warning-specific-message",
+    type=str,
+    help="The context-specific message of the SonarQube warning."
 )
 @click.option(
     "--ai-goal",
@@ -157,7 +167,9 @@ def main(
     warning_repository_commit: Optional[str],
     warning_file_path: Optional[str],
     warning_rule_key: Optional[str],
+    warning_start_line: Optional[int],
     warning_rule_name: Optional[str],
+    warning_specific_message: Optional[str],
     ai_goal: tuple[str],
     experiment_file: str
 ) -> None:
@@ -196,7 +208,9 @@ def main(
             warning_repository_commit=warning_repository_commit,
             warning_file_path=warning_file_path,
             warning_rule_key=warning_rule_key,
+            warning_start_line=warning_start_line,
             warning_rule_name=warning_rule_name,
+            warning_specific_message=warning_specific_message,
             ai_goals=ai_goal,
             experiment_file=experiment_file
         )

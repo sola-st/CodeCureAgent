@@ -29,7 +29,9 @@ class AIConfig:
         warning_repository_commit (str): The commit of the Git repo to fix the warning on. Can be a commitId or "MASTER" for the most current commit.
         warning_file_path (str): The file path to the file with the SonarQube warning
         warning_rule_key (str): The rule identifier of the SonarQube warning to fix
+        warning_start_line (int): The line where the rule violation is located
         warning_rule_name (str): The name of the SonarQube warning to fix (short description)
+        warning_specific_messgage (str): The context-specific message of the rule violation
         api_budget (float): The maximum dollar value for API calls (0.0 means infinite)
     """
 
@@ -42,7 +44,9 @@ class AIConfig:
         warning_repository_commit: str = "",
         warning_file_path: str = "",
         warning_rule_key: str = "",
+        warning_start_line: int = -1,
         warning_rule_name: str = "",
+        warning_specific_message: str = "",
         api_budget: float = 0.0,
     ) -> None:
         """
@@ -56,7 +60,9 @@ class AIConfig:
             warning_repository_commit (str): The commit of the Git repo to fix the warning on. Can be a commitId or "MASTER" for the most current commit.
             warning_file_path (str): The file path to the file with the SonarQube warning
             warning_rule_key (str): The rule identifier of the SonarQube warning to fix
+            warning_start_line (int): The line where the rule violation is located
             warning_rule_name (str): The name of the SonarQube warning to fix (short description)
+            warning_specific_messgage (str): The context-specific message of the rule violation
             api_budget (float): The maximum dollar value for API calls (0.0 means infinite)
         Returns:
             None
@@ -68,7 +74,9 @@ class AIConfig:
         self.warning_repository_commit = warning_repository_commit
         self.warning_file_path = warning_file_path
         self.warning_rule_key = warning_rule_key
+        self.warning_start_line = warning_start_line
         self.warning_rule_name = warning_rule_name
+        self.warning_specific_message = warning_specific_message
         self.api_budget = api_budget
         self.prompt_generator: PromptGenerator | None = None
         self.command_registry: CommandRegistry | None = None
@@ -126,10 +134,12 @@ class AIConfig:
         warning_repository_commit = config_params.get("warning_repository_commit", "")
         warning_file_path = config_params.get("warning_file_path", "")
         warning_rule_key = config_params.get("warning_rule_key", "")
+        warning_start_line = config_params.get("warning_start_line", "")
         warning_rule_name = config_params.get("warning_rule_name", "")
+        warning_specific_message = config_params.get("warning_specific_message", "")
         api_budget = config_params.get("api_budget", 0.0)
 
-        return AIConfig(ai_name, ai_role, ai_goals, warning_repository_URL, warning_repository_commit, warning_file_path, warning_rule_key, warning_rule_name, api_budget)
+        return AIConfig(ai_name, ai_role, ai_goals, warning_repository_URL, warning_repository_commit, warning_file_path, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message, api_budget)
 
     def save(self, ai_settings_file: str | Path) -> None:
         """
@@ -150,7 +160,9 @@ class AIConfig:
             "warning_repository_commit" : self.warning_repository_commit,
             "warning_file_path" : self.warning_file_path,
             "warning_rule_key" : self.warning_rule_key,
+            "warning_start_line" : self.warning_start_line,
             "warning_rule_name" : self.warning_rule_name,
+            "warning_specific_message" : self.warning_specific_message,
             "api_budget": self.api_budget,
         }
         with open(ai_settings_file, "w", encoding="utf-8") as file:

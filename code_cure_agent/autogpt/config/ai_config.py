@@ -198,10 +198,10 @@ class AIConfig:
         # Construct full prompt
         full_prompt_parts = {
             
-            "role": f"You are {self.ai_name}, {self.ai_role.rstrip('.')}." +\
+            "role": f"You are {self.ai_name}, {self.ai_role.rstrip('.')}" +\
             "Your decisions must always be made independently without seeking " +\
             "user assistance. Play to your strengths as an LLM and pursue " +\
-            "simple strategies with no legal complications."
+            "simple strategies with no legal complications.  \n"
         }
 
         if config.execute_local_commands:
@@ -217,8 +217,8 @@ class AIConfig:
 
         if self.ai_goals:
             full_prompt_parts["goals"] = [
-                        "## Goals",
-                        "For your task, you must fulfill the following goals:",
+                        "## Goals\n",
+                        "For your task, you must fulfill the following goals:\n",
                         *[f"{i+1}. {goal}" for i, goal in enumerate(self.ai_goals)],
                     ]
             

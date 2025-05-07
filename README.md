@@ -229,11 +229,6 @@ Within the `experimental_setups` folder, several scripts are available to post-p
   "commands_limit": 40 // default for our experiment
   ```
 
-- **Request External Fixes**: Experimental feature allowing the request of fixes from another LLM.
-  ```json
-  "external_fix_strategy": 0, // deafult for our experiment
-  ```
-
 ### 2. Switching the used GPT model
 
 In the `run_on_dataset.sh` file, locate the line:

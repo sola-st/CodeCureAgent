@@ -97,16 +97,12 @@ class BaseAgent(metaclass=ABCMeta):
         self.prompt_dictionary["commands"][2] = self.cmds_by_state[self.current_state]        
         self.prompt_dictionary["current state"] = self.descriptions[self.current_state]
 
-        prompt_goal = self.prompt_dictionary["goals"][2]
-        start_i = prompt_goal.find("bug within the project")
-        end_i = len(prompt_goal)
-        in_between = prompt_goal[start_i:end_i-1]
-        try:
-            self.project_name, self.bug_index= in_between.replace("bug within the project ", "").replace(' and bug index ', " ").replace('"', "").split(" ")[:2]
-        except:
-            print("PG:", self.prompt_dictionary["goals"][2])
-        self.localization_info = get_info(self.project_name, self.bug_index,"auto_gpt_workspace")
-        self.tests_results = run_tests(self.project_name, self.bug_index, "auto_gpt_workspace")
+        #TODO: remove these parameters compeletely, from everywhere
+        self.project_name = ""
+        self.bug_index = ""
+        self.localization_info = ""
+        self.tests_results = ""
+
         """
         The system prompt sets up the AI's personality and explains its goals,
         available resources, and restrictions.
@@ -955,26 +951,12 @@ please use the indicated format and produce a list, like this:
         prompt: ChatSequence = self.construct_prompt(instruction, thought_process_id)
         prompt = self.on_before_think(prompt, thought_process_id, instruction)
         
-        ## This is a line added by me to save prompts at each step
-        prompt_text = prompt.dump()
-        start_i = prompt_text.find("bug within the project")
-        end_i = prompt_text.find(".\n2.")
-        in_between = prompt_text[start_i:end_i]
-        project_name, bug_index= in_between.replace("bug within the project ", "").replace(' and bug index ', " ").replace('"', "").split(" ")[:2]
-
-        exps = self.exps
-        with open(os.path.join("experimental_setups", exps[-1], "logs", "prompt_history_{}_{}".format(project_name, bug_index)), "a+") as patf:
+        ## Save prompts at each step
+        sanitized_warning_file_path = self.ai_config.warning_file_path.replace("/", ".")
+        with open(os.path.join("experimental_setups", self.exps[-1], "logs", f"prompt_history_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_{str(self.ai_config.warning_start_line)}"), "a+") as patf:
             patf.write(prompt.dump())
         
-        # handle querying strategy
-        # For now, we do not evaluate the external query
-        # we just want to observe how good is it
-        if self.hyperparams["external_fix_strategy"] != 0:
-            if self.cycle_count % self.hyperparams["external_fix_strategy"] == 0:
-                query = self.construct_fix_query()
-                suggested_fixes = query_for_fix(query, self)
-                self.save_to_json(os.path.join("experimental_setups", exps[-1], "external_fixes", "external_fixes_{}_{}.json".format(project_name, bug_index)), json.loads(suggested_fixes))
-
+       
         raw_response = create_chat_completion(
             prompt,
             self.config,
@@ -1097,9 +1079,9 @@ please use the indicated format and produce a list, like this:
             static_sections_names.append("fix format")
         for key in static_sections_names:
             if isinstance(self.prompt_dictionary[key], list):
-                definitions_prompt += "\n".join(self.prompt_dictionary[key]) + "\n"
+                definitions_prompt += "\n".join(self.prompt_dictionary[key]) + "\n\n"
             elif isinstance(self.prompt_dictionary[key], str):
-                definitions_prompt += self.prompt_dictionary[key] + "\n"
+                definitions_prompt += self.prompt_dictionary[key] + "\n\n"
             else:
                 raise TypeError("For now we only support list and str types.")
             

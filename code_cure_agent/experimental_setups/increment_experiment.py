@@ -31,7 +31,6 @@ while ( not success and made_retries < max_retries):
             os.mkdir("experimental_setups/experiment_{}".format(last_exp + 1))
             os.mkdir("experimental_setups/experiment_{}/logs".format(last_exp + 1))
             os.mkdir("experimental_setups/experiment_{}/responses".format(last_exp + 1))
-            os.mkdir("experimental_setups/experiment_{}/external_fixes".format(last_exp + 1))
             os.mkdir("experimental_setups/experiment_{}/saved_contexts".format(last_exp + 1))
             os.mkdir("experimental_setups/experiment_{}/mutations_history".format(last_exp + 1))
             os.mkdir("experimental_setups/experiment_{}/plausible_patches".format(last_exp + 1))

@@ -105,17 +105,17 @@ class PromptGenerator:
             fix_format = ffmt.read()
         return {
             "commands": [
-                "## Commands",
-                "You have access to the following commands (EXCLUSIVELY):",
+                "## Commands\n",
+                "You have access to the following commands (EXCLUSIVELY):\n",
                 f"{self._generate_commands()}",
             ],
             "general guidelines":[
-                "## General guidelines:",
-                "Try to adhere to the following guidlines to the best of your ability:",
+                "## General guidelines\n",
+                "Try to adhere to the following guidlines to the best of your ability:\n",
                 f"{self._generate_numbered_list(self.general_guidelines + additional_guidelines)}",
             ],
             "fix format": [
-                "## The format of the fix",
+                "## The format of the fix\n",
                 "This is the description of the json format in which you should write your fixes (respect this format when calling the commands write_fix and try_fixes):",
                 fix_format
             ]

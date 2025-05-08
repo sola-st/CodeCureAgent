@@ -4,6 +4,7 @@ COMMAND_CATEGORIES = [
     #"autogpt.commands.web_search",
     #"autogpt.commands.web_selenium",
     "autogpt.commands.system",
+    "autogpt.commands.repository_reading_tools"
     "autogpt.commands.defects4j",
     "autogpt.commands.states",
     "autogpt.commands.sonar_qube_analysis"

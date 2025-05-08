@@ -8,7 +8,7 @@ import json
 ## Understanding the Violated Rule
 
 read_range_desc = """read_range: Reads a range of lines in a given file.  
-    Required params: (project_name:string, bug_index:string, file_path:string, start_line: int, end_line:int)"""
+    Required params: (file_path:string, start_line: int, end_line:int)"""
 
 formulate_plan_desc = """formulate_plan: Formulate a plan, with fine-grained steps, that describes how you want to approach collecting enough information about the specific rule violation and fixing it.  
     Call this command after you have collected enough information about the SonarQube rule.  

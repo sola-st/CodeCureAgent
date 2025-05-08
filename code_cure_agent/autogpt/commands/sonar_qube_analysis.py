@@ -41,7 +41,6 @@ class AnalysisError(Exception):
     },
 )
 def analyze_file_command(file_path: str, agent: BaseAgent):
-    # TODO: will need to get the repo_name from the experiment input
     return analyze_file_and_parse_report(file_path, None, agent.ai_config.warning_repository_name, "analysis_report.json", agent)
 
 
@@ -102,7 +101,7 @@ def analyze_file(file_relative_path: str, rules: list[str], repo_name: str, anal
 
 
     # Create mining command
-    cmd = ["java", "-jar", agent.config.sorald_jar_path, "mine", "--source", file_path, "--stats-output-file", analysis_report_path]
+    cmd = ["java", "-jar", agent.config.sorald_jar_path, "mine", "--source", file_path, "--stats-output-file", analysis_report_path, "--rule-parameters" , "agent_config_and_prompt_files/sonar_qube_rule_configuration.json"]
 
     if rules is not None and len(rules) > 0:
         cmd.append("--rule-keys")

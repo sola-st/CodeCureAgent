@@ -36,7 +36,7 @@ while IFS= read -r line <&3; do
         echo "Current run input: " ${fields[0]}, ${fields[1]}, ${fields[2]}, ${fields[3]}, ${fields[4]}, ${fields[5]}, ${fields[6]}
         python3 scripts/prepare_ai_settings.py "Codec" "4" "${fields[0]}" "${fields[1]}" "${fields[2]}" "${fields[3]}" "${fields[4]}" "${fields[5]}" "${fields[6]}"
 
-        ./run.sh --ai-settings agent_config_and_prompt_files/ai_settings.yaml --model-version gpt-4o-mini-2024-07-18 -c --none-interactive -m json_file --experiment-file "$2" --debug
+        ./run.sh --ai-settings agent_config_and_prompt_files/ai_settings.yaml --model-version gpt-4o-mini-2024-07-18 -c --none-interactive -m json_file --experiment-file "$2"
     fi
 done
 

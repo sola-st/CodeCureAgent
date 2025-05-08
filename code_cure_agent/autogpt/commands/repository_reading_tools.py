@@ -55,9 +55,7 @@ def read_range(file_path: str, start_line: int, end_line: int, agent: BaseAgent)
     Returns:
         str: The read lines between start_line and end_line
     """
-    print(file_path)
-    print(start_line)
-    print(end_line)
+    
     # sanity checks
     if start_line < 1:
         return "Reading lines failed. start_line must be greater than 0."

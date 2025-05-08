@@ -10,13 +10,17 @@ import json
 read_range_desc = """read_range: Reads a range of lines in a given file.  
     Required params: (file_path:string, start_line: int, end_line:int)"""
 
-formulate_plan_desc = """formulate_plan: Formulate a plan, with fine-grained steps, that describes how you want to approach collecting enough information about the specific rule violation and fixing it.  
-    Call this command after you have collected enough information about the SonarQube rule.  
-    By calling this command, you also automatically switch to the state `Gathering Context for a Fix`.  
-    Required params: (plan: string)"""
+go_to_gather_context_for_fix_desc = """go_to_gather_context_for_fix: Transitions to the state `Gathering Context for a Fix`.  
+    Call this command after you have collected enough information about the specific SonarQube rule.  
+    Required params: ()"""
 
 
 ## Gathering Context for a Fix
+
+formulate_plan_desc = """formulate_plan: Formulate or update a plan, with fine-grained steps, about how you want to approach collecting all relevant information to fix the rule violation (i.e. which commands you want to call in what order and why).  
+    Example plan (your plan and approach can be different): "1.) read_range in file foobar.java to inspect relevant context  \n2.) search_code_base with "key_words": ["some_relevant_key"] to find related files and lines that might need to be changed.  \n3.) ..."  
+    If you haven't formulated a plan yet, call this command first. You can call it again at any time, if you found new information that requires a change of plan.  
+    Required params: (plan: string)"""
 
 search_code_desc = """search_code_base: Scans all Java files in a project for a list of keywords.  
     Returns a dictionary structured as: { file_name: { class_name: { method_name: [matched keywords] } } }.  
@@ -46,9 +50,6 @@ write_fix_desc = """write_fix: Use this command to implement the fix you came up
     Note: If you're not in the `Trying out Fix Candidates` state, using this command will automatically switch you to it.  
     [RESPECT LINE NUMBERS AS GIVEN IN THE CODE SNIPPETS]"""
 
-update_plan_desc = """update_plan: Change your previously formulated plan on how to approach fixing the rule violation.  
-    Maybe you have found new information that requires a change of plan. If so use this command.  
-    Required params: (plan: string)"""
 
 go_back_to_understanding_rule_desc = """go_back_to_understanding_rule: Allows you to return back to the state `Understanding the Violated Rule` where you can collect more information about the specific rule.  
     Required Params: (reason_for_going_back: string)"""
@@ -57,7 +58,7 @@ go_back_to_understanding_rule_desc = """go_back_to_understanding_rule: Allows yo
 
 ## Trying out Fix Candidates
 
-go_back_to_collect_more_context_info_desc = """go_back_to_collect_more_context_info: Allows you to go back to the state `Gathering Context for a Fix` where you can collect more information about the code.  
+go_back_to_gather_context_for_fix_desc = """go_back_to_gather_context_for_fix: Allows you to go back to the state `Gathering Context for a Fix` where you can collect more information about the code.  
     Required Params: (reason_for_going_back: string)"""
 
 goals_accomplished_desc = """goals_accomplished: Call this function when you are sure you fixed the bug and all tests hava passed and give the reason that made you believe that you fixed the bug successfully, params: (reason: string)"""
@@ -70,11 +71,11 @@ goals_accomplished_desc = """goals_accomplished: Call this function when you are
 
 commands_dict = {
     "Understanding the Violated Rule": "\n".join(["{}. {}".format(i+1, t) for i, t in enumerate(
-        [read_range_desc, formulate_plan_desc])]),
+        [read_range_desc, go_to_gather_context_for_fix_desc])]),
     "Gathering Context for a Fix": "\n".join(["{}. {}".format(i+1, t) for i, t in enumerate(
-        [search_code_desc, get_classes_desc, get_similar_desc, extract_method_desc, read_range_desc, generate_method_desc, write_fix_desc, update_plan_desc, go_back_to_understanding_rule_desc])]),
+        [formulate_plan_desc, search_code_desc, get_classes_desc, get_similar_desc, extract_method_desc, read_range_desc, generate_method_desc, write_fix_desc, go_back_to_understanding_rule_desc])]),
     "Trying out Fix Candidates": "\n".join(["{}. {}".format(i+1, t) for i, t in enumerate(
-        [write_fix_desc, read_range_desc, go_back_to_collect_more_context_info_desc, go_back_to_understanding_rule_desc, goals_accomplished_desc])])
+        [write_fix_desc, read_range_desc, go_back_to_gather_context_for_fix_desc, go_back_to_understanding_rule_desc, goals_accomplished_desc])])
 }
 
 with open("agent_config_and_prompt_files/commands_by_state.json", "w") as cbs:

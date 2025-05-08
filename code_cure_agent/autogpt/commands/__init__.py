@@ -7,5 +7,6 @@ COMMAND_CATEGORIES = [
     "autogpt.commands.repository_reading_tools",
     "autogpt.commands.defects4j",
     "autogpt.commands.states",
+    "autogpt.commands.planning",
     "autogpt.commands.sonar_qube_analysis"
 ]

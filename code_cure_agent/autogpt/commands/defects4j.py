@@ -427,20 +427,7 @@ def execute_get_info(project_name: str, bug_index:int, agent: BaseAgent):
 
 
 
-@command(
-        "update_plan",
-        "Change your previously formulated plan. Change your previously formulated plan on how to approach fixing the rule violation. Maybe you have found new information that requires a change of plan. If so use this command.",
-        {
-            "plan": {
-                "type": "string",
-                "description": "The new or changed plan",
-                "required": True
-            }
-        }
-)
-def update_plan(plan: str, agent: BaseAgent) -> str:
-    agent.plans.append(plan)
-    return "The plan was updated."
+
 
 
 

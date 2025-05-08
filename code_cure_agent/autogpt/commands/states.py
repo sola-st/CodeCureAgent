@@ -8,23 +8,16 @@ from autogpt.agents.agent import Agent
 
 
 @command(
-        "formulate_plan",
-        "Formulate a plan, with fine-grained steps, how you want to approach fixing the rule violation. Call this command after you have collected enough information about the SonarQube rule. By calling this command, you also automatically switch to the state 'Gathering Context for a Fix'.",
+        "go_to_gather_context_for_fix",
+        "go_to_gather_context_for_fix: Transitions to the state `Gathering Context for a Fix`.",
         {
-            "plan":{
-                "type": "string",
-                "description": "The fine-grained plan you want to follow for fixing the SonarQube rule violation",
-                "required": True
-            }
         }
 )
-def formulate_plan(plan: str, agent: Agent) -> str:
+def go_to_gather_context_for_fix(agent: Agent) -> str:
     if agent.current_state != "Gathering Context for a Fix":
         agent.update_prompt_state("Gathering Context for a Fix")
     
-    agent.plans.append(plan)
-    
-    return "Since you now have a plan how to tackle the rule violation, the current state has been changed from 'Understanding the Violated Rule' to 'Gathering Context for a Fix'."
+    return "The current state has been changed from 'Understanding the Violated Rule' to 'Gathering Context for a Fix'."
 
 @command(
         "go_back_to_understanding_rule",
@@ -43,7 +36,7 @@ def go_back_to_understanding_rule(reason_for_going_back: str, agent: Agent) -> s
     return "You are now back at the state 'Understanding the Violated Rule'."
 
 @command(
-        "go_back_to_collect_more_context_info",
+        "go_back_to_gather_context_for_fix",
         "Allows you to return back to the state 'Gathering Context for a Fix' where you can collect more information about the code.",
         {
             "reason_for_going_back":{
@@ -53,7 +46,7 @@ def go_back_to_understanding_rule(reason_for_going_back: str, agent: Agent) -> s
             }
         }
 )
-def go_back_to_collect_more_context_info(reason_for_going_back: str, agent: Agent) -> str:
+def go_back_to_gather_context_for_fix(reason_for_going_back: str, agent: Agent) -> str:
     if agent.current_state != "Gathering Context for a Fix":
         agent.update_prompt_state("Gathering Context for a Fix")
     return "You are now back at the state 'Gathering Context for a Fix'."

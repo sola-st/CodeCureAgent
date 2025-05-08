@@ -7,35 +7,7 @@ import shutil
 
 from git.exc import GitCommandError
 
-
-# File for testing the implemented commands statically
-
-SORALD_JAR_PATH = "/workspaces/master-thesis-pascal-joos/code_cure_agent/sorald/sorald.jar"
-
-class Config():
-    def __init__(self, workspace_path):
-        self.workspace_path = workspace_path
-        self.sorald_jar_path = SORALD_JAR_PATH
-
-class AIConfig():
-    def __init__(self, warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message):
-        self.warning_repository_URL = warning_repository_URL
-        self.warning_repository_commit = warning_repository_commit
-        self.warning_file_path = warning_file_path
-        self.warning_rule_key = warning_rule_key
-        self.warning_start_line = warning_start_line
-        self.warning_rule_name = warning_rule_name
-        self.warning_specific_message = warning_specific_message
-
-        self.warning_repository_name = warning_repository_name
-
-class Agent():
-    def __init__(self, warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message):
-        self.config = Config("auto_gpt_workspace/")
-        self.ai_config = AIConfig(warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message)
-        self.exps = ["experiment_test"]
-
-
+from tests.agent_mock import AgentMock
 
 
 class CheckoutProjectTestCase(unittest.TestCase):
@@ -64,7 +36,7 @@ class CheckoutProjectTestCase(unittest.TestCase):
         warning_rule_name = "'InterruptedException' should not be ignored"
         warning_specific_message = "Either re-interrupt this method or rethrow the ""InterruptedException"" that can be caught here."
 
-        agent = Agent(warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message)
+        agent = AgentMock(warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message)
 
         self.assertFalse(os.path.exists(os.path.join(agent.config.workspace_path, warning_repository_name)))
 
@@ -84,7 +56,7 @@ class CheckoutProjectTestCase(unittest.TestCase):
         warning_rule_name = "'InterruptedException' should not be ignored"
         warning_specific_message = "Either re-interrupt this method or rethrow the ""InterruptedException"" that can be caught here."
 
-        agent = Agent(warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message)
+        agent = AgentMock(warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message)
 
         self.assertFalse(os.path.exists(os.path.join(agent.config.workspace_path, warning_repository_name)))
 
@@ -105,7 +77,7 @@ class CheckoutProjectTestCase(unittest.TestCase):
         warning_rule_name = "'InterruptedException' should not be ignored"
         warning_specific_message = "Either re-interrupt this method or rethrow the ""InterruptedException"" that can be caught here."
 
-        agent = Agent(warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message)
+        agent = AgentMock(warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message)
 
         self.assertFalse(os.path.exists(os.path.join(agent.config.workspace_path, warning_repository_name)))
 
@@ -126,7 +98,7 @@ class CheckoutProjectTestCase(unittest.TestCase):
         warning_rule_name = "'InterruptedException' should not be ignored"
         warning_specific_message = "Either re-interrupt this method or rethrow the ""InterruptedException"" that can be caught here."
 
-        agent = Agent(warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message)
+        agent = AgentMock(warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message)
 
         self.assertFalse(os.path.exists(os.path.join(agent.config.workspace_path, warning_repository_name)))
         with self.assertRaises(GitCommandError, msg="Should have raised a GitError, because the repository to check out doesn't exist.") as se:
@@ -147,7 +119,7 @@ class CheckoutProjectTestCase(unittest.TestCase):
         warning_rule_name = "'InterruptedException' should not be ignored"
         warning_specific_message = "Either re-interrupt this method or rethrow the ""InterruptedException"" that can be caught here."
 
-        agent = Agent(warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message)
+        agent = AgentMock(warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message)
 
         self.assertFalse(os.path.exists(os.path.join(agent.config.workspace_path, warning_repository_name)))
         with self.assertRaises(GitCommandError, msg="Should have raised a GitError, because the repository to check out doesn't exist.") as se:
@@ -180,7 +152,7 @@ class AnalyzeFileTestCase(unittest.TestCase):
         warning_rule_name = "'InterruptedException' should not be ignored"
         warning_specific_message = "Either re-interrupt this method or rethrow the ""InterruptedException"" that can be caught here."
 
-        self.agent = Agent(warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message)
+        self.agent = AgentMock(warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message)
 
 
         checkout_project(self.agent)

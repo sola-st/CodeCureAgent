@@ -214,22 +214,6 @@ class Agent(BaseAgent):
                         if uarg in uref:
                             new_command_dict["args"][uref] = command_dict["args"][uarg]
                             break
-                
-                if "project_name" in new_command_dict["args"]:
-                    if "_" in new_command_dict["args"]["project_name"]:
-                        name_only = new_command_dict["args"]["project_name"].split("_")[0]
-                        new_command_dict["args"]["project_name"] = name_only
-                if new_command_dict["name"] in [
-                    "write_fix", 
-                    "try_fixes", 
-                    "read_range", 
-                    "search_code_base", 
-                    "get_classes_and_methods",
-                    "extract_similar_functions_calls",
-                    "extract_method_code",
-                    "extract_test_code"]:
-                    new_command_dict["args"]["project_name"] = self.project_name
-                    new_command_dict["args"]["bug_index"] = self.bug_index
 
                 assistant_reply_dict["command"] = new_command_dict
             else:

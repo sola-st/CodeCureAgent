@@ -33,16 +33,16 @@ class AnalysisError(Exception):
     "analyze_file",
     "Run SonarQube analysis on a file",
     {
-        "filepath": {
+        "file_path": {
             "type": "string",
             "description": "The path to the file to analyze",
             "required": True,
         }
     },
 )
-def analyze_file_command(filepath: str, agent: BaseAgent):
+def analyze_file_command(file_path: str, agent: BaseAgent):
     # TODO: will need to get the repo_name from the experiment input
-    return analyze_file_and_parse_report(filepath, None, agent.ai_config.warning_repository_name, "analysis_report.json", agent)
+    return analyze_file_and_parse_report(file_path, None, agent.ai_config.warning_repository_name, "analysis_report.json", agent)
 
 
 
@@ -139,31 +139,31 @@ def parse_analysis_report(analysis_report_file_name: str, agent: BaseAgent) -> d
 
 # TODO: test and understand what this does in detail. Is it what we need?
 
-def preprocess_paths(workspace, project_name: str, filepath):
+def preprocess_paths(workspace, project_name: str, file_path):
     project_dir = os.path.join(workspace, project_name.lower())
     
-    if filepath.endswith(".java"):
-        filepath = filepath[:-5]
-        filepath = filepath.replace(".", "/")
-        filepath += ".java"
+    if file_path.endswith(".java"):
+        file_path = file_path[:-5]
+        file_path = file_path.replace(".", "/")
+        file_path += ".java"
     else:
-        filepath = filepath.replace(".", "/")
+        file_path = file_path.replace(".", "/")
     
-    if not os.path.exists(os.path.join(project_dir,filepath)):
+    if not os.path.exists(os.path.join(project_dir,file_path)):
         if not os.path.exists(os.path.join(project_dir, "files_index.txt")):
             with open(os.path.join(project_dir, "files_index.txt"), "w") as fit:
                 fit.write("\n".join(list_java_files(project_dir)))
             
         with open(os.path.join(project_dir, "files_index.txt")) as fit:
-            files_index = [f for f in fit.read().splitlines() if filepath in f]
+            files_index = [f for f in fit.read().splitlines() if file_path in f]
         
         if len(files_index) == 1:
-            filepath = files_index[0]
+            file_path = files_index[0]
         elif len(files_index) >= 1:
             raise ValueError("Multiple Candidate Paths. We do not handle this yet!")
         else:
-            return "The filepath {} does not exist.".format(filepath)
-    return filepath
+            return "The file_path {} does not exist.".format(file_path)
+    return file_path
 
 
 def list_java_files(main_dir) -> list:

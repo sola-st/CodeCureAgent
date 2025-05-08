@@ -34,32 +34,32 @@ def list_java_files(main_dir) -> list:
 
     return java_files
 
-def preprocess_paths(agent: BaseAgent, project_name, bug_index, filepath):
+def preprocess_paths(agent: BaseAgent, project_name, bug_index, file_path):
     workspace = agent.config.workspace_path
     project_dir = os.path.join(workspace, project_name.lower()+"_"+str(bug_index)+"_buggy")
     
-    if filepath.endswith(".java"):
-        filepath = filepath[:-5]
-        filepath = filepath.replace(".", "/")
-        filepath += ".java"
+    if file_path.endswith(".java"):
+        file_path = file_path[:-5]
+        file_path = file_path.replace(".", "/")
+        file_path += ".java"
     else:
-        filepath = filepath.replace(".", "/")
+        file_path = file_path.replace(".", "/")
     
-    if not os.path.exists(os.path.join(project_dir,filepath)):
+    if not os.path.exists(os.path.join(project_dir,file_path)):
         if not os.path.exists(os.path.join(project_dir, "files_index.txt")):
             with open(os.path.join(project_dir, "files_index.txt"), "w") as fit:
                 fit.write("\n".join(list_java_files(project_dir)))
             
         with open(os.path.join(project_dir, "files_index.txt")) as fit:
-            files_index = [f for f in fit.read().splitlines() if filepath in f]
+            files_index = [f for f in fit.read().splitlines() if file_path in f]
         
         if len(files_index) == 1:
-            filepath = files_index[0]
+            file_path = files_index[0]
         elif len(files_index) >= 1:
             raise ValueError("Multiple Candidate Paths. We do not handle this yet!")
         else:
-            return "The filepath {} does not exist.".format(filepath)
-    return filepath
+            return "The file_path {} does not exist.".format(file_path)
+    return file_path
 
 def parse_buggy_lines(buggy_lines):
     parsed_lines = {}
@@ -438,18 +438,18 @@ def execute_get_info(project_name: str, bug_index:int, agent: BaseAgent):
             "required": True
 
         },
-        "filepath": {
+        "file_path": {
             "type": "string",
             "description": "The path to the file to read from.",
             "required": True,
         },
-        "startline":{
+        "start_line":{
             "type": "integer",
             "description": "The number of the line to start reading from in the given file.",
             "required": True
 
         },
-        "endline":{
+        "end_line":{
             "type": "integer",
             "description": "The number of the line to stop reading at.",
             "required": True
@@ -457,28 +457,46 @@ def execute_get_info(project_name: str, bug_index:int, agent: BaseAgent):
         }
     },
 )
-def read_range(project_name:str, bug_index:str, filepath: str, startline: int, endline:int, agent: BaseAgent) -> str:
-    """Read a range of lines starting from line number startline and ending at line number endline
+def read_range(project_name:str, bug_index:str, file_path: str, start_line: int, end_line:int, agent: BaseAgent) -> str:
+    """Read a range of lines starting from line number start_line and ending at line number end_line
 
     Args:
         name (str): The name of the project
         index (int): The index number of the target bug
         filename (str): The path to the file to read from
-        startline (int): The line number at which the reading starts
-        endline (int): The line number at which the reading ends
+        start_line (int): The line number at which the reading starts
+        end_line (int): The line number at which the reading ends
 
     Returns:
-        str: The read lines between startline and endline
+        str: The read lines between start_line and end_line
     """
     ai_name = agent.ai_config.ai_name
 
-    return execute_read_range(project_name, bug_index, filepath, startline, endline, agent)
+    return execute_read_range(project_name, bug_index, file_path, start_line, end_line, agent)
+
+
+
+@command(
+        "update_plan",
+        "Change your previously formulated plan. Change your previously formulated plan on how to approach fixing the rule violation. Maybe you have found new information that requires a change of plan. If so use this command.",
+        {
+            "plan": {
+                "type": "string",
+                "description": "The new or changed plan",
+                "required": True
+            }
+        }
+)
+def update_plan(plan: str) -> str:
+    return "The plan was updated."
+
+
 
 """@command(
     "try_fixes",
     "This is a very useful command when you want to try multiple fixes quickly. This function allows you to try a list of fixes, the function will execute related tests to see if any of the fixes work.
     The list that you pass this function should be of the form:
-    fixes_list: [{"project_name":"project name", "bug_index":"bug index", "filepath":"path to file to edit", "changed_lines":{"162": "new code here ..."}}, {...}, ...]",
+    fixes_list: [{"project_name":"project name", "bug_index":"bug index", "file_path":"path to file to edit", "changed_lines":{"162": "new code here ..."}}, {...}, ...]",
     {
         "project_name": {
             "type": "string",
@@ -547,7 +565,7 @@ def try_fixes(project_name: str, bug_index:int, fixes_list, agent: BaseAgent):
             "required": True
 
         },
-        "filepath": {
+        "file_path": {
             "type": "string",
             "description": "The path to the file to write to",
             "required": True,
@@ -561,14 +579,14 @@ def try_fixes(project_name: str, bug_index:int, fixes_list, agent: BaseAgent):
     },
 )"""
 def write_range(project_name:str, bug_index:int, changes_dicts: list, agent: BaseAgent) -> str:
-    """Write a list of lines into a file to replace all lines between startline and endline
+    """Write a list of lines into a file to replace all lines between start_line and end_line
 
     Args:
         name (str): The name of the project
         index (int): The index number of the target bug
         filename (str): The path to the file to write to
-        startline (int): The number of the line at which the replacement starts
-        endline (int): The number of the line at which the replacement stops
+        start_line (int): The number of the line at which the replacement starts
+        end_line (int): The number of the line at which the replacement stops
         lines_list list[string]: The list of the new lines to be written to the file
 
     Returns:
@@ -595,7 +613,7 @@ def write_range(project_name:str, bug_index:int, changes_dicts: list, agent: Bas
             "required": True
 
         },
-        "filepath": {
+        "file_path": {
             "type": "string",
             "description": "The path to the file to write to",
             "required": True,
@@ -609,19 +627,9 @@ def write_range(project_name:str, bug_index:int, changes_dicts: list, agent: Bas
     },
 )
 def write_fix(project_name:str, bug_index:int, changes_dicts: list, agent: BaseAgent) -> str:
-    """Write a list of lines into a file to replace all lines between startline and endline
+    if agent.current_state != "Trying out Fix Candidates":
+        agent.update_prompt_state("Trying out Fix Candidates")
 
-    Args:
-        name (str): The name of the project
-        index (int): The index number of the target bug
-        filename (str): The path to the file to write to
-        startline (int): The number of the line at which the replacement starts
-        endline (int): The number of the line at which the replacement stops
-        lines_list list[string]: The list of the new lines to be written to the file
-
-    Returns:
-        str: Success message or error message if it was not successful
-    """
     ai_name = agent.ai_config.ai_name
     bug_report =  agent.construct_bug_report_context()
     hypothesis = agent.construct_hypothesises_context()
@@ -662,35 +670,35 @@ def write_fix(project_name:str, bug_index:int, changes_dicts: list, agent: BaseA
         return "First, we asked an expert about the fix you made and here is what the expert said:\n" + validation_result +\
         "\nSecond, we applied your suggested fix and here are the results:\n"+\
         run_ret+\
-        "\n **Note:** You are automatically switched to the state 'trying out candidate fixes'"
+        "\n **Note:** You are automatically switched to the state 'Trying out Fix Candidates'"
     else:
-        return run_ret + "\n **Note:** You are automatically switched to the state 'trying out candidate fixes'"
+        return run_ret + "\n **Note:** You are automatically switched to the state 'Trying out Fix Candidates'"
     
-def execute_read_range(project_name, bug_index, filepath, startline, endline, agent):
+def execute_read_range(project_name, bug_index, file_path, start_line, end_line, agent):
     workspace = agent.config.workspace_path
     project_dir = os.path.join(workspace, project_name.lower()+"_"+str(bug_index)+"_buggy")
     """
-    if not os.path.exists(os.path.join(project_dir,filepath)):
+    if not os.path.exists(os.path.join(project_dir,file_path)):
         if not os.path.exists(os.path.join(project_dir, "files_index.txt")):
             with open(os.path.join(project_dir, "files_index.txt"), "w") as fit:
                 fit.write("\n".join(list_java_files(project_dir)))
             
         with open(os.path.join(project_dir, "files_index.txt")) as fit:
-            files_index = [f for f in fit.read().splitlines() if filepath in f]
+            files_index = [f for f in fit.read().splitlines() if file_path in f]
         
         if len(files_index) == 1:
-            filepath = files_index[0]
+            file_path = files_index[0]
         elif len(files_index) >= 1:
             raise ValueError("Multiple Candidate Paths. We do not handle this yet!")
         else:
-            return "The filepath {} does not exist.".format(filepath)
+            return "The file_path {} does not exist.".format(file_path)
     """
-    filepath = preprocess_paths(agent, project_name, bug_index, filepath)
-    with open(os.path.join(project_dir,filepath)) as fp:
+    file_path = preprocess_paths(agent, project_name, bug_index, file_path)
+    with open(os.path.join(project_dir,file_path)) as fp:
         lines = fp.readlines()
 
     lines_str = ""
-    for i in range(startline-1, endline, 1):
+    for i in range(start_line-1, end_line, 1):
         lines_str+="Line {}:".format(i+1) + lines[i]
     return lines_str
 
@@ -698,25 +706,25 @@ def execute_read_range(project_name, bug_index, filepath, startline, endline, ag
 def execute_write_range(project_name, bug_index, changes_dicts, agent):
     project_dir = os.path.join(agent.config.workspace_path, project_name.lower()+"_"+str(bug_index)+"_buggy")
     for change_dict in changes_dicts:
-        filepath = change_dict["file_name"]
+        file_path = change_dict["file_name"]
         """
-        if not os.path.exists(os.path.join(project_dir,filepath)):
+        if not os.path.exists(os.path.join(project_dir,file_path)):
             if not os.path.exists(os.path.join(project_dir, "files_index.txt")):
                 with open(os.path.join(project_dir, "files_index.txt"), "w") as fit:
                     fit.write("\n".join(list_java_files(project_dir)))
                 
             with open(os.path.join(project_dir, "files_index.txt")) as fit:
-                files_index = [f for f in fit.read().splitlines() if filepath in f]
+                files_index = [f for f in fit.read().splitlines() if file_path in f]
         
             if len(files_index) == 1:
-                filepath = files_index[0]
+                file_path = files_index[0]
             elif len(files_index) >= 1:
                 raise ValueError("Multiple Candidate Paths. We do not handle this yet!")
             else:
-                return "The filepath {} does not exist.".format(filepath)
+                return "The file_path {} does not exist.".format(file_path)
         """
-        filepath = preprocess_paths(agent, project_name, bug_index, filepath)
-        change_dict["file_name"] = os.path.join(project_dir,filepath)
+        file_path = preprocess_paths(agent, project_name, bug_index, file_path)
+        change_dict["file_name"] = os.path.join(project_dir,file_path)
     
         apply_changes(change_dict)
 
@@ -811,7 +819,7 @@ def get_classes_and_methods(project_name: str, bug_index: str, file_path: str, a
         elif len(files_index) >= 1:
             raise ValueError("Multiple Candidate Paths. We do not handle this yet!")
         else:
-            return "The filepath {} does not exist.".format(file_path)
+            return "The file_path {} does not exist.".format(file_path)
     """
     file_path = preprocess_paths(agent, project_name, bug_index, file_path)    
     with open(os.path.join(workspace, project_dir, file_path)) as tfp:
@@ -1017,7 +1025,7 @@ def extract_test_code(project_name:str, bug_index:str, test_file_path: str, agen
         elif len(files_index) >= 1:
             raise ValueError("Multiple Candidate Paths. We do not handle this yet!")
         else:
-            return "The filepath {} does not exist.".format(test_file_path)
+            return "The file_path {} does not exist.".format(test_file_path)
         
     if not test_file_path:
         return "You should provide the test file path"
@@ -1330,7 +1338,7 @@ def extract_similar_functions_calls(project_name:str, bug_index: str, file_path:
         elif len(files_index) >= 1:
             raise ValueError("Multiple Candidate Paths. We do not handle this yet!")
         else:
-            return "The filepath {} does not exist.".format(file_path)
+            return "The file_path {} does not exist.".format(file_path)
     """
 
     file_path = preprocess_paths(agent, project_name, bug_index, file_path)
@@ -1424,7 +1432,7 @@ class FunctionExtractor(JavaListener):
             "description": "The bug index",
             "required":True
         },
-        "filepath": {
+        "file_path": {
             "type": "string",
             "description": "The path of the file",
             "required": True,
@@ -1437,36 +1445,36 @@ class FunctionExtractor(JavaListener):
     }
 )
 
-def extract_method_code(project_name: str, bug_index: str, filepath: str, method_name:str, agent: BaseAgent):
+def extract_method_code(project_name: str, bug_index: str, file_path: str, method_name:str, agent: BaseAgent):
     workspace = agent.config.workspace_path
     project_dir = "{}_{}_buggy".format(project_name.lower(), bug_index)
     
     """
-    if filepath.endswith(".java"):
-        filepath = filepath[:-5]
-        filepath = filepath.replace(".", "/")
-        filepath += ".java"
+    if file_path.endswith(".java"):
+        file_path = file_path[:-5]
+        file_path = file_path.replace(".", "/")
+        file_path += ".java"
     else:
-        filepath = filepath.replace(".", "/")
+        file_path = file_path.replace(".", "/")
     
-    if not os.path.exists(os.path.join(workspace, project_dir, filepath)):
+    if not os.path.exists(os.path.join(workspace, project_dir, file_path)):
         if not os.path.exists(os.path.join(workspace, project_dir, "files_index.txt")):
             with open(os.path.join(workspace, project_dir, "files_index.txt"), "w") as fit:
                 fit.write("\n".join(list_java_files(os.path.join(workspace, project_dir))))
                 
         with open(os.path.join(workspace, project_dir, "files_index.txt")) as fit:
-            files_index = [f for f in fit.read().splitlines() if filepath in f]
+            files_index = [f for f in fit.read().splitlines() if file_path in f]
 
         if len(files_index) == 1:
-            filepath = files_index[0]
+            file_path = files_index[0]
         elif len(files_index) >= 1:
             raise ValueError("Multiple Candidate Paths. We do not handle this yet!")
         else:
-            return "The filepath {} does not exist.".format(filepath)
+            return "The file_path {} does not exist.".format(file_path)
     """
-    filepath = preprocess_paths(agent, project_name, bug_index, filepath)
+    file_path = preprocess_paths(agent, project_name, bug_index, file_path)
 
-    input_stream = FileStream(os.path.join(workspace, project_dir, filepath))
+    input_stream = FileStream(os.path.join(workspace, project_dir, file_path))
     
     lexer = JavaLexer(input_stream)
     token_stream = CommonTokenStream(lexer)
@@ -1479,7 +1487,7 @@ def extract_method_code(project_name: str, bug_index: str, filepath: str, method
     walker = ParseTreeWalker()
     walker.walk(extractor, tree)
     ret_val = "We found the following implementations for the method name {} (we give the body of the method):\n".format(method_name)
-    with open(os.path.join(workspace, project_dir, filepath)) as wpf:
+    with open(os.path.join(workspace, project_dir, file_path)) as wpf:
         file_content = wpf.read().splitlines()
     
     for i, m in enumerate(extractor.matched_methods):
@@ -1491,41 +1499,41 @@ def extract_method_code(project_name: str, bug_index: str, filepath: str, method
 import tiktoken
 from unittest.mock import MagicMock
 
-def extract_function_def_context(project_name, bug_index, method_name, filepath, agent: BaseAgent):
+def extract_function_def_context(project_name, bug_index, method_name, file_path, agent: BaseAgent):
     input_limit = 12000
     workspace = "./auto_gpt_workspace"
     project_dir = "{}_{}_buggy".format(project_name.lower(), bug_index)
     
     """
-    if filepath.endswith(".java"):
-        filepath = filepath[:-5]
-        filepath = filepath.replace(".", "/")
-        filepath += ".java"
+    if file_path.endswith(".java"):
+        file_path = file_path[:-5]
+        file_path = file_path.replace(".", "/")
+        file_path += ".java"
     else:
-        filepath = filepath.replace(".", "/")
+        file_path = file_path.replace(".", "/")
     
-    if not os.path.exists(os.path.join(workspace, project_dir, filepath)):
+    if not os.path.exists(os.path.join(workspace, project_dir, file_path)):
         if not os.path.exists(os.path.join(workspace, project_dir, "files_index.txt")):
             with open(os.path.join(workspace, project_dir, "files_index.txt"), "w") as fit:
                 fit.write("\n".join(list_java_files(os.path.join(workspace, project_dir))))
                 
         with open(os.path.join(workspace, project_dir, "files_index.txt")) as fit:
-            files_index = [f for f in fit.read().splitlines() if filepath in f]
+            files_index = [f for f in fit.read().splitlines() if file_path in f]
 
         if len(files_index) == 1:
-            filepath = files_index[0]
+            file_path = files_index[0]
         elif len(files_index) >= 1:
             raise ValueError("Multiple Candidate Paths. We do not handle this yet!")
         else:
-            return "The filepath {} does not exist.".format(filepath)
+            return "The file_path {} does not exist.".format(file_path)
     """
-    filepath = preprocess_paths(agent, project_name, bug_index, filepath)
-    extracted_methods = extract_method_code(project_name, bug_index, filepath, method_name, agent)
+    file_path = preprocess_paths(agent, project_name, bug_index, file_path)
+    extracted_methods = extract_method_code(project_name, bug_index, file_path, method_name, agent)
     if len(extracted_methods) == 0:
         raise ValueError("NO EXTRACTED METHODS, SHOULD NOT HAPPEN")
     
     method_body = extracted_methods[0]
-    with open(os.path.join(workspace, project_dir, filepath)) as wpf:
+    with open(os.path.join(workspace, project_dir, file_path)) as wpf:
         file_content = wpf.read()
 
     start_index = file_content.find(method_body)
@@ -1541,7 +1549,7 @@ def extract_function_def_context(project_name, bug_index, method_name, filepath,
 
 @command(
     "AI_generates_method_code",
-    "This function allows to use an AI Large Language model to generate the code of the buggy method (Autocomplete code). params: (project_name: str, bug_index: str, filepath: str, method_name: str)",
+    "This function allows to use an AI Large Language model to generate the code of the buggy method (Autocomplete code). params: (project_name: str, bug_index: str, file_path: str, method_name: str)",
     {
         "project_name": {
             "type": "string",
@@ -1553,7 +1561,7 @@ def extract_function_def_context(project_name, bug_index, method_name, filepath,
             "description": "The bug index",
             "required":True
         },
-        "filepath": {
+        "file_path": {
             "type": "string",
             "description": "The path of the file",
             "required": True,
@@ -1565,8 +1573,8 @@ def extract_function_def_context(project_name, bug_index, method_name, filepath,
         }
     }
 )
-def auto_complete_functions(project_name, bug_index, filepath, method_name, agent: BaseAgent):
-    context = extract_function_def_context(project_name, bug_index, method_name, filepath, agent)
+def auto_complete_functions(project_name, bug_index, file_path, method_name, agent: BaseAgent):
+    context = extract_function_def_context(project_name, bug_index, method_name, file_path, agent)
     chat = ChatOpenAI(openai_api_key=OPENAI_API_KEY, model=agent.config.fast_llm)
     messages = [
             SystemMessage(

@@ -439,29 +439,29 @@ class FunctionExtractor(JavaListener):
 def extract_method_code(project_name, bug_index, method_name, file_path):
     workspace = "./auto_gpt_workspace"
     project_dir = "{}_{}_buggy".format(project_name.lower(), bug_index)
-    if filepath.endswith(".java"):
-        filepath = filepath[:-5]
-        filepath.replace(".", "/")
-        filepath += ".java"
+    if file_path.endswith(".java"):
+        file_path = file_path[:-5]
+        file_path.replace(".", "/")
+        file_path += ".java"
     else:
-        filepath = filepath.replace(".", "/")
+        file_path = file_path.replace(".", "/")
     
-    if not os.path.exists(os.path.join(workspace, project_dir, filepath)):
+    if not os.path.exists(os.path.join(workspace, project_dir, file_path)):
         if not os.path.exists(os.path.join(workspace, project_dir, "files_index.txt")):
             with open(os.path.join(workspace, project_dir, "files_index.txt"), "w") as fit:
                 fit.write("\n".join(list_java_files(os.path.join(workspace, project_dir))))
                 
         with open(os.path.join(workspace, project_dir, "files_index.txt")) as fit:
-            files_index = [f for f in fit.read().splitlines() if filepath in f]
+            files_index = [f for f in fit.read().splitlines() if file_path in f]
 
         if len(files_index) == 1:
-            filepath = files_index[0]
+            file_path = files_index[0]
         elif len(files_index) >= 1:
             raise ValueError("Multiple Candidate Paths. We do not handle this yet!")
         else:
-            return "The filepath {} does not exist.".format(filepath)
+            return "The file_path {} does not exist.".format(file_path)
     
-    input_stream = FileStream(os.path.join(workspace, project_dir, filepath))
+    input_stream = FileStream(os.path.join(workspace, project_dir, file_path))
     
     lexer = JavaLexer(input_stream)
     token_stream = CommonTokenStream(lexer)

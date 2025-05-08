@@ -295,14 +295,11 @@ def run_interaction_loop(
         
         if cycles_remaining == 1:  # Last cycle
 
-        ###############################
-        # Terminate or get User Input #
-        ###############################
+            ##################
+            # Get User Input #
+            ##################
 
-            if config.none_interactive:
-                logger.typewriter_log("Exiting...", Fore.YELLOW)
-                exit()
-            else:
+            if not config.none_interactive:
                 user_feedback, user_input, new_cycles_remaining = get_user_feedback(
                     config,
                     ai_config,

@@ -91,7 +91,7 @@ class BaseAgent(metaclass=ABCMeta):
         with open("agent_config_and_prompt_files/states_description.json") as sdj:
             self.descriptions = json.load(sdj)
 
-        self.current_state = "collect information to understand the bug"
+        self.current_state = "Understanding the Violated Rule"
         self.prompt_dictionary = ai_config.construct_full_prompt(config)
 
         self.prompt_dictionary["commands"][2] = self.cmds_by_state[self.current_state]        
@@ -258,7 +258,7 @@ You have access to the following commands (EXCLUSIVELY):
 1. search_code_base: This utility function scans all Java files within a specified project for a given list of keywords. It generates a dictionary as output, organized by file names, classes, and method names. Within each method name, it provides a list of keywords that match the method's content. The resulting structure is as follows: { file_name: { class_name: { method_name: [...list of matched keywords...] } } }. This functionality proves beneficial for identifying pre-existing methods that may be reusable or for locating similar code to gain insights into implementing specific functionalities. It's important to note that this function does not return the actual code but rather the names of matched methods containing at least one of the specified keywords. It requires the following params params: (project_name: string, bug_index: integer, key_words: list). Once the method names are obtained, the extract_method_code command can be used to retrieve their corresponding code snippets (only do it for the ones that are relevant)
 2. get_classes_and_methods: This function allows you to get all classes and methods names within a file. It returns a dictinary where keys are classes names and values are list of methods names within each class. The required params are: (project_name: string, bug_index: integer, file_path: string)
 3. extract_similar_functions_calls: For a provided buggy code snippet in 'code_snippet' within the file 'file_path', this function extracts similar function calls. This aids in understanding how functions are utilized in comparable code snippets, facilitating the determination of appropriate parameters to pass to a function., params: (project_name: string, bug_index: string, file_path: string, code_snippet: string)
-4. extract_method_code: This command allows you to extract possible implementations of a given method name inside a file. The required params to call this command are: (project_name: string, bug_index: integer, filepath: string, method_name: string)\n"""
+4. extract_method_code: This command allows you to extract possible implementations of a given method name inside a file. The required params to call this command are: (project_name: string, bug_index: integer, file_path: string, method_name: string)\n"""
 
         query += self.construct_bug_report_context()
 
@@ -420,9 +420,9 @@ please use the indicated format and produce a list, like this:
                     continue
                 if command_dict["command"]["name"] == command_name:
                     lines_range=(
-                        command_dict["command"]["args"]["startline"],
-                        command_dict["command"]["args"]["endline"])
-                    file_path = command_dict["command"]["args"]["filepath"]
+                        command_dict["command"]["args"]["start_line"],
+                        command_dict["command"]["args"]["end_line"])
+                    file_path = command_dict["command"]["args"]["file_path"]
                     if i < len(messages_history) - 1:
                         j = i + 1
                         next_msg = messages_history[j]
@@ -622,7 +622,7 @@ please use the indicated format and produce a list, like this:
                     continue
                 if command_dict["command"]["name"] == command_name:
                     method_name = command_dict["command"]["args"]["method_name"]
-                    file_path = command_dict["command"]["args"]["filepath"]
+                    file_path = command_dict["command"]["args"]["file_path"]
                     if i < len(messages_history) - 1:
                         j = i + 1
                         next_msg = messages_history[j]
@@ -702,27 +702,6 @@ please use the indicated format and produce a list, like this:
         self.prompt_dictionary["commands"][2] = self.cmds_by_state[state_name]
         self.current_state = state_name
 
-    def switch_state(self):
-        """
-        check whether the last executed command causes a state change.
-        If so, update the prompt based on the changed state
-        """
-        
-        for i in range(len(self.history)-1, 0, -1):
-            if self.history[i].role == "assistant":
-                if "Hypothesis discarded! You are now back at the state 'collect information to understand the bug'" in self.history[i+1].content:
-                    if self.current_state != "collect information to understand the bug":
-                        self.update_prompt_state("collect information to understand the bug")
-                elif "You are now back at the state 'collect information to fix the bug'" in self.history[i+1].content:
-                    if self.current_state != "collect information to fix the bug":
-                        self.update_prompt_state("collect information to fix the bug")
-                elif "Since you have a hypothesis about the bug, the current state have been changed from 'collect information to understand the bug' to 'collect information to fix the bug'" in self.history[i+1].content:
-                    if self.current_state != "collect information to fix the bug":
-                        self.update_prompt_state("collect information to fix the bug")
-                elif "\n **Note:** You are automatically switched to the state 'trying out candidate fixes'" in self.history[i+1].content:
-                    if self.current_state != "trying out candidate fixes":
-                        self.update_prompt_state("trying out candidate fixes")
-                break
 
     def construct_hypothesises_context(self,):
         hypothesis_string = "## Hypothesis about the bug:\n"
@@ -1033,10 +1012,7 @@ please use the indicated format and produce a list, like this:
             reserve_tokens: Number of tokens to reserve for content that is added later
         """
 
-        ## added this part to change the prompt structure
-        if len(self.history) >= 2:
-            self.switch_state()
-
+        
         self.construct_read_files()
         self.construct_suggested_fixes()
         self.construct_search_queries()
@@ -1062,11 +1038,11 @@ please use the indicated format and produce a list, like this:
             t1 = self.hyperparams["budget_control"]["T1"]
             t2 = self.hyperparams["budget_control"]["T2"]
             if self.cycle_count >= t2:
-                self.update_prompt_state("trying out candidate fixes")
-                cycle_instruction += "\nBecause of budget constaints, you were forced to transition to the state 'trying out candidate fixes'" 
+                self.update_prompt_state("Trying out Fix Candidates")
+                cycle_instruction += "\nBecause of budget constaints, you were forced to transition to the state `Trying out Fix Candidates`" 
             elif self.cycle_count >= t1:
-                self.update_prompt_state("collect information to fix the bug")
-                cycle_instruction += "\nBecause of budget constaints, you were forced to transition to the state 'collect information to fix the bug'" 
+                self.update_prompt_state("Gathering Context for a Fix")
+                cycle_instruction += "\nBecause of budget constaints, you were forced to transition to the state `Gathering Context for a Fix`" 
 
         context_prompt = self.construct_context_prompt()
         prompt = ChatSequence.for_model(
@@ -1075,7 +1051,7 @@ please use the indicated format and produce a list, like this:
         
         definitions_prompt = ""
         static_sections_names = ["goals", "current state", "commands", "general guidelines"]
-        if self.current_state in ["collect information to fix the bug", "trying out candidate fixes"]:
+        if self.current_state in ["Gathering Context for a Fix", "Trying out Fix Candidates"]:
             static_sections_names.append("fix format")
         for key in static_sections_names:
             if isinstance(self.prompt_dictionary[key], list):

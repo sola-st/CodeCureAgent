@@ -444,6 +444,10 @@ def execute_command(
             ):
                 return command.function(**arguments)
 
+
+        # The command_name was unknown. So add it to the list of unknown commands.
+
+        agent.unknown_commands.append(command_name)
         raise RuntimeError(
             f"Cannot execute '{command_name}': unknown command."
             " Do not try to use this command again."

@@ -1,3 +1,5 @@
+## Next Step
+
 Based on your current plan and the information gathered in prior steps, determine your next action.
 Select exactly one command, using your reasoning and context to justify your decision.
 Respond strictly in the JSON format defined below:

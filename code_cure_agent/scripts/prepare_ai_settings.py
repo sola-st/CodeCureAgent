@@ -33,7 +33,6 @@ ai_role: |+
   Constraints:
 
   * Do not introduce new warnings or errors.
-  * Do not rely on external libraries unless already present in the project.
   * Use best practices aligned with clean Java code and SonarQube rule compliance.
 
   ## States

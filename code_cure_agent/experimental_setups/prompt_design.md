@@ -23,7 +23,6 @@ In some cases, resolving the violation may require modifying additional files in
 Constraints:
 
 * Do not introduce new warnings or errors.
-* Do not rely on external libraries unless already present in the project.
 * Use best practices aligned with clean Java code and SonarQube rule compliance.
 
 ## States
@@ -159,13 +158,18 @@ Here is an example:
 
 ## Your Task
 
-The project to look at is <project_name (path)>.  
-We are focusing on the file <filePath>.  
-The SonarQube rule looked at is identified by key <ruleKey> with short description:  
-`<ruleName>`  
-Fix the violation of this rule at line <warningStartLine>.  
+The project to look at is `{project_name}`.  
+The SonarQube rule violation is in the file:  
+`{file_path}`.  
+
+The SonarQube rule looked at is identified by squid `{rule_key}`.  
+It has the short description:  
+`{rule_name}`  
+
+Fix the violation of this rule at line **`{warning_start_line}`**.  
 The violation has the following context-specific warning text:  
-`<warningSpecificMessage>`  
+`{warning_specific_message}`  
+
 Only address the specified rule violation; ignore all others.
 
 ## Initial SonarQube Analysis Report

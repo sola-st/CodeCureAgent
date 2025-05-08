@@ -173,6 +173,10 @@ class BaseAgent(metaclass=ABCMeta):
         self.ask_chatgpt = None
         self.hypothesises = []
 
+        self.plans = []
+
+        self.unknown_commands = []
+
         ## Here we put the initial values for the collected context sections
         self.initial_bug_report = {
 
@@ -233,6 +237,8 @@ class BaseAgent(metaclass=ABCMeta):
             "human_feedback": self.human_feedback ,
             "ask_chatgpt": self.ask_chatgpt,
             "hypothesises": self.hypothesises,
+            "plans": self.plans,
+            "unknown_commands": self.unknown_commands,
             "initial_bug_report": self.initial_bug_report,
             "buggy_lines": self.buggy_lines,
             "similar_calls": self.similar_calls,
@@ -332,6 +338,8 @@ please use the indicated format and produce a list, like this:
         self.human_feedback = context["human_feedback"]
         self.ask_chatgpt = context["ask_chatgpt"]
         self.hypothesises = context["hypothesises"]
+        self.plans = context["plans"]
+        self.unknown_commands = context["unknown_commands"]
         self.initial_bug_report = context["initial_bug_report"]
         self.buggy_lines = context["buggy_lines"]
         self.similar_calls = context["similar_calls"]
@@ -794,6 +802,61 @@ please use the indicated format and produce a list, like this:
         generated_methods += "No AI generated code yet.\n"
         return generated_methods
     
+
+
+    # Methods for creating the relevant prompt contexts in CodeCureAgent
+
+
+    def construct_task_context(self,):
+        with open("agent_config_and_prompt_files/task_section.md") as task_section_file:
+            task_section = task_section_file.read().format(project_name=self.ai_config.warning_repository_name, file_path=self.ai_config.warning_file_path, rule_key=self.ai_config.warning_rule_key,
+                                                           rule_name=self.ai_config.warning_rule_name, warning_start_line=self.ai_config.warning_start_line, warning_specific_message=self.ai_config.warning_specific_message)
+        return task_section
+    
+
+    # TODO: Improve the analysis report layout and content in the prompt
+    def construct_initial_sonar_qube_report_context(self) -> str:
+
+        analysis_report_cleaned = {"minedRules": self.initial_analysis_report["minedRules"]}
+
+        with open("agent_config_and_prompt_files/initial_sonar_qube_analysis_report_section.md") as initial_report_section_file:
+            initial_sonar_qube_report_section = initial_report_section_file.read().format(analysis_report_json=json.dumps(analysis_report_cleaned, indent=4))
+        return initial_sonar_qube_report_section
+    
+    def construct_plan_context(self) -> str:
+        plan_section = "## Your current plan for approaching the task\n\n"
+        if self.plans:
+            plan_section += self.plans[-1]
+        else:
+            plan_section += "No plan made yet."
+
+        return plan_section
+    
+    # TODO: implement the history
+    def construct_agent_history_context(self) -> str:
+        return ""
+    
+    def construct_forbidden_commands_context(self) -> str:
+        forbidden_commands_section = ""
+        if self.unknown_commands:
+            forbidden_commands_section = "## Forbidden Commands\n\nDO NOT ATTEMPT TO CALL ANY OF THE FOLLOWING COMMANDS UNDER ANY CIRCUMSTANCES:  \n" + "  \n".join(self.unknown_commands)
+        return forbidden_commands_section
+
+    def construct_context_prompt_code_cure_agent(self) -> str:
+        '''Constructs the context parts in the prompt including task description and history.
+        Returns:
+            str: The context prompt string
+        '''
+        task_section = self.construct_task_context()
+        initial_sonar_qube_report_section = self.construct_initial_sonar_qube_report_context()
+        plan_section = self.construct_plan_context()
+        agent_history_section = self.construct_agent_history_context()
+        forbidden_commands_section = self.construct_forbidden_commands_context()
+
+        # Join the different parts together with a space inbetween. If one of the sections is None or an empty string then it is ignored.
+        return "\n\n".join(filter(None, [task_section, initial_sonar_qube_report_section, plan_section, agent_history_section, forbidden_commands_section]))
+
+    # TODO: to be removed when not needed anymore. Replaced by construct_context_prompt_code_cure_agent
     def construct_context_prompt(self,):
         
         context_prompt = "What follows are sections of the most important information you gathered so far about the current bug.\
@@ -1024,7 +1087,7 @@ please use the indicated format and produce a list, like this:
         self.construct_extracted_methods()
         self.save_context()
 
-        with open("agent_config_and_prompt_files/cycle_instruction_text.txt") as cit:
+        with open("agent_config_and_prompt_files/cycle_instruction_text.md") as cit:
             cycle_instruction = cit.read()
 
         if self.hyperparams["budget_control"]["name"] == "NO-TRACK":
@@ -1044,7 +1107,7 @@ please use the indicated format and produce a list, like this:
                 self.update_prompt_state("Gathering Context for a Fix")
                 cycle_instruction += "\nBecause of budget constaints, you were forced to transition to the state `Gathering Context for a Fix`" 
 
-        context_prompt = self.construct_context_prompt()
+        context_prompt = self.construct_context_prompt_code_cure_agent()
         prompt = ChatSequence.for_model(
             self.llm.name,
             [Message("system", self.prompt_dictionary["role"])])

@@ -21,6 +21,9 @@ from autogpt.agents.agent import Agent
 def formulate_plan(plan: str, agent: Agent) -> str:
     if agent.current_state != "Gathering Context for a Fix":
         agent.update_prompt_state("Gathering Context for a Fix")
+    
+    agent.plans.append(plan)
+    
     return "Since you now have a plan how to tackle the rule violation, the current state has been changed from 'Understanding the Violated Rule' to 'Gathering Context for a Fix'."
 
 @command(

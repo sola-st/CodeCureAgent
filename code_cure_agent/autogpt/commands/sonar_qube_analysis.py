@@ -46,6 +46,18 @@ def analyze_file_command(file_path: str, agent: BaseAgent):
 
 
 def analyze_file_and_parse_report(file_relative_path: str, rules: list[str], repo_name: str, analysis_report_file_name: str, agent: BaseAgent) -> dict:
+    """
+    Analyze a file with SonarQube (via Sorald miner). Creates the analysis report json. Then parses this report into a dict object and returns it.
+
+    Args:
+        file_relative_path (str): Path to the file to analyze. (Relative to the repository under analysis)
+        rules (list[str]): SonarQube rules to check (list of SIds). If the list is empty all rules are checked.
+        repo_name (str): Name of the repository under analysis
+        analysis_report_file_name (src): Name of the analysis report file to be saved.
+        agent (BaseAgent): The agent with its configuration
+    Returns:
+        dict: The created and parsed analysis report.
+    """
 
     result = analyze_file(file_relative_path, rules, repo_name, analysis_report_file_name, agent)
 
@@ -58,8 +70,9 @@ def analyze_file_and_parse_report(file_relative_path: str, rules: list[str], rep
         logger.error("Error", "Running SonarQube analysis failed with error: " + result.stderr)
         raise AnalysisError(f"Error: {result.stderr}")
     
-# Checks whether the expected rule violation is present in the analysis report
+
 def rule_violation_present_in_analysis_report(analysis_report: dict, warning_rule_key: str, warning_start_line: int) -> bool:
+    """Checks whether the expected rule violation is present in the analysis report"""
     mined_rules = analysis_report["minedRules"]
     return any(map(lambda mined_rule: mined_rule["ruleKey"] == warning_rule_key and ___warning_locations_contains_start_line(mined_rule["warningLocations"], warning_start_line), mined_rules))
 
@@ -71,20 +84,19 @@ def ___warning_locations_contains_start_line(warning_locations: dict, warning_st
 
 
 
-"""
-Analyze a file with SonarQube (via Sorald miner). Creates the analysis report json.
 
-Args:
-        agent (BaseAgent): The agent with its configuration
+def analyze_file(file_relative_path: str, rules: list[str], repo_name: str, analysis_report_file_name: str, agent: BaseAgent) -> subprocess.CompletedProcess[str]:
+    """
+    Analyze a file with SonarQube (via Sorald miner). Creates the analysis report json.
+    Args:
         file_relative_path (str): Path to the file to analyze. (Relative to the repository under analysis)
         rules (list[str]): SonarQube rules to check (list of SIds). If the list is empty all rules are checked.
         repo_name (str): Name of the repository under analysis
         analysis_report_file_name (src): Name of the analysis report file to be saved.
+        agent (BaseAgent): The agent with its configuration
     Returns:
         subprocess.CompletedProcess[str]: Result of running the mining suprocess. If subprocess was succesful then the property "returncode" is 0.
-"""
-def analyze_file(file_relative_path: str, rules: list[str], repo_name: str, analysis_report_file_name: str, agent: BaseAgent) -> subprocess.CompletedProcess[str]:
-
+    """
     workspace = agent.config.workspace_path
 
     # Prepare the paths

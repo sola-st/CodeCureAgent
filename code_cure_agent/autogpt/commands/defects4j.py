@@ -487,7 +487,8 @@ def read_range(project_name:str, bug_index:str, file_path: str, start_line: int,
             }
         }
 )
-def update_plan(plan: str) -> str:
+def update_plan(plan: str, agent: BaseAgent) -> str:
+    agent.plans.append(plan)
     return "The plan was updated."
 
 
@@ -931,7 +932,7 @@ def search_code_base(project_name:str, bug_index:str, key_words: list, agent: Ba
                             matched_files[file] = {class_name:{method_name:matched_keyworkds}}
     logger.debug(str(matched_files))
     matched_names = [f for f in java_files if f.endswith(".java") and any(k in f.lower() for k in lower_kwords)]
-    return "The following matches were found:\n"+str(matched_files) + "\nThe search also matched the following files names: \n" + "\n".join(matched_names)
+    return "The following matches were found:  \n" + str(matched_files) + "  \nThe search also matched the following files names:  \n" + "  \n".join(matched_names)
 
 
 def extract_root_cause(info):

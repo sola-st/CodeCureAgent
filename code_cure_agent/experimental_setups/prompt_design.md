@@ -68,7 +68,7 @@ You have access to the following commands (EXCLUSIVELY):
 4. extract_method_code: Retrieves possible implementations of a method by name in a file.
     Required params: (project_name: string, bug_index: integer, file_path: string, method_name: string)
 5. read_range: Reads a range of lines in a given file.  
-    Required params: (project_name:string, bug_index:string, file_path:string, startline: int, endline:int)
+    Required params: (project_name:string, bug_index:string, file_path:string, start_line: int, end_line:int)
 6. AI_generates_method_code:  Uses an AI model to generate a method implementation.  
     This helps see another implementation of that method given the context before it, which would help in 'probably' inferring a fix but no guarantee.  
     Required params: (project_name: str, bug_index: str, file_path: str, method_name: str)
@@ -301,27 +301,30 @@ Respond strictly in the JSON format defined below:
 
 ```ts
 interface Response {
-// Express your thoughts based on the information that you have collected so far, the possible steps that you could do next and also your reasoning about fixing the bug in question"
-thoughts: string;
-command: {
-name: string;
-args: Record<string, any>;
-};
+    // Express your thoughts based on the information that you have collected so far, the possible steps that you could do next and also your reasoning about fixing the rule violation"
+    thoughts: string;
+    command: {
+        name: string;
+        args: Record<string, any>;
+    };
 }
 ```
 
 Example:
 
+```json
 {
-"thoughts": "I have information about the bug, but I need to run the test cases to understand the bug better.",
-"command": {
-"name": "run_tests",
-"args": {
-"name": "Chart",
-"index": 1
+    "thoughts": "I have information about the rule violation, but I need to collect more information about the relevant lines in file foo.java.",
+    "command": {
+        "name": "read_range",
+        "args": {
+            "file_path": "the/file/path/foo.java", 
+            "start_line": 1, 
+            "end_line": 50,
+        }
+    }
 }
-}
-}
+```
 
 **IMPORTANT NOTE TO THE AGENT:** DO NOT include any English text or explanations outside the JSON object in your response.
 

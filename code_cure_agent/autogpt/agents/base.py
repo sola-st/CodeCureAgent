@@ -1086,6 +1086,8 @@ please use the indicated format and produce a list, like this:
             prompt.insert(history_start_index, new_summary_msg)
 
         """
+
+        #TODO: Remove this, if we want to keep the history entirely in the main user prompt
         if len(self.history) > 2:
             last_command = self.history[-2]
             command_result = self.history[-1]

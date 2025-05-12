@@ -8,7 +8,7 @@ import json
 ## Understanding the Violated Rule
 
 read_range_desc = """read_range: Reads a range of lines in a given file.  
-    Required params: (file_path:string, start_line: int, end_line:int)"""
+    Required params: (file_path: string, start_line: int, end_line: int)"""
 
 go_to_gather_context_for_fix_desc = """go_to_gather_context_for_fix: Transitions to the state `Gathering Context for a Fix`.  
     Call this command after you have collected enough information about the specific SonarQube rule.  
@@ -40,12 +40,12 @@ extract_method_desc = """extract_method_code: Retrieves possible implementations
 
 generate_method_desc = """AI_generates_method_code:  Uses an AI model to generate a method implementation.  
     This helps see another implementation of that method given the context before it, which would help in 'probably' inferring a fix but no guarantee.  
-    Required params: (project_name: str, bug_index: str, file_path: str, method_name: str)"""
+    Required params: (project_name: string, bug_index: string, file_path: string, method_name: string)"""
 
 write_fix_desc = """write_fix: Use this command to implement the fix you came up with.  
     Only use this command if you think that you have collected all necessary information by using other commands.  
     The project will automatically be rebuilt and reanalyzed by SonarQube. Changes are reverted automatically if the build fails or if the rule violation remains.  
-    Required params: (project_name: string, bug_index: integer, changes_dicts:list[dict])  
+    Required params: (changes_dicts:list[dict])  
     The list should contain at least one non-empty dictionary of changes. Each dict must conform to the format defined in the section `## The format of the fix`.
     Note: If you're not in the `Trying out Fix Candidates` state, using this command will automatically switch you to it.  
     [RESPECT LINE NUMBERS AS GIVEN IN THE CODE SNIPPETS]"""
@@ -73,7 +73,7 @@ commands_dict = {
     "Understanding the Violated Rule": "\n".join(["{}. {}".format(i+1, t) for i, t in enumerate(
         [read_range_desc, go_to_gather_context_for_fix_desc])]),
     "Gathering Context for a Fix": "\n".join(["{}. {}".format(i+1, t) for i, t in enumerate(
-        [formulate_plan_desc, search_code_desc, get_classes_desc, get_similar_desc, extract_method_desc, read_range_desc, generate_method_desc, write_fix_desc, go_back_to_understanding_rule_desc])]),
+        [formulate_plan_desc, read_range_desc, write_fix_desc, go_back_to_understanding_rule_desc])]),
     "Trying out Fix Candidates": "\n".join(["{}. {}".format(i+1, t) for i, t in enumerate(
         [write_fix_desc, read_range_desc, go_back_to_gather_context_for_fix_desc, go_back_to_understanding_rule_desc, goals_accomplished_desc])])
 }

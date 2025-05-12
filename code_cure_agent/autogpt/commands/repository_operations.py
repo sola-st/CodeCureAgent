@@ -7,12 +7,13 @@ import shutil
 from autogpt.logs.logger import logger
 import subprocess
 
-'''
-Clone targeted repository and checkout targeted commit.
-If the target project folder already exists it is first removed.
-Throws a GitError if cloning or checking out fails.
-'''
+
 def checkout_project(agent: BaseAgent) -> None:
+    """
+    Clone targeted repository and checkout targeted commit.
+    If the target project folder already exists it is first removed.
+    Throws a GitError if cloning or checking out fails.
+    """
     repo_path = os.path.join(agent.config.workspace_path, agent.ai_config.warning_repository_name)
 
     logger.info("", "Project checkout procedure starting.")
@@ -43,13 +44,14 @@ def checkout_project(agent: BaseAgent) -> None:
             logger.error("Git Checkout failed", f"Error: {e}")
             raise
 
-'''
-Try to build the target project. 
-Expects that the project is already checked out.
-Expects the project to be a maven project compatible with JDK 11 and with the pom.xml in the root folder of the project.
-If there was an exception in the subcommand a BuildError is thrown.
-'''
+
 def build_project(agent: BaseAgent) -> None:
+    """
+    Try to build the target project. 
+    Expects that the project is already checked out.
+    Expects the project to be a maven project compatible with JDK 11 and with the pom.xml in the root folder of the project.
+    If there was an exception in the subcommand a BuildError is thrown.
+    """
     repo_path = os.path.join(agent.config.workspace_path, agent.ai_config.warning_repository_name)
     
 

@@ -15,6 +15,7 @@ from docker.errors import DockerException, ImageNotFound
 from docker.models.containers import Container as DockerContainer
 
 from autogpt.agents.agent import BaseAgent
+from autogpt.commands.defects4j_static import query_for_mutants, construct_fix_command, get_detailed_list_of_buggy_lines, extract_command
 from autogpt.command_decorator import command
 from autogpt.logs import logger
 
@@ -537,26 +538,11 @@ def write_range(project_name:str, bug_index:int, changes_dicts: list, agent: Bas
 
 
 
-@command(
+# Not used anymore. Instead see write_fix.py
+'''@command(
     "write_fix",
-    "Write a list of lines into a file, the parameter changed_lines is a dictionary that contains lines numbers as keys and the new content of that line as value (only include changed lines). The test cases are run automatically after running the changes. The changes are reverted automatically if the the test cases fail.",
+    "Use this command to implement the fix you came up with. Only use this command if you think that you have collected all necessary information by using other commands. The project will automatically be rebuilt and reanalyzed by SonarQube. Changes are reverted automatically if the build fails or if the rule violation remains.",
     {
-        "project_name": {
-            "type": "string",
-            "description": "The name of the project.",
-            "required": True,
-        },
-        "bug_index":{
-            "type": "integer",
-            "description": "The index (number) of the bug that you want to get info about.",
-            "required": True
-
-        },
-        "file_path": {
-            "type": "string",
-            "description": "The path to the file to write to",
-            "required": True,
-        },
         "changed_lines":{
             "type": "dict",
             "description": "a dictionary of the changed lines",
@@ -564,7 +550,7 @@ def write_range(project_name:str, bug_index:int, changes_dicts: list, agent: Bas
 
         }
     },
-)
+)'''
 def write_fix(project_name:str, bug_index:int, changes_dicts: list, agent: BaseAgent) -> str:
     if agent.current_state != "Trying out Fix Candidates":
         agent.update_prompt_state("Trying out Fix Candidates")
@@ -643,6 +629,63 @@ def execute_write_range(project_name, bug_index, changes_dicts, agent):
 
     run_ret = run_defects4j_tests(project_name, bug_index, agent)
     return "Lines written successfully, the result of running test cases on the modified code is the following:\n" + run_ret
+
+
+# Moved the mutants creation here for now, without changing the RepairAgent specific parts.
+# If we would decide to try to use this for CodeCureAgent, then we would need to adapt it.
+# Then we should also make this a proper part of the main command call and have it as part of the feedback and history in some simplified way.
+def create_mutants_from_fix(assistant_reply_dict: dict, agent: BaseAgent):
+    if assistant_reply_dict["command"]["name"] == "write_fix":
+        try:
+            fix_content = assistant_reply_dict["command"]["args"].get("changes_dicts", "[]")
+        except Exception as e:
+            fix_content = "No fix suggested yet."
+            logger.info("NO FIX WAS SUGGESTED"+ str(e))
+        # getting the list of buggy lines
+        detailed_buggies = get_detailed_list_of_buggy_lines(agent.project_name, agent.bug_index)
+        
+        # create mutation prompt
+        mutant_prompt = agent.construct_mutation_prompt(fix_content, detailed_buggies)
+        # save mutation prompt
+        with open(os.path.join("experimental_setups", exps[-1], "mutations_history", "mutations_prompt_{}_{}".format(agent.project_name, agent.bug_index)), "a") as mph:
+            mph.write(mutant_prompt)
+        
+        # Asking main agent for mutants
+        mutants = query_for_mutants(mutant_prompt, agent)
+        
+        existing_mutants = []
+        mutants_save_path = os.path.join("experimental_setups", agent.exps[-1], "mutations_history", "mutants_{}_{}.json".format(agent.project_name, agent.bug_index))
+        
+        if os.path.exists(mutants_save_path):
+            with open(mutants_save_path) as json_file:
+                existing_mutants = json.load(json_file)
+        with open(os.path.join("experimental_setups", exps[-1], "mutations_history", "mutants_raw_{}_{}.json".format(agent.project_name, agent.bug_index)), "a") as raw_m:
+            raw_m.write(mutants)
+        
+        try:
+            mutants_json = agent.save_to_json(mutants_save_path, json.loads(mutants))
+            logger.info("MUTANTS LENGTH: " + str(len(mutants_json)) + "\n\n")
+            if isinstance(mutants_json, dict):
+                mutants_json = [mutants_json]
+            
+            for m in mutants_json:
+                if m not in existing_mutants:
+                    fix_command = construct_fix_command(m, agent.project_name, agent.bug_index)
+                    if isinstance(fix_command, str):
+                        logger.info("MUTANT OBJECT: " + fix_command + "\n\n")
+                        raise TypeError("Error: EXPECTED 'DICT', RECEIEVED 'STR' INSTEAD" + fix_command)
+                    name, args = extract_command(fix_command, None, agent.config)
+                    
+                    exec_result = execute_command(name, args, agent)
+                    logger.info("---------------------------\nRESULT OF TRYING {} returned\n {} \n----------------------------\n\n".format(args, exec_result))
+                    if " 0 failing test" in exec_result:
+                        logger.info("PLAUSIBLE PATCH FOUND. REASON = 0 FAILING TESTS.\n\n")
+                        ## writing the plausible patch
+                        with open(os.path.join("experimental_setups", exps[-1], "plausible_patches", "plausible_patches_{}_{}.json".format(agent.project_name, agent.bug_index)), "a+") as exps:
+                            exps.write("### PLAUSIBLE FIX\n{}\n".format(str(m)))
+        except Exception as e:
+            logger.info("Error in loading the mutants response: " + str(e) + "\n\n")
+
 
 def get_edited_files(name, index):
     target_file = "defects4j/framework/projects/{name}/patches/{index}.src.patch".format(name=name, index=index)

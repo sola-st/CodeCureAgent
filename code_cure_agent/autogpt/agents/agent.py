@@ -26,7 +26,6 @@ from autogpt.logs.log_cycle import (
     LogCycleHandler,
 )
 from autogpt.workspace import Workspace
-from autogpt.commands.defects4j_static import query_for_mutants, construct_fix_command, get_detailed_list_of_buggy_lines
 
 from .base import AgentThoughts, BaseAgent, CommandArgs, CommandName
 
@@ -185,8 +184,8 @@ class Agent(BaseAgent):
         if not llm_response.content:
             raise SyntaxError("Assistant response has no text content")
 
-        exps = self.exps
-        with open(os.path.join("experimental_setups", exps[-1], "responses", "model_responses_{}_{}".format(self.project_name, self.bug_index)), "a+") as patf:
+        sanitized_warning_file_path = self.ai_config.warning_file_path.replace("/", ".")
+        with open(os.path.join("experimental_setups", self.exps[-1], "responses", f"model_responses_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_{str(self.ai_config.warning_start_line)}"), "a+") as patf:
             patf.write(llm_response.content)
         assistant_reply_dict = extract_dict_from_response(llm_response.content)
 
@@ -219,57 +218,6 @@ class Agent(BaseAgent):
             else:
                 assistant_reply_dict["command"] = {"name": "unknown_command", "args":{}}
             
-            if assistant_reply_dict["command"]["name"] == "write_fix":
-                try:
-                    fix_content = assistant_reply_dict["command"]["args"].get("changes_dicts", "[]")
-                except Exception as e:
-                    fix_content = "No fix suggested yet."
-                    logger.info("NO FIX WAS SUGGESTED"+ str(e))
-                # getting the list of buggy lines
-                detailed_buggies = get_detailed_list_of_buggy_lines(self.project_name, self.bug_index)
-                
-                # create mutation prompt
-                mutant_prompt = self.construct_mutation_prompt(fix_content, detailed_buggies)
-                # save mutation prompt
-                with open(os.path.join("experimental_setups", exps[-1], "mutations_history", "mutations_prompt_{}_{}".format(self.project_name, self.bug_index)), "a") as mph:
-                    mph.write(mutant_prompt)
-                
-                # Asking main agent for mutants
-                mutants = query_for_mutants(mutant_prompt, agent=self)
-                
-                exps = self.exps
-                existing_mutants = []
-                mutants_save_path = os.path.join("experimental_setups", exps[-1], "mutations_history", "mutants_{}_{}.json".format(self.project_name, self.bug_index))
-                
-                if os.path.exists(mutants_save_path):
-                    with open(mutants_save_path) as json_file:
-                        existing_mutants = json.load(json_file)
-                with open(os.path.join("experimental_setups", exps[-1], "mutations_history", "mutants_raw_{}_{}.json".format(self.project_name, self.bug_index)), "a") as raw_m:
-                    raw_m.write(mutants)
-                
-                try:
-                    mutants_json = self.save_to_json(mutants_save_path, json.loads(mutants))
-                    logger.info("MUTANTS LENGTH: " + str(len(mutants_json)) + "\n\n")
-                    if isinstance(mutants_json, dict):
-                        mutants_json = [mutants_json]
-                    
-                    for m in mutants_json:
-                        if m not in existing_mutants:
-                            fix_command = construct_fix_command(m, self.project_name, self.bug_index)
-                            if isinstance(fix_command, str):
-                                logger.info("MUTANT OBJECT: " + fix_command + "\n\n")
-                                raise TypeError("Error: EXPECTED 'DICT', RECEIEVED 'STR' INSTEAD" + fix_command)
-                            name, args = extract_command(fix_command, None, self.config)
-                            
-                            exec_result = execute_command(name, args, self)
-                            logger.info("---------------------------\nRESULT OF TRYING {} returned\n {} \n----------------------------\n\n".format(args, exec_result))
-                            if " 0 failing test" in exec_result:
-                                logger.info("PLAUSIBLE PATCH FOUND. REASON = 0 FAILING TESTS.\n\n")
-                                ## writing the plausible patch
-                                with open(os.path.join("experimental_setups", exps[-1], "plausible_patches", "plausible_patches_{}_{}.json".format(self.project_name, self.bug_index)), "a+") as exps:
-                                    exps.write("### PLAUSIBLE FIX\n{}\n".format(str(m)))
-                except Exception as e:
-                    logger.info("Error in loading the mutants response: " + str(e) + "\n\n")
 
         valid, errors = validate_dict(assistant_reply_dict, self.config)
         

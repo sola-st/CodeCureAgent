@@ -21,6 +21,11 @@ python3 scripts/construct_commands_descriptions.py
 input="$1"
 dos2unix "$input" # Convert file to Unix line endings (if needed)
 
+# Ensure the input file ends with a newline
+if [ -n "$input" ] && [ -f "$input" ]; then
+    tail -c1 "$input" | read -r _ || echo >> "$input"
+fi
+
 skip_header=1
 
 

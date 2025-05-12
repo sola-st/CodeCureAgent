@@ -74,7 +74,7 @@ class AIConfig:
         self.warning_repository_commit = warning_repository_commit
         self.warning_file_path = warning_file_path
         self.warning_rule_key = warning_rule_key
-        self.warning_start_line = warning_start_line
+        self.warning_start_line = int(warning_start_line)
         self.warning_rule_name = warning_rule_name
         self.warning_specific_message = warning_specific_message
         self.api_budget = api_budget

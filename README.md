@@ -35,12 +35,6 @@ Before you start using CodeCureAgent, ensure that your system meets the followin
 
    ```bash
    git clone https://github.com/sola-st/master-thesis-pascal-joos.git
-   cd master-thesis-pascal-joos
-   cd code_cure_agent
-   git clone https://github.com/rjust/defects4j.git
-   cp -r ../data/buggy-lines defects4j
-   cp -r ../data/buggy-methods defects4j
-   cd ../..
    ```
 
 3. Open the repository folder in VS Code.
@@ -49,6 +43,7 @@ Before you start using CodeCureAgent, ensure that your system meets the followin
 VS Code will now build and start the DevContainer, setting up the environment for you. This will take a while.
 
 5. Within your VS Code terminal, move to the folder code_cure_agent
+
     ```bash
     cd code_cure_agent
     ```

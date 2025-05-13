@@ -819,16 +819,6 @@ please use the indicated format and produce a list, like this:
                                                            rule_name=self.ai_config.warning_rule_name, warning_start_line=self.ai_config.warning_start_line, warning_specific_message=self.ai_config.warning_specific_message)
         return task_section
     
-
-    # TODO: Improve the analysis report layout and content in the prompt
-    def construct_initial_sonar_qube_report_context(self) -> str:
-
-        analysis_report_cleaned = {"minedRules": self.initial_analysis_report["minedRules"]}
-
-        with open("agent_config_and_prompt_files/initial_sonar_qube_analysis_report_section.md") as initial_report_section_file:
-            initial_sonar_qube_report_section = initial_report_section_file.read().format(analysis_report_json=json.dumps(analysis_report_cleaned, indent=4))
-        return initial_sonar_qube_report_section
-    
     def construct_plan_context(self) -> str:
         plan_section = "## Your current plan for approaching the task\n\n"
         if self.plans:
@@ -854,13 +844,12 @@ please use the indicated format and produce a list, like this:
             str: The context prompt string
         '''
         task_section = self.construct_task_context()
-        initial_sonar_qube_report_section = self.construct_initial_sonar_qube_report_context()
         plan_section = self.construct_plan_context()
         agent_history_section = self.construct_agent_history_context()
         forbidden_commands_section = self.construct_forbidden_commands_context()
 
         # Join the different parts together with a space inbetween. If one of the sections is None or an empty string then it is ignored.
-        return "\n\n".join(filter(None, [task_section, initial_sonar_qube_report_section, plan_section, agent_history_section, forbidden_commands_section]))
+        return "\n\n".join(filter(None, [task_section, plan_section, agent_history_section, forbidden_commands_section]))
 
     # TODO: to be removed when not needed anymore. Replaced by construct_context_prompt_code_cure_agent
     def construct_context_prompt(self,):

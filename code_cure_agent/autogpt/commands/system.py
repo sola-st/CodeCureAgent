@@ -23,7 +23,7 @@ from autogpt.logs import logger
         }
     },
 )
-def task_complete(reason: str, agent: Agent) -> NoReturn:
+def goals_accomplished(reason: str, agent: Agent) -> NoReturn:
     """
     A function that takes in a string and exits the program
 

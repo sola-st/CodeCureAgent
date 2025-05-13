@@ -1,7 +1,6 @@
 import json
 
-
-
+## The no_state_machine state corresponds to not using a state machine at all. It therefore includes all of the relevant commands (except commands for transitioning states)
 
 
 
@@ -49,8 +48,7 @@ write_fix_desc = """write_fix: Use this command to implement the fix you came up
     Only use this command if you think that you have collected all necessary information by using other commands.  
     The project will automatically be rebuilt and reanalyzed by SonarQube. Changes are reverted automatically if the build fails or if the rule violation remains.  
     Required params: (changes_dicts:list[dict])  
-    The list should contain at least one non-empty dictionary of changes. Each dict must conform to the format defined in the section `## The format of the fix`.
-    Note: If you're not in the `Trying out Fix Candidates` state, using this command will automatically switch you to it.  
+    The list should contain at least one non-empty dictionary of changes. Each dict must conform to the format defined in the section `## The format of the fix`.  
     [RESPECT LINE NUMBERS AS GIVEN IN THE CODE SNIPPETS]"""
 
 
@@ -78,7 +76,9 @@ commands_dict = {
     "Gathering Context for a Fix": "\n".join(["{}. {}".format(i+1, t) for i, t in enumerate(
         [formulate_plan_desc, read_range_desc, write_fix_desc, go_back_to_understanding_rule_desc])]),
     "Trying out Fix Candidates": "\n".join(["{}. {}".format(i+1, t) for i, t in enumerate(
-        [write_fix_desc, read_range_desc, go_back_to_gather_context_for_fix_desc, go_back_to_understanding_rule_desc, goals_accomplished_desc])])
+        [write_fix_desc, read_range_desc, go_back_to_gather_context_for_fix_desc, go_back_to_understanding_rule_desc, goals_accomplished_desc])]),
+    "no_state_machine": "\n".join(["{}. {}".format(i+1, t) for i, t in enumerate(
+        [read_range_desc, formulate_plan_desc, write_fix_desc, goals_accomplished_desc])])
 }
 
 with open("agent_config_and_prompt_files/commands_by_state.json", "w") as cbs:

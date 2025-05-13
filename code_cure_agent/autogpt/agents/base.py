@@ -91,7 +91,13 @@ class BaseAgent(metaclass=ABCMeta):
         with open("agent_config_and_prompt_files/states_description.json") as sdj:
             self.descriptions = json.load(sdj)
 
-        self.current_state = "Understanding the Violated Rule"
+        # Change this to the initial state if a state machine is to be used. 
+        # Also need to add info about the states in "prepare_ai_settings.py"
+
+        # By setting to no_state_machine, no state machine will 
+        # be used but only a single state with all commands
+        self.current_state = "no_state_machine"
+        
         self.prompt_dictionary = ai_config.construct_full_prompt(config)
 
         self.prompt_dictionary["commands"][2] = self.cmds_by_state[self.current_state]        
@@ -1097,7 +1103,7 @@ please use the indicated format and produce a list, like this:
         elif self.hyperparams["budget_control"]["name"] == "FULL-TRACK" and self.hyperparams["budget_control"]["params"]!={}:
             n_fixes = self.hyperparams["budget_control"]["params"]["#fixes"]
             cycle_instruction += "\nYou have, so far, executed, {} commands and suggested {} fixes. You have {} commands left. However, you need to suggest {} fixes before consuming all the left commands.\n".format(self.cycle_count, len(self.suggested_fixes), self.hyperparams["commands_limit"]-self.cycle_count, n_fixes - len(self.suggested_fixes))
-        elif self.hyperparams["budget_control"]["name"]=="FORCED":
+        elif self.hyperparams["budget_control"]["name"]=="FORCED" and self.current_state != "no_state_machine":
             t1 = self.hyperparams["budget_control"]["T1"]
             t2 = self.hyperparams["budget_control"]["T2"]
             if self.cycle_count >= t2:
@@ -1113,8 +1119,10 @@ please use the indicated format and produce a list, like this:
             [Message("system", self.prompt_dictionary["role"])])
         
         definitions_prompt = ""
-        static_sections_names = ["goals", "current state", "commands", "general guidelines"]
-        if self.current_state in ["Gathering Context for a Fix", "Trying out Fix Candidates"]:
+        static_sections_names = ["goals", "commands", "general guidelines"]
+        if self.current_state != "no_state_machine":
+            static_sections_names.append("current state")
+        if self.current_state in ["no_state_machine", "Gathering Context for a Fix", "Trying out Fix Candidates"]:
             static_sections_names.append("fix format")
         for key in static_sections_names:
             if isinstance(self.prompt_dictionary[key], list):

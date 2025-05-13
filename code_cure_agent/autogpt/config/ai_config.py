@@ -198,10 +198,7 @@ class AIConfig:
         # Construct full prompt
         full_prompt_parts = {
             
-            "role": f"You are {self.ai_name}, {self.ai_role.rstrip('.')}" +\
-            "Your decisions must always be made independently without seeking " +\
-            "user assistance. Play to your strengths as an LLM and pursue " +\
-            "simple strategies with no legal complications.  \n"
+            "role": f"You are {self.ai_name}, {self.ai_role.rstrip('.')}"
         }
 
         if config.execute_local_commands:

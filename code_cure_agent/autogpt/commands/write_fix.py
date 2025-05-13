@@ -39,7 +39,7 @@ def write_fix(changes_dicts: list, agent: BaseAgent) -> str:
     run_ret = ""
 
     state_switched = False
-    if agent.current_state != "Trying out Fix Candidates":
+    if agent.current_state != "no_state_machine" and agent.current_state != "Trying out Fix Candidates":
         agent.update_prompt_state("Trying out Fix Candidates")
         state_switched = True
 

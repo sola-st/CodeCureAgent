@@ -37,7 +37,7 @@ def list_java_files(main_dir) -> list:
 
 def preprocess_paths(agent: BaseAgent, project_name, bug_index, file_path):
     workspace = agent.config.workspace_path
-    project_dir = os.path.join(workspace, project_name.lower()+"_"+str(bug_index)+"_buggy")
+    project_dir = os.path.join(workspace, project_name+"_"+str(bug_index)+"_buggy")
     
     if file_path.endswith(".java"):
         file_path = file_path[:-5]
@@ -113,7 +113,7 @@ def create_deletion_template(project_name, bug_number):
 
 def run_checkout(project_name: str, bug_index:int, agent: BaseAgent):
     cmd_temp = "defects4j checkout -p {} -v {}b -w {}"
-    folder_name = "_".join([project_name.lower(), str(bug_index), "buggy"])
+    folder_name = "_".join([project_name, str(bug_index), "buggy"])
     if os.path.exists(os.path.join("auto_gpt_workspace", folder_name)):
         os.system("rm -rf {}".format(os.path.join("auto_gpt_workspace", folder_name)))
     cmd = cmd_temp.format(project_name, bug_index, folder_name)
@@ -214,7 +214,7 @@ def run_tests(project_name: str, bug_index: int, agent: BaseAgent) -> str:
 
 def run_defects4j_tests(project_name: str, bug_index:int, agent: BaseAgent):
     cmd_temp = "cd {} && defects4j compile && defects4j test"
-    folder_name = "_".join([project_name.lower(), str(bug_index), "buggy"])
+    folder_name = "_".join([project_name, str(bug_index), "buggy"])
     cmd = cmd_temp.format(folder_name)
 
     """Run tests on a given project and a bug number
@@ -603,7 +603,7 @@ def write_fix(project_name:str, bug_index:int, changes_dicts: list, agent: BaseA
 
 
 def execute_write_range(project_name, bug_index, changes_dicts, agent):
-    project_dir = os.path.join(agent.config.workspace_path, project_name.lower()+"_"+str(bug_index)+"_buggy")
+    project_dir = os.path.join(agent.config.workspace_path, project_name+"_"+str(bug_index)+"_buggy")
     for change_dict in changes_dicts:
         file_path = change_dict["file_name"]
         """
@@ -752,7 +752,7 @@ def get_classes_and_methods(project_name: str, bug_index: str, file_path: str, a
     It returns a dictinary where keys are classes names and values are list of methods names"""
     
     workspace = agent.config.workspace_path
-    project_dir="{}_{}_buggy".format(project_name.lower(), bug_index)
+    project_dir="{}_{}_buggy".format(project_name, bug_index)
     source_dir = ""
     if os.path.exists(os.path.join(workspace, project_dir, "source")):
         source_dir = "source"
@@ -829,7 +829,7 @@ def list_files(start_path='.'):
 
 def search_code_base(project_name:str, bug_index:str, key_words: list, agent: BaseAgent):
     workspace = agent.config.workspace_path
-    project_dir = "{}_{}_buggy".format(project_name.lower(), bug_index)
+    project_dir = "{}_{}_buggy".format(project_name, bug_index)
 
     source_dir = ""
     all_dirs = os.listdir(os.path.join(workspace, project_dir))
@@ -949,7 +949,7 @@ def extract_failing_test(output_message):
 def extract_test_code(project_name:str, bug_index:str, test_file_path: str, agent:BaseAgent):
 
     workspace = agent.config.workspace_path
-    project_dir = "{}_{}_buggy".format(project_name.lower(), bug_index)
+    project_dir = "{}_{}_buggy".format(project_name, bug_index)
     test_dir = ""
     all_dirs = os.listdir(os.path.join(workspace, project_dir))
     test_file_path = test_file_path.split("::")[0]
@@ -1021,7 +1021,7 @@ def extract_test_code(project_name:str, bug_index:str, test_file_path: str, agen
 
 
 def extract_fail_report(name: str, index: str, agent: BaseAgent):
-    project_dir = "{}_{}_buggy".format(name.lower(), index)
+    project_dir = "{}_{}_buggy".format(name, index)
     workspace = agent.config.workspace_path
 
     with open(os.path.join(workspace, project_dir, "failing_tests")) as wp_file:
@@ -1109,7 +1109,7 @@ def prepare_command(workspace, project_dir):
 
 def prepare_lsp_env(name, index, workspace):
     source_path = "lspeclipse"
-    destination_path = os.path.join(workspace, "_".join([name.lower(), str(index), "buggy"]))
+    destination_path = os.path.join(workspace, "_".join([name, str(index), "buggy"]))
 
     # Using subprocess to execute the cp command
     command = ["cp", "-r", source_path, destination_path]
@@ -1124,7 +1124,7 @@ def prepare_lsp_env(name, index, workspace):
 def lsp_hover(name:str, index:str, file_path:str, line_number:int, column:int, agent: BaseAgent):
     base_dir = "home/isleem/research_projects_repos/AutoGPT"
     workspace = agent.config.workspace_path
-    project_dir = "_".join([name.lower(), str(index), "buggy"])
+    project_dir = "_".join([name, str(index), "buggy"])
     id = random.randint(100, 9999999999)
     hover_request = {
         "jsonrpc": "2.0",
@@ -1278,7 +1278,7 @@ def extract_function_calls(java_code):
 
 def extract_similar_functions_calls(project_name:str, bug_index: str, file_path: str, code_snippet: str, agent:BaseAgent):
     workspace = agent.config.workspace_path
-    project_dir = "{}_{}_buggy".format(project_name.lower(), bug_index)
+    project_dir = "{}_{}_buggy".format(project_name, bug_index)
     
     """
     if not os.path.exists(os.path.join(workspace, project_dir,file_path)):
@@ -1403,7 +1403,7 @@ class FunctionExtractor(JavaListener):
 
 def extract_method_code(project_name: str, bug_index: str, file_path: str, method_name:str, agent: BaseAgent):
     workspace = agent.config.workspace_path
-    project_dir = "{}_{}_buggy".format(project_name.lower(), bug_index)
+    project_dir = "{}_{}_buggy".format(project_name, bug_index)
     
     """
     if file_path.endswith(".java"):
@@ -1458,7 +1458,7 @@ from unittest.mock import MagicMock
 def extract_function_def_context(project_name, bug_index, method_name, file_path, agent: BaseAgent):
     input_limit = 12000
     workspace = "./auto_gpt_workspace"
-    project_dir = "{}_{}_buggy".format(project_name.lower(), bug_index)
+    project_dir = "{}_{}_buggy".format(project_name, bug_index)
     
     """
     if file_path.endswith(".java"):

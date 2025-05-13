@@ -395,7 +395,7 @@ please use the indicated format and produce a list, like this:
             else:
                 return False
         except Exception as e:
-            with open("exception_files.txt", "w") as ef:
+            with open(f"experimental_setups/{self.exps[-1]}/logs/repetition_exception_file.txt", "w") as ef:
                 ef.write(str(e))
             print("Exception raised,", e)
             return False
@@ -1156,7 +1156,7 @@ please use the indicated format and produce a list, like this:
             command_result = self.history[-1]
             last_command_section = "{}\n".format(last_command.content)
             append_messages.append(Message("assistant", last_command_section))
-            result_last_command = "The result of executing that last command is:\n {}".format(command_result.content)
+            result_last_command = "The result of executing that last command is:\n{}".format(command_result.content)
             append_messages.append((Message("user", result_last_command)))
         if append_messages:
             prompt.extend(append_messages)
@@ -1334,15 +1334,12 @@ please use the indicated format and produce a list, like this:
             )
         except SyntaxError as e:
             logger.error(f"Response could not be parsed: {e}")
-            with open("parsing_erros_responses.txt", "a") as pers:
+            with open(f"experimental_setups/{self.exps[-1]}/logs/parsing_erros_responses.txt", "a") as pers:
                 pers.write(llm_response.content+"\n")
-            # TODO: tune this message
-            self.history.add(
-                "system",
-                f"Your response could not be parsed."
-                "\n\nRemember to only respond using the specified format above!",
-            )
-            return None, None, {}
+
+            return "error_when_parsing", {"error": "Your response could not be parsed."
+                                          f"\nTrying to parse the response failed with the following error message: {e}"
+                                          "\n\nRemember to only respond using the specified json schema!"}, {}
 
         # TODO: update memory/context
 

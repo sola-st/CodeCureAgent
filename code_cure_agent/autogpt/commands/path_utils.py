@@ -3,7 +3,7 @@ import os
 # TODO: test and understand what this does in detail. Is it what we need?
 
 def preprocess_paths(workspace, project_name: str, file_path):
-    project_dir = os.path.join(workspace, project_name.lower())
+    project_dir = os.path.join(workspace, project_name)
     
     if file_path.endswith(".java"):
         file_path = file_path[:-5]

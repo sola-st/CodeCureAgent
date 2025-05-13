@@ -78,7 +78,7 @@ def run_tests(name: str, index: int, workspace) -> str:
 
 def run_defects4j_tests(name: str, index:int, workspace):
     cmd_temp = "cd {} && defects4j compile && defects4j test"
-    folder_name = "_".join([name.lower(), str(index), "buggy"])
+    folder_name = "_".join([name, str(index), "buggy"])
     cmd = cmd_temp.format(folder_name)
 
     """Run tests on a given project and a bug number
@@ -137,7 +137,7 @@ def run_defects4j_tests(name: str, index:int, workspace):
 
 def run_checkout(name: str, index:int, workspace):
     cmd_temp = "defects4j checkout -p {} -v {}b -w {}"
-    folder_name = "_".join([name.lower(), str(index), "buggy"])
+    folder_name = "_".join([name, str(index), "buggy"])
     if os.path.exists(os.path.join("auto_gpt_workspace", folder_name)):
         os.system("rm -rf {}".format(os.path.join("auto_gpt_workspace", folder_name)))
     cmd = cmd_temp.format(name, index, folder_name)
@@ -293,7 +293,7 @@ def extract_file_name(diff_line):
     return "/".join(diff_line[2].split("/")[1:])
 
 def extract_fail_report(name: str, index: str, workspace):
-    project_dir = "{}_{}_buggy".format(name.lower(), index)
+    project_dir = "{}_{}_buggy".format(name, index)
     workspace = workspace
 
     with open(os.path.join(workspace, project_dir, "failing_tests")) as wp_file:
@@ -438,7 +438,7 @@ class FunctionExtractor(JavaListener):
 
 def extract_method_code(project_name, bug_index, method_name, file_path):
     workspace = "./auto_gpt_workspace"
-    project_dir = "{}_{}_buggy".format(project_name.lower(), bug_index)
+    project_dir = "{}_{}_buggy".format(project_name, bug_index)
     if file_path.endswith(".java"):
         file_path = file_path[:-5]
         file_path.replace(".", "/")
@@ -483,7 +483,7 @@ def extract_function_def_context(project_name, bug_index, method_name, file_path
         raise ValueError("NO EXTRACTED METHODS, SHOULD NOT HAPPEN")
     method_body = extracted_methods[0]
     workspace = "./auto_gpt_workspace"
-    project_dir = "{}_{}_buggy".format(project_name.lower(), bug_index)
+    project_dir = "{}_{}_buggy".format(project_name, bug_index)
     with open(os.path.join(workspace, project_dir, file_path)) as wpf:
         file_content = wpf.read()
 

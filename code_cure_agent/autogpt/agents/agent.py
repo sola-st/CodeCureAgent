@@ -131,7 +131,9 @@ class Agent(BaseAgent):
         user_input: str | None,
     ) -> str:
         # Execute command
-        if command_name is not None and command_name.lower().startswith("error"):
+        if command_name is not None and command_name.lower() == "error_when_parsing":
+            result = command_args["error"]
+        elif command_name is not None and command_name.lower().startswith("error"):
             result = f"Could not execute command: {command_name}{command_args}"
         elif command_name == "human_feedback":
             result = f"Human feedback: {user_input}"
@@ -189,6 +191,10 @@ class Agent(BaseAgent):
             patf.write(llm_response.content)
         assistant_reply_dict = extract_dict_from_response(llm_response.content)
 
+
+        if "thoughts" not in assistant_reply_dict:
+            assistant_reply_dict["thoughts"] = "No thoughts given."
+
         if "command" not in assistant_reply_dict:
             assistant_reply_dict["command"] = {"name": "missing_command", "args":{}}
         command_dict = assistant_reply_dict["command"]
@@ -223,8 +229,7 @@ class Agent(BaseAgent):
         
         if not valid:
             raise SyntaxError(
-                "Validation of response failed:\n  "
-                + ";\n  ".join([str(e) for e in errors])
+                ";\n".join([str(e) for e in errors])
             )
 
         for plugin in self.config.plugins:
@@ -379,7 +384,7 @@ def execute_command(
 
         # The command_name was unknown. So add it to the list of unknown commands.
 
-        agent.unknown_commands.append(command_name)
+        agent.unknown_commands.append(str(command_name))
         raise RuntimeError(
             f"Cannot execute '{command_name}': unknown command."
             " Do not try to use this command again."

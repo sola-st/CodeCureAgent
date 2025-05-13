@@ -16,12 +16,8 @@ go_to_gather_context_for_fix_desc = """go_to_gather_context_for_fix: Transitions
 
 ## Gathering Context for a Fix
 
-formulate_plan_desc = """formulate_plan: Formulate or update a plan, with fine-grained steps, about how you want to approach collecting all relevant information to fix the rule violation (i.e. which commands you want to call in what order and why).  
-    Example plan (your plan and approach can be different):  
-    "1.) read_range in file foobar.java to inspect relevant context  
-    2.) search_code_base with "key_words": ["some_relevant_key"] to find related files and lines that might need to be changed.  
-    3.) ..."  
-    If you haven't formulated a plan yet, call this command first. You can call it again at any time, if you found new information that requires a change of plan.  
+formulate_plan_desc = """formulate_plan: Formulate or update a plan, with fine-grained steps, about how you want to fix the rule violation (i.e. which lines in which files to change and to what).  
+    Call this command before calling write_fix for the first time. You can call it again at any time, if you received new information that requires a change of plan.  
     Required params: (plan: string)"""
 
 search_code_desc = """search_code_base: Scans all Java files in a project for a list of keywords.  

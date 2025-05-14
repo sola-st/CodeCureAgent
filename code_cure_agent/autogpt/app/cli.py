@@ -88,6 +88,11 @@ import click
     help="AI role override",
 )
 @click.option(
+    "--warning-ID",
+    type=int,
+    help="A unique ID for the warning (the specific warning instance the agent runs on)"
+)
+@click.option(
     "--warning-repository-url",
     type=str,
     help="The Git repository with the SonarQube warning to fix"
@@ -160,6 +165,7 @@ def main(
     install_plugin_deps: bool,
     ai_name: Optional[str],
     ai_role: Optional[str],
+    warning_id: Optional[int],
     warning_repository_url: Optional[str],
     warning_repository_commit: Optional[str],
     warning_file_path: Optional[str],
@@ -201,6 +207,7 @@ def main(
             install_plugin_deps=install_plugin_deps,
             ai_name=ai_name,
             ai_role=ai_role,
+            warning_ID=warning_id,
             warning_repository_URL=warning_repository_url,
             warning_repository_commit=warning_repository_commit,
             warning_file_path=warning_file_path,

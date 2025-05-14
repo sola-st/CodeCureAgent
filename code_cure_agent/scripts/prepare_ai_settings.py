@@ -37,6 +37,7 @@ ai_role: |+
   * Your decisions must always be made independently without seeking user assistance.
 
 api_budget: 0.0
+warning_ID: '{warning_ID}'
 warning_repository_URL: '{warning_repository_URL}'
 warning_repository_commit: '{warning_repository_commit}'
 warning_rule_key: '{warning_rule_key}'
@@ -47,8 +48,7 @@ warning_specific_message: '{warning_specific_message}'
 """
 
 parser = argparse.ArgumentParser()
-parser.add_argument("name")
-parser.add_argument("index")
+parser.add_argument("warning_ID")
 parser.add_argument("warning_repository_URL")
 parser.add_argument("warning_repository_commit")
 parser.add_argument("warning_rule_key")
@@ -59,7 +59,7 @@ parser.add_argument("warning_specific_message")
 args = parser.parse_args()
 
 
-settings = template.format(warning_repository_URL=args.warning_repository_URL, warning_repository_commit=args.warning_repository_commit, warning_rule_key=args.warning_rule_key,
+settings = template.format(warning_ID=args.warning_ID, warning_repository_URL=args.warning_repository_URL, warning_repository_commit=args.warning_repository_commit, warning_rule_key=args.warning_rule_key,
                            warning_file_path=args.warning_file_path, warning_start_line=args.warning_start_line, warning_rule_name=args.warning_rule_name, warning_specific_message=args.warning_specific_message)
 
 with open("agent_config_and_prompt_files/ai_settings.yaml", "w") as set_yaml:

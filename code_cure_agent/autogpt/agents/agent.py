@@ -190,7 +190,7 @@ class Agent(BaseAgent):
 
         sanitized_warning_file_path = self.ai_config.warning_file_path.replace(
             "/", ".")
-        with open(os.path.join("experimental_setups", self.exps[-1], "responses", f"model_responses_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_{str(self.ai_config.warning_start_line)}"), "a+") as patf:
+        with open(os.path.join("experimental_setups", self.exps[-1], "responses", f"model_responses_{str(self.ai_config.warning_ID)}_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(self.ai_config.warning_start_line)}"), "a+") as patf:
             patf.write(llm_response.content)
         assistant_reply_dict = extract_dict_from_response(llm_response.content)
 
@@ -282,7 +282,7 @@ class Agent(BaseAgent):
             sanitized_warning_file_path = self.ai_config.warning_file_path.replace(
                 "/", ".")
             initial_analysis_report = sonar_qube_analysis.analyze_file_and_parse_report(self.ai_config.warning_file_path, rules_in_active_profile, self.ai_config.warning_repository_name,
-                                                                                        f"{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_{str(self.ai_config.warning_start_line)}_initial_analysis_report.json", self)
+                                                                                        f"initial_analysis_report_{str(self.ai_config.warning_ID)}_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(self.ai_config.warning_start_line)}.json", self)
 
             self.initial_analysis_report = initial_analysis_report
 

@@ -256,7 +256,9 @@ class BaseAgent(metaclass=ABCMeta):
         # with open("experimental_setups/experiments_list.txt") as eht:
         exps = self.exps
 
-        with open(os.path.join("experimental_setups", exps[-1], "saved_contexts", "saved_context_{}_{}".format(self.project_name, self.bug_index)), "w") as patf:
+        sanitized_warning_file_path = self.ai_config.warning_file_path.replace(
+            "/", ".")
+        with open(os.path.join("experimental_setups", exps[-1], "saved_contexts", f"saved_context_{str(self.ai_config.warning_ID)}_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(self.ai_config.warning_start_line)}"), "w") as patf:
             json.dump(context, patf)
 
     def construct_pre_info(self, ):
@@ -326,7 +328,9 @@ please use the indicated format and produce a list, like this:
         # with open("experimental_setups/experiments_list.txt") as eht:
         #    exps = eht.read().splitlines()
         exps = self.exps
-        with open(os.path.join("experimental_setups", exps[-1], "saved_contexts", "saved_context_{}_{}".format(self.project_name, self.bug_index)), "r") as patf:
+        sanitized_warning_file_path = self.ai_config.warning_file_path.replace(
+            "/", ".")
+        with open(os.path.join("experimental_setups", exps[-1], "saved_contexts", f"saved_context_{str(self.ai_config.warning_ID)}_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(self.ai_config.warning_start_line)}"), "r") as patf:
             context = json.load(patf)
 
         self.cycle_budget = context["cycle_budget"]
@@ -1006,7 +1010,7 @@ please use the indicated format and produce a list, like this:
         # Save prompts at each step
         sanitized_warning_file_path = self.ai_config.warning_file_path.replace(
             "/", ".")
-        with open(os.path.join("experimental_setups", self.exps[-1], "logs", f"prompt_history_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_{str(self.ai_config.warning_start_line)}"), "a+") as patf:
+        with open(os.path.join("experimental_setups", self.exps[-1], "logs", f"prompt_history_{str(self.ai_config.warning_ID)}_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(self.ai_config.warning_start_line)}"), "a+") as patf:
             patf.write(prompt.dump())
 
         raw_response = create_chat_completion(

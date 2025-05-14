@@ -44,6 +44,7 @@ def prompt_user(
             ai_config_template.ai_goals,
             ai_config_template.ai_name,
             ai_config_template.ai_role,
+            ai_config_template.warning_ID,
             ai_config_template.warning_repository_URL,
             ai_config_template.warning_repository_commit,
             ai_config_template.warning_file_path,
@@ -180,6 +181,17 @@ def generate_aiconfig_manual(
             "Develop and manage multiple businesses autonomously",
         ]
 
+    if ai_config_template and ai_config_template.warning_ID:
+        warning_ID = ai_config_template.warning_ID
+    else:
+        # Get repository URL from User
+        logger.typewriter_log(
+            "Give a unique ID for the agent run identifying the specific warning: ",
+            Fore.GREEN, speak_text=False
+        )
+        warning_ID = int(utils.clean_input(
+            config, "Warning ID is: "))
+
     if ai_config_template and ai_config_template.warning_repository_URL:
         warning_repository_URL = ai_config_template.warning_repository_URL
     else:
@@ -275,7 +287,7 @@ def generate_aiconfig_manual(
             )
             api_budget = 0.0
 
-    return AIConfig(ai_name, ai_role, ai_goals, warning_repository_URL, warning_repository_commit, warning_file_path, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message, api_budget)
+    return AIConfig(ai_name, ai_role, ai_goals, warning_ID, warning_repository_URL, warning_repository_commit, warning_file_path, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message, api_budget)
 
 
 def generate_aiconfig_automatic(user_prompt: str, config: Config) -> AIConfig:

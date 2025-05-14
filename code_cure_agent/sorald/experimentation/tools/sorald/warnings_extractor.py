@@ -171,7 +171,8 @@ def extract_warnings(repo_urls: List[str], config: Config) -> None:
         raw_data_dst.write_text(frame.to_csv())
 
         deltas_dst = config.output_dir / (raw_data_dst.stem + ".deltas.csv")
-        deltas_dst.write_text(frame.diff(axis=1).fillna(frame.iloc[0]).to_csv())
+        deltas_dst.write_text(frame.diff(
+            axis=1).fillna(frame.iloc[0]).to_csv())
 
     print(f"Results written to {config.output_dir}")
 

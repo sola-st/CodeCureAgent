@@ -48,15 +48,15 @@ def count_message_tokens(
         tokens_per_name = 1
         encoding_model = "gpt-4"
 
-    # If the model is none of the above, use a safe upper estimate for the tokens 
-    # needed for the message context. 
-    # There is no newer information on the ChatML format than 
+    # If the model is none of the above, use a safe upper estimate for the tokens
+    # needed for the message context.
+    # There is no newer information on the ChatML format than
     # "https://github.com/openai/openai-python/blob/120d225b91a8453e15240a49fb1c6794d8119326/chatml.md"
     else:
         tokens_per_message = 4
         tokens_per_name = 1
         encoding_model = model
-        
+
     try:
         encoding = tiktoken.encoding_for_model(encoding_model)
     except KeyError:

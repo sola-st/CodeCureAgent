@@ -47,7 +47,6 @@ class OpenAIModelName(str, enum.Enum):
     GPT4_1 = "gpt-4.1-2025-04-14"
 
 
-
 OPEN_AI_EMBEDDING_MODELS = {
     OpenAIModelName.ADA: EmbeddingModelProviderModelInfo(
         name=OpenAIModelName.ADA,
@@ -212,7 +211,8 @@ class OpenAIProvider(
         **kwargs,
     ) -> LanguageModelProviderModelResponse:
         """Create a completion using the OpenAI API."""
-        completion_kwargs = self._get_completion_kwargs(model_name, functions, **kwargs)
+        completion_kwargs = self._get_completion_kwargs(
+            model_name, functions, **kwargs)
         response = await self._create_completion(
             messages=model_prompt,
             **completion_kwargs,
@@ -338,7 +338,8 @@ async def _create_completion(
     """
     messages = [message.dict() for message in messages]
     if "functions" in kwargs:
-        kwargs["functions"] = [function.json_schema for function in kwargs["functions"]]
+        kwargs["functions"] = [
+            function.json_schema for function in kwargs["functions"]]
     return await openai.ChatCompletion.acreate(
         messages=messages,
         **kwargs,

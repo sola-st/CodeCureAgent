@@ -48,7 +48,8 @@ def main(args: List[str]):
 
 
 def generate_pr_message(rule_key: int, num_repairs: int) -> str:
-    rule_description = get_rule_metadata(rule_key)[jsonkeys.SONAR_METADATA.TITLE]
+    rule_description = get_rule_metadata(
+        rule_key)[jsonkeys.SONAR_METADATA.TITLE]
     rule_doc_url = get_rule_doc_url(rule_key)
 
     return jinja2.Template(TEMPLATE).render(
@@ -60,7 +61,8 @@ def generate_pr_message(rule_key: int, num_repairs: int) -> str:
 
 
 def get_rule_doc_url(rule_key: int, handled_rules_url: str = HANDLED_RULES_URL) -> str:
-    handled_rules = requests.get(handled_rules_url, headers={"Content-Type": "text/html"}).content.decode()
+    handled_rules = requests.get(handled_rules_url, headers={
+                                 "Content-Type": "text/html"}).content.decode()
     markup = BeautifulSoup(handled_rules, features="html.parser")
 
     for a_tag in markup.find_all("a"):

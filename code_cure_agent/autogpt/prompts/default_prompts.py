@@ -1,4 +1,4 @@
-#########################Setup.py#################################
+######################### Setup.py#################################
 
 DEFAULT_SYSTEM_PROMPT_AICONFIG_AUTOMATIC = """
 Your task is to devise up to 5 highly effective goals and an appropriate role-based name (_GPT) for an autonomous agent, ensuring that the goals are optimally aligned with the successful completion of its assigned task.

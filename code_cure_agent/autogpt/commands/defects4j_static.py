@@ -1,3 +1,11 @@
+import tiktoken
+from antlr4 import FileStream, CommonTokenStream
+from langchain.chat_models import ChatOpenAI
+from antlr4 import ParseTreeWalker
+from java_antlr.JavaListener import JavaListener
+from java_antlr.JavaParser import JavaParser
+from java_antlr.JavaLexer import JavaLexer
+from langchain.schema.messages import HumanMessage, SystemMessage, AIMessage
 import os
 import subprocess
 from pathlib import Path
@@ -6,6 +14,7 @@ import json
 from autogpt.logs import logger
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
 
 def get_info(name: str, index: int, workspace) -> str:
     """Create and execute a Python file in a Docker container and return the STDOUT of the
@@ -21,7 +30,8 @@ def get_info(name: str, index: int, workspace) -> str:
 
     return execute_get_info(name, index, workspace)
 
-def execute_get_info(name: str, index:int, workspace):
+
+def execute_get_info(name: str, index: int, workspace):
     cmd_temp = "defects4j info -p {} -b {}"
     cmd = cmd_temp.format(name, index)
 
@@ -53,14 +63,15 @@ def execute_get_info(name: str, index:int, workspace):
             root_cause = extract_root_cause(result.stdout)
             edited_files = get_edited_files(name, index)
             localization_info = get_localization(name, index)
-            return root_cause + "\n"+ localization_info
+            return root_cause + "\n" + localization_info
         else:
             return f"Error: {result.stderr}"
     else:
         logger.debug("Auto-GPT is not running in a Docker container")
         return "Tricky situation! Auto-GPT is not running in a Docker container"
-    
+
     # TODO("Adapt this code later to run inside docker if it's not already running")
+
 
 def run_tests(name: str, index: int, workspace) -> str:
     """Create and execute a Python file in a Docker container and return the STDOUT of the
@@ -76,7 +87,8 @@ def run_tests(name: str, index: int, workspace) -> str:
 
     return run_defects4j_tests(name, index, workspace)
 
-def run_defects4j_tests(name: str, index:int, workspace):
+
+def run_defects4j_tests(name: str, index: int, workspace):
     cmd_temp = "cd {} && defects4j compile && defects4j test"
     folder_name = "_".join([name, str(index), "buggy"])
     cmd = cmd_temp.format(folder_name)
@@ -106,7 +118,7 @@ def run_defects4j_tests(name: str, index:int, workspace):
         )
         if result.returncode == 0:
             logger.debug(
-                "NO ERROR IF: " +result.stdout)
+                "NO ERROR IF: " + result.stdout)
             if "BUILD FAILED" in result.stdout:
                 with open(os.path.join(workspace, folder_name+"_test.txt"), "w") as testrf:
                     testrf.write("")
@@ -132,14 +144,16 @@ def run_defects4j_tests(name: str, index:int, workspace):
     else:
         logger.debug("Auto-GPT is not running in a Docker container")
         return "Tricky situation! Auto-GPT is not running in a Docker container"
-    
+
     # TODO("Adapt this code later to run inside docker if it's not already running")
 
-def run_checkout(name: str, index:int, workspace):
+
+def run_checkout(name: str, index: int, workspace):
     cmd_temp = "defects4j checkout -p {} -v {}b -w {}"
     folder_name = "_".join([name, str(index), "buggy"])
     if os.path.exists(os.path.join("auto_gpt_workspace", folder_name)):
-        os.system("rm -rf {}".format(os.path.join("auto_gpt_workspace", folder_name)))
+        os.system(
+            "rm -rf {}".format(os.path.join("auto_gpt_workspace", folder_name)))
     cmd = cmd_temp.format(name, index, folder_name)
 
     """Undo the changes that you made to the project and restore the original content of all files
@@ -174,6 +188,7 @@ def run_checkout(name: str, index:int, workspace):
         logger.debug("Auto-GPT is not running in a Docker container")
         return "Tricky situation! Auto-GPT is not running in a Docker container"
 
+
 def we_are_running_in_a_docker_container() -> bool:
     """Check if we are running in a Docker container
 
@@ -182,6 +197,7 @@ def we_are_running_in_a_docker_container() -> bool:
     """
     return True
     return os.path.exists("/.dockerenv")
+
 
 def extract_root_cause(info):
     separator = "--------------------------------------------------------------------------------"
@@ -194,18 +210,18 @@ def extract_root_cause(info):
 def extract_failing_test(output_message):
     # Define a regular expression pattern to match failing test information
     pattern = re.compile(r'Failing tests: (\d+)\n\s+- (.+::\w+)')
-    
+
     # Search for the pattern in the output message
     match = pattern.search(output_message)
-    
+
     if match:
         # Extract the number of failing tests and the test case information
         num_failures = int(match.group(1))
         test_case_info = match.group(2)
-        
+
         # Split the test case information into class and function
         class_name, function_name = test_case_info.split('::')
-        
+
         return {
             'num_failures': num_failures,
             'class_name': class_name,
@@ -214,8 +230,10 @@ def extract_failing_test(output_message):
     else:
         return None
 
+
 def get_edited_files(name, index):
-    target_file = "defects4j/framework/projects/{name}/patches/{index}.src.patch".format(name=name, index=index)
+    target_file = "defects4j/framework/projects/{name}/patches/{index}.src.patch".format(
+        name=name, index=index)
     with open(target_file) as ptf:
         diff_content = ptf.readlines()
 
@@ -228,7 +246,8 @@ def get_edited_files(name, index):
 
 def extract_lines_range(name, index):
     import whatthepatch
-    target_file = "defects4j/framework/projects/{name}/patches/{index}.src.patch".format(name=name, index=index)
+    target_file = "defects4j/framework/projects/{name}/patches/{index}.src.patch".format(
+        name=name, index=index)
     with open(target_file) as ptf:
         text = ptf.readlines()
     diff = [x for x in whatthepatch.parse_patch(text)]
@@ -244,6 +263,7 @@ def extract_lines_range(name, index):
                     max = d.new
         min_max.append((min, max-5))
     return min_max
+
 
 def get_localization(name, index):
     localization_dir = "defects4j/buggy-lines"
@@ -271,8 +291,9 @@ def get_localization(name, index):
         print(methods_info)
         for m in methods_list:
             if m.endswith("1"):
-                methods_info += m +'\n'
+                methods_info += m + '\n'
     return lines_info + "\n" + methods_info
+
 
 def get_list_of_buggy_lines(name, index):
     localization_dir = "defects4j/buggy-lines"
@@ -288,9 +309,11 @@ def get_list_of_buggy_lines(name, index):
             lines.append(bl.split("#")[-2])
         return lines
 
+
 def extract_file_name(diff_line):
     diff_line = diff_line.split(" ")
     return "/".join(diff_line[2].split("/")[1:])
+
 
 def extract_fail_report(name: str, index: str, workspace):
     project_dir = "{}_{}_buggy".format(name, index)
@@ -321,46 +344,47 @@ def extract_fail_report(name: str, index: str, workspace):
         failing_test_cases.append(current_case)
 
     logger.debug(str(failing_test_cases))
-    
-    return "There are {} failing test cases, here is the full log of failing cases:\n".format(len(failing_test_cases))+\
+
+    return "There are {} failing test cases, here is the full log of failing cases:\n".format(len(failing_test_cases)) +\
         "\n\n".join(["\n".join(ftc) for ftc in failing_test_cases])
 
-from langchain.chat_models import ChatOpenAI
-from langchain.schema.messages import HumanMessage, SystemMessage, AIMessage
 
 def query_for_fix(query, agent):
-    chat = ChatOpenAI(openai_api_key=OPENAI_API_KEY, model=agent.config.fast_llm)
+    chat = ChatOpenAI(openai_api_key=OPENAI_API_KEY,
+                      model=agent.config.fast_llm)
 
     messages = [
         SystemMessage(
-            content="You are an automated program repair agent who suggests fixes to given bugs." +\
-                    "Particularly, you will be given some information about a bug." +\
+            content="You are an automated program repair agent who suggests fixes to given bugs." +
+                    "Particularly, you will be given some information about a bug." +
                     "Your task is to suggest a list of possible fixes for the given bug. Usually, the given information contains an approximate location of the bug. Respect the fix format described below. Output a json parsable output enclosed in a list."
-                    ),
+        ),
         HumanMessage(
             content=query
-            )  
+        )
     ]
     response = chat.invoke(messages)
 
     return response.content
 
+
 def query_for_mutants(query, agent):
-    chat = ChatOpenAI(openai_api_key=OPENAI_API_KEY, model=agent.config.fast_llm)
+    chat = ChatOpenAI(openai_api_key=OPENAI_API_KEY,
+                      model=agent.config.fast_llm)
 
     messages = [
         SystemMessage(
-            content="You are a code assitant and program repair agent who suggests fixes to given bugs." +\
-                    "Particularly, you will be given some information about a bug." +\
-                    "Your task is to suggest a list of possible mutations of the buggy code. Probably mutating it a little bit would fix the bug."+\
-                    "Use the information that I give you and also your general knowledge of similar code snippets or bug fixes that you know of."+\
+            content="You are a code assitant and program repair agent who suggests fixes to given bugs." +
+                    "Particularly, you will be given some information about a bug." +
+                    "Your task is to suggest a list of possible mutations of the buggy code. Probably mutating it a little bit would fix the bug." +
+                    "Use the information that I give you and also your general knowledge of similar code snippets or bug fixes that you know of." +
                     "Respect the fix format, described below, for every mutant that you generate."
-                    ),
+        ),
         HumanMessage(
             content=query
-            )  
+        )
     ]
-    #response_format={ "type": "json_object" }
+    # response_format={ "type": "json_object" }
     response = chat.invoke(messages)
 
     return response.content
@@ -380,33 +404,35 @@ def construct_fix_command(fix_object, project_name, bug_index):
             return str(e)
 
     return {
-            "thoughts": "executing the mutants",
-            "command":{
-                "name": "write_fix",
-                "args":{
-                    "project_name":project_name,
-                    "bug_index":bug_index,
+        "thoughts": "executing the mutants",
+        "command": {
+            "name": "write_fix",
+            "args": {
+                    "project_name": project_name,
+                    "bug_index": bug_index,
                     "changes_dicts": fix_object
-                }
             }
         }
+    }
 
 
 def query_for_commands(query, agent):
-    chat = ChatOpenAI(openai_api_key=OPENAI_API_KEY, model=agent.config.fast_llm)
+    chat = ChatOpenAI(openai_api_key=OPENAI_API_KEY,
+                      model=agent.config.fast_llm)
 
     messages = [
         SystemMessage(
             content="I have a set of functions that help me analyze and repair buggy code. I will give you the description of the functions (I also call them commands), and the buggy piece of code and tell me what commands would make sense to call to get more info about the bug."
-                    ),
+        ),
         HumanMessage(
             content=query
-            )  
+        )
     ]
-    #response_format={ "type": "json_object" }
+    # response_format={ "type": "json_object" }
     response = chat.invoke(messages)
 
     return response.content
+
 
 def list_java_files(main_dir) -> list:
     directory = main_dir
@@ -414,15 +440,11 @@ def list_java_files(main_dir) -> list:
     for root, dirs, files in os.walk(directory):
         for file in files:
             if file.endswith(".java"):
-                java_files.append(os.path.join(root.replace("{}/".format(main_dir), ""), file))
+                java_files.append(os.path.join(
+                    root.replace("{}/".format(main_dir), ""), file))
 
     return java_files
 
-from antlr4 import FileStream, CommonTokenStream
-from java_antlr.JavaLexer import JavaLexer
-from java_antlr.JavaParser import JavaParser
-from java_antlr.JavaListener import JavaListener
-from antlr4 import ParseTreeWalker
 
 class FunctionExtractor(JavaListener):
     def __init__(self):
@@ -434,7 +456,9 @@ class FunctionExtractor(JavaListener):
         method_body = ctx.methodBody().getText()
         method_params = ctx.formalParameters().getText()
         if method_name == self.target_name:
-            self.matched_methods.append((method_name, method_body, method_params))
+            self.matched_methods.append(
+                (method_name, method_body, method_params))
+
 
 def extract_method_code(project_name, bug_index, method_name, file_path):
     workspace = "./auto_gpt_workspace"
@@ -445,40 +469,44 @@ def extract_method_code(project_name, bug_index, method_name, file_path):
         file_path += ".java"
     else:
         file_path = file_path.replace(".", "/")
-    
+
     if not os.path.exists(os.path.join(workspace, project_dir, file_path)):
         if not os.path.exists(os.path.join(workspace, project_dir, "files_index.txt")):
             with open(os.path.join(workspace, project_dir, "files_index.txt"), "w") as fit:
-                fit.write("\n".join(list_java_files(os.path.join(workspace, project_dir))))
-                
+                fit.write("\n".join(list_java_files(
+                    os.path.join(workspace, project_dir))))
+
         with open(os.path.join(workspace, project_dir, "files_index.txt")) as fit:
-            files_index = [f for f in fit.read().splitlines() if file_path in f]
+            files_index = [f for f in fit.read().splitlines()
+                           if file_path in f]
 
         if len(files_index) == 1:
             file_path = files_index[0]
         elif len(files_index) >= 1:
-            raise ValueError("Multiple Candidate Paths. We do not handle this yet!")
+            raise ValueError(
+                "Multiple Candidate Paths. We do not handle this yet!")
         else:
             return "The file_path {} does not exist.".format(file_path)
-    
+
     input_stream = FileStream(os.path.join(workspace, project_dir, file_path))
-    
+
     lexer = JavaLexer(input_stream)
     token_stream = CommonTokenStream(lexer)
     parser = JavaParser(token_stream)
-    
+
     tree = parser.compilationUnit()
-    
+
     extractor = FunctionExtractor()
     extractor.target_name = method_name
     walker = ParseTreeWalker()
     walker.walk(extractor, tree)
     return [b[1] for i, b in enumerate(extractor.matched_methods)]
-    
-import tiktoken
+
+
 def extract_function_def_context(project_name, bug_index, method_name, file_path, agent):
     input_limit = 12000
-    extracted_methods = extract_method_code(project_name, bug_index, method_name, file_path)
+    extracted_methods = extract_method_code(
+        project_name, bug_index, method_name, file_path)
     if len(extract_method_code) == 0:
         raise ValueError("NO EXTRACTED METHODS, SHOULD NOT HAPPEN")
     method_body = extracted_methods[0]
@@ -497,20 +525,24 @@ def extract_function_def_context(project_name, bug_index, method_name, file_path
         return context
     else:
         return enc.decode(context[-input_limit:])
-    
+
+
 def auto_complete_functions(project_name, bug_index, file_path, method_name, agent):
-    context = extract_function_def_context(project_name, bug_index, method_name, file_path, agent)
-    chat = ChatOpenAI(openai_api_key=OPENAI_API_KEY, model=agent.config.fast_llm)
+    context = extract_function_def_context(
+        project_name, bug_index, method_name, file_path, agent)
+    chat = ChatOpenAI(openai_api_key=OPENAI_API_KEY,
+                      model=agent.config.fast_llm)
     messages = [
-            SystemMessage(
-                content="implement the code for the method {}, here is the code before the method:".format(method_name)),
-            HumanMessage(
-                content=context
-                )  
-        ]
-        #response_format={ "type": "json_object" }
+        SystemMessage(
+            content="implement the code for the method {}, here is the code before the method:".format(method_name)),
+        HumanMessage(
+            content=context
+        )
+    ]
+    # response_format={ "type": "json_object" }
     response = chat.invoke(messages)
     return response.content
+
 
 def extract_command(
     assistant_reply_json: dict, assistant_reply, config
@@ -604,6 +636,7 @@ def execute_command(
     except Exception as e:
         return f"Error: {str(e)}"
 
+
 def get_detailed_list_of_buggy_lines(name, index):
     localization_dir = "defects4j/buggy-lines"
     methods_dir = "defects4j/buggy-methods"
@@ -618,7 +651,7 @@ def get_detailed_list_of_buggy_lines(name, index):
             if bl.replace("\n", "").replace(" ", "").replace("\t", "") == "":
                 continue
             lines.append((int(bl.split("#")[1]), bl.split("#")[0]))
-        
+
         ret_val = "Your fix should target all the following lines by at least one edit type (modification, insertion, or deletion):\n"
         for l in lines:
             ret_val += str(l[0]) + " from file: " + l[1] + "\n"
@@ -626,35 +659,41 @@ def get_detailed_list_of_buggy_lines(name, index):
         ret_val += "\n"
         return ret_val
 
+
 def parse_buggy_lines(buggy_lines):
-	parsed_lines = {}
-	for line in buggy_lines:
-		splitted_line = line.split("#")
-		if splitted_line[0] in parsed_lines:
-			parsed_lines[splitted_line[0]].append((splitted_line[1], splitted_line[2]))
-		else:
-			parsed_lines[splitted_line[0]] = [(splitted_line[1], splitted_line[2])]
-	return parsed_lines
+    parsed_lines = {}
+    for line in buggy_lines:
+        splitted_line = line.split("#")
+        if splitted_line[0] in parsed_lines:
+            parsed_lines[splitted_line[0]].append(
+                (splitted_line[1], splitted_line[2]))
+        else:
+            parsed_lines[splitted_line[0]] = [
+                (splitted_line[1], splitted_line[2])]
+    return parsed_lines
 
 
 def create_fix_template(project_name, bug_number):
-	with open("defects4j/buggy-lines/{}-{}.buggy.lines".format(project_name, bug_number)) as bgl:
-		buggy_lines = bgl.read().splitlines()
-	parsed_lines = parse_buggy_lines(buggy_lines)
-	
-	fix_template = []
-	for key in parsed_lines:
-		new_dict = {
-        "file_name": key,
-		"target_lines": parsed_lines[key],
-        "insertions": [],
-        "deletions": [],
-        "modifications": []
-    	}
-		fix_template.append(new_dict)
+    with open("defects4j/buggy-lines/{}-{}.buggy.lines".format(project_name, bug_number)) as bgl:
+        buggy_lines = bgl.read().splitlines()
+    parsed_lines = parse_buggy_lines(buggy_lines)
 
-	fix_template_str = json.dumps(fix_template)
-	fix_template_str = fix_template_str.replace('"modifications": []', '"modifications": [here put the list of modification dictionaries {"line_number":..., "modified_line":...}, ...]')
-	fix_template_str = fix_template_str.replace('"deletions": []', '"deletions": [here put the lines number to delete...]')
-	fix_template_str = fix_template_str.replace('"insertions": []', '"insertions": [here put the list of insertion dictionaries. DO NOT REPEAT ALREADY EXISTING LINES!: {"line_numbe":..., "new_lines":[...]}, ...]')
-	return fix_template_str
+    fix_template = []
+    for key in parsed_lines:
+        new_dict = {
+            "file_name": key,
+            "target_lines": parsed_lines[key],
+            "insertions": [],
+            "deletions": [],
+            "modifications": []
+        }
+        fix_template.append(new_dict)
+
+    fix_template_str = json.dumps(fix_template)
+    fix_template_str = fix_template_str.replace(
+        '"modifications": []', '"modifications": [here put the list of modification dictionaries {"line_number":..., "modified_line":...}, ...]')
+    fix_template_str = fix_template_str.replace(
+        '"deletions": []', '"deletions": [here put the lines number to delete...]')
+    fix_template_str = fix_template_str.replace(
+        '"insertions": []', '"insertions": [here put the list of insertion dictionaries. DO NOT REPEAT ALREADY EXISTING LINES!: {"line_numbe":..., "new_lines":[...]}, ...]')
+    return fix_template_str

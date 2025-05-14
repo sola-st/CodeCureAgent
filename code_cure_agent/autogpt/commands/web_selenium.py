@@ -1,45 +1,43 @@
 """Commands for browsing a website"""
 
 from __future__ import annotations
+from autogpt.url_utils.validators import validate_url
+from autogpt.processing.html import extract_hyperlinks, format_hyperlinks
+from autogpt.memory.vector import MemoryItem, get_memory
+from autogpt.logs import logger
+from autogpt.command_decorator import command
+from autogpt.agents.agent import Agent
+from webdriver_manager.microsoft import EdgeChromiumDriverManager as EdgeDriverManager
+from webdriver_manager.firefox import GeckoDriverManager
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.safari.webdriver import WebDriver as SafariDriver
+from selenium.webdriver.safari.options import Options as SafariOptions
+from selenium.webdriver.remote.webdriver import WebDriver
+from selenium.webdriver.firefox.webdriver import WebDriver as FirefoxDriver
+from selenium.webdriver.firefox.service import Service as GeckoDriverService
+from selenium.webdriver.firefox.options import Options as FirefoxOptions
+from selenium.webdriver.edge.webdriver import WebDriver as EdgeDriver
+from selenium.webdriver.edge.service import Service as EdgeDriverService
+from selenium.webdriver.edge.options import Options as EdgeOptions
+from selenium.webdriver.common.options import ArgOptions as BrowserOptions
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.webdriver import WebDriver as ChromeDriver
+from selenium.webdriver.chrome.service import Service as ChromeDriverService
+from selenium.webdriver.chrome.options import Options as ChromeOptions
+from selenium.common.exceptions import WebDriverException
+from bs4 import BeautifulSoup
+from typing import Optional
+from sys import platform
+from pathlib import Path
+import logging
 
 from autogpt.llm.utils.token_counter import count_string_tokens
 
 COMMAND_CATEGORY = "web_browse"
 COMMAND_CATEGORY_TITLE = "Web Browsing"
 
-import logging
-from pathlib import Path
-from sys import platform
-from typing import Optional
-
-from bs4 import BeautifulSoup
-from selenium.common.exceptions import WebDriverException
-from selenium.webdriver.chrome.options import Options as ChromeOptions
-from selenium.webdriver.chrome.service import Service as ChromeDriverService
-from selenium.webdriver.chrome.webdriver import WebDriver as ChromeDriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.options import ArgOptions as BrowserOptions
-from selenium.webdriver.edge.options import Options as EdgeOptions
-from selenium.webdriver.edge.service import Service as EdgeDriverService
-from selenium.webdriver.edge.webdriver import WebDriver as EdgeDriver
-from selenium.webdriver.firefox.options import Options as FirefoxOptions
-from selenium.webdriver.firefox.service import Service as GeckoDriverService
-from selenium.webdriver.firefox.webdriver import WebDriver as FirefoxDriver
-from selenium.webdriver.remote.webdriver import WebDriver
-from selenium.webdriver.safari.options import Options as SafariOptions
-from selenium.webdriver.safari.webdriver import WebDriver as SafariDriver
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.wait import WebDriverWait
-from webdriver_manager.chrome import ChromeDriverManager
-from webdriver_manager.firefox import GeckoDriverManager
-from webdriver_manager.microsoft import EdgeChromiumDriverManager as EdgeDriverManager
-
-from autogpt.agents.agent import Agent
-from autogpt.command_decorator import command
-from autogpt.logs import logger
-from autogpt.memory.vector import MemoryItem, get_memory
-from autogpt.processing.html import extract_hyperlinks, format_hyperlinks
-from autogpt.url_utils.validators import validate_url
 
 FILE_DIR = Path(__file__).parent.parent
 TOKENS_TO_TRIGGER_SUMMARY = 50
@@ -74,7 +72,8 @@ def browse_website(url: str, question: str, agent: Agent) -> str:
         driver, text = scrape_text_with_selenium(url, agent)
         add_header(driver)
         if TOKENS_TO_TRIGGER_SUMMARY < count_string_tokens(text, agent.llm.name):
-            text = summarize_memorize_webpage(url, text, question, agent, driver)
+            text = summarize_memorize_webpage(
+                url, text, question, agent, driver)
 
         links = scrape_links_with_selenium(driver, url)
 
@@ -111,7 +110,8 @@ def scrape_text_with_selenium(url: str, agent: Agent) -> tuple[WebDriver, str]:
         "safari": SafariOptions,
     }
 
-    options: BrowserOptions = options_available[agent.config.selenium_web_browser]()
+    options: BrowserOptions = options_available[agent.config.selenium_web_browser](
+    )
     options.add_argument(
         "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.5615.49 Safari/537.36"
     )
@@ -244,6 +244,7 @@ def summarize_memorize_webpage(
 
     memory = get_memory(agent.config)
 
-    new_memory = MemoryItem.from_webpage(text, url, agent.config, question=question)
+    new_memory = MemoryItem.from_webpage(
+        text, url, agent.config, question=question)
     memory.add(new_memory)
     return new_memory.summary

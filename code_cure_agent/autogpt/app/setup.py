@@ -163,7 +163,8 @@ def generate_aiconfig_manual(
             "For example: \nIncrease net worth, Grow Twitter Account, Develop and manage"
             " multiple businesses autonomously'",
         )
-        logger.info("Enter nothing to load defaults, enter nothing when finished.")
+        logger.info(
+            "Enter nothing to load defaults, enter nothing when finished.")
         ai_goals = []
         for i in range(5):
             ai_goal = utils.clean_input(
@@ -187,7 +188,8 @@ def generate_aiconfig_manual(
             "Give the Git repository URL of the project with the warning to fix: ",
             Fore.GREEN, speak_text=False
         )
-        warning_repository_URL = utils.clean_input(config, "Repository URL is: ")
+        warning_repository_URL = utils.clean_input(
+            config, "Repository URL is: ")
 
     if ai_config_template and ai_config_template.warning_repository_commit:
         warning_repository_commit = ai_config_template.warning_repository_commit
@@ -197,8 +199,9 @@ def generate_aiconfig_manual(
             "Give the Git repository Commit of the project to use: ",
             Fore.GREEN, speak_text=False
         )
-        warning_repository_commit = utils.clean_input(config, "Repository Commit is: ")
-    
+        warning_repository_commit = utils.clean_input(
+            config, "Repository Commit is: ")
+
     if ai_config_template and ai_config_template.warning_file_path:
         warning_file_path = ai_config_template.warning_file_path
     else:
@@ -227,7 +230,8 @@ def generate_aiconfig_manual(
             "Give the start line of the rule violation: ",
             Fore.GREEN, speak_text=False
         )
-        warning_start_line = int(utils.clean_input(config, "Rule violation start line: "))
+        warning_start_line = int(utils.clean_input(
+            config, "Rule violation start line: "))
 
     if ai_config_template and ai_config_template.warning_rule_name:
         warning_rule_name = ai_config_template.warning_rule_name
@@ -247,9 +251,8 @@ def generate_aiconfig_manual(
             "Give the rule violations specific message: ",
             Fore.GREEN, speak_text=False
         )
-        warning_specific_message = utils.clean_input(config, "Specific message: ")
-
-
+        warning_specific_message = utils.clean_input(
+            config, "Specific message: ")
 
     # Get API Budget from User
     logger.typewriter_log(
@@ -302,7 +305,8 @@ def generate_aiconfig_automatic(user_prompt: str, config: Config) -> AIConfig:
     logger.debug(f"AI Config Generator Raw Output: {output}")
 
     # Parse the output
-    ai_name = re.search(r"Name(?:\s*):(?:\s*)(.*)", output, re.IGNORECASE).group(1)
+    ai_name = re.search(r"Name(?:\s*):(?:\s*)(.*)",
+                        output, re.IGNORECASE).group(1)
     ai_role = (
         re.search(
             r"Description(?:\s*):(?:\s*)(.*?)(?:(?:\n)|Goals)",

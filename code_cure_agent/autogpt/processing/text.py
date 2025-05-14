@@ -18,7 +18,7 @@ def batch(iterable, max_batch_length: int, overlap: int = 0):
     if max_batch_length < 1:
         raise ValueError("n must be at least one")
     for i in range(0, len(iterable), max_batch_length - overlap):
-        yield iterable[i : i + max_batch_length]
+        yield iterable[i: i + max_batch_length]
 
 
 def _max_chunk_length(model: str, max: Optional[int] = None) -> int:
@@ -59,7 +59,8 @@ def chunk_content(
     n_chunks = ceil(total_length / max_chunk_length)
 
     chunk_length = ceil(total_length / n_chunks)
-    overlap = min(max_chunk_length - chunk_length, MAX_OVERLAP) if with_overlap else 0
+    overlap = min(max_chunk_length - chunk_length,
+                  MAX_OVERLAP) if with_overlap else 0
 
     for token_batch in batch(tokenized_text, chunk_length + overlap, overlap):
         yield tokenizer.decode(token_batch), len(token_batch)
@@ -88,7 +89,8 @@ def summarize_text(
         raise ValueError("No text to summarize")
 
     if instruction and question:
-        raise ValueError("Parameters 'question' and 'instructions' cannot both be set")
+        raise ValueError(
+            "Parameters 'question' and 'instructions' cannot both be set")
 
     model = config.fast_llm
 
@@ -120,7 +122,8 @@ def summarize_text(
             # "Only respond with a concise summary or description of the user message."
         )
 
-        logger.debug(f"Summarizing with {model}:\n{summarization_prompt.dump()}\n")
+        logger.debug(
+            f"Summarizing with {model}:\n{summarization_prompt.dump()}\n")
         summary = create_chat_completion(
             prompt=summarization_prompt, config=config, temperature=0, max_tokens=500
         ).content
@@ -186,7 +189,8 @@ def split_text(
     n_chunks = ceil(text_length / max_length)
     target_chunk_length = ceil(text_length / n_chunks)
 
-    nlp: spacy.language.Language = spacy.load(config.browse_spacy_language_model)
+    nlp: spacy.language.Language = spacy.load(
+        config.browse_spacy_language_model)
     nlp.add_pipe("sentencizer")
     doc = nlp(text)
     sentences = [sentence.text.strip() for sentence in doc.sents]
@@ -238,7 +242,7 @@ def split_text(
             current_chunk_length += sentence_length
 
         else:  # sentence longer than maximum length -> chop up and try again
-            sentences[i : i + 1] = [
+            sentences[i: i + 1] = [
                 chunk
                 for chunk, _ in chunk_content(sentence, for_model, target_chunk_length)
             ]

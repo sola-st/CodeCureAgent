@@ -18,10 +18,10 @@ def extract_dict_from_response(response_content: str) -> dict[str, Any]:
     if start_triple_quote != -1:
         response_content = response_content[start_triple_quote:]
         end_triple_quote = response_content[3:].find("```")
-        if end_triple_quote !=-1:
+        if end_triple_quote != -1:
             response_content = response_content[:end_triple_quote+3]
             response_content = "\n".join(response_content.split("\n")[1:])
-            
+
         """if response_content.startswith("```") and response_content.endswith("```"):
             response_content = response_content.split("\n")[1:]
             for i in range(len(response_content)-1, 0, -1):
@@ -29,8 +29,8 @@ def extract_dict_from_response(response_content: str) -> dict[str, Any]:
                     response_content = response_content[:i]
                     break
             response_content = "\n".join(response_content)"""
-            # Discard the first and last ```, then re-join in case the response naturally included ```
-            #response_content = "```".join(response_content.split("```")[1:-1])
+        # Discard the first and last ```, then re-join in case the response naturally included ```
+        # response_content = "```".join(response_content.split("```")[1:-1])
 
     # response content comes from OpenAI as a Python `str(content_dict)`, literal_eval reverses this
     try:

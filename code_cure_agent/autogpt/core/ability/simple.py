@@ -58,7 +58,8 @@ class SimpleAbilityRegistry(AbilityRegistry, Configurable):
     def register_ability(
         self, ability_name: str, ability_configuration: AbilityConfiguration
     ) -> None:
-        ability_class = SimplePluginService.get_plugin(ability_configuration.location)
+        ability_class = SimplePluginService.get_plugin(
+            ability_configuration.location)
         ability_args = {
             "logger": self._logger.getChild(ability_name),
             "configuration": ability_configuration,

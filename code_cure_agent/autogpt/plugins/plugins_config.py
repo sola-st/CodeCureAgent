@@ -61,7 +61,8 @@ class PluginsConfig(BaseModel):
         plugins_allowlist: list[str],
     ) -> dict[str, PluginConfig]:
         if not plugins_config_file.is_file():
-            logger.warn("plugins_config.yaml does not exist, creating base config.")
+            logger.warn(
+                "plugins_config.yaml does not exist, creating base config.")
             cls.create_empty_plugins_config(
                 plugins_config_file,
                 plugins_denylist,
@@ -82,7 +83,8 @@ class PluginsConfig(BaseModel):
             elif type(plugin) == PluginConfig:
                 plugins[name] = plugin
             else:
-                raise ValueError(f"Invalid plugin config data type: {type(plugin)}")
+                raise ValueError(
+                    f"Invalid plugin config data type: {type(plugin)}")
         return plugins
 
     @staticmethod

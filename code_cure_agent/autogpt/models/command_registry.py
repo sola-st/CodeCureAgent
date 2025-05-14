@@ -165,7 +165,8 @@ class CommandRegistry:
 
             # Register command classes
             elif (
-                inspect.isclass(attr) and issubclass(attr, Command) and attr != Command
+                inspect.isclass(attr) and issubclass(
+                    attr, Command) and attr != Command
             ):
                 command = attr()
 
@@ -175,7 +176,8 @@ class CommandRegistry:
 
     def register_module_category(self, module: ModuleType) -> CommandCategory:
         if not (category_name := getattr(module, "COMMAND_CATEGORY", None)):
-            raise ValueError(f"Cannot import invalid command module {module.__name__}")
+            raise ValueError(
+                f"Cannot import invalid command module {module.__name__}")
 
         if category_name not in self.categories:
             self.categories[category_name] = CommandRegistry.CommandCategory(

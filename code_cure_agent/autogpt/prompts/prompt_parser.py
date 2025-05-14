@@ -27,7 +27,7 @@ class PromptParser():
         if start_goals == -1:
             raise ValueError("Goals section should always be in the prompt")
         self.role = self.prompt_text[:start_goals]
-        
+
         start_state = self.prompt_text.find("## Current state")
         if start_state == -1:
             raise ValueError("Current state should always be in the prompt")
@@ -63,23 +63,27 @@ class PromptParser():
             raise ValueError("Suggested fixes section should be in the prompt")
         self.read_lines = self.prompt_text[start_read_lines:start_fixes]
 
-        start_search_queries = self.prompt_text.find("## Executed search queries within the code base")
+        start_search_queries = self.prompt_text.find(
+            "## Executed search queries within the code base")
         if start_search_queries == -1:
             raise ValueError("Search queries section should be in the prompt")
         self.suggested_fixes = self.prompt_text[start_fixes:start_search_queries]
 
-        start_info = self.prompt_text.find("## Info about the bug (bug report summary)")
+        start_info = self.prompt_text.find(
+            "## Info about the bug (bug report summary)")
         if start_info == -1:
             raise ValueError("Info summary should always be in the prompt")
         self.search_queries = self.prompt_text[start_search_queries:start_info]
 
-        start_commands_list = self.prompt_text.find("## The list of commands you have executed so far")
+        start_commands_list = self.prompt_text.find(
+            "## The list of commands you have executed so far")
         if start_commands_list == -1:
             raise ValueError("Commands list section should be in the prompt")
-        self.info = self.parse_info_section(self.prompt_text[start_info: start_commands_list])
+        self.info = self.parse_info_section(
+            self.prompt_text[start_info: start_commands_list])
 
-
-        end_sections = self.prompt_text.find("## DO NOT TRY TO USE THE FOLLOWING COMMANDS IN YOUR NEXT ACTION (NEVER AT ALL):")
+        end_sections = self.prompt_text.find(
+            "## DO NOT TRY TO USE THE FOLLOWING COMMANDS IN YOUR NEXT ACTION (NEVER AT ALL):")
         self.commands_list = self.prompt_text[start_commands_list:end_sections]
 
     def parse_info_section(self, info_text):
@@ -88,9 +92,10 @@ class PromptParser():
         test_code = ""
         start_bug_info = info_text.find("### Bug info:")
         start_test_cases = info_text.find("### Test cases results:")
-        start_test_code = info_text.find("### The code of the failing test cases:")
+        start_test_code = info_text.find(
+            "### The code of the failing test cases:")
         if start_bug_info != -1:
-            if start_test_cases !=-1:
+            if start_test_cases != -1:
                 bug_info = info_text[start_bug_info:start_test_cases]
             elif start_test_code != -1:
                 bug_info = info_text[start_bug_info:start_test_code]

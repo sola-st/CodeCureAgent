@@ -99,7 +99,8 @@ def generate_achievements_file(
         key=lambda pr: datetime.datetime.fromisoformat(pr.created_at),
         reverse=True,
     )
-    rendered_content = jinja2.Template(template).render(pull_requests=pull_requests)
+    rendered_content = jinja2.Template(
+        template).render(pull_requests=pull_requests)
     output_file.write_text(rendered_content, encoding=ENCODING)
 
 
@@ -118,7 +119,8 @@ def parse_pull_requests(prs_json: pathlib.Path) -> List[PullRequest]:
             status="merged"
             if pr_meta[jsonkeys.PR.IS_MERGED]
             else pr_meta[jsonkeys.PR.STATE],
-            contains_manual_edits=len(data[jsonkeys.MANUAL_EDITS.SECTION_KEY] or [])
+            contains_manual_edits=len(
+                data[jsonkeys.MANUAL_EDITS.SECTION_KEY] or [])
             > 0,
             repairs=get_all_repairs(
                 data[jsonkeys.SORALD_STATS.SECTION_KEY], _is_legacy(data)

@@ -56,7 +56,8 @@ class SimplePluginService(PluginService):
         #   storage locations. E.g. if we know that path_type is a file path, we can
         #   search the workspace for it. If it's an import path, we can check the core
         #   system and the auto_gpt_plugins package.
-        raise NotImplemented("Resolving plugin name to path is not implemented.")
+        raise NotImplemented(
+            "Resolving plugin name to path is not implemented.")
 
     #####################################
     # High-level storage format loaders #

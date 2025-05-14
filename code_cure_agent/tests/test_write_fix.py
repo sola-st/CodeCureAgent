@@ -136,7 +136,8 @@ class WriteFixTestCase(unittest.TestCase):
         }
 
         change_result = write_fix.apply_changes(change_dict, self.agent)
-        self.assertEqual(change_result["file_content"], self.file_without_changes)
+        self.assertEqual(
+            change_result["file_content"], self.file_without_changes)
 
     def test_apply_changes_delete_line_before_a_modified_line_and_insert_line_before_modified_line_changes(self):
         change_dict = {

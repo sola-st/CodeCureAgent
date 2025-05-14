@@ -46,7 +46,8 @@ class Logger(metaclass=Singleton):
         self.console_handler.setFormatter(console_formatter)
 
         # Info handler in activity.log
-        self.file_handler = logging.FileHandler(self.log_dir / log_file, "a", "utf-8")
+        self.file_handler = logging.FileHandler(
+            self.log_dir / log_file, "a", "utf-8")
         self.file_handler.setLevel(logging.DEBUG)
         info_formatter = AutoGptFormatter(
             "%(asctime)s %(levelname)s %(title)s %(message_no_color)s"
@@ -54,7 +55,8 @@ class Logger(metaclass=Singleton):
         self.file_handler.setFormatter(info_formatter)
 
         # Error handler error.log
-        error_handler = logging.FileHandler(self.log_dir / error_file, "a", "utf-8")
+        error_handler = logging.FileHandler(
+            self.log_dir / error_file, "a", "utf-8")
         error_handler.setLevel(logging.ERROR)
         error_formatter = AutoGptFormatter(
             "%(asctime)s %(levelname)s %(module)s:%(funcName)s:%(lineno)d %(title)s"
@@ -157,7 +159,8 @@ class Logger(metaclass=Singleton):
             if isinstance(message, list):
                 message = " ".join(message)
         self.logger.log(
-            level, message, extra={"title": str(title), "color": str(title_color)}
+            level, message, extra={"title": str(
+                title), "color": str(title_color)}
         )
 
     def set_level(self, level: logging._Level) -> None:
@@ -173,7 +176,8 @@ class Logger(metaclass=Singleton):
                 " and ask there!"
             )
 
-        self.typewriter_log("DOUBLE CHECK CONFIGURATION", Fore.YELLOW, additionalText)
+        self.typewriter_log("DOUBLE CHECK CONFIGURATION",
+                            Fore.YELLOW, additionalText)
 
     def log_json(self, data: Any, file_name: str | Path) -> None:
         # Create a handler for JSON files

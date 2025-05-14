@@ -1,10 +1,9 @@
 import json
 
-## The no_state_machine state corresponds to not using a state machine at all. It therefore includes all of the relevant commands (except commands for transitioning states)
+# The no_state_machine state corresponds to not using a state machine at all. It therefore includes all of the relevant commands (except commands for transitioning states)
 
 
-
-## Understanding the Violated Rule
+# Understanding the Violated Rule
 
 read_range_desc = """read_range: Reads a range of lines in a given file.  
     Required params: (file_path: string, start_line: int, end_line: int)"""
@@ -14,7 +13,7 @@ go_to_gather_context_for_fix_desc = """go_to_gather_context_for_fix: Transitions
     Required params: ()"""
 
 
-## Gathering Context for a Fix
+# Gathering Context for a Fix
 
 formulate_plan_desc = """formulate_plan: Formulate or update a plan, with fine-grained steps, about how you want to fix the rule violation (i.e. which lines in which files to change and to what).  
     Call this command before calling write_fix for the first time. You can call it again at any time, if you received new information that requires a change of plan.  
@@ -50,20 +49,19 @@ write_fix_desc = """write_fix: Use this command to implement the fix you came up
 
 go_back_to_understanding_rule_desc = """go_back_to_understanding_rule: Allows you to return back to the state `Understanding the Violated Rule` where you can collect more information about the specific rule.  
     Required Params: (reason_for_going_back: string)"""
-### also read_range
+# also read_range
 
 
-## Trying out Fix Candidates
+# Trying out Fix Candidates
 
 go_back_to_gather_context_for_fix_desc = """go_back_to_gather_context_for_fix: Allows you to go back to the state `Gathering Context for a Fix` where you can collect more information about the code.  
     Required Params: (reason_for_going_back: string)"""
 
 goals_accomplished_desc = """goals_accomplished: Call this function when you are sure you fixed the bug and all tests hava passed and give the reason that made you believe that you fixed the bug successfully, params: (reason: string)"""
 
-### also write_fix
-### also read_range
-### also back_to_understanding_rule_desc
-
+# also write_fix
+# also read_range
+# also back_to_understanding_rule_desc
 
 
 commands_dict = {

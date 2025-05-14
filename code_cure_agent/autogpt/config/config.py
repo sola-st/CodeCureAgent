@@ -22,7 +22,6 @@ PLUGINS_CONFIG_FILE = "agent_config_and_prompt_files/plugins_config.yaml"
 PROMPT_SETTINGS_FILE = "agent_config_and_prompt_files/prompt_settings.yaml"
 
 
-
 class Config(SystemSettings, arbitrary_types_allowed=True):
     name: str = "Auto-GPT configuration"
     description: str = "Default configuration for the Auto-GPT application."
@@ -108,7 +107,8 @@ class Config(SystemSettings, arbitrary_types_allowed=True):
     plugins_config: PluginsConfig = Field(
         default_factory=lambda: PluginsConfig(plugins={})
     )
-    plugins: list[AutoGPTPluginTemplate] = Field(default_factory=list, exclude=True)
+    plugins: list[AutoGPTPluginTemplate] = Field(
+        default_factory=list, exclude=True)
     plugins_allowlist: list[str] = Field(default_factory=list)
     plugins_denylist: list[str] = Field(default_factory=list)
     plugins_openai: list[str] = Field(default_factory=list)
@@ -272,7 +272,8 @@ class ConfigBuilder(Configurable[Config]):
         )
 
         config_dict["google_custom_search_engine_id"] = os.getenv(
-            "GOOGLE_CUSTOM_SEARCH_ENGINE_ID", os.getenv("CUSTOM_SEARCH_ENGINE_ID")
+            "GOOGLE_CUSTOM_SEARCH_ENGINE_ID", os.getenv(
+                "CUSTOM_SEARCH_ENGINE_ID")
         )
 
         config_dict["elevenlabs_voice_id"] = os.getenv(
@@ -289,8 +290,10 @@ class ConfigBuilder(Configurable[Config]):
                 default_tts_provider = "gtts"
             config_dict["text_to_speech_provider"] = default_tts_provider
 
-        config_dict["plugins_allowlist"] = _safe_split(os.getenv("ALLOWLISTED_PLUGINS"))
-        config_dict["plugins_denylist"] = _safe_split(os.getenv("DENYLISTED_PLUGINS"))
+        config_dict["plugins_allowlist"] = _safe_split(
+            os.getenv("ALLOWLISTED_PLUGINS"))
+        config_dict["plugins_denylist"] = _safe_split(
+            os.getenv("DENYLISTED_PLUGINS"))
 
         with contextlib.suppress(TypeError):
             config_dict["image_size"] = int(os.getenv("IMAGE_SIZE"))

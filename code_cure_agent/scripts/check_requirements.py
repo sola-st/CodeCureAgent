@@ -11,7 +11,8 @@ def main():
             line.strip().split("#")[0].strip() for line in f.readlines()
         ]
 
-    installed_packages = {pkg.key: pkg.version for pkg in pkg_resources.working_set}
+    installed_packages = {
+        pkg.key: pkg.version for pkg in pkg_resources.working_set}
 
     missing_packages = []
     for required_package in required_packages:

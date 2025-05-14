@@ -179,7 +179,8 @@ def parse_raw_output(
             ),
             sonar_url_text=get_sonar_link_text(rule_key),
             repair_description=repair_description,
-            link_to_repair_description=get_link_to_repair_description(heading_text),
+            link_to_repair_description=get_link_to_repair_description(
+                heading_text),
         )
 
         violation_type = metadata[jsonkeys.SONAR_METADATA.TYPE]
@@ -193,7 +194,8 @@ def parse_raw_output(
             vulnerabilities.append(violation_information)
 
         else:
-            raise Exception(f"New rule violation type, {violation_type}, encountered.")
+            raise Exception(
+                f"New rule violation type, {violation_type}, encountered.")
 
     return {
         "bugs": sorted(bugs),

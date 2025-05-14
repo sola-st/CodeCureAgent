@@ -25,6 +25,7 @@ CommandName = str
 CommandArgs = dict[str, str]
 AgentThoughts = dict[str, Any]
 
+
 class BaseAgent(metaclass=ABCMeta):
     """Base class for all Auto-GPT agents."""
 
@@ -82,28 +83,28 @@ class BaseAgent(metaclass=ABCMeta):
         # Overwrite the continuos_limit with the commands_limit specified in hyperparams.json
         self.config.continuous_limit = self.hyperparams["commands_limit"]
         logger.typewriter_log(
-                "Continuous Limit: ", Fore.GREEN, f"{self.config.continuous_limit}"
+            "Continuous Limit: ", Fore.GREEN, f"{self.config.continuous_limit}"
         )
-        
+
         with open("agent_config_and_prompt_files/commands_by_state.json") as cbs:
             self.cmds_by_state = json.load(cbs)
 
         with open("agent_config_and_prompt_files/states_description.json") as sdj:
             self.descriptions = json.load(sdj)
 
-        # Change this to the initial state if a state machine is to be used. 
+        # Change this to the initial state if a state machine is to be used.
         # Also need to add info about the states in "prepare_ai_settings.py"
 
-        # By setting to no_state_machine, no state machine will 
+        # By setting to no_state_machine, no state machine will
         # be used but only a single state with all commands
         self.current_state = "no_state_machine"
-        
+
         self.prompt_dictionary = ai_config.construct_full_prompt(config)
 
-        self.prompt_dictionary["commands"][2] = self.cmds_by_state[self.current_state]        
+        self.prompt_dictionary["commands"][2] = self.cmds_by_state[self.current_state]
         self.prompt_dictionary["current state"] = self.descriptions[self.current_state]
 
-        #TODO: remove these parameters compeletely, from everywhere
+        # TODO: remove these parameters compeletely, from everywhere
         self.project_name = ""
         self.bug_index = ""
         self.localization_info = ""
@@ -164,7 +165,6 @@ class BaseAgent(metaclass=ABCMeta):
         """
         self.search_queries = []
 
-
         """
         {
             "get_info": "...",
@@ -183,7 +183,7 @@ class BaseAgent(metaclass=ABCMeta):
 
         self.unknown_commands = []
 
-        ## Here we put the initial values for the collected context sections
+        # Here we put the initial values for the collected context sections
         self.initial_bug_report = {
 
         }
@@ -195,8 +195,6 @@ class BaseAgent(metaclass=ABCMeta):
         self.buggy_lines = ""
         self.similar_calls = None
 
-        
-
         self.extracted_methods = []
 
         self.pre_search = ""
@@ -206,15 +204,15 @@ class BaseAgent(metaclass=ABCMeta):
         self.suggested_commands = []
 
         self.auto_complete = True
-        self. generated_methods= None
+        self. generated_methods = None
         self.dummy_fix = False
 
         experiments_list = "experimental_setups/experiments_list.txt"
-        
+
         # Create experiments_list.txt if not yet created
         if not os.path.isfile(experiments_list):
             try:
-                with open(experiments_list, "x"): 
+                with open(experiments_list, "x"):
                     pass
             except FileExistsError:
                 pass
@@ -240,7 +238,7 @@ class BaseAgent(metaclass=ABCMeta):
             "bug_report": self.bug_report,
             "bug_index": self.bug_index,
             "commands_history": self.commands_history,
-            "human_feedback": self.human_feedback ,
+            "human_feedback": self.human_feedback,
             "ask_chatgpt": self.ask_chatgpt,
             "hypothesises": self.hypothesises,
             "plans": self.plans,
@@ -255,12 +253,11 @@ class BaseAgent(metaclass=ABCMeta):
             "initial_analysis_report": self.initial_analysis_report
         }
 
-        #with open("experimental_setups/experiments_list.txt") as eht:
-        exps =self.exps
+        # with open("experimental_setups/experiments_list.txt") as eht:
+        exps = self.exps
 
         with open(os.path.join("experimental_setups", exps[-1], "saved_contexts", "saved_context_{}_{}".format(self.project_name, self.bug_index)), "w") as patf:
             json.dump(context, patf)
-        
 
     def construct_pre_info(self, ):
         query = "I have a set of functions that help me analyze and repair buggy code. I will give you the description of the functions (I also call them commands), and the buggy piece of code and tell me what commands would make sense to call to get more info about the bug.\n"
@@ -304,24 +301,29 @@ please use the indicated format and produce a list, like this:
     {"name":..., "args":...}
 ]"""
         try:
-            self.suggested_commands = json.loads(query_for_commands(query, self))
+            self.suggested_commands = json.loads(
+                query_for_commands(query, self))
         except Exception as e:
-            logger.info("EXCEPTION HAPPENED IN COMMANDS SUGGESTION-*-*-*-*-*-*-*-*-*-*-*-*-*-\n\n")
+            logger.info(
+                "EXCEPTION HAPPENED IN COMMANDS SUGGESTION-*-*-*-*-*-*-*-*-*-*-*-*-*-\n\n")
 
         for cmd in self.suggested_commands:
             name, args = extract_command(cmd, None, self.config)
             exec_result = execute_command(name, args)
             if name == "search_code_base":
-                self.pre_search += "Searching keywords: {}, returned the following results:\n{}\n\n".format(str(args), exec_result)
+                self.pre_search += "Searching keywords: {}, returned the following results:\n{}\n\n".format(
+                    str(args), exec_result)
             if name == "extract_method_code":
-                self.pre_methods_code +=  str(exec_result) + "\n"
+                self.pre_methods_code += str(exec_result) + "\n"
             if name == "get_classes_and_methods":
-                self.pre_search += "\nExtracted methods and classes from {} and the result is the following:\n {}".format(args, exec_result)
+                self.pre_search += "\nExtracted methods and classes from {} and the result is the following:\n {}".format(
+                    args, exec_result)
             if name == "extract_similar_functions_calls":
-                self.pre_similar += "Search query {} found the following similar functions calls:\n{}\n\n".format(str(args), exec_result)
+                self.pre_similar += "Search query {} found the following similar functions calls:\n{}\n\n".format(
+                    str(args), exec_result)
 
     def load_context(self,):
-        #with open("experimental_setups/experiments_list.txt") as eht:
+        # with open("experimental_setups/experiments_list.txt") as eht:
         #    exps = eht.read().splitlines()
         exps = self.exps
         with open(os.path.join("experimental_setups", exps[-1], "saved_contexts", "saved_context_{}_{}".format(self.project_name, self.bug_index)), "r") as patf:
@@ -354,9 +356,9 @@ please use the indicated format and produce a list, like this:
         self.hyperparams = context["hyperparams"]
         self.history = context["history"]
         self.initial_analysis_report = context["initial_analysis_report"]
-        
+
     def construct_fix_query(self,):
-        
+
         hypothesis_string = self.construct_hypothesises_context()
         read_files_section = self.construct_read_files_context()
         suggested_fixes_section = self.construct_fixes_context()
@@ -366,10 +368,11 @@ please use the indicated format and produce a list, like this:
 
         prelude = "This is the info we gathered so far about the bug. Unfortunately, we cannot gather any more info. You have to suggested a fixed based the following given information and ofcourse based on your knowledge."
         context_prompt = prelude + "\n" + bug_report + "\n" + "\n" + read_files_section + "\n" + suggested_fixes_section + "\n" + search_queries + "\n" +\
-            similar_calls_context + "\n".join(self.prompt_dictionary["fix format"]) + "\n\n"
-        
+            similar_calls_context + \
+            "\n".join(self.prompt_dictionary["fix format"]) + "\n\n"
+
         context_prompt += "Task: Suggest a list of 10 possible fixes, output a list in the following form: [fix1, fix2, ..., fix10]\n"
-        
+
         return context_prompt
 
     def validate_command_parsing(self, command_dict):
@@ -389,12 +392,13 @@ please use the indicated format and produce a list, like this:
                 return False
         else:
             return False
-        
+
     def detect_command_repetition(self, ref_cmd):
-        #with open("assistant_output_from_command_repetition.json", "w") as aocr:
+        # with open("assistant_output_from_command_repetition.json", "w") as aocr:
         #    json.dump(assistant_outputs+[str(ref_cmd["command"])], aocr)
         try:
-            assistant_outputs = [str(extract_dict_from_response(msg.content)["command"]) for msg in self.history if msg.role == "assistant"]
+            assistant_outputs = [str(extract_dict_from_response(msg.content)[
+                                     "command"]) for msg in self.history if msg.role == "assistant"]
             if str(ref_cmd["command"]) in assistant_outputs:
                 logger.info("WARNING: REPETITION DETECTED!\n\n")
                 return True
@@ -405,7 +409,7 @@ please use the indicated format and produce a list, like this:
                 ef.write(str(e))
             print("Exception raised,", e)
             return False
-        
+
     def handle_command_repitition(self, repeated_command: dict, handling_strategy: str = ""):
         if handling_strategy == "":
             return ""
@@ -414,9 +418,10 @@ please use the indicated format and produce a list, like this:
         elif handling_strategy == "TOP3":
             return "Suggest three commands that would make sense to execute given your current input. Give the full json object of each command with all attributes, put the three commands in a list, i.e, [{...}, {...}, {...}]. Do not add any text explanataion before or after the list of the three commands."
         else:
-            raise ValueError("The value given to the param handling_strategy is unsuported: {}".format(handling_strategy))
-        
-    def construct_read_files(self, command_name = "read_range"):
+            raise ValueError(
+                "The value given to the param handling_strategy is unsuported: {}".format(handling_strategy))
+
+    def construct_read_files(self, command_name="read_range"):
         skip_next = False
         read_files = {}
         messages_history = [msg for _, msg in enumerate(self.history)]
@@ -433,7 +438,7 @@ please use the indicated format and produce a list, like this:
                 if not self.validate_command_parsing(command_dict):
                     continue
                 if command_dict["command"]["name"] == command_name:
-                    lines_range=(
+                    lines_range = (
                         command_dict["command"]["args"]["start_line"],
                         command_dict["command"]["args"]["end_line"])
                     file_path = command_dict["command"]["args"]["file_path"]
@@ -441,7 +446,7 @@ please use the indicated format and produce a list, like this:
                         j = i + 1
                         next_msg = messages_history[j]
                         read_result = next_msg.content
-                        skip_next= True
+                        skip_next = True
                     if read_result:
                         if file_path in read_files:
                             read_files[file_path][lines_range] = read_result
@@ -455,7 +460,7 @@ please use the indicated format and produce a list, like this:
                     skip_next = False
         self.read_files = read_files
 
-    def construct_generated_methods(self, command_name = "AI_generate_method_code"):
+    def construct_generated_methods(self, command_name="AI_generate_method_code"):
         skip_next = False
         messages_history = [msg for _, msg in enumerate(self.history)]
         gen_result = None
@@ -476,7 +481,7 @@ please use the indicated format and produce a list, like this:
                         j = i + 1
                         next_msg = messages_history[j]
                         gen_result = next_msg.content
-                        skip_next= True
+                        skip_next = True
                     if gen_result:
                         self.generated_methods = (method_name, gen_result)
                     else:
@@ -493,14 +498,14 @@ please use the indicated format and produce a list, like this:
                 command_dict = extract_dict_from_response(msg.content)
                 try:
                     commands_history.append(command_dict["command"]["name"] + " , Your reasoning for calling this command was: '{}'".format(
-                            command_dict["thoughts"]
-                        )
+                        command_dict["thoughts"]
+                    )
                     )
                 except:
                     pass
         self.commands_history = commands_history
 
-    def construct_suggested_fixes(self, command_names = ["write_range", "write_fix", "try_fixes"]):
+    def construct_suggested_fixes(self, command_names=["write_range", "write_fix", "try_fixes"]):
         skip_next = False
         suggested_fixes = []
         messages_history = [msg for _, msg in enumerate(self.history)]
@@ -515,7 +520,8 @@ please use the indicated format and produce a list, like this:
                     continue
                 if command_dict["command"]["name"] in command_names:
                     if command_dict["command"]["name"] in ["write_range", "write_fix"]:
-                        changes_dicts = command_dict["command"]["args"].get("changes_dicts", [])
+                        changes_dicts = command_dict["command"]["args"].get(
+                            "changes_dicts", [])
                         suggested_fixes.append(changes_dicts)
                     else:
                         for f in command_dict["command"]["args"]["fixes_list"]:
@@ -523,7 +529,7 @@ please use the indicated format and produce a list, like this:
                             suggested_fixes.append(changes_dicts)
 
         self.suggested_fixes = suggested_fixes
- 
+
     def construct_human_feedback(self):
         human_feedback = []
         messages_history = [msg for _, msg in enumerate(self.history)]
@@ -547,7 +553,7 @@ please use the indicated format and produce a list, like this:
                 try:
                     command_dict = extract_dict_from_response(msg.content)
                     command_name = command_dict["command"]["name"]
-                    
+
                     if i < len(messages_history) - 1:
                         j = i + 1
                         next_msg = messages_history[j]
@@ -558,7 +564,7 @@ please use the indicated format and produce a list, like this:
                 except:
                     pass
         return unknown_commands
-    
+
     def construct_search_queries(self, command_name="search_code_base"):
         skip_next = False
         search_queries = []
@@ -580,7 +586,7 @@ please use the indicated format and produce a list, like this:
                         j = i + 1
                         next_msg = messages_history[j]
                         search_result = next_msg.content
-                        skip_next= True
+                        skip_next = True
                     if search_result:
                         search_queries.append({
                             "query": key_words,
@@ -599,7 +605,7 @@ please use the indicated format and produce a list, like this:
                 continue
             skip_next = False
             msg = messages_history[i]
-            if msg.role == "assistant" :
+            if msg.role == "assistant":
                 command_dict = extract_dict_from_response(msg.content)
                 if not self.validate_command_parsing(command_dict):
                     continue
@@ -610,7 +616,7 @@ please use the indicated format and produce a list, like this:
                         j = i + 1
                         next_msg = messages_history[j]
                         search_result = next_msg.content
-                        skip_next= True
+                        skip_next = True
                     if search_result:
                         search_queries.append({
                             "code_snippet": code_snippet,
@@ -630,7 +636,7 @@ please use the indicated format and produce a list, like this:
                 continue
             skip_next = False
             msg = messages_history[i]
-            if msg.role == "assistant" :
+            if msg.role == "assistant":
                 command_dict = extract_dict_from_response(msg.content)
                 if not self.validate_command_parsing(command_dict):
                     continue
@@ -641,7 +647,7 @@ please use the indicated format and produce a list, like this:
                         j = i + 1
                         next_msg = messages_history[j]
                         search_result = next_msg.content
-                        skip_next= True
+                        skip_next = True
                     if search_result:
                         search_queries.append({
                             "method_name": method_name,
@@ -680,7 +686,7 @@ please use the indicated format and produce a list, like this:
         """
         failing_test_code = ""
         for i in range(len(messages_history)):
-            msg = messages_history[i]    
+            msg = messages_history[i]
             if msg.role == "assistant" and not msg.content.startswith("## As RepairAgentv0.5.0, this is the last command I have called in response to the users' input"):
                 command_dict = extract_dict_from_response(msg.content)
                 if not self.validate_command_parsing(command_dict):
@@ -689,11 +695,12 @@ please use the indicated format and produce a list, like this:
                     if i < len(messages_history) - 1:
                         j = i + 1
                         next_msg = messages_history[j]
-                        failing_test_code += "Extracting test code from file {} returned: ".format(command_dict["command"]["args"]["test_file_path"]) + next_msg.content + "\n"
+                        failing_test_code += "Extracting test code from file {} returned: ".format(
+                            command_dict["command"]["args"]["test_file_path"]) + next_msg.content + "\n"
 
         if get_info or run_tests or failing_test_code:
-            self.bug_report = {"get_info": "No longer needed for this version", "run_tests": "No longer needed for this version", "failing_test_code": failing_test_code}
-
+            self.bug_report = {"get_info": "No longer needed for this version",
+                               "run_tests": "No longer needed for this version", "failing_test_code": failing_test_code}
 
     def construct_hypothesises(self,):
         self.hypothesises = []
@@ -705,8 +712,9 @@ please use the indicated format and produce a list, like this:
                 if not self.validate_command_parsing(command_dict):
                     continue
                 if command_dict["command"]["name"] == "express_hypothesis":
-                    self.hypothesises.append(command_dict["command"]["args"]["hypothesis"])
-    
+                    self.hypothesises.append(
+                        command_dict["command"]["args"]["hypothesis"])
+
     def update_prompt_state(self, state_name):
         """
         Given a state name, this function would update the prompt dictionary to include the right description of the state 
@@ -716,49 +724,51 @@ please use the indicated format and produce a list, like this:
         self.prompt_dictionary["commands"][2] = self.cmds_by_state[state_name]
         self.current_state = state_name
 
-
     def construct_hypothesises_context(self,):
         hypothesis_string = "## Hypothesis about the bug:\n"
         if self.hypothesises:
             for h in self.hypothesises[:-1]:
                 hypothesis_string += "- (Refuted) " + h + "\n"
 
-            hypothesis_string += "- (Current hypothesis) " + self.hypothesises[-1] + "\n"
+            hypothesis_string += "- (Current hypothesis) " + \
+                self.hypothesises[-1] + "\n"
         else:
             hypothesis_string += "No hypothesis made yet.\n"
 
         return hypothesis_string
-    
 
     def construct_read_files_context(self,):
         read_files_section = "## Read lines:\n"
         if self.read_files:
             for f in self.read_files:
                 for r in self.read_files[f]:
-                    read_files_section += "Lines {} to {} from file: {}\n{}\n\n".format(r[0], r[1], f, self.read_files[f][r])
+                    read_files_section += "Lines {} to {} from file: {}\n{}\n\n".format(
+                        r[0], r[1], f, self.read_files[f][r])
         else:
-            read_files_section+="No files have been read so far.\n"
+            read_files_section += "No files have been read so far.\n"
 
         return read_files_section
-    
+
     def construct_fixes_context(self,):
-        suggested_fixes_section = "## Suggested fixes:\n"+"This is the list of suggested fixes so far but none of them worked:\n"
+        suggested_fixes_section = "## Suggested fixes:\n" + \
+            "This is the list of suggested fixes so far but none of them worked:\n"
         if self.suggested_fixes:
             for f in self.suggested_fixes:
                 suggested_fixes_section += "###Fix:\n{}\n\n".format(str(f))
         else:
             suggested_fixes_section += "No fixes were suggested yet.\n"
         return suggested_fixes_section
-    
+
     def construct_search_context(self,):
         search_queries = "## Executed search queries within the code base:\n"
         if self.search_queries:
             for s in self.search_queries:
-                search_queries += "Searching keywords: {}, returned the following results:\n{}\n\n".format(s["query"], s["result"])
+                search_queries += "Searching keywords: {}, returned the following results:\n{}\n\n".format(
+                    s["query"], s["result"])
         else:
             search_queries += "No search queries executed so far.\n"
         return search_queries
-    
+
     def construct_extracted_methods_context(self,):
         extracted_methods = "## The list of emplementations of some methods in the code base:\n"
         if self.extracted_methods:
@@ -767,12 +777,13 @@ please use the indicated format and produce a list, like this:
         else:
             extracted_methods += "No extracted methods so far.\n"
         return extracted_methods
-    
+
     def construct_similar_calls_context(self,):
         search_queries = "## Functions calls extracted based on snippets of code and target files:\n"
         if self.similar_calls:
             for s in self.similar_calls:
-                search_queries += "Code snippet: {}\ntarget file: {}\nsimilar functions calls that were found:\n{}\n\n".format(s["code_snippet"], s["file_path"],s["result"])
+                search_queries += "Code snippet: {}\ntarget file: {}\nsimilar functions calls that were found:\n{}\n\n".format(
+                    s["code_snippet"], s["file_path"], s["result"])
         else:
             search_queries += "No similar functions  calls were extracted.\n"
         return search_queries
@@ -781,44 +792,43 @@ please use the indicated format and produce a list, like this:
         bug_report = "## Info about the bug (bug report summary):\n"
 
         if self.bug_report:
-            bug_report += "### Bug info:\n"+ self.localization_info.replace("#FAULT_OF_OMISSION", "") + "\n" +\
-            "### Test cases results:\n"+ self.tests_results +"\n" +\
-            ("### The code of the failing test cases:\n" if self.bug_report["failing_test_code"] else "")+ self.bug_report["failing_test_code"]+"\n"
+            bug_report += "### Bug info:\n" + self.localization_info.replace("#FAULT_OF_OMISSION", "") + "\n" +\
+                "### Test cases results:\n" + self.tests_results + "\n" +\
+                ("### The code of the failing test cases:\n" if self.bug_report[
+                 "failing_test_code"] else "") + self.bug_report["failing_test_code"]+"\n"
         else:
             bug_report += "No info was collected about the bug so far. You can get more info about the bug by running the commands: get_info and run_tests.\n"
         return bug_report
-    
+
     def construct_commands_history_context(self,):
         commands_history = "## The list of commands you have executed so far:\n"
         if self.commands_history:
             commands_history += "\n".join(self.commands_history)
         return commands_history
-    
+
     def construct_human_feedback_context(self,):
         human_feedback = "## The list of human feedbacks:\n"
         if self.human_feedback:
             human_feedback += "\n".join(self.human_feedback)
         human_feedback += "\n"
         return human_feedback
-    
+
     def construct_generated_methods_context(self,):
         generated_methods = "## AI generated regeneration of buggy method:\n"
         if self.generated_methods:
-            generated_methods += "\n".join("The regeneration of method {} has returned".format(self.generated_methods[0], self.generated_methods[1]))
+            generated_methods += "\n".join("The regeneration of method {} has returned".format(
+                self.generated_methods[0], self.generated_methods[1]))
         generated_methods += "No AI generated code yet.\n"
         return generated_methods
-    
-
 
     # Methods for creating the relevant prompt contexts in CodeCureAgent
-
 
     def construct_task_context(self,):
         with open("agent_config_and_prompt_files/task_section.md") as task_section_file:
             task_section = task_section_file.read().format(project_name=self.ai_config.warning_repository_name, file_path=self.ai_config.warning_file_path, rule_key=self.ai_config.warning_rule_key,
                                                            rule_name=self.ai_config.warning_rule_name, warning_start_line=self.ai_config.warning_start_line, warning_specific_message=self.ai_config.warning_specific_message)
         return task_section
-    
+
     def construct_plan_context(self) -> str:
         plan_section = "## Your current plan for approaching the task\n\n"
         if self.plans:
@@ -827,15 +837,16 @@ please use the indicated format and produce a list, like this:
             plan_section += "No plan made yet."
 
         return plan_section
-    
+
     # TODO: implement the history
     def construct_agent_history_context(self) -> str:
         return ""
-    
+
     def construct_forbidden_commands_context(self) -> str:
         forbidden_commands_section = ""
         if self.unknown_commands:
-            forbidden_commands_section = "## Forbidden Commands\n\nDO NOT ATTEMPT TO CALL ANY OF THE FOLLOWING COMMANDS UNDER ANY CIRCUMSTANCES:  \n" + "  \n".join(self.unknown_commands)
+            forbidden_commands_section = "## Forbidden Commands\n\nDO NOT ATTEMPT TO CALL ANY OF THE FOLLOWING COMMANDS UNDER ANY CIRCUMSTANCES:  \n" + \
+                "  \n".join(self.unknown_commands)
         return forbidden_commands_section
 
     def construct_context_prompt_code_cure_agent(self) -> str:
@@ -853,10 +864,10 @@ please use the indicated format and produce a list, like this:
 
     # TODO: to be removed when not needed anymore. Replaced by construct_context_prompt_code_cure_agent
     def construct_context_prompt(self,):
-        
+
         context_prompt = "What follows are sections of the most important information you gathered so far about the current bug.\
         Use the following info to suggest a fix for the buggy code:\n"
-        
+
         hypothesis_string = self.construct_hypothesises_context()
         read_files_section = self.construct_read_files_context()
         suggested_fixes_section = self.construct_fixes_context()
@@ -867,11 +878,13 @@ please use the indicated format and produce a list, like this:
         extracted_methods_context = self.construct_extracted_methods_context()
         generated_methods = self.construct_generated_methods_context()
 
-        unknow_cmd = "## DO NOT TRY TO USE THE FOLLOWING COMMANDS IN YOUR NEXT ACTION (NEVER AT ALL):\n" + "\n".join(self.construct_unknown_commands())
+        unknow_cmd = "## DO NOT TRY TO USE THE FOLLOWING COMMANDS IN YOUR NEXT ACTION (NEVER AT ALL):\n" + "\n".join(
+            self.construct_unknown_commands())
 
-        context_prompt += bug_report + "\n" + hypothesis_string + "\n" + read_files_section + "\n" + generated_methods +"\n"+ extracted_methods_context + "\n" + suggested_fixes_section + "\n" + search_queries + "\n" +\
+        context_prompt += bug_report + "\n" + hypothesis_string + "\n" + read_files_section + "\n" + generated_methods + "\n" + extracted_methods_context + "\n" + suggested_fixes_section + "\n" + search_queries + "\n" +\
             similar_calls_context + "\n" + unknow_cmd + \
-            "\n" + "**Important:** This is the end of information sections. After this, you will see the last command you executed (if you executed any so far) and the result of its execution. Continue your reasoning from there.\n"
+            "\n" + \
+            "**Important:** This is the end of information sections. After this, you will see the last command you executed (if you executed any so far) and the result of its execution. Continue your reasoning from there.\n"
 
         return context_prompt
 
@@ -908,8 +921,9 @@ please use the indicated format and produce a list, like this:
         Make usage of the following information to suggest mutations of fixes:\n"
 
         context_prompt += "\n".join(info_sections)
-        context_prompt += "\n" + "\n".join(self.prompt_dictionary["fix format"])
-        #context_prompt += "\n" + "For reference, here is a patch that you can start mutating from (if not available create your own):\n" + str(last_patch) +"\n\n"
+        context_prompt += "\n" + \
+            "\n".join(self.prompt_dictionary["fix format"])
+        # context_prompt += "\n" + "For reference, here is a patch that you can start mutating from (if not available create your own):\n" + str(last_patch) +"\n\n"
         with open("agent_config_and_prompt_files/hints.txt") as htt:
             hints = htt.read()
 
@@ -925,7 +939,7 @@ please use the indicated format and produce a list, like this:
 
     def save_to_json(self, path, json_content, mode="a"):
         if not os.path.exists(path):
-            
+
             if isinstance(json_content, list):
                 with open(path, "w") as json_file:
                     json.dump(json_content, json_file)
@@ -953,7 +967,7 @@ please use the indicated format and produce a list, like this:
                 with open(path, "w") as json_file:
                     json.dump(file_content, json_file)
                 return json_content
-            
+
             elif isinstance(json_content, dict):
                 new_contents = []
                 if any(x in [k.lower() for k in json_content.keys()] for x in ["mutants", "mutants list", "mutants_list", "possible_mutants", "possible_mutants", "mutations", "possible mutations", "possible_mutations", "mutations_list", "mutations list", "fixes", "possible fixes", "possible_fixes", "fixes list", "fixes_list"]):
@@ -985,15 +999,16 @@ please use the indicated format and produce a list, like this:
 
         instruction = instruction or self.default_cycle_instruction
 
-        prompt: ChatSequence = self.construct_prompt(instruction, thought_process_id)
+        prompt: ChatSequence = self.construct_prompt(
+            instruction, thought_process_id)
         prompt = self.on_before_think(prompt, thought_process_id, instruction)
-        
-        ## Save prompts at each step
-        sanitized_warning_file_path = self.ai_config.warning_file_path.replace("/", ".")
+
+        # Save prompts at each step
+        sanitized_warning_file_path = self.ai_config.warning_file_path.replace(
+            "/", ".")
         with open(os.path.join("experimental_setups", self.exps[-1], "logs", f"prompt_history_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_{str(self.ai_config.warning_start_line)}"), "a+") as patf:
             patf.write(prompt.dump())
-        
-       
+
         raw_response = create_chat_completion(
             prompt,
             self.config,
@@ -1001,7 +1016,7 @@ please use the indicated format and produce a list, like this:
             if self.config.openai_functions
             else None,
         )
-        
+
         try:
             response_dict = extract_dict_from_response(
                 raw_response.content
@@ -1009,15 +1024,17 @@ please use the indicated format and produce a list, like this:
             repetition = self.detect_command_repetition(response_dict)
             if repetition:
                 logger.info("WARNING: REPETITION DETECTED!\n")
-                logger.info(str(self.handle_command_repitition(response_dict, self.hyperparams["repetition_handling"])) + "\n\n")
-                prompt.extend([Message("user", self.handle_command_repitition(response_dict, self.hyperparams["repetition_handling"]))])
+                logger.info(str(self.handle_command_repitition(
+                    response_dict, self.hyperparams["repetition_handling"])) + "\n\n")
+                prompt.extend([Message("user", self.handle_command_repitition(
+                    response_dict, self.hyperparams["repetition_handling"]))])
                 new_response = create_chat_completion(
-                        prompt,
-                        self.config,
-                        functions=get_openai_command_specs(self.command_registry)
-                        if self.config.openai_functions
-                        else None,
-                    )
+                    prompt,
+                    self.config,
+                    functions=get_openai_command_specs(self.command_registry)
+                    if self.config.openai_functions
+                    else None,
+                )
                 if self.hyperparams["repetition_handling"] == "TOP3":
                     top3_list = json.loads(new_response.content)
                     for r in top3_list:
@@ -1031,7 +1048,7 @@ please use the indicated format and produce a list, like this:
             return self.on_response(raw_response, thought_process_id, prompt, instruction)
         except SyntaxError as e:
             return self.on_response(raw_response, thought_process_id, prompt, instruction)
-        
+
     @abstractmethod
     def execute(
         self,
@@ -1070,7 +1087,6 @@ please use the indicated format and produce a list, like this:
             reserve_tokens: Number of tokens to reserve for content that is added later
         """
 
-        
         self.construct_read_files()
         self.construct_suggested_fixes()
         self.construct_search_queries()
@@ -1087,26 +1103,28 @@ please use the indicated format and produce a list, like this:
 
         if self.hyperparams["budget_control"]["name"] == "NO-TRACK":
             pass
-        elif self.hyperparams["budget_control"]["name"] == "FULL-TRACK" and self.hyperparams["budget_control"]["params"]=={}:
-            cycle_instruction += "\nYou have, so far, executed {} commands, you have only {} commands left.\n".format(self.cycle_count, self.hyperparams["commands_limit"]-self.cycle_count)
-        elif self.hyperparams["budget_control"]["name"] == "FULL-TRACK" and self.hyperparams["budget_control"]["params"]!={}:
+        elif self.hyperparams["budget_control"]["name"] == "FULL-TRACK" and self.hyperparams["budget_control"]["params"] == {}:
+            cycle_instruction += "\nYou have, so far, executed {} commands, you have only {} commands left.\n".format(
+                self.cycle_count, self.hyperparams["commands_limit"]-self.cycle_count)
+        elif self.hyperparams["budget_control"]["name"] == "FULL-TRACK" and self.hyperparams["budget_control"]["params"] != {}:
             n_fixes = self.hyperparams["budget_control"]["params"]["#fixes"]
-            cycle_instruction += "\nYou have, so far, executed, {} commands and suggested {} fixes. You have {} commands left. However, you need to suggest {} fixes before consuming all the left commands.\n".format(self.cycle_count, len(self.suggested_fixes), self.hyperparams["commands_limit"]-self.cycle_count, n_fixes - len(self.suggested_fixes))
-        elif self.hyperparams["budget_control"]["name"]=="FORCED" and self.current_state != "no_state_machine":
+            cycle_instruction += "\nYou have, so far, executed, {} commands and suggested {} fixes. You have {} commands left. However, you need to suggest {} fixes before consuming all the left commands.\n".format(
+                self.cycle_count, len(self.suggested_fixes), self.hyperparams["commands_limit"]-self.cycle_count, n_fixes - len(self.suggested_fixes))
+        elif self.hyperparams["budget_control"]["name"] == "FORCED" and self.current_state != "no_state_machine":
             t1 = self.hyperparams["budget_control"]["T1"]
             t2 = self.hyperparams["budget_control"]["T2"]
             if self.cycle_count >= t2:
                 self.update_prompt_state("Trying out Fix Candidates")
-                cycle_instruction += "\nBecause of budget constaints, you were forced to transition to the state `Trying out Fix Candidates`" 
+                cycle_instruction += "\nBecause of budget constaints, you were forced to transition to the state `Trying out Fix Candidates`"
             elif self.cycle_count >= t1:
                 self.update_prompt_state("Gathering Context for a Fix")
-                cycle_instruction += "\nBecause of budget constaints, you were forced to transition to the state `Gathering Context for a Fix`" 
+                cycle_instruction += "\nBecause of budget constaints, you were forced to transition to the state `Gathering Context for a Fix`"
 
         context_prompt = self.construct_context_prompt_code_cure_agent()
         prompt = ChatSequence.for_model(
             self.llm.name,
             [Message("system", self.prompt_dictionary["role"])])
-        
+
         definitions_prompt = ""
         static_sections_names = ["goals", "commands", "general guidelines"]
         if self.current_state != "no_state_machine":
@@ -1115,19 +1133,21 @@ please use the indicated format and produce a list, like this:
             static_sections_names.append("fix format")
         for key in static_sections_names:
             if isinstance(self.prompt_dictionary[key], list):
-                definitions_prompt += "\n".join(self.prompt_dictionary[key]) + "\n\n"
+                definitions_prompt += "\n".join(
+                    self.prompt_dictionary[key]) + "\n\n"
             elif isinstance(self.prompt_dictionary[key], str):
                 definitions_prompt += self.prompt_dictionary[key] + "\n\n"
             else:
                 raise TypeError("For now we only support list and str types.")
-            
+
         prompt.extend(ChatSequence.for_model(
             self.llm.name,
-            [Message("user", definitions_prompt + "\n" + context_prompt + "\n\n" + cycle_instruction)] + prepend_messages,
+            [Message("user", definitions_prompt + "\n" + context_prompt +
+                     "\n\n" + cycle_instruction)] + prepend_messages,
         ))
-        #prompt.append(Message("user", context_prompt))
-        
-        ## The following is the original code, uncomment when needed to roll back
+        # prompt.append(Message("user", context_prompt))
+
+        # The following is the original code, uncomment when needed to roll back
         """
        # Reserve tokens for messages to be appended later, if any
         reserve_tokens += self.history.max_summary_tlength
@@ -1147,13 +1167,14 @@ please use the indicated format and produce a list, like this:
 
         """
 
-        #TODO: Remove this, if we want to keep the history entirely in the main user prompt
+        # TODO: Remove this, if we want to keep the history entirely in the main user prompt
         if len(self.history) > 2:
             last_command = self.history[-2]
             command_result = self.history[-1]
             last_command_section = "{}\n".format(last_command.content)
             append_messages.append(Message("assistant", last_command_section))
-            result_last_command = "The result of executing that last command is:\n{}".format(command_result.content)
+            result_last_command = "The result of executing that last command is:\n{}".format(
+                command_result.content)
             append_messages.append((Message("user", result_last_command)))
         if append_messages:
             prompt.extend(append_messages)
@@ -1177,17 +1198,18 @@ please use the indicated format and produce a list, like this:
         if not cycle_instruction:
             raise ValueError("No instruction given")
 
-        #cycle_instruction_msg = Message("user", cycle_instruction)
+        # cycle_instruction_msg = Message("user", cycle_instruction)
         cycle_instruction_tlength = 0
-        #count_message_tokens(
+        # count_message_tokens(
         #    cycle_instruction_msg, self.llm.name
-        #)
+        # )
 
         append_messages: list[Message] = []
 
-        response_format_instr = self.response_format_instruction(thought_process_id)
-        #if response_format_instr:
-        #s    append_messages.append(Message("user", response_format_instr))
+        response_format_instr = self.response_format_instruction(
+            thought_process_id)
+        # if response_format_instr:
+        # s    append_messages.append(Message("user", response_format_instr))
 
         prompt = self.construct_base_prompt(
             thought_process_id,
@@ -1196,14 +1218,15 @@ please use the indicated format and produce a list, like this:
         )
 
         # ADD user input message ("triggering prompt")
-        #prompt.append(cycle_instruction_msg)
+        # prompt.append(cycle_instruction_msg)
 
         return prompt
 
     # This can be expanded to support multiple types of (inter)actions within an agent
     def response_format_instruction(self, thought_process_id: ThoughtProcessID) -> str:
         if thought_process_id != "one-shot":
-            raise NotImplementedError(f"Unknown thought process '{thought_process_id}'")
+            raise NotImplementedError(
+                f"Unknown thought process '{thought_process_id}'")
 
         RESPONSE_FORMAT_WITH_COMMAND = """```ts
         interface Response {
@@ -1289,7 +1312,8 @@ please use the indicated format and produce a list, like this:
             message_to_add = Message("system", plugin_response)
             tokens_to_add = count_message_tokens(message_to_add, self.llm.name)
             if current_tokens_used + tokens_to_add > self.send_token_limit:
-                logger.debug(f"Plugin response too long, skipping: {plugin_response}")
+                logger.debug(
+                    f"Plugin response too long, skipping: {plugin_response}")
                 logger.debug(f"Plugins remaining at stop: {plugin_count - i}")
                 break
             prompt.insert(
@@ -1373,7 +1397,8 @@ def add_history_upto_token_limit(
     trimmed_messages: list[Message] = []
     for cycle in reversed(list(history.per_cycle())):
         messages_to_add = [msg for msg in cycle if msg is not None]
-        tokens_to_add = count_message_tokens(messages_to_add, prompt.model.name)
+        tokens_to_add = count_message_tokens(
+            messages_to_add, prompt.model.name)
         if current_prompt_length + tokens_to_add > t_limit:
             limit_reached = True
 

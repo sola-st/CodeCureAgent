@@ -172,7 +172,8 @@ class EmbeddingModelProviderModelResponse(ModelProviderModelResponse):
     @validator("completion_tokens_used")
     def _verify_no_completion_tokens_used(cls, v):
         if v > 0:
-            raise ValueError("Embeddings should not have completion tokens used.")
+            raise ValueError(
+                "Embeddings should not have completion tokens used.")
         return v
 
 

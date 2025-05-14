@@ -41,10 +41,7 @@ import click
 )
 @click.option("--speak", is_flag=True, help="Enable Speak Mode")
 @click.option("--debug", is_flag=True, help="Enable Debug Mode")
-
-
 @click.option("--model-version", type=str, required=True, help="GPT model to use.")
-
 @click.option(
     "--use-memory",
     "-m",
@@ -200,7 +197,7 @@ def main(
                 __file__
             ).parent.parent.parent,  # TODO: make this an option
             workspace_directory=workspace_directory,
-            sorald_jar_path= sorald_jar_path,
+            sorald_jar_path=sorald_jar_path,
             install_plugin_deps=install_plugin_deps,
             ai_name=ai_name,
             ai_role=ai_role,

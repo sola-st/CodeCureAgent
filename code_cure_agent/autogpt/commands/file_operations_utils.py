@@ -22,7 +22,8 @@ class ParserStrategy:
 class TXTParser(ParserStrategy):
     def read(self, file_path: str) -> str:
         charset_match = charset_normalizer.from_path(file_path).best()
-        logger.debug(f"Reading '{file_path}' with encoding '{charset_match.encoding}'")
+        logger.debug(
+            f"Reading '{file_path}' with encoding '{charset_match.encoding}'")
         return str(charset_match)
 
 
@@ -84,7 +85,8 @@ class MarkdownParser(ParserStrategy):
     def read(self, file_path: str) -> str:
         with open(file_path, "r") as f:
             html = markdown.markdown(f.read())
-            text = "".join(BeautifulSoup(html, "html.parser").findAll(string=True))
+            text = "".join(BeautifulSoup(
+                html, "html.parser").findAll(string=True))
         return text
 
 
@@ -106,7 +108,8 @@ class FileContext:
         self.parser = parser
 
     def read_file(self, file_path) -> str:
-        self.logger.debug(f"Reading file {file_path} with parser {self.parser}")
+        self.logger.debug(
+            f"Reading file {file_path} with parser {self.parser}")
         return self.parser.read(file_path)
 
 
@@ -154,7 +157,8 @@ def read_textual_file(file_path: str, logger: logs.Logger) -> str:
     parser = extension_to_parser.get(file_extension)
     if not parser:
         if is_binary:
-            raise ValueError(f"Unsupported binary file format: {file_extension}")
+            raise ValueError(
+                f"Unsupported binary file format: {file_extension}")
         # fallback to txt file parser (to support script and code files loading)
         parser = TXTParser()
     file_context = FileContext(parser, logger)

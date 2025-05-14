@@ -34,7 +34,8 @@ def get_embedding(
     Returns:
         List[float]: The embedding.
     """
-    multiple = isinstance(input, list) and all(not isinstance(i, int) for i in input)
+    multiple = isinstance(input, list) and all(
+        not isinstance(i, int) for i in input)
 
     if isinstance(input, str):
         input = input.replace("\n", " ")

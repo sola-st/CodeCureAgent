@@ -17,7 +17,8 @@ async def run_auto_gpt(user_configuration: dict):
     client_logger.debug("Getting agent settings")
 
     agent_workspace = (
-        user_configuration.get("workspace", {}).get("configuration", {}).get("root", "")
+        user_configuration.get("workspace", {}).get(
+            "configuration", {}).get("root", "")
     )
 
     if not agent_workspace:  # We don't have an agent yet.
@@ -45,7 +46,8 @@ async def run_auto_gpt(user_configuration: dict):
         agent_settings.update_agent_name_and_goals(name_and_goals)
 
         # Step 3. Provision the agent.
-        agent_workspace = SimpleAgent.provision_agent(agent_settings, client_logger)
+        agent_workspace = SimpleAgent.provision_agent(
+            agent_settings, client_logger)
         print("agent is provisioned")
 
     # launch agent interaction loop

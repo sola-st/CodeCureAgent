@@ -84,13 +84,15 @@ class SimplePlanner(Configurable):
         settings: PlannerSettings,
         logger: logging.Logger,
         model_providers: dict[ModelProviderName, LanguageModelProvider],
-        workspace: Workspace = None,  # Workspace is not available during bootstrapping.
+        # Workspace is not available during bootstrapping.
+        workspace: Workspace = None,
     ) -> None:
         self._configuration = settings.configuration
         self._logger = logger
         self._workspace = workspace
 
-        self._providers: dict[LanguageModelClassification, LanguageModelProvider] = {}
+        self._providers: dict[LanguageModelClassification,
+                              LanguageModelProvider] = {}
         for model, model_config in self._configuration.models.items():
             self._providers[model] = model_providers[model_config.provider_name]
 
@@ -144,12 +146,14 @@ class SimplePlanner(Configurable):
         **kwargs,
     ) -> LanguageModelResponse:
         model_classification = prompt_strategy.model_classification
-        model_configuration = self._configuration.models[model_classification].dict()
+        model_configuration = self._configuration.models[model_classification].dict(
+        )
         self._logger.debug(f"Using model configuration: {model_configuration}")
         del model_configuration["provider_name"]
         provider = self._providers[model_classification]
 
-        template_kwargs = self._make_template_kwargs_for_strategy(prompt_strategy)
+        template_kwargs = self._make_template_kwargs_for_strategy(
+            prompt_strategy)
         template_kwargs.update(kwargs)
         prompt = prompt_strategy.build_prompt(**template_kwargs)
 

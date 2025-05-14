@@ -1,3 +1,4 @@
+from autogpt.llm.providers.openai import OPEN_AI_CHAT_MODELS
 import os
 import re
 import tiktoken
@@ -9,8 +10,6 @@ import argparse
 import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
-
-from autogpt.llm.providers.openai import OPEN_AI_CHAT_MODELS
 
 
 def calculate_tokens(folder_path, fixed_file_path, model_name="gpt-3.5-turbo"):
@@ -44,13 +43,15 @@ def calculate_tokens(folder_path, fixed_file_path, model_name="gpt-3.5-turbo"):
                 continue
 
             # Extract input tokens
-            input_tokens_match = re.search(r"Length:\s*(\d+)\s*tokens", sequence)
+            input_tokens_match = re.search(
+                r"Length:\s*(\d+)\s*tokens", sequence)
             if input_tokens_match:
                 input_tokens = int(input_tokens_match.group(1))
                 input_tokens_sum += input_tokens
 
             # Extract ASSISTANT to USER text
-            assistant_match = re.search(r"--------------- ASSISTANT ----------------(.*?)(?=------------------ USER ----------------|$)", sequence, re.DOTALL)
+            assistant_match = re.search(
+                r"--------------- ASSISTANT ----------------(.*?)(?=------------------ USER ----------------|$)", sequence, re.DOTALL)
             if assistant_match:
                 assistant_text = assistant_match.group(1).strip()
                 output_tokens_sum += len(encoder.encode(assistant_text))
@@ -60,7 +61,8 @@ def calculate_tokens(folder_path, fixed_file_path, model_name="gpt-3.5-turbo"):
         file_output_tokens.append(output_tokens_sum)
 
         # Check if the filename matches any fixed string
-        matched = any(fixed_string in filename for fixed_string in fixed_strings)
+        matched = any(
+            fixed_string in filename for fixed_string in fixed_strings)
         if matched:
             matched_tokens.append(total_tokens)
         else:
@@ -69,22 +71,31 @@ def calculate_tokens(folder_path, fixed_file_path, model_name="gpt-3.5-turbo"):
     total_input_tokens = sum(file_input_tokens)
     total_output_tokens = sum(file_output_tokens)
 
-    average_input_tokens = statistics.mean(file_input_tokens) if file_input_tokens else 0
-    average_output_tokens = statistics.mean(file_output_tokens) if file_output_tokens else 0
+    average_input_tokens = statistics.mean(
+        file_input_tokens) if file_input_tokens else 0
+    average_output_tokens = statistics.mean(
+        file_output_tokens) if file_output_tokens else 0
 
-    median_input_tokens = statistics.median(file_input_tokens) if file_input_tokens else 0
-    median_output_tokens = statistics.median(file_output_tokens) if file_output_tokens else 0
+    median_input_tokens = statistics.median(
+        file_input_tokens) if file_input_tokens else 0
+    median_output_tokens = statistics.median(
+        file_output_tokens) if file_output_tokens else 0
 
     # Statistics for matched and unmatched files
-    average_matched_tokens = statistics.mean(matched_tokens) if matched_tokens else 0
-    median_matched_tokens = statistics.median(matched_tokens) if matched_tokens else 0
+    average_matched_tokens = statistics.mean(
+        matched_tokens) if matched_tokens else 0
+    median_matched_tokens = statistics.median(
+        matched_tokens) if matched_tokens else 0
 
-    average_unmatched_tokens = statistics.mean(unmatched_tokens) if unmatched_tokens else 0
-    median_unmatched_tokens = statistics.median(unmatched_tokens) if unmatched_tokens else 0
+    average_unmatched_tokens = statistics.mean(
+        unmatched_tokens) if unmatched_tokens else 0
+    median_unmatched_tokens = statistics.median(
+        unmatched_tokens) if unmatched_tokens else 0
 
     # Create violin plot
     categories = ["All Files", "Matched Files", "Unmatched Files"]
-    data = [[i+j for i, j in zip(file_input_tokens, file_output_tokens)], matched_tokens, unmatched_tokens]
+    data = [[i+j for i, j in zip(file_input_tokens, file_output_tokens)],
+            matched_tokens, unmatched_tokens]
 
     plt.figure(figsize=(10, 6))
     plt.violinplot(data, showmeans=True)
@@ -94,27 +105,31 @@ def calculate_tokens(folder_path, fixed_file_path, model_name="gpt-3.5-turbo"):
     plt.grid(axis="y")
     plt.show()
 
-    return (total_input_tokens, total_output_tokens, 
-            average_input_tokens, average_output_tokens, 
-            median_input_tokens, median_output_tokens, 
+    return (total_input_tokens, total_output_tokens,
+            average_input_tokens, average_output_tokens,
+            median_input_tokens, median_output_tokens,
             average_matched_tokens, median_matched_tokens,
             average_unmatched_tokens, median_unmatched_tokens, data)
+
 
 if __name__ == "__main__":
 
     # Read in arguments from the script call.
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model_version", type=str, required=True, help="The GPT model used in the experiment. Can be the short name of the model or the full version name.")
-    parser.add_argument("--logs_folder", type=str, help="Path to the logs folder that contains the prompt logs")
-    parser.add_argument("--fixed_file_path", type=str, help="Path to the fixed_so_far file")
-    
+    parser.add_argument("--model_version", type=str, required=True,
+                        help="The GPT model used in the experiment. Can be the short name of the model or the full version name.")
+    parser.add_argument("--logs_folder", type=str,
+                        help="Path to the logs folder that contains the prompt logs")
+    parser.add_argument("--fixed_file_path", type=str,
+                        help="Path to the fixed_so_far file")
+
     args = parser.parse_args()
 
     if args.logs_folder != None:
         folder_path = args.logs_folder
     else:
         folder_path = "prompt_logs"
-    
+
     if args.fixed_file_path != None:
         fixed_file_path = args.fixed_file_path
     else:
@@ -122,15 +137,13 @@ if __name__ == "__main__":
 
     model = args.model_version
 
-    
-
     if not os.path.exists(folder_path):
         print(f"Error: The folder '{folder_path}' does not exist.")
     elif not os.path.exists(fixed_file_path):
         print(f"Error: The file '{fixed_file_path}' does not exist.")
     else:
-        (input_tokens_sum, output_tokens_sum, 
-         avg_input_tokens, avg_output_tokens, 
+        (input_tokens_sum, output_tokens_sum,
+         avg_input_tokens, avg_output_tokens,
          med_input_tokens, med_output_tokens,
          avg_matched_tokens, med_matched_tokens,
          avg_unmatched_tokens, med_unmatched_tokens, data) = calculate_tokens(folder_path, fixed_file_path, model_name=model)
@@ -152,7 +165,7 @@ if __name__ == "__main__":
         import pandas as pd
 
         # Example data structure
-        #data = [int(i/1000) for i in data]
+        # data = [int(i/1000) for i in data]
         data = {
             "Category": ["Unfixed bugs"] * len(data[2]) + ["Fixed bugs"] * len(data[1]) + ["All"] * len(data[0]),
             "Tokens":  [int(i/1000) for i in data[2]] + [int(i/1000) for i in data[1]] + [int(i/1000) for i in data[0]],
@@ -163,12 +176,15 @@ if __name__ == "__main__":
         fig, ax = plt.subplots(figsize=(8, 6))
 
         # Create the violin plot
-        sns.violinplot(x="Category", y="Tokens", data=df, palette="muted", inner="box", ax=ax)
+        sns.violinplot(x="Category", y="Tokens", data=df,
+                       palette="muted", inner="box", ax=ax)
 
         # Add horizontal grid lines (matches the style in the original plot)
         ax.yaxis.grid(True)  # Enable horizontal grid lines
-        ax.grid(which='major', linestyle='-', linewidth=0.5, color='gray')  # Style for major grid lines
-        ax.grid(which='minor', linestyle='--', linewidth=0.3, color='lightgray')  # Style for minor grid lines
+        ax.grid(which='major', linestyle='-', linewidth=0.5,
+                color='gray')  # Style for major grid lines
+        ax.grid(which='minor', linestyle='--', linewidth=0.3,
+                color='lightgray')  # Style for minor grid lines
 
         # Customize the y-axis label
         ax.set_ylabel("Count of tokens per bug (K)")
@@ -181,7 +197,8 @@ if __name__ == "__main__":
         prompt_token_cost = OPEN_AI_CHAT_MODELS[model].prompt_token_cost
 
         # Set the secondary y-axis limits to align with primary axis
-        ax2.set_ylim(ax.get_ylim()[0] * prompt_token_cost, ax.get_ylim()[1] * prompt_token_cost) 
+        ax2.set_ylim(ax.get_ylim()[0] * prompt_token_cost,
+                     ax.get_ylim()[1] * prompt_token_cost)
 
         # Show the plot
         plt.show()

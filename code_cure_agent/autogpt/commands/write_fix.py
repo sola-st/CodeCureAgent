@@ -119,12 +119,13 @@ def apply_changes(change_dict: dict, agent: BaseAgent) -> dict:
         lines = file.readlines()
 
     # Mark deletions via an identifier first to avoid conflicts with line number changes
-    deleted_lines_identifier = hashlib.sha512(b"THIS_LINE_IS_TO_BE_DELETED_IDENTIFIER").hexdigest()
+    deleted_lines_identifier = hashlib.sha512(
+        b"THIS_LINE_IS_TO_BE_DELETED_IDENTIFIER").hexdigest()
 
     for line_number in deletions:
         if 1 <= int(line_number) <= len(lines):
-            lines[int(line_number) - 1] = deleted_lines_identifier + "\n" 
-            
+            lines[int(line_number) - 1] = deleted_lines_identifier + "\n"
+
         else:
             logger.warn(
                 f"Line {line_number} to delete was out of range for the file {file_relative_path}. The file only has {len(lines)} lines.", "apply_changes failed")
@@ -159,11 +160,10 @@ def apply_changes(change_dict: dict, agent: BaseAgent) -> dict:
             lines.insert(int(line_number) - 1, new_line)
             line_number += 1
 
-    
     # Finally delete all the lines from the list that are flagged as to be deleted.
-    # It is possible that a modification of the same line as a deletion overwrites the flag. 
+    # It is possible that a modification of the same line as a deletion overwrites the flag.
     # This is intended and therefore in this case the modification wins.
-    lines = [line for line in lines if line != deleted_lines_identifier + "\n" ]
+    lines = [line for line in lines if line != deleted_lines_identifier + "\n"]
 
     # Write the modified code back to the file
     with open(file_full_path, 'w') as file:

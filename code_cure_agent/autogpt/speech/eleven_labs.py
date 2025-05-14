@@ -77,7 +77,8 @@ class ElevenLabsSpeech(VoiceBase):
         tts_url = (
             f"https://api.elevenlabs.io/v1/text-to-speech/{self._voices[voice_index]}"
         )
-        response = requests.post(tts_url, headers=self._headers, json={"text": text})
+        response = requests.post(
+            tts_url, headers=self._headers, json={"text": text})
 
         if response.status_code == 200:
             with open("speech.mpeg", "wb") as f:
@@ -86,6 +87,7 @@ class ElevenLabsSpeech(VoiceBase):
             os.remove("speech.mpeg")
             return True
         else:
-            logger.warn("Request failed with status code:", response.status_code)
+            logger.warn("Request failed with status code:",
+                        response.status_code)
             logger.info("Response content:", response.content)
             return False

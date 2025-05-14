@@ -60,7 +60,8 @@ def run_cli(sys_args: List[str]) -> None:
         raise RuntimeError(f"Unrecognized command {parsed_args.command}")
 
     data[record_id] = record
-    parsed_args.prs_json_file.write_text(json.dumps(data, indent=4), encoding=ENCODING)
+    parsed_args.prs_json_file.write_text(
+        json.dumps(data, indent=4), encoding=ENCODING)
 
 
 def create_record_id(owner: str, repo: str, pr_number: int) -> str:
@@ -81,7 +82,8 @@ def execute_record_initial(
         )
         sys.exit(1)
 
-    sorald_stats = read_json_if_exists(sorald_stats_file, sys.getdefaultencoding())
+    sorald_stats = read_json_if_exists(
+        sorald_stats_file, sys.getdefaultencoding())
     return create_initial_record(repo_slug, pr, sorald_stats)
 
 
@@ -100,7 +102,8 @@ def execute_record_final(
 
     record = copy.deepcopy(data[record_id])
     record[jsonkeys.PR.SECTION_KEY].update(get_pr_state(pr))
-    record[jsonkeys.DIFF.SECTION_KEY][jsonkeys.DIFF.FINAL] = get_diff(pr.diff_url)
+    record[jsonkeys.DIFF.SECTION_KEY][jsonkeys.DIFF.FINAL] = get_diff(
+        pr.diff_url)
 
     return record
 

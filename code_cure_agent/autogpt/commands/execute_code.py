@@ -1,22 +1,19 @@
 """Commands to execute code"""
 
+from .decorators import sanitize_path_arg
+from autogpt.logs import logger
+from autogpt.config import Config
+from autogpt.command_decorator import command
+from autogpt.agents.agent import Agent
+from docker.models.containers import Container as DockerContainer
+from docker.errors import DockerException, ImageNotFound
+import docker
+from pathlib import Path
+import subprocess
+import os
 COMMAND_CATEGORY = "execute_code"
 COMMAND_CATEGORY_TITLE = "Execute Code"
 
-import os
-import subprocess
-from pathlib import Path
-
-import docker
-from docker.errors import DockerException, ImageNotFound
-from docker.models.containers import Container as DockerContainer
-
-from autogpt.agents.agent import Agent
-from autogpt.command_decorator import command
-from autogpt.config import Config
-from autogpt.logs import logger
-
-from .decorators import sanitize_path_arg
 
 ALLOWLIST_CONTROL = "allowlist"
 DENYLIST_CONTROL = "denylist"

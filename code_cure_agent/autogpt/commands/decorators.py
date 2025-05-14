@@ -26,7 +26,8 @@ def sanitize_path_arg(arg_name: str):
 
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            logger.debug(f"Sanitizing arg '{arg_name}' on function '{func.__name__}'")
+            logger.debug(
+                f"Sanitizing arg '{arg_name}' on function '{func.__name__}'")
             logger.debug(f"Function annotations: {func.__annotations__}")
 
             # Get Agent from the called function's arguments
@@ -37,7 +38,8 @@ def sanitize_path_arg(arg_name: str):
             logger.debug(f"KWArgs: {kwargs}")
             logger.debug(f"Agent argument lifted from function call: {agent}")
             if not isinstance(agent, Agent):
-                raise RuntimeError("Could not get Agent from decorated command's args")
+                raise RuntimeError(
+                    "Could not get Agent from decorated command's args")
 
             # Sanitize the specified path argument, if one is given
             given_path: str | Path | None = kwargs.get(

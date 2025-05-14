@@ -185,7 +185,8 @@ def benchmark_commits(
     unique_commits = commits_to_analyze[["url", "commit"]].drop_duplicates(
         keep="first", ignore_index=True
     )
-    args = [(row.url, row.commit, rule_keys) for _, row in unique_commits.iterrows()]
+    args = [(row.url, row.commit, rule_keys)
+            for _, row in unique_commits.iterrows()]
     results = pool.imap(imappable_benchmark_commit, args)
     results_progress = tqdm.tqdm(
         results, desc="Processing commits", total=len(unique_commits)
@@ -213,7 +214,8 @@ def benchmark_commit(
 
 
 def _benchmark_commit(repo: git.Repo, rule_keys: List[str]) -> "CommitRepairStats":
-    repair_stats = list(map(functools.partial(run_sorald_for_rule, repo), rule_keys))
+    repair_stats = list(map(functools.partial(
+        run_sorald_for_rule, repo), rule_keys))
 
     return CommitRepairStats(
         project_url=next(repo.remote().urls),

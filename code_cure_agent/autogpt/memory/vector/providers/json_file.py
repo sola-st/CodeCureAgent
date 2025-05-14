@@ -75,7 +75,8 @@ class JSONFileMemory(VectorMemoryProvider):
             logger.debug(f"Index file '{self.file_path}' does not exist")
             return
         with self.file_path.open("r") as f:
-            logger.debug(f"Loading memories from index file '{self.file_path}'")
+            logger.debug(
+                f"Loading memories from index file '{self.file_path}'")
             json_index = orjson.loads(f.read())
             for memory_item_dict in json_index:
                 self.memories.append(MemoryItem(**memory_item_dict))

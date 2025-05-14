@@ -147,16 +147,19 @@ def run_auto_gpt(
     )
 
     # HACK: doing this here to collect some globals that depend on the workspace.
-    config.file_logger_path = Workspace.build_file_logger_path(config.workspace_path)
+    config.file_logger_path = Workspace.build_file_logger_path(
+        config.workspace_path)
 
     # Set sorald_jar_path to default if not specified via the cli or environment variable
     if not config.sorald_jar_path:
-        config.sorald_jar_path = os.path.join(config.workdir, DEFAULT_SORALD_JAR_PATH)
+        config.sorald_jar_path = os.path.join(
+            config.workdir, DEFAULT_SORALD_JAR_PATH)
 
     config.plugins = scan_plugins(config, config.debug_mode)
 
     # Create a CommandRegistry instance and scan default folder
-    command_registry = CommandRegistry.with_command_modules(COMMAND_CATEGORIES, config)
+    command_registry = CommandRegistry.with_command_modules(
+        COMMAND_CATEGORIES, config)
 
     ai_config = construct_main_ai_config(
         config,
@@ -178,7 +181,8 @@ def run_auto_gpt(
     if config.chat_messages_enabled:
         for plugin in config.plugins:
             if hasattr(plugin, "can_handle_report") and plugin.can_handle_report():
-                logger.info(f"Loaded plugin into logger: {plugin.__class__.__name__}")
+                logger.info(
+                    f"Loaded plugin into logger: {plugin.__class__.__name__}")
                 logger.chat_plugins.append(plugin)
 
     # Initialize memory and make sure it is empty.
@@ -188,7 +192,8 @@ def run_auto_gpt(
     logger.typewriter_log(
         "Using memory of type:", Fore.GREEN, f"{memory.__class__.__name__}"
     )
-    logger.typewriter_log("Using Browser:", Fore.GREEN, config.selenium_web_browser)
+    logger.typewriter_log("Using Browser:", Fore.GREEN,
+                          config.selenium_web_browser)
 
     agent = Agent(
         memory=memory,
@@ -196,12 +201,10 @@ def run_auto_gpt(
         triggering_prompt=DEFAULT_TRIGGERING_PROMPT,
         ai_config=ai_config,
         config=config,
-        experiment_file = experiment_file
+        experiment_file=experiment_file
     )
 
-
     agent.prepare_target_project()
-
 
     run_interaction_loop(agent)
 
@@ -240,7 +243,8 @@ def run_interaction_loop(
     # These contain both application config and agent config, so grab them here.
     config = agent.config
     ai_config = agent.ai_config
-    logger.debug(f"{ai_config.ai_name} System Prompt: {str(agent.prompt_dictionary)}")
+    logger.debug(
+        f"{ai_config.ai_name} System Prompt: {str(agent.prompt_dictionary)}")
 
     cycle_budget = cycles_remaining = _get_cycle_budget(
         config.continuous_mode, config.continuous_limit
@@ -277,7 +281,8 @@ def run_interaction_loop(
     #########################
 
     while cycles_remaining > 0:
-        logger.debug(f"Cycle budget: {cycle_budget}; remaining: {cycles_remaining}")
+        logger.debug(
+            f"Cycle budget: {cycle_budget}; remaining: {cycles_remaining}")
 
         ########
         # Plan #
@@ -290,9 +295,9 @@ def run_interaction_loop(
         # Update User #
         ###############
         # Print the assistant's thoughts and the next command to the user.
-        update_user(config, ai_config, command_name, command_args, assistant_reply_dict)
+        update_user(config, ai_config, command_name,
+                    command_args, assistant_reply_dict)
 
-        
         if cycles_remaining == 1:  # Last cycle
 
             ##################
@@ -356,7 +361,8 @@ def run_interaction_loop(
         if result is not None:
             logger.typewriter_log("SYSTEM: ", Fore.YELLOW, result)
         else:
-            logger.typewriter_log("SYSTEM: ", Fore.YELLOW, "Unable to execute command")
+            logger.typewriter_log("SYSTEM: ", Fore.YELLOW,
+                                  "Unable to execute command")
 
 
 def update_user(
@@ -509,14 +515,15 @@ def construct_main_ai_config(
     if goals:
         ai_config.ai_goals = list(goals)
 
-
     if (
-        all([name, role, goals, ai_config.warning_repository_URL, ai_config.warning_repository_commit, ai_config.warning_file_path, ai_config.warning_rule_key, ai_config.warning_start_line, ai_config.warning_rule_name, ai_config.warning_specific_message])
+        all([name, role, goals, ai_config.warning_repository_URL, ai_config.warning_repository_commit, ai_config.warning_file_path,
+            ai_config.warning_rule_key, ai_config.warning_start_line, ai_config.warning_rule_name, ai_config.warning_specific_message])
         or (config.skip_reprompt
-        and all([ai_config.ai_name, ai_config.ai_role, ai_config.ai_goals, ai_config.warning_repository_URL, ai_config.warning_repository_commit, ai_config.warning_file_path, ai_config.warning_rule_key, ai_config.warning_start_line, ai_config.warning_rule_name, ai_config.warning_specific_message]))
+            and all([ai_config.ai_name, ai_config.ai_role, ai_config.ai_goals, ai_config.warning_repository_URL, ai_config.warning_repository_commit, ai_config.warning_file_path, ai_config.warning_rule_key, ai_config.warning_start_line, ai_config.warning_rule_name, ai_config.warning_specific_message]))
     ):
-        logger.typewriter_log("ai_config found: ", Fore.GREEN, "The complete ai_config was successfully loaded from the ai_settings_file.")
-        
+        logger.typewriter_log("ai_config found: ", Fore.GREEN,
+                              "The complete ai_config was successfully loaded from the ai_settings_file.")
+
     elif all([ai_config.ai_name, ai_config.ai_role, ai_config.ai_goals, ai_config.warning_repository_URL, ai_config.warning_repository_commit, ai_config.warning_file_path, ai_config.warning_rule_key, ai_config.warning_start_line, ai_config.warning_rule_name, ai_config.warning_specific_message]):
         logger.typewriter_log(
             "Welcome back! ",
@@ -571,21 +578,29 @@ Continue ({config.authorise_key}/{config.exit_key}): """,
     logger.typewriter_log("Goals:", Fore.GREEN, "", speak_text=False)
     for goal in ai_config.ai_goals:
         logger.typewriter_log("-", Fore.GREEN, goal, speak_text=False)
-    logger.typewriter_log("Warning Repository URL: ", Fore.GREEN, ai_config.warning_repository_URL)
-    logger.typewriter_log("Warning Repository Commit: ", Fore.GREEN, ai_config.warning_repository_commit)
-    logger.typewriter_log("Warning Repository Name", Fore.GREEN, ai_config.warning_repository_name)
-    logger.typewriter_log("Warning File Path: ", Fore.GREEN, ai_config.warning_file_path)
-    logger.typewriter_log("Warning File Name: ", Fore.GREEN, ai_config.warning_file_name)
-    logger.typewriter_log("Warning Rule Key: ", Fore.GREEN, ai_config.warning_rule_key)
-    logger.typewriter_log("Warning Start Line: ", Fore.GREEN, str(ai_config.warning_start_line))
-    logger.typewriter_log("Warning Rule Name: ", Fore.GREEN, ai_config.warning_rule_name)
-    logger.typewriter_log("Warning Specific Message: ", Fore.GREEN, ai_config.warning_specific_message)
+    logger.typewriter_log("Warning Repository URL: ",
+                          Fore.GREEN, ai_config.warning_repository_URL)
+    logger.typewriter_log("Warning Repository Commit: ",
+                          Fore.GREEN, ai_config.warning_repository_commit)
+    logger.typewriter_log("Warning Repository Name",
+                          Fore.GREEN, ai_config.warning_repository_name)
+    logger.typewriter_log("Warning File Path: ",
+                          Fore.GREEN, ai_config.warning_file_path)
+    logger.typewriter_log("Warning File Name: ",
+                          Fore.GREEN, ai_config.warning_file_name)
+    logger.typewriter_log("Warning Rule Key: ", Fore.GREEN,
+                          ai_config.warning_rule_key)
+    logger.typewriter_log("Warning Start Line: ", Fore.GREEN,
+                          str(ai_config.warning_start_line))
+    logger.typewriter_log("Warning Rule Name: ",
+                          Fore.GREEN, ai_config.warning_rule_name)
+    logger.typewriter_log("Warning Specific Message: ",
+                          Fore.GREEN, ai_config.warning_specific_message)
     logger.typewriter_log(
         "API Budget:",
         Fore.GREEN,
         "infinite" if ai_config.api_budget <= 0 else f"${ai_config.api_budget}",
     )
-    
 
     return ai_config
 
@@ -603,7 +618,7 @@ def print_assistant_thoughts(
     assistant_thoughts_criticism = None
 
     assistant_thoughts = assistant_reply_json_valid.get("thoughts", {})
-    #assistant_thoughts_text = remove_ansi_escape(assistant_thoughts.get("text", ""))
+    # assistant_thoughts_text = remove_ansi_escape(assistant_thoughts.get("text", ""))
     if assistant_thoughts:
         """assistant_thoughts_reasoning = remove_ansi_escape(
             assistant_thoughts.get("reasoning", "")
@@ -618,7 +633,7 @@ def print_assistant_thoughts(
     logger.typewriter_log(
         f"{ai_name.upper()} THOUGHTS:", Fore.YELLOW, str(assistant_thoughts)
     )
-    #logger.typewriter_log("REASONING:", Fore.YELLOW, str(assistant_thoughts_reasoning))
+    # logger.typewriter_log("REASONING:", Fore.YELLOW, str(assistant_thoughts_reasoning))
     """
     if assistant_thoughts_plan:
         logger.typewriter_log("PLAN:", Fore.YELLOW, "")
@@ -641,5 +656,7 @@ def print_assistant_thoughts(
         else:
             logger.typewriter_log("SPEAK:", Fore.YELLOW, f"{assistant_thoughts_speak}")
     """
+
+
 def remove_ansi_escape(s: str) -> str:
     return s.replace("\x1B", "")

@@ -143,14 +143,16 @@ def meter_api(func: Callable):
     def update_usage_with_response(response: OpenAIObject):
         try:
             usage = response.usage
-            logger.debug(f"Reported usage from call to model {response.model}: {usage}")
+            logger.debug(
+                f"Reported usage from call to model {response.model}: {usage}")
             api_manager.update_cost(
                 response.usage.prompt_tokens,
                 response.usage.completion_tokens if "completion_tokens" in usage else 0,
                 response.model,
             )
         except Exception as err:
-            logger.warn(f"Failed to update API costs: {err.__class__.__name__}: {err}")
+            logger.warn(
+                f"Failed to update API costs: {err.__class__.__name__}: {err}")
 
     def metering_wrapper(*args, **kwargs):
         openai_obj = openai_obj_processor(*args, **kwargs)

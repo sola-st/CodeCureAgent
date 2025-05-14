@@ -229,7 +229,8 @@ class SimpleAgent(Agent, Configurable):
             # Nothing to do here
             return task
         else:
-            self._logger.debug(f"Evaluating task {task} and adding relevant context.")
+            self._logger.debug(
+                f"Evaluating task {task} and adding relevant context.")
             # TODO: Look up relevant memories (need working memory system)
             # TODO: Evaluate whether there is enough information to start the task (language model call).
             task.context.enough_info = True
@@ -358,7 +359,8 @@ class SimpleAgent(Agent, Configurable):
         system_locations = agent_settings.agent.configuration.systems.dict()
 
         system_settings = getattr(agent_settings, system_name)
-        system_class = SimplePluginService.get_plugin(system_locations[system_name])
+        system_class = SimplePluginService.get_plugin(
+            system_locations[system_name])
         system_instance = system_class(
             system_settings,
             *args,

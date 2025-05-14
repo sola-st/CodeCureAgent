@@ -90,18 +90,19 @@ class AIConfig:
                 suffix_index = len(warning_repository_URL)
 
             if last_forward_slash_index < 0 or suffix_index <= last_forward_slash_index:
-                logger.error("Couldn't extract repository name from warning_repository_URL", 
-                            f"The ai_config.warning_repository_URL was {warning_repository_URL}. The last forward slash was at {last_forward_slash_index}. The suffix_index at {suffix_index}.")
-                logger.warn("Falling back to warning_repository_name 'unknown_repo'. However cloning the repo will likely also fail.")
+                logger.error("Couldn't extract repository name from warning_repository_URL",
+                             f"The ai_config.warning_repository_URL was {warning_repository_URL}. The last forward slash was at {last_forward_slash_index}. The suffix_index at {suffix_index}.")
+                logger.warn(
+                    "Falling back to warning_repository_name 'unknown_repo'. However cloning the repo will likely also fail.")
                 self.warning_repository_name = "unknown_repo"
-            
+
             else:
-                self.warning_repository_name = warning_repository_URL[last_forward_slash_index + 1:suffix_index]
+                self.warning_repository_name = warning_repository_URL[
+                    last_forward_slash_index + 1:suffix_index]
 
         # Retrieve the target file name from the file path
         if warning_file_path:
             self.warning_file_name = warning_file_path.split("/")[-1]
-
 
     @staticmethod
     def load(ai_settings_file: str | Path) -> "AIConfig":
@@ -130,13 +131,16 @@ class AIConfig:
             else str(goal)
             for goal in config_params.get("ai_goals", [])
         ]
-        warning_repository_URL = config_params.get("warning_repository_URL", "")
-        warning_repository_commit = config_params.get("warning_repository_commit", "")
+        warning_repository_URL = config_params.get(
+            "warning_repository_URL", "")
+        warning_repository_commit = config_params.get(
+            "warning_repository_commit", "")
         warning_file_path = config_params.get("warning_file_path", "")
         warning_rule_key = config_params.get("warning_rule_key", "")
         warning_start_line = config_params.get("warning_start_line", "")
         warning_rule_name = config_params.get("warning_rule_name", "")
-        warning_specific_message = config_params.get("warning_specific_message", "")
+        warning_specific_message = config_params.get(
+            "warning_specific_message", "")
         api_budget = config_params.get("api_budget", 0.0)
 
         return AIConfig(ai_name, ai_role, ai_goals, warning_repository_URL, warning_repository_commit, warning_file_path, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message, api_budget)
@@ -156,13 +160,13 @@ class AIConfig:
             "ai_name": self.ai_name,
             "ai_role": self.ai_role,
             "ai_goals": self.ai_goals,
-            "warning_repository_URL" : self.warning_repository_URL,
-            "warning_repository_commit" : self.warning_repository_commit,
-            "warning_file_path" : self.warning_file_path,
-            "warning_rule_key" : self.warning_rule_key,
-            "warning_start_line" : self.warning_start_line,
-            "warning_rule_name" : self.warning_rule_name,
-            "warning_specific_message" : self.warning_specific_message,
+            "warning_repository_URL": self.warning_repository_URL,
+            "warning_repository_commit": self.warning_repository_commit,
+            "warning_file_path": self.warning_file_path,
+            "warning_rule_key": self.warning_rule_key,
+            "warning_start_line": self.warning_start_line,
+            "warning_rule_name": self.warning_rule_name,
+            "warning_specific_message": self.warning_specific_message,
             "api_budget": self.api_budget,
         }
         with open(ai_settings_file, "w", encoding="utf-8") as file:
@@ -197,7 +201,7 @@ class AIConfig:
 
         # Construct full prompt
         full_prompt_parts = {
-            
+
             "role": f"You are {self.ai_name}, {self.ai_role.rstrip('.')}"
         }
 
@@ -210,15 +214,17 @@ class AIConfig:
                 else distro.name(pretty=True)
             )
 
-            full_prompt_parts.append(f"The OS you are running on is: {os_info}")
+            full_prompt_parts.append(
+                f"The OS you are running on is: {os_info}")
 
         if self.ai_goals:
             full_prompt_parts["goals"] = [
-                        "## Goals\n",
-                        "For your task, you must fulfill the following goals:\n",
-                        *[f"{i+1}. {goal}" for i, goal in enumerate(self.ai_goals)],
-                    ]
-            
+                "## Goals\n",
+                "For your task, you must fulfill the following goals:\n",
+                *[f"{i+1}. {goal}" for i,
+                  goal in enumerate(self.ai_goals)],
+            ]
+
         additional_constraints: list[str] = []
         if self.api_budget > 0.0:
             additional_constraints["additional constraints"] = (

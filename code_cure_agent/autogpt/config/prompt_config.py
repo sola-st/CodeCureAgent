@@ -43,4 +43,4 @@ class PromptConfig:
             config_params = yaml.load(file, Loader=yaml.FullLoader)
 
         self.general_guidelines = config_params.get("general_guidelines", [])
-        #self.simple_patterns = config_params.get("simple_patterns", [])
+        # self.simple_patterns = config_params.get("simple_patterns", [])

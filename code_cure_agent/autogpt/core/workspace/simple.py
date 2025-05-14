@@ -130,7 +130,8 @@ class SimpleWorkspace(Configurable, Workspace):
         if root is None:
             return Path(relative_path).resolve()
 
-        self._logger.debug(f"Resolving path '{relative_path}' in workspace '{root}'")
+        self._logger.debug(
+            f"Resolving path '{relative_path}' in workspace '{root}'")
         root, relative_path = Path(root).resolve(), Path(relative_path)
         self._logger.debug(f"Resolved root as '{root}'")
 

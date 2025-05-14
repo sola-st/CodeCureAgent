@@ -221,7 +221,7 @@ Cli 17
 
 Codec 2""".replace("\n\n", "\n")
 
-#ChatRepair
+# ChatRepair
 chatgpt_fixes = """Lang-59
 Lang-45
 Closure-44
@@ -609,6 +609,8 @@ Compress 38
 Compress 47"""
 
 # Function to parse bugs into a dictionary
+
+
 def parse_bugs(bug_list):
     parsed = {}
     for bug in bug_list:
@@ -617,6 +619,7 @@ def parse_bugs(bug_list):
             parsed[project] = 0
         parsed[project] += 1
     return parsed
+
 
 # Parse normalized datasets
 chatrepair_data = parse_bugs(chatgpt_fixes.split("\n"))
@@ -641,7 +644,8 @@ plausibles = {
 
 # Initialize table
 table = PrettyTable()
-table.field_names = ["Project", "Bugs", "Plausible", "Correct", "ChatRepair", "ITER", "SelfAPR"]
+table.field_names = ["Project", "Bugs", "Plausible",
+                     "Correct", "ChatRepair", "ITER", "SelfAPR"]
 
 # Fill table rows
 for project, bugs in total_bugs.items():
@@ -650,14 +654,15 @@ for project, bugs in total_bugs.items():
     chatrepair = chatrepair_data.get(project, 0)
     iter_fixes = iter_data.get(project, 0)
     selfapr = selfapr_data.get(project, 0)
-    table.add_row([project, bugs, plausible, correct, chatrepair, iter_fixes, selfapr])
+    table.add_row([project, bugs, plausible, correct,
+                  chatrepair, iter_fixes, selfapr])
 
 # Add summary row
 total_row = [
     "Total",
     sum(total_bugs.values()),
     sum(plausibles.values()),
-    sum(repair_agent.values()),  
+    sum(repair_agent.values()),
     sum(chatrepair_data.values()),
     sum(iter_data.values()),
     sum(selfapr_data.values())

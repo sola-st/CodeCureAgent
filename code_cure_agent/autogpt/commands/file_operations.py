@@ -1,24 +1,22 @@
 """Commands to perform operations on files"""
 
 from __future__ import annotations
+from .file_operations_utils import read_textual_file
+from .decorators import sanitize_path_arg
+from autogpt.memory.vector import MemoryItem, VectorMemory
+from autogpt.logs import logger
+from autogpt.command_decorator import command
+from autogpt.agents.agent import Agent
+from typing import Generator, Literal
+from pathlib import Path
+import os.path
+import os
+import hashlib
+import contextlib
 
 COMMAND_CATEGORY = "file_operations"
 COMMAND_CATEGORY_TITLE = "File Operations"
 
-import contextlib
-import hashlib
-import os
-import os.path
-from pathlib import Path
-from typing import Generator, Literal
-
-from autogpt.agents.agent import Agent
-from autogpt.command_decorator import command
-from autogpt.logs import logger
-from autogpt.memory.vector import MemoryItem, VectorMemory
-
-from .decorators import sanitize_path_arg
-from .file_operations_utils import read_textual_file
 
 Operation = Literal["write", "append", "delete"]
 
@@ -45,7 +43,8 @@ def operations_from_log(
         operation = operation.strip()
         if operation in ("write", "append"):
             try:
-                path, checksum = (x.strip() for x in tail.rsplit(" #", maxsplit=1))
+                path, checksum = (x.strip()
+                                  for x in tail.rsplit(" #", maxsplit=1))
             except ValueError:
                 logger.warn(f"File log entry lacks checksum: '{line}'")
                 path, checksum = tail.strip(), None
@@ -155,7 +154,8 @@ def read_file(filename: str, agent: Agent) -> str:
         content = read_textual_file(filename, logger)
 
         # TODO: invalidate/update memory when file is edited
-        file_memory = MemoryItem.from_text_file(content, filename, agent.config)
+        file_memory = MemoryItem.from_text_file(
+            content, filename, agent.config)
         if len(file_memory.chunks) > 1:
             return file_memory.summary
 
@@ -185,7 +185,8 @@ def ingest_file(
         logger.debug(f"Created memory: {file_memory.dump(True)}")
         memory.add(file_memory)
 
-        logger.info(f"Ingested {len(file_memory.e_chunks)} chunks from {filename}")
+        logger.info(
+            f"Ingested {len(file_memory.e_chunks)} chunks from {filename}")
     except Exception as err:
         logger.warn(f"Error while ingesting file '{filename}': {err}")
 

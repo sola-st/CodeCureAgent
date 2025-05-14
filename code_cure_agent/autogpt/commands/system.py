@@ -1,15 +1,13 @@
 """Commands to control the internal state of the program"""
 
 from __future__ import annotations
+from autogpt.logs import logger
+from autogpt.command_decorator import command
+from autogpt.agents.agent import Agent
+from typing import NoReturn
 
 COMMAND_CATEGORY = "system"
 COMMAND_CATEGORY_TITLE = "System"
-
-from typing import NoReturn
-
-from autogpt.agents.agent import Agent
-from autogpt.command_decorator import command
-from autogpt.logs import logger
 
 
 @command(

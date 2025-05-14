@@ -22,10 +22,12 @@ def bootstrap_agent(task):
     config.continuous_mode = False
     config.temperature = 0
     config.plain_output = True
-    command_registry = CommandRegistry.with_command_modules(COMMAND_CATEGORIES, config)
+    command_registry = CommandRegistry.with_command_modules(
+        COMMAND_CATEGORIES, config)
     config.memory_backend = "no_memory"
     config.workspace_path = Workspace.init_workspace_directory(config)
-    config.file_logger_path = Workspace.build_file_logger_path(config.workspace_path)
+    config.file_logger_path = Workspace.build_file_logger_path(
+        config.workspace_path)
     ai_config = AIConfig(
         ai_name="Auto-GPT",
         ai_role="a multi-purpose AI assistant.",

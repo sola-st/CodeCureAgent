@@ -100,7 +100,8 @@ Latest Development:
             if ai_message.type != "ai_response":
                 continue
             user_message = (
-                messages[i - 1] if i > 0 and messages[i - 1].role == "user" else None
+                messages[i - 1] if i > 0 and messages[i -
+                                                      1].role == "user" else None
             )
             result_message = messages[i + 1]
             try:
@@ -119,6 +120,7 @@ Latest Development:
         )
         with open("debug_prompt_summary_file.txt", "a+") as dbmp:
             dbmp.write(prompt)
+
     def summary_message(self) -> Message:
         return Message(
             "system",
@@ -184,7 +186,8 @@ Latest Development:
 
         # Determine token lengths for use in batching
         prompt_template_length = len(
-            MessageHistory.SUMMARIZATION_PROMPT.format(summary="", new_events="")
+            MessageHistory.SUMMARIZATION_PROMPT.format(
+                summary="", new_events="")
         )
         max_input_tokens = summ_model.max_tokens - max_summary_length
         summary_tlength = count_string_tokens(self.summary, summ_model.name)
@@ -201,8 +204,10 @@ Latest Development:
                 > max_input_tokens - prompt_template_length - summary_tlength
             ):
                 # The batch is full. Summarize it and start a new one.
-                self._update_summary_with_batch(batch, config, max_summary_length)
-                summary_tlength = count_string_tokens(self.summary, summ_model.name)
+                self._update_summary_with_batch(
+                    batch, config, max_summary_length)
+                summary_tlength = count_string_tokens(
+                    self.summary, summ_model.name)
                 batch = [event]
                 batch_tlength = event_tlength
             else:
@@ -222,7 +227,8 @@ Latest Development:
             summary=self.summary, new_events=new_events_batch
         )
 
-        prompt = ChatSequence.for_model(config.fast_llm, [Message("user", prompt)])
+        prompt = ChatSequence.for_model(
+            config.fast_llm, [Message("user", prompt)])
         if (
             self.agent is not None
             and hasattr(self.agent, "created_at")

@@ -3,6 +3,7 @@ import os
 # Overwrites the .env files with the OPENAI_API_KEY provided via a user prompt
 # If new environment variables are to add to .env, add them here
 
+
 def main():
     file_paths = ["autogpt/.env", ".env"]
 

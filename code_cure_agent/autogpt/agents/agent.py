@@ -54,13 +54,14 @@ class Agent(BaseAgent):
             config=config,
             default_cycle_instruction=triggering_prompt,
             cycle_budget=cycle_budget,
-            experiment_file = experiment_file
+            experiment_file=experiment_file
         )
 
         self.memory = memory
         """VectorMemoryProvider used to manage the agent's context (TODO)"""
 
-        self.workspace = Workspace(config.workspace_path, config.restrict_to_workspace)
+        self.workspace = Workspace(
+            config.workspace_path, config.restrict_to_workspace)
         """Workspace that the agent has access to, e.g. for reading/writing files."""
 
         self.created_at = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -72,7 +73,6 @@ class Agent(BaseAgent):
     def construct_base_prompt(self, *args, **kwargs) -> ChatSequence:
         if kwargs.get("prepend_messages") is None:
             kwargs["prepend_messages"] = []
-
 
         # Add budget information (if any) to prompt
         api_manager = ApiManager()
@@ -149,7 +149,8 @@ class Agent(BaseAgent):
             for plugin in self.config.plugins:
                 if not plugin.can_handle_pre_command():
                     continue
-                command_name, arguments = plugin.pre_command(command_name, command_args)
+                command_name, arguments = plugin.pre_command(
+                    command_name, command_args)
             command_result = execute_command(
                 command_name=command_name,
                 arguments=command_args,
@@ -159,7 +160,8 @@ class Agent(BaseAgent):
                 result = f"Command {command_name} returned: " f"{command_result}"
             else:
                 result = f"Command {command_name} returned a lengthy response, we truncated it to the first 4000 characters: " f"{str(command_result)[:4000]}"
-            result_tlength = count_string_tokens(str(command_result), self.llm.name)
+            result_tlength = count_string_tokens(
+                str(command_result), self.llm.name)
             memory_tlength = count_string_tokens(
                 str(self.history.summary_message()), self.llm.name
             )
@@ -173,12 +175,12 @@ class Agent(BaseAgent):
                 result = plugin.post_command(command_name, result)
         # Check if there's a result from the command append it to the message
         if result is None:
-            self.history.add("user", "Unable to execute command", "action_result")
+            self.history.add(
+                "user", "Unable to execute command", "action_result")
         else:
             self.history.add("user", result, "action_result")
 
         return result
-
 
     def parse_and_process_response(
         self, llm_response: ChatModelResponse, *args, **kwargs
@@ -186,17 +188,18 @@ class Agent(BaseAgent):
         if not llm_response.content:
             raise SyntaxError("Assistant response has no text content")
 
-        sanitized_warning_file_path = self.ai_config.warning_file_path.replace("/", ".")
+        sanitized_warning_file_path = self.ai_config.warning_file_path.replace(
+            "/", ".")
         with open(os.path.join("experimental_setups", self.exps[-1], "responses", f"model_responses_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_{str(self.ai_config.warning_start_line)}"), "a+") as patf:
             patf.write(llm_response.content)
         assistant_reply_dict = extract_dict_from_response(llm_response.content)
-
 
         if "thoughts" not in assistant_reply_dict:
             assistant_reply_dict["thoughts"] = "No thoughts given."
 
         if "command" not in assistant_reply_dict:
-            assistant_reply_dict["command"] = {"name": "missing_command", "args":{}}
+            assistant_reply_dict["command"] = {
+                "name": "missing_command", "args": {}}
         command_dict = assistant_reply_dict["command"]
 
         with open("agent_config_and_prompt_files/commands_interface.json") as cif:
@@ -206,13 +209,15 @@ class Agent(BaseAgent):
             ref_args = commands_interface[command_dict["name"]]
             if isinstance(command_dict.get("args", None), dict):
                 command_args = list(command_dict["args"].keys())
-                new_command_dict = {"name": command_dict["name"], "args":{}}
+                new_command_dict = {"name": command_dict["name"], "args": {}}
                 for k in command_args:
                     if k in ref_args:
                         new_command_dict["args"][k] = command_dict["args"][k]
-                
-                unmatched_args = [arg for arg in command_args if arg not in ref_args]
-                unmatched_ref = [arg for arg in ref_args if arg not in list(new_command_dict["args"].keys())]
+
+                unmatched_args = [
+                    arg for arg in command_args if arg not in ref_args]
+                unmatched_ref = [arg for arg in ref_args if arg not in list(
+                    new_command_dict["args"].keys())]
 
                 for uarg in unmatched_args:
                     for uref in unmatched_ref:
@@ -222,11 +227,11 @@ class Agent(BaseAgent):
 
                 assistant_reply_dict["command"] = new_command_dict
             else:
-                assistant_reply_dict["command"] = {"name": "unknown_command", "args":{}}
-            
+                assistant_reply_dict["command"] = {
+                    "name": "unknown_command", "args": {}}
 
         valid, errors = validate_dict(assistant_reply_dict, self.config)
-        
+
         if not valid:
             raise SyntaxError(
                 ";\n".join([str(e) for e in errors])
@@ -258,7 +263,6 @@ class Agent(BaseAgent):
             NEXT_ACTION_FILE_NAME,
         )
         return response
-    
 
     '''
     Clone and checkout the target project.
@@ -266,36 +270,36 @@ class Agent(BaseAgent):
     Validate that the expected rule is present in the analysis report.
     Then build the project to validate that it can be built succesfully.
     '''
+
     def prepare_target_project(self) -> None:
-        
+
         try:
             repository_operations.checkout_project(self)
 
             with open("sonarqube_quality_profile/quality_profile_rule_keys.txt") as rule_keys_file:
                 rules_in_active_profile = rule_keys_file.read().split(",")
 
-            sanitized_warning_file_path = self.ai_config.warning_file_path.replace("/", ".")
-            initial_analysis_report = sonar_qube_analysis.analyze_file_and_parse_report(self.ai_config.warning_file_path, rules_in_active_profile, self.ai_config.warning_repository_name, 
-                                                                    f"{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_{str(self.ai_config.warning_start_line)}_initial_analysis_report.json", self)
+            sanitized_warning_file_path = self.ai_config.warning_file_path.replace(
+                "/", ".")
+            initial_analysis_report = sonar_qube_analysis.analyze_file_and_parse_report(self.ai_config.warning_file_path, rules_in_active_profile, self.ai_config.warning_repository_name,
+                                                                                        f"{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_{str(self.ai_config.warning_start_line)}_initial_analysis_report.json", self)
 
             self.initial_analysis_report = initial_analysis_report
 
             # Validate that the expected rule violation is present in the analysis report
             if not sonar_qube_analysis.rule_violation_present_in_analysis_report(initial_analysis_report, self.ai_config.warning_rule_key, self.ai_config.warning_start_line):
-                logger.error("Error", f"The rule {self.ai_config.warning_rule_key} at line {str(self.ai_config.warning_start_line)} which was to fix wasn't part of the analysis report created by running Sorald on the file.")
-                logger.error("Aborting", "Preparing the target project failed. Therefore aborting the execution.")
+                logger.error(
+                    "Error", f"The rule {self.ai_config.warning_rule_key} at line {str(self.ai_config.warning_start_line)} which was to fix wasn't part of the analysis report created by running Sorald on the file.")
+                logger.error(
+                    "Aborting", "Preparing the target project failed. Therefore aborting the execution.")
                 exit(1)
-
 
             repository_operations.build_project(self)
 
         except (sonar_qube_analysis.AnalysisError, GitError, repository_operations.BuildError, subprocess.TimeoutExpired):
-            logger.error("Aborting", "Preparing the target project failed. Therefore aborting the execution.")
+            logger.error(
+                "Aborting", "Preparing the target project failed. Therefore aborting the execution.")
             exit(1)
-
-        
-
-
 
 
 def extract_command(
@@ -382,7 +386,6 @@ def execute_command(
                 or command_name == command.name.lower()
             ):
                 return command.function(**arguments)
-
 
         # The command_name was unknown. So add it to the list of unknown commands.
 

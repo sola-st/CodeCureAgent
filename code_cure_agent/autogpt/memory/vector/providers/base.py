@@ -52,7 +52,8 @@ class VectorMemoryProvider(MutableSet[MemoryItem]):
         )
 
         relevances = self.score_memories_for_relevance(query, config)
-        logger.debug(f"Memory relevance scores: {[str(r) for r in relevances]}")
+        logger.debug(
+            f"Memory relevance scores: {[str(r) for r in relevances]}")
 
         # take last k items and reverse
         top_k_indices = np.argsort([r.score for r in relevances])[-k:][::-1]

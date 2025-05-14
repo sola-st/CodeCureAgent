@@ -146,7 +146,8 @@ class InitialPlan(PromptStrategy):
         template_kwargs["agent_goals"] = to_numbered_list(
             agent_goals, **template_kwargs
         )
-        template_kwargs["abilities"] = to_numbered_list(abilities, **template_kwargs)
+        template_kwargs["abilities"] = to_numbered_list(
+            abilities, **template_kwargs)
         template_kwargs["system_info"] = to_numbered_list(
             self._system_info, **template_kwargs
         )
@@ -183,7 +184,8 @@ class InitialPlan(PromptStrategy):
             The parsed response.
 
         """
-        parsed_response = json_loads(response_content["function_call"]["arguments"])
+        parsed_response = json_loads(
+            response_content["function_call"]["arguments"])
         parsed_response["task_list"] = [
             Task.parse_obj(task) for task in parsed_response["task_list"]
         ]

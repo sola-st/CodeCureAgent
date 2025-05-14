@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 from matplotlib import pyplot as plt
 from venn import venn
 import pandas
@@ -348,7 +349,8 @@ def check_d4j_2(bug, d4j_2=False):
 
 
 def _load_select_baselines_d4j(models):
-    dl_methods = ["AlphaRepair", "CURE", "CoCoNuT", "CURE", "Recoder", "SEQUENCER", "DLFix", "RewardRepair"]
+    dl_methods = ["AlphaRepair", "CURE", "CoCoNuT", "CURE",
+                  "Recoder", "SEQUENCER", "DLFix", "RewardRepair"]
     trad_methods = ["Tbar-68", "Prapr2", "AVATAR", "SimFix", "FixMiner", "capgen", "jaid", "sketchfix", "Nopol",
                     "GenProg-A", "jGenProg", "jKali", "jMutRepair", "Kali-A"]
     data = pandas.read_csv("d4j12.csv", header=0)
@@ -363,6 +365,7 @@ def _load_select_baselines_d4j(models):
                                     data[col].dropna().tolist()]) - {"Lang-2", "Time-21", "Closure-63", "Closure-93"})
 
     return toolBugSet
+
 
 iterlist = """Chart 1
 Chart 11
@@ -428,28 +431,31 @@ iterlist = iterlist.split("\n")
 with open("fixed_so_far") as fsf:
     repair_agent = fsf.read().splitlines()
 
-import matplotlib.pyplot as plt
-#from matplotlib_venn import venn
+# from matplotlib_venn import venn
+
 
 def graph_uniqueness():
     toolBugSet = _load_select_baselines_d4j([])
     dfj_12_bug, dfj_2_bug = load_selfapr_patches()
-    #toolBugSet['Other'] |= set(dfj_12_bug)
+    # toolBugSet['Other'] |= set(dfj_12_bug)
     toolBugSet['SelfAPR'] = set(dfj_12_bug) | set(dfj_2_bug)
-    #toolBugSet['Other'] |= set([x.strip() for x in codex_fixes.splitlines()])
+    # toolBugSet['Other'] |= set([x.strip() for x in codex_fixes.splitlines()])
     del toolBugSet['Other']
-    toolBugSet['ChatRepair'] = set([x.split(".")[0].strip() for x in chatgpt_fixes.splitlines()])
+    toolBugSet['ChatRepair'] = set(
+        [x.split(".")[0].strip() for x in chatgpt_fixes.splitlines()])
     toolBugSet['ITER'] = set([c.replace(" ", "-") for c in iterlist])
-    toolBugSet['RepairAgent'] = set([c.replace(" ", "-") for c in repair_agent])
+    toolBugSet['RepairAgent'] = set(
+        [c.replace(" ", "-") for c in repair_agent])
     plt.figure()
     plt.tight_layout()
     venn(toolBugSet, fontsize=18, legend_loc="lower left")
 
     # Increase font size
-    #plt.title("Venn Diagram", fontsize=18)  # Example title with fontsize 18
+    # plt.title("Venn Diagram", fontsize=18)  # Example title with fontsize 18
     plt.tight_layout()
-    #plt.show()
+    # plt.show()
     plt.savefig("venn_diagram.png")
     print(len(dfj_12_bug), len(dfj_2_bug))
+
 
 graph_uniqueness()

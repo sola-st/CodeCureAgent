@@ -172,7 +172,8 @@ class NextAbility(PromptStrategy):
 
         """
         function_name = response_content["function_call"]["name"]
-        function_arguments = json_loads(response_content["function_call"]["arguments"])
+        function_arguments = json_loads(
+            response_content["function_call"]["arguments"])
         parsed_response = {
             "motivation": function_arguments.pop("motivation"),
             "self_criticism": function_arguments.pop("self_criticism"),

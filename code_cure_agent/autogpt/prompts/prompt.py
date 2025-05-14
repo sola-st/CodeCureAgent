@@ -27,9 +27,9 @@ def build_default_prompt_generator(config: Config) -> PromptGenerator:
     for guideline in prompt_config.general_guidelines:
         prompt_generator.add_general_guidelines(guideline)
 
-    #for pattern in prompt_config.simple_patterns:
+    # for pattern in prompt_config.simple_patterns:
     #    prompt_generator.add_simple_pattern(pattern)
 
-    #for step in prompt_config.work_plan:
+    # for step in prompt_config.work_plan:
     #    prompt_generator.add_work_plan(step)
     return prompt_generator

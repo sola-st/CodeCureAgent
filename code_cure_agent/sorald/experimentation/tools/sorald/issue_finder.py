@@ -15,7 +15,8 @@ GITHUB_API_URL = "https://api.github.com"
 def main():
     parsed_args = create_parser().parse_args(sys.argv[1:])
 
-    gh = github.Github(login_or_token=parsed_args.token, base_url=GITHUB_API_URL)
+    gh = github.Github(login_or_token=parsed_args.token,
+                       base_url=GITHUB_API_URL)
 
     search = gh.search_issues(
         parsed_args.query,
@@ -36,7 +37,8 @@ def create_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
-    parser.add_argument("-q", "--query", help="a free-form search query", required=True)
+    parser.add_argument(
+        "-q", "--query", help="a free-form search query", required=True)
     parser.add_argument(
         "-t",
         "--token",

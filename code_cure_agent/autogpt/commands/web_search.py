@@ -1,18 +1,16 @@
 """Commands to search the web with"""
 
 from __future__ import annotations
+from autogpt.command_decorator import command
+from autogpt.agents.agent import Agent
+from duckduckgo_search import DDGS
+from itertools import islice
+import time
+import json
 
 COMMAND_CATEGORY = "web_search"
 COMMAND_CATEGORY_TITLE = "Web Search"
 
-import json
-import time
-from itertools import islice
-
-from duckduckgo_search import DDGS
-
-from autogpt.agents.agent import Agent
-from autogpt.command_decorator import command
 
 DUCKDUCKGO_MAX_ATTEMPTS = 3
 
@@ -140,7 +138,8 @@ def safe_google_results(results: str | list) -> str:
     """
     if isinstance(results, list):
         safe_message = json.dumps(
-            [result.encode("utf-8", "ignore").decode("utf-8") for result in results]
+            [result.encode("utf-8", "ignore").decode("utf-8")
+             for result in results]
         )
     else:
         safe_message = results.encode("utf-8", "ignore").decode("utf-8")

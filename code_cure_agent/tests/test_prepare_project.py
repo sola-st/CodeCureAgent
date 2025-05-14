@@ -23,8 +23,6 @@ class CheckoutProjectTestCase(unittest.TestCase):
             shutil.rmtree(auto_gpt_workspace)
         os.mkdir(auto_gpt_workspace)
 
-           
-
     def test_checkout_project_master_branch(self):
 
         warning_repository_URL = "https://github.com/argparse4j/argparse4j.git"
@@ -36,14 +34,18 @@ class CheckoutProjectTestCase(unittest.TestCase):
         warning_rule_name = "'InterruptedException' should not be ignored"
         warning_specific_message = "Either re-interrupt this method or rethrow the ""InterruptedException"" that can be caught here."
 
-        agent = AgentMock(warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message)
+        agent = AgentMock(warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name,
+                          warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message)
 
-        self.assertFalse(os.path.exists(os.path.join(agent.config.workspace_path, warning_repository_name)))
+        self.assertFalse(os.path.exists(os.path.join(
+            agent.config.workspace_path, warning_repository_name)))
 
         checkout_project(agent)
 
-        self.assertTrue(os.path.exists(os.path.join(agent.config.workspace_path, warning_repository_name)), f"Expected project folder '{warning_repository_name}' was not created.")
-        self.assertTrue(os.path.exists(os.path.join(agent.config.workspace_path, warning_repository_name, warning_file_path)), f"Expected file '{warning_file_path} was not present in the checked out repository '{warning_repository_name}'")
+        self.assertTrue(os.path.exists(os.path.join(agent.config.workspace_path, warning_repository_name)),
+                        f"Expected project folder '{warning_repository_name}' was not created.")
+        self.assertTrue(os.path.exists(os.path.join(agent.config.workspace_path, warning_repository_name, warning_file_path)),
+                        f"Expected file '{warning_file_path} was not present in the checked out repository '{warning_repository_name}'")
 
     def test_checkout_project_specific_commit(self):
 
@@ -56,15 +58,18 @@ class CheckoutProjectTestCase(unittest.TestCase):
         warning_rule_name = "'InterruptedException' should not be ignored"
         warning_specific_message = "Either re-interrupt this method or rethrow the ""InterruptedException"" that can be caught here."
 
-        agent = AgentMock(warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message)
+        agent = AgentMock(warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name,
+                          warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message)
 
-        self.assertFalse(os.path.exists(os.path.join(agent.config.workspace_path, warning_repository_name)))
+        self.assertFalse(os.path.exists(os.path.join(
+            agent.config.workspace_path, warning_repository_name)))
 
         checkout_project(agent)
 
-        self.assertTrue(os.path.exists(os.path.join(agent.config.workspace_path, warning_repository_name)), f"Expected project folder '{warning_repository_name}' was not created.")
-        self.assertTrue(os.path.exists(os.path.join(agent.config.workspace_path, warning_repository_name, warning_file_path)), f"Expected file '{warning_file_path} was not present in the checked out repository '{warning_repository_name}'")
-
+        self.assertTrue(os.path.exists(os.path.join(agent.config.workspace_path, warning_repository_name)),
+                        f"Expected project folder '{warning_repository_name}' was not created.")
+        self.assertTrue(os.path.exists(os.path.join(agent.config.workspace_path, warning_repository_name, warning_file_path)),
+                        f"Expected file '{warning_file_path} was not present in the checked out repository '{warning_repository_name}'")
 
     def test_checkout_project_unknown_repo(self):
 
@@ -77,15 +82,18 @@ class CheckoutProjectTestCase(unittest.TestCase):
         warning_rule_name = "'InterruptedException' should not be ignored"
         warning_specific_message = "Either re-interrupt this method or rethrow the ""InterruptedException"" that can be caught here."
 
-        agent = AgentMock(warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message)
+        agent = AgentMock(warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name,
+                          warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message)
 
-        self.assertFalse(os.path.exists(os.path.join(agent.config.workspace_path, warning_repository_name)))
+        self.assertFalse(os.path.exists(os.path.join(
+            agent.config.workspace_path, warning_repository_name)))
 
         checkout_project(agent)
 
-        self.assertTrue(os.path.exists(os.path.join(agent.config.workspace_path, warning_repository_name)), f"Expected project folder '{warning_repository_name}' was not created.")
-        self.assertTrue(os.path.exists(os.path.join(agent.config.workspace_path, warning_repository_name, warning_file_path)), f"Expected file '{warning_file_path} was not present in the checked out repository '{warning_repository_name}'")
-
+        self.assertTrue(os.path.exists(os.path.join(agent.config.workspace_path, warning_repository_name)),
+                        f"Expected project folder '{warning_repository_name}' was not created.")
+        self.assertTrue(os.path.exists(os.path.join(agent.config.workspace_path, warning_repository_name, warning_file_path)),
+                        f"Expected file '{warning_file_path} was not present in the checked out repository '{warning_repository_name}'")
 
     def test_checkout_project_wrong_url(self):
 
@@ -98,15 +106,19 @@ class CheckoutProjectTestCase(unittest.TestCase):
         warning_rule_name = "'InterruptedException' should not be ignored"
         warning_specific_message = "Either re-interrupt this method or rethrow the ""InterruptedException"" that can be caught here."
 
-        agent = AgentMock(warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message)
+        agent = AgentMock(warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name,
+                          warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message)
 
-        self.assertFalse(os.path.exists(os.path.join(agent.config.workspace_path, warning_repository_name)))
+        self.assertFalse(os.path.exists(os.path.join(
+            agent.config.workspace_path, warning_repository_name)))
         with self.assertRaises(GitCommandError, msg="Should have raised a GitError, because the repository to check out doesn't exist.") as se:
             checkout_project(agent)
         self.assertEqual(se.exception.status, 128)
 
-        self.assertFalse(os.path.exists(os.path.join(agent.config.workspace_path, warning_repository_name)), f"Project folder '{warning_repository_name}' was created, but shouldn't have.")
-        self.assertFalse(os.path.exists(os.path.join(agent.config.workspace_path, warning_repository_name, warning_file_path)), f"File '{warning_file_path} was present in the checked out repository '{warning_repository_name}', but shouldn't have.")
+        self.assertFalse(os.path.exists(os.path.join(agent.config.workspace_path, warning_repository_name)),
+                         f"Project folder '{warning_repository_name}' was created, but shouldn't have.")
+        self.assertFalse(os.path.exists(os.path.join(agent.config.workspace_path, warning_repository_name, warning_file_path)),
+                         f"File '{warning_file_path} was present in the checked out repository '{warning_repository_name}', but shouldn't have.")
 
     def test_checkout_project_wrong_commit(self):
 
@@ -119,16 +131,19 @@ class CheckoutProjectTestCase(unittest.TestCase):
         warning_rule_name = "'InterruptedException' should not be ignored"
         warning_specific_message = "Either re-interrupt this method or rethrow the ""InterruptedException"" that can be caught here."
 
-        agent = AgentMock(warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message)
+        agent = AgentMock(warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name,
+                          warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message)
 
-        self.assertFalse(os.path.exists(os.path.join(agent.config.workspace_path, warning_repository_name)))
+        self.assertFalse(os.path.exists(os.path.join(
+            agent.config.workspace_path, warning_repository_name)))
         with self.assertRaises(GitCommandError, msg="Should have raised a GitError, because the repository to check out doesn't exist.") as se:
             checkout_project(agent)
         self.assertEqual(se.exception.status, 1)
 
-        self.assertTrue(os.path.exists(os.path.join(agent.config.workspace_path, warning_repository_name)), f"Expected project folder '{warning_repository_name}' was not created.")
-        self.assertTrue(os.path.exists(os.path.join(agent.config.workspace_path, warning_repository_name, warning_file_path)), f"Expected file '{warning_file_path} was not present in the checked out repository '{warning_repository_name}'")
-
+        self.assertTrue(os.path.exists(os.path.join(agent.config.workspace_path, warning_repository_name)),
+                        f"Expected project folder '{warning_repository_name}' was not created.")
+        self.assertTrue(os.path.exists(os.path.join(agent.config.workspace_path, warning_repository_name, warning_file_path)),
+                        f"Expected file '{warning_file_path} was not present in the checked out repository '{warning_repository_name}'")
 
 
 class AnalyzeFileTestCase(unittest.TestCase):
@@ -152,8 +167,8 @@ class AnalyzeFileTestCase(unittest.TestCase):
         warning_rule_name = "'InterruptedException' should not be ignored"
         warning_specific_message = "Either re-interrupt this method or rethrow the ""InterruptedException"" that can be caught here."
 
-        self.agent = AgentMock(warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message)
-
+        self.agent = AgentMock(warning_repository_URL, warning_repository_commit, warning_file_path,
+                               warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message)
 
         checkout_project(self.agent)
 
@@ -164,14 +179,14 @@ class AnalyzeFileTestCase(unittest.TestCase):
         os.mkdir(auto_gpt_workspace)
         shutil.rmtree("experimental_setups/experiment_test")
 
-
     def test_analyze_file_and_parser_report_single_rule(self):
         rules = ["S2142"]
         analysis_report_relative_path = "analysis_report.json"
 
         # Call the analyze_file function
-        report = analyze_file_and_parse_report(self.agent.ai_config.warning_file_path, rules, self.agent.ai_config.warning_repository_name, analysis_report_relative_path, self.agent)
-        
+        report = analyze_file_and_parse_report(self.agent.ai_config.warning_file_path, rules,
+                                               self.agent.ai_config.warning_repository_name, analysis_report_relative_path, self.agent)
+
         self.assertIsNotNone(report)
         self.assertIsNotNone(report["minedRules"])
         self.assertTrue(len(report["minedRules"]) == 1)
@@ -179,17 +194,19 @@ class AnalyzeFileTestCase(unittest.TestCase):
         self.assertEqual(report["minedRules"][0]["ruleKey"], "S2142")
         self.assertIsNotNone(report["minedRules"][0]["warningLocations"])
         self.assertEqual(len(report["minedRules"][0]["warningLocations"]), 1)
-        self.assertIsNotNone(report["minedRules"][0]["warningLocations"][0]["startLine"])
-        self.assertEqual(report["minedRules"][0]["warningLocations"][0]["startLine"], self.agent.ai_config.warning_start_line)
-
+        self.assertIsNotNone(report["minedRules"][0]
+                             ["warningLocations"][0]["startLine"])
+        self.assertEqual(report["minedRules"][0]["warningLocations"]
+                         [0]["startLine"], self.agent.ai_config.warning_start_line)
 
     def test_analyze_file_and_parser_report_all_rules(self):
         rules = None
         analysis_report_relative_path = "analysis_report.json"
 
         # Call the analyze_file function
-        report = analyze_file_and_parse_report(self.agent.ai_config.warning_file_path, rules, self.agent.ai_config.warning_repository_name, analysis_report_relative_path, self.agent)
-        
+        report = analyze_file_and_parse_report(self.agent.ai_config.warning_file_path, rules,
+                                               self.agent.ai_config.warning_repository_name, analysis_report_relative_path, self.agent)
+
         self.assertIsNotNone(report)
         self.assertIsNotNone(report["minedRules"])
         self.assertTrue(len(report["minedRules"]) > 1)
@@ -198,19 +215,19 @@ class AnalyzeFileTestCase(unittest.TestCase):
 
     def test_analyze_file_and_parser_report_quality_profile_rules(self):
         with open("sonarqube_quality_profile/quality_profile_rule_keys.txt") as rule_keys_file:
-                rules = rule_keys_file.read().split(",")
-                
+            rules = rule_keys_file.read().split(",")
+
         analysis_report_relative_path = "analysis_report.json"
 
         # Call the analyze_file function
-        report = analyze_file_and_parse_report(self.agent.ai_config.warning_file_path, rules, self.agent.ai_config.warning_repository_name, analysis_report_relative_path, self.agent)
-        
+        report = analyze_file_and_parse_report(self.agent.ai_config.warning_file_path, rules,
+                                               self.agent.ai_config.warning_repository_name, analysis_report_relative_path, self.agent)
+
         self.assertIsNotNone(report)
         self.assertIsNotNone(report["minedRules"])
         self.assertTrue(len(report["minedRules"]) > 1)
         self.assertIsNotNone(report["minedRules"][0]["ruleKey"])
         self.assertIsNotNone(report["minedRules"][0]["warningLocations"])
-
 
     def test_analyze_file_and_parser_wrong_path(self):
         rules = ["S2142"]
@@ -218,9 +235,8 @@ class AnalyzeFileTestCase(unittest.TestCase):
 
         # Call the analyze_file function
         with self.assertRaises(Exception) as e:
-            report = analyze_file_and_parse_report("main/src/main/java/net/sourceforge/argparse4j/internal/SomeNonExistingFile.java", rules, self.agent.ai_config.warning_repository_name, analysis_report_relative_path, self.agent)
+            report = analyze_file_and_parse_report("main/src/main/java/net/sourceforge/argparse4j/internal/SomeNonExistingFile.java",
+                                                   rules, self.agent.ai_config.warning_repository_name, analysis_report_relative_path, self.agent)
 
-        self.assertRegex(str(e.exception), "Error: java.lang.IllegalArgumentException*")
-        
-       
-
+        self.assertRegex(str(e.exception),
+                         "Error: java.lang.IllegalArgumentException*")

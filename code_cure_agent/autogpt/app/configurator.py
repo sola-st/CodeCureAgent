@@ -77,7 +77,8 @@ def create_config(
 
     # Check if continuous limit is used without continuous mode
     if continuous_limit and not continuous:
-        raise click.UsageError("--continuous-limit can only be used with --continuous")
+        raise click.UsageError(
+            "--continuous-limit can only be used with --continuous")
 
     if speak:
         logger.typewriter_log("Speak Mode: ", Fore.GREEN, "ENABLED")
@@ -86,14 +87,17 @@ def create_config(
     # Set the used LLM model
     # If --model_version set, try to use this version of GPT model if available
     if (check_model(model_version, model_type="fast_llm", config=config) == model_version):
-        logger.typewriter_log(f"LLM set to: {model_version}", Fore.GREEN, "ENABLED")
+        logger.typewriter_log(
+            f"LLM set to: {model_version}", Fore.GREEN, "ENABLED")
         config.fast_llm = model_version
         config.smart_llm = model_version
 
     else:
         # Defaults to gpt-3.5-turbo-0125
-        config.fast_llm = check_model(config.fast_llm, "fast_llm", config=config)
-        config.smart_llm = check_model(config.smart_llm, "smart_llm", config=config)
+        config.fast_llm = check_model(
+            config.fast_llm, "fast_llm", config=config)
+        config.smart_llm = check_model(
+            config.smart_llm, "smart_llm", config=config)
 
     if memory_type:
         supported_memory = get_supported_memory_backends()
@@ -104,7 +108,8 @@ def create_config(
                 Fore.RED,
                 f"{supported_memory}",
             )
-            logger.typewriter_log("Defaulting to: ", Fore.YELLOW, config.memory_backend)
+            logger.typewriter_log(
+                "Defaulting to: ", Fore.YELLOW, config.memory_backend)
         else:
             config.memory_backend = chosen
 

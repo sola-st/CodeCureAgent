@@ -31,17 +31,16 @@ class PromptGenerator:
     commands: list[Command]
     command_registry: CommandRegistry | None
 
-
     def __init__(self):
         self.commands = []
         self.command_registry = None
-        #self.simple_patterns = []
+        # self.simple_patterns = []
         self.general_guidelines: list[str] = []
 
     def add_simple_pattern(self, pattern: str) -> None:
         self.simple_patterns.append(pattern)
 
-    def add_general_guidelines(self, line:str) -> None:
+    def add_general_guidelines(self, line: str) -> None:
         self.general_guidelines.append(line)
 
     def add_command(
@@ -109,7 +108,7 @@ class PromptGenerator:
                 "You have access to the following commands (EXCLUSIVELY):\n",
                 f"{self._generate_commands()}",
             ],
-            "general guidelines":[
+            "general guidelines": [
                 "## General guidelines\n",
                 "Try to adhere to the following guidlines to the best of your ability:\n",
                 f"{self._generate_numbered_list(self.general_guidelines + additional_guidelines)}",

@@ -31,7 +31,8 @@ def install_plugin_dependencies():
 
             # Assume the first entry in the list will be (in) the lowest common dir
             first_entry = zfile.namelist()[0]
-            basedir = first_entry.rsplit("/", 1)[0] if "/" in first_entry else ""
+            basedir = first_entry.rsplit(
+                "/", 1)[0] if "/" in first_entry else ""
             logger.debug(f"Looking for requirements.txt in '{basedir}'")
 
             basereqs = os.path.join(basedir, "requirements.txt")

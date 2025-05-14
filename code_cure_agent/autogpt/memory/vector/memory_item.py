@@ -116,7 +116,8 @@ class MemoryItem:
         # or the result of the command specified in ai_message
 
         if ai_message.role != "assistant":
-            raise ValueError(f"Invalid role on 'ai_message': {ai_message.role}")
+            raise ValueError(
+                f"Invalid role on 'ai_message': {ai_message.role}")
 
         result = (
             result_message.content
@@ -213,7 +214,8 @@ class MemoryItemRelevance:
         memory_item: MemoryItem, for_query: str, e_query: Embedding | None = None
     ) -> MemoryItemRelevance:
         e_query = e_query or get_embedding(for_query)
-        _, srs, crs = MemoryItemRelevance.calculate_scores(memory_item, e_query)
+        _, srs, crs = MemoryItemRelevance.calculate_scores(
+            memory_item, e_query)
         return MemoryItemRelevance(
             for_query=for_query,
             memory_item=memory_item,

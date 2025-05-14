@@ -1,21 +1,18 @@
 """Commands to generate images based on text input"""
 
+from autogpt.logs import logger
+from autogpt.command_decorator import command
+from autogpt.agents.agent import Agent
+from PIL import Image
+import requests
+import openai
+from base64 import b64decode
+import uuid
+import time
+import json
+import io
 COMMAND_CATEGORY = "text_to_image"
 COMMAND_CATEGORY_TITLE = "Text to Image"
-
-import io
-import json
-import time
-import uuid
-from base64 import b64decode
-
-import openai
-import requests
-from PIL import Image
-
-from autogpt.agents.agent import Agent
-from autogpt.command_decorator import command
-from autogpt.logs import logger
 
 
 @command(

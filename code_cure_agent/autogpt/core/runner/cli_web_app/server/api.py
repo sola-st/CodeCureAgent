@@ -66,9 +66,11 @@ async def interaction_step(
         result = agent.execute(command_name, command_args, user_input)
         if " 0 failing test" in result:
             with open(os.path.join("experimental_setups", exps[-1], "plausible_patches", "plausible_patches_{}_{}.json".format(agent.project_name, agent.bug_index)), "a+") as exps:
-                exps.write("### PLAUSIBLE FIX\n{}\n".format(str(command_args["changes_dicts"])))
+                exps.write("### PLAUSIBLE FIX\n{}\n".format(
+                    str(command_args["changes_dicts"])))
         if result is None:
-            logger.typewriter_log("SYSTEM: ", Fore.YELLOW, "Unable to execute command")
+            logger.typewriter_log("SYSTEM: ", Fore.YELLOW,
+                                  "Unable to execute command")
             return
 
     next_command_name, next_command_args, assistant_reply_dict = agent.think()
@@ -89,10 +91,12 @@ def bootstrap_agent(task, continuous_mode) -> Agent:
     config.continuous_mode = continuous_mode
     config.temperature = 0
     config.plain_output = True
-    command_registry = CommandRegistry.with_command_modules(COMMAND_CATEGORIES, config)
+    command_registry = CommandRegistry.with_command_modules(
+        COMMAND_CATEGORIES, config)
     config.memory_backend = "no_memory"
     config.workspace_path = Workspace.init_workspace_directory(config)
-    config.file_logger_path = Workspace.build_file_logger_path(config.workspace_path)
+    config.file_logger_path = Workspace.build_file_logger_path(
+        config.workspace_path)
     ai_config = AIConfig(
         ai_name="Auto-GPT",
         ai_role="a multi-purpose AI assistant.",

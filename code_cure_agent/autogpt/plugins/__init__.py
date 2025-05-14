@@ -39,10 +39,12 @@ def inspect_zip_for_modules(zip_path: str, debug: bool = False) -> list[str]:
     with zipfile.ZipFile(zip_path, "r") as zfile:
         for name in zfile.namelist():
             if name.endswith("__init__.py") and not name.startswith("__MACOSX"):
-                logger.debug(f"Found module '{name}' in the zipfile at: {name}")
+                logger.debug(
+                    f"Found module '{name}' in the zipfile at: {name}")
                 result.append(name)
     if len(result) == 0:
-        logger.debug(f"Module '__init__.py' not found in the zipfile @ {zip_path}.")
+        logger.debug(
+            f"Module '__init__.py' not found in the zipfile @ {zip_path}.")
     return result
 
 
@@ -96,7 +98,8 @@ def fetch_openai_plugins_manifest_and_spec(config: Config) -> dict:
                 logger.warn(f"Error while requesting manifest from {url}: {e}")
         else:
             logger.info(f"Manifest for {url} already exists")
-            manifest = json.load(open(f"{openai_plugin_client_dir}/ai-plugin.json"))
+            manifest = json.load(
+                open(f"{openai_plugin_client_dir}/ai-plugin.json"))
         if not os.path.exists(f"{openai_plugin_client_dir}/openapi.json"):
             openapi_spec = openapi_python_client._get_document(
                 url=manifest["api"]["url"], path=None, timeout=5
@@ -106,7 +109,8 @@ def fetch_openai_plugins_manifest_and_spec(config: Config) -> dict:
             )
         else:
             logger.info(f"OpenAPI spec for {url} already exists")
-            openapi_spec = json.load(open(f"{openai_plugin_client_dir}/openapi.json"))
+            openapi_spec = json.load(
+                open(f"{openai_plugin_client_dir}/openapi.json"))
         manifests[url] = {"manifest": manifest, "openapi_spec": openapi_spec}
     return manifests
 
@@ -259,7 +263,8 @@ def scan_plugins(config: Config, debug: bool = False) -> List[AutoGPTPluginTempl
                 logger.debug(f"Zipped Plugin: {plugin}, Module: {module}")
                 zipped_package = zipimporter(str(plugin))
                 try:
-                    zipped_module = zipped_package.load_module(str(module.parent))
+                    zipped_module = zipped_package.load_module(
+                        str(module.parent))
                 except:
                     logger.error(f"Failed to load {str(module.parent)}")
 
@@ -276,7 +281,8 @@ def scan_plugins(config: Config, debug: bool = False) -> List[AutoGPTPluginTempl
                         and a_module.__name__ != "AutoGPTPluginTemplate"
                     ):
                         plugin_name = a_module.__name__
-                        plugin_configured = plugins_config.get(plugin_name) is not None
+                        plugin_configured = plugins_config.get(
+                            plugin_name) is not None
                         plugin_enabled = plugins_config.is_enabled(plugin_name)
 
                         if plugin_configured and plugin_enabled:
@@ -319,7 +325,9 @@ def scan_plugins(config: Config, debug: bool = False) -> List[AutoGPTPluginTempl
                 loaded_plugins.append(plugin)
 
     if loaded_plugins:
-        logger.info(f"\nPlugins found: {len(loaded_plugins)}\n" "--------------------")
+        logger.info(
+            f"\nPlugins found: {len(loaded_plugins)}\n" "--------------------")
     for plugin in loaded_plugins:
-        logger.info(f"{plugin._name}: {plugin._version} - {plugin._description}")
+        logger.info(
+            f"{plugin._name}: {plugin._version} - {plugin._description}")
     return loaded_plugins

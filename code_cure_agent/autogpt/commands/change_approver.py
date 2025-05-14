@@ -2,6 +2,8 @@ import os
 from autogpt.agents.base import BaseAgent
 
 # TODO: Implement approval logic
+
+
 def approve_changes(changes_dicts: list[dict], all_files_with_changes: list[dict], unchanged_files: list[dict], agent: BaseAgent):
 
     sanitized_warning_file_path = agent.ai_config.warning_file_path.replace(

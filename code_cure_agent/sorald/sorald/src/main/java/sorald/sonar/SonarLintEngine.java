@@ -155,7 +155,7 @@ public final class SonarLintEngine extends AbstractSonarLintEngine {
     }
 
     private static Map<String, SonarLintRuleDefinition> computeAllRulesDefinitionsByKey() {
-        return loadPluginMetadata(loadedPlugins, globalConfig.getEnabledLanguages(), false, false);
+        return loadPluginMetadata(loadedPlugins, globalConfig.getEnabledLanguages(), false, true);
     }
 
     private static AnalysisEngineConfiguration buildAnalysisEngineConfiguration() {

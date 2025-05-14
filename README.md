@@ -19,8 +19,8 @@ Before you start using CodeCureAgent, ensure that your system meets the followin
   - Create an account on the OpenAI website and purchase credits to use the API.
   - Generate an API token on the same website.
 - **Disk Space**:
-    - At least 40GB of available disk space on your machine. The code itself does not take 40GB. However, the dependencies might take up to 8GB, and files generated from running on different instances may use more. 40GB is a safe estimate.
-    - If you are using VS Code DevContainers, you can avoid pulling the heavy Docker image (~22GB).
+  - At least 40GB of available disk space on your machine. The code itself does not take 40GB. However, the dependencies might take up to 8GB, and files generated from running on different instances may use more. 40GB is a safe estimate.
+  - If you are using VS Code DevContainers, you can avoid pulling the heavy Docker image (~22GB).
 - **Internet Access**: Required while running CodeCureAgent to connect to OpenAI's API.
 
 ---
@@ -60,19 +60,17 @@ The script will prompt you to paste your API token.
 
 ---
 
-
 ## III. Run CodeCureAgent
 
-CodeCureAgent takes a csv file as input where each line specifies a SonarQube rule violated in a single java file in a single Git repository.  
-CodeCureAgent tries to fix all occurences of the violated rule in the file.  
+CodeCureAgent takes a csv file as input where each line specifies a single violation of a SonarQube rule in a single Java file in a single Git repository.  
 
-For an example on how the input file has to look like see [specific_commit_handled_rules_input_file_single_rule_violations.csv](code_cure_agent/experimental_setups/dev_dataset/mining_results/specific_commit_handled_rules_input_file_single_rule_violations.csv).  
+For an example on how the input file has to look like see [specific_commit_quality_profile_rules_input_file_single_rule_violations.csv](code_cure_agent/experimental_setups/dev_dataset/mining_results/specific_commit_quality_profile_rules_input_file_single_rule_violations.csv).  
 You can create your own by following the steps described further down below in this paragraph.
 
 To execute CodeCureAgent on an input file, run the following from the `code_cure_agent` folder:
 
   ```bash
-   ./run_on_dataset.sh ./experimental_setups/dev_dataset/mining_results/specific_commit_handled_rules_input_file_single_rule_violations.csv hyperparams.json
+   ./run_on_dataset.sh ./experimental_setups/dev_dataset/mining_results/specific_commit_quality_profile_rules_input_file_single_rule_violations.csv hyperparams.json
    ```
 
 The first argument is the csv input file to run on. The second argument specifies hyperparameter settings.  
@@ -85,14 +83,14 @@ You can open the `hyperparams.json` file to review or customize its parameters (
 - It initiates the autonomous repair process, trying to fix occurences of the given warning type in the given file.
 - Logs detailing each step performed will be displayed in your terminal.
 
-
 #### **Creating your own csv input file, based on repositories you want to run CodeCureAgent on**
 
 1. Create a .txt file with the URLs to the git repositories to use in each line. If you want to run on specific commits of the repositories you can add the commitID after the URL, separated by a comma.  
 For an example see [sampled_repos_specific_commit.txt](code_cure_agent/experimental_setups/dev_dataset/sampled_repos_specific_commit.txt).  
 
 2. Use the Sorald mining tool to mine SonarQube warnings on the repositories specified in the file.  
-Example usage (run from `code_cure_agent` on the `sampled_repos_specific_commit.txt` file): 
+Example usage (run from `code_cure_agent` on the `sampled_repos_specific_commit.txt` file):  
+
    ```bash
    java -jar ./sorald/sorald.jar mine \
       --git-repos-list ./experimental_setups/dev_dataset/sampled_repos_specific_commit.txt \
@@ -100,17 +98,20 @@ Example usage (run from `code_cure_agent` on the `sampled_repos_specific_commit.
       --stats-output-file ./experimental_setups/dev_dataset/mining_results/specific_commit_handled_rules_mining_result.json \
       --temp-dir ./experimental_setups/dev_dataset/temp \
       --stats-on-git-repos \
-      --rule-parameters ./experimental_setups/dev_dataset/rule_configuration.json \
+      --rule-parameters ./sonarqube_quality_profile/quality_profile_rule_parameters.json \
       --handled-rules
-   ``` 
+   ```
+
    Remove the --handled-rules flag if you want to mine all warnings supported by the used SonarQube version.  
    If you only want to mine specific rules, pass the IDs of the rules via --rule-keys, or to only mine for specific types of rules use --rule-types.  
+   For our experiments we use only rules that are part of the SonarWay quality profile, by using the keys from `code_cure_agent/sonarqube_quality_profile/quality_profile_rule_keys.txt`.  
    After running the mining tool the output is saved in a json file. In the example this is `specific_commit_handled_rules_mining_result.json`.
 
 3. Finally you can create your csv input file from the json report by using `code_cure_agent/experimental_setups/prepare_experiment_input_file.py`.  
 To this script provide the previously created json report as the first argument. Also --rule-violations-mode must be set to single.  
 Additionally you can provide the path, the csv-file is to be saved to via --target-csv-file-path.  
-Example: 
+Example:
+
   ```bash
     python3 ./experimental_setups/prepare_experiment_input_file.py ./experimental_setups/dev_dataset/mining_results/specific_commit_handled_rules_mining_result.json \
       --target-csv-file-path ./experimental_setups/dev_dataset/mining_results/specific_commit_handled_rules_input_file_single_rule_violations.csv --rule-violations-mode single

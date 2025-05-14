@@ -271,9 +271,11 @@ class Agent(BaseAgent):
         try:
             repository_operations.checkout_project(self)
 
+            with open("sonarqube_quality_profile/quality_profile_rule_keys.txt") as rule_keys_file:
+                rules_in_active_profile = rule_keys_file.read().split(",")
 
             sanitized_warning_file_path = self.ai_config.warning_file_path.replace("/", ".")
-            initial_analysis_report = sonar_qube_analysis.analyze_file_and_parse_report(self.ai_config.warning_file_path, None, self.ai_config.warning_repository_name, 
+            initial_analysis_report = sonar_qube_analysis.analyze_file_and_parse_report(self.ai_config.warning_file_path, rules_in_active_profile, self.ai_config.warning_repository_name, 
                                                                     f"{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_{str(self.ai_config.warning_start_line)}_initial_analysis_report.json", self)
 
             self.initial_analysis_report = initial_analysis_report

@@ -196,6 +196,21 @@ class AnalyzeFileTestCase(unittest.TestCase):
         self.assertIsNotNone(report["minedRules"][0]["ruleKey"])
         self.assertIsNotNone(report["minedRules"][0]["warningLocations"])
 
+    def test_analyze_file_and_parser_report_quality_profile_rules(self):
+        with open("sonarqube_quality_profile/quality_profile_rule_keys.txt") as rule_keys_file:
+                rules = rule_keys_file.read().split(",")
+                
+        analysis_report_relative_path = "analysis_report.json"
+
+        # Call the analyze_file function
+        report = analyze_file_and_parse_report(self.agent.ai_config.warning_file_path, rules, self.agent.ai_config.warning_repository_name, analysis_report_relative_path, self.agent)
+        
+        self.assertIsNotNone(report)
+        self.assertIsNotNone(report["minedRules"])
+        self.assertTrue(len(report["minedRules"]) > 1)
+        self.assertIsNotNone(report["minedRules"][0]["ruleKey"])
+        self.assertIsNotNone(report["minedRules"][0]["warningLocations"])
+
 
     def test_analyze_file_and_parser_wrong_path(self):
         rules = ["S2142"]

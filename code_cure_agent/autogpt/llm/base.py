@@ -18,6 +18,9 @@ TText = list[int]
 class MessageDict(TypedDict):
     role: MessageRole
     content: str
+    type: MessageType
+    command: Optional[str]
+    args: dict
 
 
 class ResponseMessageDict(TypedDict):
@@ -38,9 +41,12 @@ class Message:
     role: MessageRole
     content: str
     type: MessageType | None = None
+    command: Optional[str] = None
+    args: dict = field(default_factory=dict)
+    agent_thoughts: Optional[str] = None
 
     def raw(self) -> MessageDict:
-        return {"role": self.role, "content": self.content}
+        return {"role": self.role, "content": self.content, "type": self.type, "command": self.command, "args": self.args}
 
 
 @dataclass
@@ -119,8 +125,12 @@ class ChatSequence:
         message_role: MessageRole,
         content: str,
         type: MessageType | None = None,
+        command: Optional[str] = None,
+        args: dict = {},
+        agent_thoughts: Optional[str] = None
     ) -> None:
-        self.append(Message(message_role, content, type))
+        self.append(Message(message_role, content, type,
+                    command, args, agent_thoughts))
 
     def append(self, message: Message):
         return self.messages.append(message)

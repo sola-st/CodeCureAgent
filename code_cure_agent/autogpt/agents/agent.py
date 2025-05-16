@@ -180,6 +180,12 @@ class Agent(BaseAgent):
         else:
             self.history.add("user", result, "action_result")
 
+        sanitized_warning_file_path = self.ai_config.warning_file_path.replace(
+            "/", ".")
+        with open(os.path.join("experimental_setups", self.exps[-1], "responses", f"model_responses_{str(self.ai_config.warning_ID)}_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(self.ai_config.warning_start_line)}"), "a+") as patf:
+            patf.write(
+                "\nCommand execution based on model response:\n" + str(result) + "\n")
+
         return result
 
     def parse_and_process_response(
@@ -244,7 +250,6 @@ class Agent(BaseAgent):
 
         response = None, None, assistant_reply_dict
 
-        # Print Assistant thoughts
         if assistant_reply_dict != {}:
             # Get command name and arguments
             try:
@@ -335,7 +340,7 @@ def extract_command(
             return (
                 "Error:",
                 {
-                    "message": f"The previous message sent was not a dictionary {assistant_reply_json}"
+                    "message": f"The message was not a dictionary {assistant_reply_json}"
                 },
             )
 

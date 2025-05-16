@@ -221,7 +221,6 @@ class BaseAgent(metaclass=ABCMeta):
             self.exps = eht.read().splitlines()
 
     def save_context(self,):
-        return
         context = {
             "cycle_budget": self.cycle_budget,
             "cycle_count": self.cycle_count,
@@ -236,7 +235,6 @@ class BaseAgent(metaclass=ABCMeta):
             "suggested_fixes": self.suggested_fixes,
             "search_queries": self.search_queries,
             "bug_report": self.bug_report,
-            "bug_index": self.bug_index,
             "commands_history": self.commands_history,
             "human_feedback": self.human_feedback,
             "ask_chatgpt": self.ask_chatgpt,
@@ -249,7 +247,7 @@ class BaseAgent(metaclass=ABCMeta):
             "extracted_methods": self.extracted_methods,
             "experiment_file": self.experiment_file,
             "hyperparams": self.hyperparams,
-            "history": [{"role": msg.role, "content": msg.content} for _, msg in enumerate(self.history)],
+            "history": [msg for _, msg in enumerate(self.history)],
             "initial_analysis_report": self.initial_analysis_report
         }
 
@@ -398,20 +396,13 @@ please use the indicated format and produce a list, like this:
             return False
 
     def detect_command_repetition(self, ref_cmd):
-        # with open("assistant_output_from_command_repetition.json", "w") as aocr:
-        #    json.dump(assistant_outputs+[str(ref_cmd["command"])], aocr)
-        try:
-            assistant_outputs = [str(extract_dict_from_response(msg.content)[
-                                     "command"]) for msg in self.history if msg.role == "assistant"]
-            if str(ref_cmd["command"]) in assistant_outputs:
-                logger.info("WARNING: REPETITION DETECTED!\n\n")
-                return True
-            else:
-                return False
-        except Exception as e:
-            with open(f"experimental_setups/{self.exps[-1]}/logs/repetition_exception_file.txt", "w") as ef:
-                ef.write(str(e))
-            print("Exception raised,", e)
+
+        assistant_outputs = [{"name": msg.command, "args": msg.args} for msg in self.history if msg.type == "ai_response" and not msg.command.lower(
+        ).startswith("error") and msg.command != "unknown_command" and msg.command != "missing_command"]
+        if str(ref_cmd["command"]) in assistant_outputs:
+            logger.info("WARNING: REPETITION DETECTED!\n\n")
+            return True
+        else:
             return False
 
     def handle_command_repitition(self, repeated_command: dict, handling_strategy: str = ""):
@@ -842,9 +833,75 @@ please use the indicated format and produce a list, like this:
 
         return plan_section
 
-    # TODO: implement the history
     def construct_agent_history_context(self) -> str:
-        return ""
+
+        history_section = ""
+
+        with open("agent_config_and_prompt_files/agent_history_preamble.md") as history_section_file:
+            history_section = history_section_file.read()
+
+        cycle = 0
+        for message in self.history:
+            if message.type == "ai_response":
+                cycle += 1
+
+                # Add thoughts
+                history_section += f"\n\n### Step {cycle}\n\nYour thoughts: "
+                if message.agent_thoughts is None:
+                    history_section += "`No thoughts given.`"
+                else:
+                    history_section += message.agent_thoughts
+
+                # Add command call information
+                history_section += self.construct_command_call_history_subsection(
+                    message)
+
+            # Add command call result
+            # We expect the "action_result" type method to always follow its predecessor "ai_response"
+            if message.type == "action_result":
+                history_section += "\n\n" + message.content
+
+        if cycle == 0:
+            history_section += "\n\nNo steps taken yet."
+
+        return history_section
+
+    def construct_command_call_history_subsection(self, message: Message) -> str:
+        command_call_subsection = "\n\nCalled command: "
+
+        # Handle exceptional commands
+        if message.command is None:
+            command_call_subsection += "The command was missing."
+        elif message.command.lower() == "error_when_parsing":
+            command_call_subsection += message.args.get(
+                "error", "No command found.")
+        elif message.command.lower().startswith("error"):
+            command_call_subsection += f"Could not execute command: {message.command}{str(message.args)}"
+        elif message.command == "unknown_command":
+            command_call_subsection += "The command was not known."
+        elif message.command == "missing_command":
+            command_call_subsection += "The command was missing."
+        else:
+            with open("agent_config_and_prompt_files/commands_interface.json") as cif:
+                commands_interface = json.load(cif)
+
+        if message.command in list(commands_interface.keys()):
+            command_call_subsection += self.format_command_information(
+                message)
+        else:
+            command_call_subsection += f"Unknown command named: {message.command}"
+
+        return command_call_subsection
+
+    # TODO: potentially create dedicated formatings for each command
+    def format_command_information(self, message: Message) -> str:
+        command_information = f"`{message.command}` with arguments "
+        if message.args is None:
+            command_information += "`none`"
+        else:
+            for key, value in message.args.items():
+                command_information += f"`{key}`: `{str(value)}`; "
+        return command_information
 
     def construct_forbidden_commands_context(self) -> str:
         forbidden_commands_section = ""
@@ -1013,6 +1070,11 @@ please use the indicated format and produce a list, like this:
         with open(os.path.join("experimental_setups", self.exps[-1], "logs", f"prompt_history_{str(self.ai_config.warning_ID)}_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(self.ai_config.warning_start_line)}"), "a+") as patf:
             patf.write(prompt.dump())
 
+        sanitized_warning_file_path = self.ai_config.warning_file_path.replace(
+            "/", ".")
+        with open(os.path.join("experimental_setups", self.exps[-1], "logs", f"all_messages_{str(self.ai_config.warning_ID)}_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(self.ai_config.warning_start_line)}"), "w") as patf:
+            patf.write(self.history.dump())
+
         raw_response = create_chat_completion(
             prompt,
             self.config,
@@ -1030,6 +1092,7 @@ please use the indicated format and produce a list, like this:
                 logger.info("WARNING: REPETITION DETECTED!\n")
                 logger.info(str(self.handle_command_repitition(
                     response_dict, self.hyperparams["repetition_handling"])) + "\n\n")
+                # A separate message is added to the prompt, then the prompt is executed again with the added message
                 prompt.extend([Message("user", self.handle_command_repitition(
                     response_dict, self.hyperparams["repetition_handling"]))])
                 new_response = create_chat_completion(
@@ -1051,6 +1114,7 @@ please use the indicated format and produce a list, like this:
 
             return self.on_response(raw_response, thought_process_id, prompt, instruction)
         except SyntaxError as e:
+            logger.error(e.msg)
             return self.on_response(raw_response, thought_process_id, prompt, instruction)
 
     @abstractmethod
@@ -1091,16 +1155,7 @@ please use the indicated format and produce a list, like this:
             reserve_tokens: Number of tokens to reserve for content that is added later
         """
 
-        self.construct_read_files()
-        self.construct_suggested_fixes()
-        self.construct_search_queries()
-        self.construct_bug_report()
-        self.construct_commands_history()
-        self.construct_human_feedback()
-        self.construct_hypothesises()
-        self.construct_similar_calls()
-        self.construct_extracted_methods()
-        self.save_context()
+        # self.save_context()
 
         with open("agent_config_and_prompt_files/cycle_instruction_text.md") as cit:
             cycle_instruction = cit.read()
@@ -1149,39 +1204,6 @@ please use the indicated format and produce a list, like this:
             [Message("user", definitions_prompt + "\n" + context_prompt +
                      "\n\n" + cycle_instruction)] + prepend_messages,
         ))
-        # prompt.append(Message("user", context_prompt))
-
-        # The following is the original code, uncomment when needed to roll back
-        """
-       # Reserve tokens for messages to be appended later, if any
-        reserve_tokens += self.history.max_summary_tlength
-        if append_messages:
-            reserve_tokens += count_message_tokens(append_messages, self.llm.name)
-
-        # Fill message history, up to a margin of reserved_tokens.
-        # Trim remaining historical messages and add them to the running summary.
-        history_start_index = len(prompt)
-        trimmed_history = add_history_upto_token_limit(
-            prompt, self.history, self.send_token_limit - reserve_tokens
-        )
-        
-        if trimmed_history:
-            new_summary_msg, _ = self.history.trim_messages(list(prompt), self.config)
-            prompt.insert(history_start_index, new_summary_msg)
-
-        """
-
-        # TODO: Remove this, if we want to keep the history entirely in the main user prompt
-        if len(self.history) > 2:
-            last_command = self.history[-2]
-            command_result = self.history[-1]
-            last_command_section = "{}\n".format(last_command.content)
-            append_messages.append(Message("assistant", last_command_section))
-            result_last_command = "The result of executing that last command is:\n{}".format(
-                command_result.content)
-            append_messages.append((Message("user", result_last_command)))
-        if append_messages:
-            prompt.extend(append_messages)
 
         return prompt
 
@@ -1335,7 +1357,7 @@ please use the indicated format and produce a list, like this:
     ) -> tuple[CommandName | None, CommandArgs | None, AgentThoughts]:
         """Called upon receiving a response from the chat model.
 
-        Adds the last/newest message in the prompt and the response to `history`,
+        Adds the messages in the prompt and the response to `history`,
         and calls `self.parse_and_process_response()` to do the rest.
 
         Params:
@@ -1347,14 +1369,12 @@ please use the indicated format and produce a list, like this:
             The parsed command name and command args, if any, and the agent thoughts.
         """
 
-        # Save assistant reply to message history
-        self.history.append(prompt[-1])
-        self.history.add(
-            "assistant", llm_response.content, "ai_response"
-        )  # FIXME: support function calls
+        # Save all parts of the prompt to message history
+        for msg in prompt:
+            self.history.append(msg)
 
         try:
-            return self.parse_and_process_response(
+            command_name, command_args, assistant_reply_dict = self.parse_and_process_response(
                 llm_response, thought_process_id, prompt, instruction
             )
         except SyntaxError as e:
@@ -1362,11 +1382,16 @@ please use the indicated format and produce a list, like this:
             with open(f"experimental_setups/{self.exps[-1]}/logs/parsing_erros_responses.txt", "a") as pers:
                 pers.write(llm_response.content+"\n")
 
-            return "error_when_parsing", {"error": "Your response could not be parsed."
-                                          f"\nTrying to parse the response failed with the following error message: {e}"
-                                          "\n\nRemember to only respond using the specified json schema!"}, {}
+            command_name, command_args, assistant_reply_dict = "error_when_parsing", {"error": "Your response could not be parsed."
+                                                                                      f"\nTrying to parse the response failed with the following error message: {e}"
+                                                                                      "\n\nRemember to only respond using the specified json schema!"}, {}
 
-        # TODO: update memory/context
+        # Save assistant reply to message history
+        response_message = Message(
+            "assistant", llm_response.content, "ai_response", command=command_name, args=command_args, agent_thoughts=assistant_reply_dict.get("thoughts", "No thoughts given."))
+        self.history.append(response_message)
+
+        return command_name, command_args, assistant_reply_dict
 
     @abstractmethod
     def parse_and_process_response(

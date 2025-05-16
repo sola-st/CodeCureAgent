@@ -245,14 +245,14 @@ Line 8:
 
 ## Agent History
 
-Below is a log of all previous steps. For each cycle, you are given:
+Below is a log of all previous steps that you have taken. For each step, you are given:
 
 * the thoughts you formulated,
 * the command you issued,
 * and the result that was returned.
 Use this history to inform your next decision.
 
-### Cycle 1
+### Step 1
 
 Your answer:
 
@@ -288,7 +288,7 @@ Line 229:     * Creates a Base64 codec used for decoding (all modes) and encodin
 Line 230:     * <p>
 ```
 
-### Cycle 2
+### Step 2
 
  //...
 

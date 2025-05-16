@@ -104,15 +104,30 @@ def apply_changes(change_dict: dict, agent: BaseAgent) -> dict:
     project_dir = os.path.join(
         agent.config.workspace_path, agent.ai_config.warning_repository_name)
 
-    file_relative_path = change_dict.get("file_name", "")
+    file_relative_path = change_dict.get("file_name", None)
+
+    if file_relative_path is None:
+        raise ApplyChangesError(
+            "The write_fix command was in a wrong format. Couldn't find `file_name` in the change_dict.")
 
     file_relative_path = path_utils.preprocess_paths(
         agent.config.workspace_path, agent.ai_config.warning_repository_name, file_relative_path)
     file_full_path = os.path.join(project_dir, file_relative_path)
 
-    insertions = change_dict.get("insertions", [])
-    deletions = change_dict.get("deletions", [])
-    modifications = change_dict.get("modifications", [])
+    insertions = change_dict.get("insertions", None)
+    deletions = change_dict.get("deletions", None)
+    modifications = change_dict.get("modifications", None)
+
+    if all(map(lambda element: element is None, [insertions, deletions, modifications])):
+        raise ApplyChangesError(
+            "The write_fix command was in a wrong format. Neither `insertions`, `deletions` nor `modifications` was given in the change_dict."
+        )
+    if insertions is None:
+        insertions = []
+    if deletions is None:
+        deletions = []
+    if modifications is None:
+        modifications = []
 
     # Read the original code from the file
     with open(file_full_path, 'r') as file:

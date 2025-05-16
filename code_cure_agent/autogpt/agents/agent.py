@@ -157,7 +157,7 @@ class Agent(BaseAgent):
                 agent=self,
             )
             if len(str(command_result)) < 4000:
-                result = f"Command {command_name} returned: " f"{command_result}"
+                result = f"Command `{command_name}` returned:  \n" f"{command_result}"
             else:
                 result = f"Command {command_name} returned a lengthy response, we truncated it to the first 4000 characters: " f"{str(command_result)[:4000]}"
             result_tlength = count_string_tokens(
@@ -198,14 +198,18 @@ class Agent(BaseAgent):
             "/", ".")
         with open(os.path.join("experimental_setups", self.exps[-1], "responses", f"model_responses_{str(self.ai_config.warning_ID)}_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(self.ai_config.warning_start_line)}"), "a+") as patf:
             patf.write(llm_response.content)
+
+        # Raises a SyntaxError, if it is not a valid json
         assistant_reply_dict = extract_dict_from_response(llm_response.content)
 
-        if "thoughts" not in assistant_reply_dict:
-            assistant_reply_dict["thoughts"] = "No thoughts given."
+        # Validate the dictionary before assuming presence of any keys
+        valid, errors = validate_dict(assistant_reply_dict, self.config)
 
-        if "command" not in assistant_reply_dict:
-            assistant_reply_dict["command"] = {
-                "name": "missing_command", "args": {}}
+        if not valid:
+            raise SyntaxError(
+                ";\n".join([str(e) for e in errors])
+            )
+
         command_dict = assistant_reply_dict["command"]
 
         with open("agent_config_and_prompt_files/commands_interface.json") as cif:
@@ -213,35 +217,24 @@ class Agent(BaseAgent):
 
         if command_dict.get("name", "") in list(commands_interface.keys()):
             ref_args = commands_interface[command_dict["name"]]
-            if isinstance(command_dict.get("args", None), dict):
-                command_args = list(command_dict["args"].keys())
-                new_command_dict = {"name": command_dict["name"], "args": {}}
-                for k in command_args:
-                    if k in ref_args:
-                        new_command_dict["args"][k] = command_dict["args"][k]
+            command_args = list(command_dict["args"].keys())
+            new_command_dict = {"name": command_dict["name"], "args": {}}
+            for k in command_args:
+                if k in ref_args:
+                    new_command_dict["args"][k] = command_dict["args"][k]
 
-                unmatched_args = [
-                    arg for arg in command_args if arg not in ref_args]
-                unmatched_ref = [arg for arg in ref_args if arg not in list(
-                    new_command_dict["args"].keys())]
+            unmatched_args = [
+                arg for arg in command_args if arg not in ref_args]
+            unmatched_ref = [arg for arg in ref_args if arg not in list(
+                new_command_dict["args"].keys())]
 
-                for uarg in unmatched_args:
-                    for uref in unmatched_ref:
-                        if uarg in uref:
-                            new_command_dict["args"][uref] = command_dict["args"][uarg]
-                            break
+            for uarg in unmatched_args:
+                for uref in unmatched_ref:
+                    if uarg in uref:
+                        new_command_dict["args"][uref] = command_dict["args"][uarg]
+                        break
 
-                assistant_reply_dict["command"] = new_command_dict
-            else:
-                assistant_reply_dict["command"] = {
-                    "name": "unknown_command", "args": {}}
-
-        valid, errors = validate_dict(assistant_reply_dict, self.config)
-
-        if not valid:
-            raise SyntaxError(
-                ";\n".join([str(e) for e in errors])
-            )
+            assistant_reply_dict["command"] = new_command_dict
 
         for plugin in self.config.plugins:
             if not plugin.can_handle_post_planning():
@@ -269,14 +262,13 @@ class Agent(BaseAgent):
         )
         return response
 
-    '''
-    Clone and checkout the target project.
-    Then run the initial analysis on the target file.
-    Validate that the expected rule is present in the analysis report.
-    Then build the project to validate that it can be built succesfully.
-    '''
-
     def prepare_target_project(self) -> None:
+        '''
+        Clone and checkout the target project.
+        Then run the initial analysis on the target file.
+        Validate that the expected rule is present in the analysis report.
+        Then build the project to validate that it can be built succesfully.
+        '''
 
         try:
             repository_operations.checkout_project(self)

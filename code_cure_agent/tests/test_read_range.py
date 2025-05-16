@@ -44,13 +44,13 @@ class ReadRangeTestCase(unittest.TestCase):
     def test_reading_existing_lines_from_warning_file_path_file(self):
         range_read: str = read_range(
             self.agent.ai_config.warning_file_path, 1, 50, self.agent)
-        self.assertEqual(range_read.rfind("Line 50:            }"), 2194)
+        self.assertEqual(range_read.rfind("Line 50:            }"), 2193)
 
     def test_reading_line_zero_from_warning_file_path_file(self):
         range_read: str = read_range(
             self.agent.ai_config.warning_file_path, 0, 50, self.agent)
         print(range_read)
-        self.assertEqual(range_read.rfind("Line 50:            }"), 2194)
+        self.assertEqual(range_read.rfind("Line 50:            }"), 2193)
 
     def test_reading_line_minus_one_from_warning_file_path_file(self):
         range_read = read_range(

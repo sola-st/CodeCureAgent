@@ -72,7 +72,7 @@ def read_range(file_path: str, start_line: int, end_line: int, agent: BaseAgent)
     with open(os.path.join(project_dir, file_path)) as fp:
         lines = fp.readlines()
 
-    lines_str = "\n"
+    lines_str = ""
 
     for i in range(start_line-1, end_line, 1):
         # if start_line was 0 skip this non existing line

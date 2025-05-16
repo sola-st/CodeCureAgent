@@ -398,12 +398,12 @@ please use the indicated format and produce a list, like this:
     def detect_command_repetition(self, ref_cmd):
 
         assistant_outputs = [{"name": msg.command, "args": msg.args} for msg in self.history if msg.type == "ai_response" and not msg.command.lower(
-        ).startswith("error") and msg.command != "unknown_command" and msg.command != "missing_command"]
-        if str(ref_cmd["command"]) in assistant_outputs:
-            logger.info("WARNING: REPETITION DETECTED!\n\n")
-            return True
-        else:
-            return False
+        ).startswith("error")]
+        if isinstance(ref_cmd, dict) and "command" in ref_cmd.keys():
+            if ref_cmd["command"] in assistant_outputs:
+                logger.info("WARNING: REPETITION DETECTED!\n\n")
+                return True
+        return False
 
     def handle_command_repitition(self, repeated_command: dict, handling_strategy: str = ""):
         if handling_strategy == "":
@@ -653,32 +653,6 @@ please use the indicated format and produce a list, like this:
 
     def construct_bug_report(self):
         messages_history = [msg for _, msg in enumerate(self.history)]
-        """
-        for i in range(len(messages_history)):
-            msg = messages_history[i]
-            if msg.role == "assistant" and not msg.content.startswith("## As RepairAgentv0.5.0, this is the last command I have called in response to the users' input"):
-                command_dict = extract_dict_from_response(msg.content)
-                if command_dict["command"]["name"] == "get_info":
-                    if i < len(messages_history) - 1:
-                        j = i + 1
-                        next_msg = messages_history[j]
-                        get_info = next_msg.content
-                        self.prompt_dictionary["commands"][2].replace("2. get_info: Gets info about a specific bug in a specific project, params: (name: string, index: integer). This command can only be executed once\n", "")
-                        break
-        """
-        """
-        for i in range(len(messages_history)):
-            msg = messages_history[i]
-            if msg.role == "assistant" and not msg.content.startswith("## As RepairAgentv0.5.0, this is the last command I have called in response to the users' input"):
-                command_dict = extract_dict_from_response(msg.content)
-                if command_dict["command"]["name"] == "run_tests":
-                    if i < len(messages_history) - 1:
-                        j = i + 1
-                        next_msg = messages_history[j]
-                        run_tests = next_msg.content
-                        self.prompt_dictionary["commands"][2].replace("3. run_tests: Runs the test cases of the project being analyzed, params: (name: string, index: integer). This command can only be executed once.\n", "")
-                        break
-        """
         failing_test_code = ""
         for i in range(len(messages_history)):
             msg = messages_history[i]
@@ -846,7 +820,7 @@ please use the indicated format and produce a list, like this:
                 cycle += 1
 
                 # Add thoughts
-                history_section += f"\n\n### Step {cycle}\n\nYour thoughts: "
+                history_section += f"\n\n### Step {cycle}\n\nYour thoughts:  \n"
                 if message.agent_thoughts is None:
                     history_section += "`No thoughts given.`"
                 else:
@@ -867,29 +841,24 @@ please use the indicated format and produce a list, like this:
         return history_section
 
     def construct_command_call_history_subsection(self, message: Message) -> str:
-        command_call_subsection = "\n\nCalled command: "
+        command_call_subsection = "\n\nCalled command:  \n"
 
         # Handle exceptional commands
         if message.command is None:
             command_call_subsection += "The command was missing."
         elif message.command.lower() == "error_when_parsing":
-            command_call_subsection += message.args.get(
-                "error", "No command found.")
+            command_call_subsection += "Command could not be parsed."
         elif message.command.lower().startswith("error"):
             command_call_subsection += f"Could not execute command: {message.command}{str(message.args)}"
-        elif message.command == "unknown_command":
-            command_call_subsection += "The command was not known."
-        elif message.command == "missing_command":
-            command_call_subsection += "The command was missing."
         else:
             with open("agent_config_and_prompt_files/commands_interface.json") as cif:
                 commands_interface = json.load(cif)
 
-        if message.command in list(commands_interface.keys()):
-            command_call_subsection += self.format_command_information(
-                message)
-        else:
-            command_call_subsection += f"Unknown command named: {message.command}"
+            if message.command in list(commands_interface.keys()):
+                command_call_subsection += self.format_command_information(
+                    message)
+            else:
+                command_call_subsection += f"Unknown command named: {message.command}"
 
         return command_call_subsection
 
@@ -1083,6 +1052,8 @@ please use the indicated format and produce a list, like this:
             else None,
         )
 
+        self.cycle_count += 1
+
         try:
             response_dict = extract_dict_from_response(
                 raw_response.content
@@ -1110,12 +1081,11 @@ please use the indicated format and produce a list, like this:
                             raw_response = Message("assistant", str(r))
                 elif self.hyperparams["repetition_handling"] == "RESTRICT":
                     raw_response = new_response
-            self.cycle_count += 1
 
-            return self.on_response(raw_response, thought_process_id, prompt, instruction)
         except SyntaxError as e:
-            logger.error(e.msg)
-            return self.on_response(raw_response, thought_process_id, prompt, instruction)
+            logger.error("Error in repetition handling: " + e.msg)
+
+        return self.on_response(raw_response, thought_process_id, prompt, instruction)
 
     @abstractmethod
     def execute(

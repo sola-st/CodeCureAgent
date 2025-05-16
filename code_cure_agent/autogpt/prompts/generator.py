@@ -92,7 +92,7 @@ class PromptGenerator:
         *,
         additional_simple_patterns: list[str] = [],
         additional_guidelines: list[str] = []
-    ) -> str:
+    ) -> dict:
         """
         Generate a prompt string based on the constraints, commands, resources,
             and best practices.

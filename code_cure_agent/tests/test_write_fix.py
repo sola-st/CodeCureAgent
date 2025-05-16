@@ -127,6 +127,78 @@ class WriteFixTestCase(unittest.TestCase):
         }]
         print(write_fix.write_fix(changes_dict, self.agent))
 
+    def test_write_fix_wrong_file_name_key_in_second_dict(self):
+        changes_dict = [{
+            "file_name": self.agent.ai_config.warning_file_path,
+            "insertions": [{
+                "line_number": 10,
+                "new_lines": [
+                    "    // Some new line\n",
+                    "    // next new line\n"
+                ]
+            },],
+            "deletions": [1],
+            "modifications": [{
+                "line_number": 4,
+                "modified_line": "    modified_here\n"
+            },
+                {
+                "line_number": 11,
+                "modified_line": "    modified_there\n"
+            }]
+        },
+            {
+            "file_path": "main/src/main/java/net/sourceforge/argparse4j/internal/SubparsersImpl.java",
+            "insertions": [{
+                "line_number": 10,
+                "new_lines": [
+                    "    // Some new line\n",
+                    "    // next new line\n"
+                ]
+            },],
+            "deletions": [1],
+            "modifications": [{
+                "line_number": 4,
+                "modified_line": "    modified_here\n"
+            },
+                {
+                "line_number": 11,
+                "modified_line": "    modified_there\n"
+            }]
+        }]
+        result = write_fix.write_fix(changes_dict, self.agent)
+
+        self.assertEqual(
+            result, "Failure when trying to apply the fix: The write_fix command was in a wrong format. Couldn't find `file_name` in the change_dict.")
+
+    def test_write_fix_no_insertions_deletions_and_modification_keys_in_second_dict(self):
+        changes_dict = [{
+            "file_name": self.agent.ai_config.warning_file_path,
+            "insertions": [{
+                "line_number": 10,
+                "new_lines": [
+                    "    // Some new line\n",
+                    "    // next new line\n"
+                ]
+            },],
+            "deletions": [1],
+            "modifications": [{
+                "line_number": 4,
+                "modified_line": "    modified_here\n"
+            },
+                {
+                "line_number": 11,
+                "modified_line": "    modified_there\n"
+            }]
+        },
+            {
+            "file_name": "main/src/main/java/net/sourceforge/argparse4j/internal/SubparsersImpl.java"
+        }]
+        result = write_fix.write_fix(changes_dict, self.agent)
+
+        self.assertEqual(
+            result, "Failure when trying to apply the fix: The write_fix command was in a wrong format. Neither `insertions`, `deletions` nor `modifications` was given in the change_dict.")
+
     def test_apply_changes_no_changes(self):
         change_dict = {
             "file_name": self.agent.ai_config.warning_file_path,
@@ -245,9 +317,6 @@ class WriteFixTestCase(unittest.TestCase):
 
         self.assertEqual(
             ace.exception.msg, f"Line 134 to modify was out of range for the file {change_dict['file_name']}. The file only has 133 lines.")
-
-    def test_apply_changes_insert_out_of_bounds_line(self):
-        pass
 
     def test_apply_changes_insert_after_last_line(self):
         change_dict = {

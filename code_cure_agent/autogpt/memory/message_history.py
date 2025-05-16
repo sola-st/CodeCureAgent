@@ -111,7 +111,7 @@ Latest Development:
                 assert result_message.type == "action_result"
 
                 yield user_message, ai_message, result_message
-            except AssertionError as err:
+            except (AssertionError, SyntaxError) as err:
                 logger.debug(
                     f"Invalid item in message history: {err}; Messages: {messages[i-1:i+2]}"
                 )

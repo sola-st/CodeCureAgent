@@ -47,10 +47,16 @@ class ReadRangeTestCase(unittest.TestCase):
         self.assertEqual(range_read.rfind("Line 50:            }"), 2194)
 
     def test_reading_line_zero_from_warning_file_path_file(self):
-        range_read = read_range(
+        range_read: str = read_range(
             self.agent.ai_config.warning_file_path, 0, 50, self.agent)
+        print(range_read)
+        self.assertEqual(range_read.rfind("Line 50:            }"), 2194)
+
+    def test_reading_line_minus_one_from_warning_file_path_file(self):
+        range_read = read_range(
+            self.agent.ai_config.warning_file_path, -1, 50, self.agent)
         self.assertEqual(
-            range_read, "Reading lines failed. start_line must be greater than 0.")
+            range_read, "Reading lines failed. start_line must be greater or equal 0.")
 
     def test_reading_inverted_line_range_from_warning_file_path_file(self):
         range_read = read_range(

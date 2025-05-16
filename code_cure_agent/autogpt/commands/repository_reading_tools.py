@@ -56,8 +56,9 @@ def read_range(file_path: str, start_line: int, end_line: int, agent: BaseAgent)
     """
 
     # sanity checks
-    if start_line < 1:
-        return "Reading lines failed. start_line must be greater than 0."
+    if start_line < 0:
+        # using < 0 instead of <= 0 here, because the model sometimes tries to read starting from line 0
+        return "Reading lines failed. start_line must be greater or equal 0."
 
     if end_line < start_line:
         return "Reading lines failed. end_line must be greater or equal than start_line."
@@ -74,6 +75,9 @@ def read_range(file_path: str, start_line: int, end_line: int, agent: BaseAgent)
     lines_str = "\n"
 
     for i in range(start_line-1, end_line, 1):
+        # if start_line was 0 skip this non existing line
+        if i < 0:
+            continue
 
         # Prevent reading further than the file is long (a last newline character without any character following it is not considered a new line)
         if len(lines) <= i:

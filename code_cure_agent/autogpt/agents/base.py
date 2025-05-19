@@ -18,7 +18,7 @@ from autogpt.llm.utils import count_message_tokens, create_chat_completion
 from autogpt.logs import logger
 from autogpt.memory.message_history import MessageHistory
 from autogpt.prompts.prompt import DEFAULT_TRIGGERING_PROMPT
-from autogpt.json_utils.utilities import extract_dict_from_response
+from autogpt.utils.json_utils.json_utilities import extract_dict_from_response
 from autogpt.commands.defects4j_static import get_info, run_tests, query_for_fix, query_for_commands, extract_command, execute_command, create_fix_template
 
 CommandName = str

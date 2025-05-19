@@ -96,3 +96,10 @@ class ReadRangeTestCase(unittest.TestCase):
         range_read: str = read_range(other_file_path, 1, 8, self.agent)
         self.assertEqual(range_read.strip(
         ), "Line 1:argparse4j 0.8.0\nLine 2:================\nLine 3:\nLine 4:Release Note\nLine 5:------------\nLine 6:\nLine 7:New features have been added, and things have been improved on a lot\nLine 8:of fronts. See below.")
+
+    def test_reading_lines_from_none_existing_file(self):
+        other_file_path = "NEWS_none_existing"
+        range_read: str = read_range(other_file_path, 1, 8, self.agent)
+
+        self.assertEqual(
+            range_read, "Reading lines failed. The file_path 'NEWS_none_existing' does not exist.")

@@ -85,15 +85,15 @@ def build_project(agent: BaseAgent) -> None:
         raise
 
     if result.returncode == 0:
-        logger.info("", f"Build was successful.")
+        logger.info("", "Build was successful.")
     else:
-        logger.error(
+        logger.debug(
             "Error", f"Build failed with returncode {result.returncode}, stdout: \n{result.stdout}\n stderr: {result.stderr}")
         raise BuildError(result.returncode, result.stdout)
 
 
 class BuildError(Exception):
-    def __init__(self, returncode, stderr):
+    def __init__(self, returncode, stdout):
         self.returncode = returncode
-        self.stderr = stderr
-        super().__init__(stderr)
+        self.stdout = stdout
+        super().__init__(stdout)

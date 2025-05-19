@@ -1,7 +1,7 @@
 """Commands to perform Git operations"""
 
 from .decorators import sanitize_path_arg
-from autogpt.url_utils.validators import validate_url
+from autogpt.utils.url_utils.validators import validate_url
 from autogpt.command_decorator import command
 from autogpt.agents.agent import Agent
 from git.repo import Repo

@@ -66,9 +66,13 @@ def read_range(file_path: str, start_line: int, end_line: int, agent: BaseAgent)
     workspace = agent.config.workspace_path
     project_dir = os.path.join(
         workspace, agent.ai_config.warning_repository_name)
+    try:
+        file_path = path_utils.preprocess_paths(
+            workspace, agent.ai_config.warning_repository_name, file_path)
 
-    file_path = path_utils.preprocess_paths(
-        workspace, agent.ai_config.warning_repository_name, file_path)
+    except ValueError as ve:
+        return f"Reading lines failed. The file_path '{file_path}' does not exist."
+
     with open(os.path.join(project_dir, file_path)) as fp:
         lines = fp.readlines()
 

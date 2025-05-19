@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from autogpt.memory.vector import VectorMemory
     from autogpt.models.command_registry import CommandRegistry
 
-from autogpt.json_utils.utilities import extract_dict_from_response, validate_dict
+from autogpt.utils.json_utils.json_utilities import extract_dict_from_response, validate_dict
 from autogpt.llm.api_manager import ApiManager
 from autogpt.llm.base import Message
 from autogpt.llm.utils import count_string_tokens
@@ -293,7 +293,13 @@ class Agent(BaseAgent):
 
             repository_operations.build_project(self)
 
-        except (sonar_qube_analysis.AnalysisError, GitError, repository_operations.BuildError, subprocess.TimeoutExpired):
+        except repository_operations.BuildError as be:
+            logger.error(
+                "Error", f"Build failed with returncode {be.returncode}, stdout: \n{be.stdout}")
+            logger.error(
+                "Aborting", "Preparing the target project failed. Therefore aborting the execution.")
+            exit(1)
+        except (sonar_qube_analysis.AnalysisError, GitError, subprocess.TimeoutExpired):
             logger.error(
                 "Aborting", "Preparing the target project failed. Therefore aborting the execution.")
             exit(1)

@@ -5,7 +5,7 @@ A module that contains the PromptConfig class object that contains the configura
 import yaml
 from colorama import Fore
 
-from autogpt import utils
+from autogpt.utils.yaml_utils import yaml_utils
 from autogpt.logs import logger
 
 
@@ -33,7 +33,7 @@ class PromptConfig:
             None
         """
         # Validate file
-        (validated, message) = utils.validate_yaml_file(prompt_settings_file)
+        (validated, message) = yaml_utils.validate_yaml_file(prompt_settings_file)
         if not validated:
             logger.typewriter_log("FAILED FILE VALIDATION", Fore.RED, message)
             logger.double_check()

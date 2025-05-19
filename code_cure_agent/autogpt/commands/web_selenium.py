@@ -1,7 +1,7 @@
 """Commands for browsing a website"""
 
 from __future__ import annotations
-from autogpt.url_utils.validators import validate_url
+from autogpt.utils.url_utils.validators import validate_url
 from autogpt.processing.html import extract_hyperlinks, format_hyperlinks
 from autogpt.memory.vector import MemoryItem, get_memory
 from autogpt.logs import logger

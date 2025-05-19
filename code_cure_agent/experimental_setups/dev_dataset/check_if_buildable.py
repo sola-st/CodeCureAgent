@@ -81,7 +81,7 @@ if __name__ == "__main__":
                     except GitError as ge:
                         error = str(ge)
                     except repository_operations.BuildError as be:
-                        error = be.stderr
+                        error = be.stdout
                     except subprocess.TimeoutExpired as te:
                         error = f"TimeoutExpired exception: Build timed out after {te.timeout / 60} minutes. \nThe stdout was the following: \n\n{te.stdout.decode('utf-8')}"
                     except Exception as e:

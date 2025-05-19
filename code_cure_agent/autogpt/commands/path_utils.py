@@ -28,7 +28,8 @@ def preprocess_paths(workspace, project_name: str, file_path):
             raise ValueError(
                 "Multiple Candidate Paths. We do not handle this yet!")
         else:
-            return "The file_path {} does not exist.".format(file_path)
+            raise ValueError(
+                "The file_path {} does not exist.".format(file_path))
     return file_path
 
 

@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from autogpt.agents import Agent, BaseAgent
     from autogpt.config import Config
 
-from autogpt.json_utils.utilities import extract_dict_from_response
+from autogpt.utils.json_utils.json_utilities import extract_dict_from_response
 from autogpt.llm.base import ChatSequence, Message
 from autogpt.llm.providers.openai import OPEN_AI_CHAT_MODELS
 from autogpt.llm.utils import (

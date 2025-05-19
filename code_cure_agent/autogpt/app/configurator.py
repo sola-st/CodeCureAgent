@@ -6,7 +6,7 @@ from typing import Literal
 import click
 from colorama import Back, Fore, Style
 
-from autogpt import utils
+from autogpt.utils.yaml_utils import yaml_utils
 from autogpt.config import Config
 from autogpt.llm.api_manager import ApiManager
 from autogpt.logs import logger
@@ -125,7 +125,7 @@ def create_config(
         file = ai_settings_file
 
         # Validate file
-        (validated, message) = utils.validate_yaml_file(file)
+        (validated, message) = yaml_utils.validate_yaml_file(file)
         if not validated:
             logger.typewriter_log("FAILED FILE VALIDATION", Fore.RED, message)
             logger.double_check()
@@ -139,7 +139,7 @@ def create_config(
         file = prompt_settings_file
 
         # Validate file
-        (validated, message) = utils.validate_yaml_file(file)
+        (validated, message) = yaml_utils.validate_yaml_file(file)
         if not validated:
             logger.typewriter_log("FAILED FILE VALIDATION", Fore.RED, message)
             logger.double_check()

@@ -52,10 +52,10 @@ def write_fix(changes_dicts: list, agent: BaseAgent) -> str:
         all_files_with_changes = execute_write_range(changes_dicts, agent)
 
     except ApplyChangesError as ace:
-        # Need to rollback in case one of the files to change was already overwritten successfully
+        # Need to rollback in case one of the files to change was already overwritten successfully or partially
         rollback_changes(agent)
         feedback = "REJECTED  \nFailure when trying to apply the fix: " + ace.msg + \
-            "  \nThe repository has been restored to its original state."
+            "  \n\nIMPORTANT: The repository has been restored to its original state! You need to start applying changes from scratch again."
 
         if state_switched:
             feedback += "  \n**Note:** You are automatically switched to the state 'Trying out Fix Candidates'"
@@ -68,7 +68,7 @@ def write_fix(changes_dicts: list, agent: BaseAgent) -> str:
     feedback += "  \n" + change_approver_feedback
 
     rollback_changes(agent)
-    feedback += "  \nThe repository has been restored to its original state."
+    feedback += "  \n\nIMPORTANT: The repository has been restored to its original state! You need to start applying changes from scratch again."
 
     if state_switched:
         feedback += "  \n**Note:** You are automatically switched to the state 'Trying out Fix Candidates'"
@@ -99,12 +99,16 @@ def execute_write_range(changes_dicts: list[dict], agent: BaseAgent) -> list[Fil
         file_relative_path = change_dict.get("file_name", None)
 
         if file_relative_path is None:
+            logger.error("apply_changes failed",
+                         "The write_fix command was in a wrong format. Couldn't find `file_name` in the change_dict. change_dict:" + str(change_dict))
             raise ApplyChangesError(
                 "The write_fix command was in a wrong format. Couldn't find `file_name` in the change_dict.")
         try:
             file_relative_path = path_utils.preprocess_paths(
                 agent.config.workspace_path, agent.ai_config.warning_repository_name, file_relative_path)
         except ValueError as ve:
+            logger.error("apply_changes failed",
+                         "The path couldn't be processed with error: " + str(ve))
             raise ApplyChangesError(str(ve))
 
         file_full_path = os.path.join(project_dir, file_relative_path)
@@ -117,11 +121,10 @@ def execute_write_range(changes_dicts: list[dict], agent: BaseAgent) -> list[Fil
                 change_dict)
         except ValueError as ve:
             # No change_dict for the current file path present yet, so add it
-            new_list = list()
-            new_list.append(change_dict)
             change_dicts_merged_by_path.append(
-                (file_full_path, new_list))
+                (file_full_path, [change_dict]))
 
+    # Apply the changes from all of the grouped change_dicts
     for (file_full_path, change_dicts) in change_dicts_merged_by_path:
         changed_file = apply_changes(
             change_dicts, file_relative_path, file_full_path)
@@ -158,6 +161,8 @@ def apply_changes(change_dicts_with_same_file_path: list[dict], file_relative_pa
         new_modifications = change_dict.get("modifications", None)
 
         if all(map(lambda element: element is None, [new_insertions, new_deletions, new_modifications])):
+            logger.error("apply_changes failed",
+                         "The write_fix command was in a wrong format. Neither `insertions`, `deletions` nor `modifications` was given in the change_dict. change_dict:" + str(change_dict))
             raise ApplyChangesError(
                 "The write_fix command was in a wrong format. Neither `insertions`, `deletions` nor `modifications` was given in the change_dict."
             )
@@ -178,8 +183,8 @@ def apply_changes(change_dicts_with_same_file_path: list[dict], file_relative_pa
                 line_number) - 1] = deleted_lines_identifier + "\n"
 
         else:
-            logger.warn(
-                f"Line {line_number} to delete was out of range for the file {file_relative_path}. The file only has {len(file_changes.change_tracked_lines)} lines.", "apply_changes failed")
+            logger.error("apply_changes failed",
+                         f"Line {line_number} to delete was out of range for the file {file_relative_path}. The file only has {len(file_changes.change_tracked_lines)} lines.")
             raise ApplyChangesError(
                 f"Line {line_number} to delete was out of range for the file {file_relative_path}. The file only has {len(file_changes.change_tracked_lines)} lines.")
 
@@ -196,8 +201,8 @@ def apply_changes(change_dicts_with_same_file_path: list[dict], file_relative_pa
                 file_changes.change_tracked_lines[int(
                     line_number) - 1] = modified_line + "\n"
         else:
-            logger.warn(
-                f"Line {line_number} to modify was out of range for the file {file_relative_path}. The file only has {len(file_changes.change_tracked_lines)} lines.", "apply_changes failed")
+            logger.error("apply_changes failed",
+                         f"Line {line_number} to modify was out of range for the file {file_relative_path}. The file only has {len(file_changes.change_tracked_lines)} lines.")
             raise ApplyChangesError(
                 f"Line {line_number} to modify was out of range for the file {file_relative_path}. The file only has {len(file_changes.change_tracked_lines)} lines.")
 

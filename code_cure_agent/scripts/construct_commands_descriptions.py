@@ -41,7 +41,7 @@ generate_method_desc = """AI_generates_method_code:  Uses an AI model to generat
 
 write_fix_desc = """write_fix: Use this command to implement the fix you came up with.  
     Only use this command if you think that you have collected all necessary information by using other commands.  
-    The project will automatically be rebuilt and reanalyzed by SonarQube. Changes are reverted automatically if the build fails or if the rule violation remains.  
+    The project will automatically be rebuilt and reanalyzed by SonarQube, to check if your fix solves the rule violation. Afterwards the project is restored to its original state. 
     Required params: (changes_dicts:list[dict])  
     The list should contain at least one non-empty dictionary of changes. Each dict must conform to the format defined in the section `## The format of the fix`.  
     [RESPECT LINE NUMBERS AS GIVEN IN THE CODE SNIPPETS]"""

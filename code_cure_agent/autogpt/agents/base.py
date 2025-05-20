@@ -1054,36 +1054,38 @@ please use the indicated format and produce a list, like this:
 
         self.cycle_count += 1
 
-        try:
-            response_dict = extract_dict_from_response(
-                raw_response.content
-            )
-            repetition = self.detect_command_repetition(response_dict)
-            if repetition:
-                logger.info("WARNING: REPETITION DETECTED!\n")
-                logger.info(str(self.handle_command_repitition(
-                    response_dict, self.hyperparams["repetition_handling"])) + "\n\n")
-                # A separate message is added to the prompt, then the prompt is executed again with the added message
-                prompt.extend([Message("user", self.handle_command_repitition(
-                    response_dict, self.hyperparams["repetition_handling"]))])
-                new_response = create_chat_completion(
-                    prompt,
-                    self.config,
-                    functions=get_openai_command_specs(self.command_registry)
-                    if self.config.openai_functions
-                    else None,
+        if self.hyperparams["repetition_handling"] != "NONE":
+            try:
+                response_dict = extract_dict_from_response(
+                    raw_response.content
                 )
-                if self.hyperparams["repetition_handling"] == "TOP3":
-                    top3_list = json.loads(new_response.content)
-                    for r in top3_list:
-                        repetition = self.detect_command_repetition(r)
-                        if not repetition:
-                            raw_response = Message("assistant", str(r))
-                elif self.hyperparams["repetition_handling"] == "RESTRICT":
-                    raw_response = new_response
+                repetition = self.detect_command_repetition(response_dict)
+                if repetition:
+                    logger.info("WARNING: REPETITION DETECTED!\n")
+                    logger.info(str(self.handle_command_repitition(
+                        response_dict, self.hyperparams["repetition_handling"])) + "\n\n")
+                    # A separate message is added to the prompt, then the prompt is executed again with the added message
+                    prompt.extend([Message("user", self.handle_command_repitition(
+                        response_dict, self.hyperparams["repetition_handling"]))])
+                    new_response = create_chat_completion(
+                        prompt,
+                        self.config,
+                        functions=get_openai_command_specs(
+                            self.command_registry)
+                        if self.config.openai_functions
+                        else None,
+                    )
+                    if self.hyperparams["repetition_handling"] == "TOP3":
+                        top3_list = json.loads(new_response.content)
+                        for r in top3_list:
+                            repetition = self.detect_command_repetition(r)
+                            if not repetition:
+                                raw_response = Message("assistant", str(r))
+                    elif self.hyperparams["repetition_handling"] == "RESTRICT":
+                        raw_response = new_response
 
-        except SyntaxError as e:
-            logger.error("Error in repetition handling: " + e.msg)
+            except SyntaxError as e:
+                logger.error("Error in repetition handling: " + e.msg)
 
         return self.on_response(raw_response, thought_process_id, prompt, instruction)
 

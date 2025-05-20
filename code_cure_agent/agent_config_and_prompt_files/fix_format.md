@@ -63,3 +63,9 @@ Here is an example:
     }
 ]
 ```
+
+When using "modifications", take care that you do not accidentally write over a unrelated line which needs to be retained. In such cases use "insertions" instead, which moves successive lines without overwriting them.
+
+You must always apply all relevant changes in a single write_fix all at once.  
+After each write_fix attempt, the project is restored to its original state and all your made changes are lost.  
+However, you can then try again and attempt modfied fixes, if your previous attempts failed.

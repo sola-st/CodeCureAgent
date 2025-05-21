@@ -361,7 +361,7 @@ def approve(messages: list[str], changes_dicts: list[dict], agent: BaseAgent) ->
         "/", ".")
     with open(os.path.join("experimental_setups", agent.exps[-1], "plausible_patches",
                            f"plausible_patches_{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}.json"), "a+") as exps:
-        exps.write("  \n### PLAUSIBLE FIX\n{}\n\n ###CHANGE APPROVER FEEDBACK: {}".format(
+        exps.write("  \n### PLAUSIBLE FIX\n{}\n\n ###CHANGE APPROVER FEEDBACK:  \n{}".format(
             str(changes_dicts), "  \n".join(messages)))
 
     return "APPROVED  \n" + "  \n".join(messages)
@@ -375,7 +375,7 @@ def reject(messages: list[str], changes_dicts: list[dict], agent: BaseAgent) -> 
         "/", ".")
     with open(os.path.join("experimental_setups", agent.exps[-1], "implausible_patches",
                            f"implausible_patches_{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}.json"), "a+") as exps:
-        exps.write("  \n### PLAUSIBLE FIX\n{}\n\n ###CHANGE APPROVER FEEDBACK: {}".format(
+        exps.write("  \n### IMPLAUSIBLE FIX\n{}\n\n ###CHANGE APPROVER FEEDBACK:  \n{}".format(
             str(changes_dicts), "  \n".join(messages)))
 
     return "REJECTED  \n" + "  \n".join(messages)

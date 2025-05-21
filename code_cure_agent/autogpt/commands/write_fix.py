@@ -60,6 +60,13 @@ def write_fix(changes_dicts: list, agent: BaseAgent) -> str:
         feedback = "REJECTED  \nFailure when trying to apply the fix: " + ace.msg + \
             "  \n\nIMPORTANT: The repository has been restored to its original state! You need to start applying changes from scratch again."
 
+        sanitized_warning_file_path = agent.ai_config.warning_file_path.replace(
+            "/", ".")
+        with open(os.path.join("experimental_setups", agent.exps[-1], "implausible_patches",
+                               f"implausible_patches_{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}.json"), "a+") as exps:
+            exps.write("  \n### IMPLAUSIBLE FIX\n{}\n\n ###CHANGE APPROVER FEEDBACK:  \n{}".format(
+                str(changes_dicts), feedback))
+
         if state_switched:
             feedback += "  \n**Note:** You are automatically switched to the state 'Trying out Fix Candidates'"
 

@@ -92,6 +92,9 @@ class BaseAgent(metaclass=ABCMeta):
         with open("agent_config_and_prompt_files/states_description.json") as sdj:
             self.descriptions = json.load(sdj)
 
+        with open("sonarqube_quality_profile/quality_profile_rule_keys.txt") as rule_keys_file:
+            self.sonar_qube_rules_in_active_profile = rule_keys_file.read().split(",")
+
         # Change this to the initial state if a state machine is to be used.
         # Also need to add info about the states in "prepare_ai_settings.py"
 
@@ -183,12 +186,15 @@ class BaseAgent(metaclass=ABCMeta):
 
         self.unknown_commands = []
 
+        self.write_fix_attempts = 1
+
         # Here we put the initial values for the collected context sections
         self.initial_bug_report = {
 
         }
 
-        self.initial_analysis_report = {
+        # Holds all the initial analysis reports of relevant files, with no changes to the project
+        self.initial_analysis_reports = {
 
         }
 
@@ -241,6 +247,7 @@ class BaseAgent(metaclass=ABCMeta):
             "hypothesises": self.hypothesises,
             "plans": self.plans,
             "unknown_commands": self.unknown_commands,
+            "write_fix_attempts": self.write_fix_attempts,
             "initial_bug_report": self.initial_bug_report,
             "buggy_lines": self.buggy_lines,
             "similar_calls": self.similar_calls,
@@ -248,7 +255,7 @@ class BaseAgent(metaclass=ABCMeta):
             "experiment_file": self.experiment_file,
             "hyperparams": self.hyperparams,
             "history": [msg for _, msg in enumerate(self.history)],
-            "initial_analysis_report": self.initial_analysis_report
+            "initial_analysis_report": self.initial_analysis_reports
         }
 
         # with open("experimental_setups/experiments_list.txt") as eht:
@@ -350,6 +357,7 @@ please use the indicated format and produce a list, like this:
         self.hypothesises = context["hypothesises"]
         self.plans = context["plans"]
         self.unknown_commands = context["unknown_commands"]
+        self.write_fix_attempts = context["write_fix_attempts"]
         self.initial_bug_report = context["initial_bug_report"]
         self.buggy_lines = context["buggy_lines"]
         self.similar_calls = context["similar_calls"]
@@ -357,7 +365,7 @@ please use the indicated format and produce a list, like this:
         self.experiment_file = context["experiment_file"]
         self.hyperparams = context["hyperparams"]
         self.history = context["history"]
-        self.initial_analysis_report = context["initial_analysis_report"]
+        self.initial_analysis_reports = context["initial_analysis_report"]
 
     def construct_fix_query(self,):
 

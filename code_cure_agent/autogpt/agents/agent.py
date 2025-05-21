@@ -273,18 +273,17 @@ class Agent(BaseAgent):
         try:
             repository_operations.checkout_project(self)
 
-            with open("sonarqube_quality_profile/quality_profile_rule_keys.txt") as rule_keys_file:
-                rules_in_active_profile = rule_keys_file.read().split(",")
-
+            # Create the initial analysis report of the target file.
+            # If reports for further files are needed later (if the agent writes to some other file then the target file), then they are added on demand in write_fix.
             sanitized_warning_file_path = self.ai_config.warning_file_path.replace(
                 "/", ".")
-            initial_analysis_report = sonar_qube_analysis.analyze_file_and_parse_report(self.ai_config.warning_file_path, rules_in_active_profile, self.ai_config.warning_repository_name,
-                                                                                        f"initial_analysis_report_{str(self.ai_config.warning_ID)}_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(self.ai_config.warning_start_line)}.json", self)
+            initial_analysis_report_target_file = sonar_qube_analysis.analyze_file_and_parse_report(self.ai_config.warning_file_path, self.sonar_qube_rules_in_active_profile, self.ai_config.warning_repository_name,
+                                                                                                    f"{str(self.ai_config.warning_ID)}_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(self.ai_config.warning_start_line)}_initial_analysis_report_file_{sanitized_warning_file_path}.json", self)
 
-            self.initial_analysis_report = initial_analysis_report
+            self.initial_analysis_reports[self.ai_config.warning_file_path] = initial_analysis_report_target_file
 
             # Validate that the expected rule violation is present in the analysis report
-            if not sonar_qube_analysis.rule_violation_present_in_analysis_report(initial_analysis_report, self.ai_config.warning_rule_key, self.ai_config.warning_start_line):
+            if not sonar_qube_analysis.rule_violation_present_in_analysis_report(initial_analysis_report_target_file, self.ai_config.warning_rule_key, self.ai_config.warning_start_line):
                 logger.error(
                     "Error", f"The rule {self.ai_config.warning_rule_key} at line {str(self.ai_config.warning_start_line)} which was to fix wasn't part of the analysis report created by running Sorald on the file.")
                 logger.error(

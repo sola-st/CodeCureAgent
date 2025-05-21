@@ -40,9 +40,7 @@ class AnalysisError(Exception):
     },
 )
 def analyze_file_command(file_path: str, agent: BaseAgent):
-    with open("sonarqube_quality_profile/quality_profile_rule_keys.txt") as rule_keys_file:
-        rules_in_active_profile = rule_keys_file.read().split(",")
-    return analyze_file_and_parse_report(file_path, rules_in_active_profile, agent.ai_config.warning_repository_name, "analysis_report.json", agent)
+    return analyze_file_and_parse_report(file_path, agent.sonar_qube_rules_in_active_profile, agent.ai_config.warning_repository_name, "analysis_report.json", agent)
 
 
 def analyze_file_and_parse_report(file_relative_path: str, rules: list[str], repo_name: str, analysis_report_file_name: str, agent: BaseAgent) -> dict:
@@ -137,6 +135,6 @@ def parse_analysis_report(analysis_report_file_name: str, agent: BaseAgent) -> d
         analysis_report = json.load(analysis_report_file)
 
     shutil.copy(analysis_report_path, os.path.join("experimental_setups",
-                agent.exps[-1], "initial_analysis_reports", analysis_report_file_name))
+                agent.exps[-1], "analysis_reports", analysis_report_file_name))
 
     return analysis_report

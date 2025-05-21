@@ -19,7 +19,7 @@ class ReadRangeTestCase(unittest.TestCase):
         if os.path.exists("experimental_setups/experiment_test"):
             shutil.rmtree("experimental_setups/experiment_test")
         os.mkdir("experimental_setups/experiment_test")
-        os.mkdir("experimental_setups/experiment_test/initial_analysis_reports")
+        os.mkdir("experimental_setups/experiment_test/analysis_reports")
 
         warning_repository_URL = "https://github.com/argparse4j/argparse4j.git"
         warning_repository_commit = "a0cef432451487d513382297cec2c5b14c147a30"

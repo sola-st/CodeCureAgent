@@ -20,7 +20,7 @@ class WriteFixTestCase(unittest.TestCase):
         if os.path.exists("experimental_setups/experiment_test"):
             shutil.rmtree("experimental_setups/experiment_test")
         os.mkdir("experimental_setups/experiment_test")
-        os.mkdir("experimental_setups/experiment_test/initial_analysis_reports")
+        os.mkdir("experimental_setups/experiment_test/analysis_reports")
         os.mkdir("experimental_setups/experiment_test/plausible_patches")
         os.mkdir("experimental_setups/experiment_test/implausible_patches")
 
@@ -171,7 +171,7 @@ class WriteFixTestCase(unittest.TestCase):
         result = write_fix.write_fix(changes_dict, self.agent)
 
         self.assertEqual(
-            result, "REJECTED  \nFailure when trying to apply the fix: The write_fix command was in a wrong format. Couldn't find `file_name` in the change_dict.  \nThe repository has been restored to its original state.")
+            result, "REJECTED  \nFailure when trying to apply the fix: The write_fix command was in a wrong format. Couldn't find `file_name` in the change_dict.  \n\nIMPORTANT: The repository has been restored to its original state! You need to start applying changes from scratch again.")
 
     def test_write_fix_non_existent_file_name_key_in_second_dict(self):
         changes_dict = [{
@@ -213,9 +213,7 @@ class WriteFixTestCase(unittest.TestCase):
             }]
         }]
         result = write_fix.write_fix(changes_dict, self.agent)
-        self.assertEqual(result, """REJECTED  
-Failure when trying to apply the fix: The file_path main/src/main/java/net/sourceforge/argparse4j/internal/SubparsersImpl2.java does not exist.  
-The repository has been restored to its original state.""")
+        self.assertEqual(result, """REJECTED  \nFailure when trying to apply the fix: The file_path main/src/main/java/net/sourceforge/argparse4j/internal/SubparsersImpl2.java does not exist.  \n\nIMPORTANT: The repository has been restored to its original state! You need to start applying changes from scratch again.""")
 
     def test_write_fix_no_insertions_deletions_and_modification_keys_in_second_dict(self):
         changes_dict = [{
@@ -243,7 +241,7 @@ The repository has been restored to its original state.""")
         result = write_fix.write_fix(changes_dict, self.agent)
 
         self.assertEqual(
-            result, "REJECTED  \nFailure when trying to apply the fix: The write_fix command was in a wrong format. Neither `insertions`, `deletions` nor `modifications` was given in the change_dict.  \nThe repository has been restored to its original state.")
+            result, "REJECTED  \nFailure when trying to apply the fix: The write_fix command was in a wrong format. Neither `insertions`, `deletions` nor `modifications` was given in the change_dict.  \n\nIMPORTANT: The repository has been restored to its original state! You need to start applying changes from scratch again.")
 
     def test_execute_write_range_multiple_dicts_with_same_file_path(self):
         changes_dict = [{

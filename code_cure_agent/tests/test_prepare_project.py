@@ -156,7 +156,7 @@ class AnalyzeFileTestCase(unittest.TestCase):
         if os.path.exists("experimental_setups/experiment_test"):
             shutil.rmtree("experimental_setups/experiment_test")
         os.mkdir("experimental_setups/experiment_test")
-        os.mkdir("experimental_setups/experiment_test/initial_analysis_reports")
+        os.mkdir("experimental_setups/experiment_test/analysis_reports")
 
         warning_repository_URL = "https://github.com/argparse4j/argparse4j.git"
         warning_repository_commit = "a0cef432451487d513382297cec2c5b14c147a30"
@@ -214,13 +214,11 @@ class AnalyzeFileTestCase(unittest.TestCase):
         self.assertIsNotNone(report["minedRules"][0]["warningLocations"])
 
     def test_analyze_file_and_parser_report_quality_profile_rules(self):
-        with open("sonarqube_quality_profile/quality_profile_rule_keys.txt") as rule_keys_file:
-            rules = rule_keys_file.read().split(",")
 
         analysis_report_relative_path = "analysis_report.json"
 
         # Call the analyze_file function
-        report = analyze_file_and_parse_report(self.agent.ai_config.warning_file_path, rules,
+        report = analyze_file_and_parse_report(self.agent.ai_config.warning_file_path, self.agent.sonar_qube_rules_in_active_profile,
                                                self.agent.ai_config.warning_repository_name, analysis_report_relative_path, self.agent)
 
         self.assertIsNotNone(report)
@@ -234,9 +232,9 @@ class AnalyzeFileTestCase(unittest.TestCase):
         analysis_report_relative_path = "analysis_report.json"
 
         # Call the analyze_file function
-        with self.assertRaises(Exception) as e:
+        with self.assertRaises(ValueError) as e:
             report = analyze_file_and_parse_report("main/src/main/java/net/sourceforge/argparse4j/internal/SomeNonExistingFile.java",
                                                    rules, self.agent.ai_config.warning_repository_name, analysis_report_relative_path, self.agent)
 
-        self.assertRegex(str(e.exception),
-                         "Error: java.lang.IllegalArgumentException*")
+        self.assertEqual(str(e.exception),
+                         "The file_path main/src/main/java/net/sourceforge/argparse4j/internal/SomeNonExistingFile.java does not exist.")

@@ -7,6 +7,9 @@ class FileChanges():
         self.change_tracked_lines: ChangeTrackedList = ChangeTrackedList(
             lines_before_change)
 
+    def __repr__(self):
+        return f"FileChanges(file_path='{self.file_path}', change_tracked_lines={repr(self.change_tracked_lines)})"
+
 
 class ChangeTrackedList(list):
     """
@@ -26,6 +29,9 @@ class ChangeTrackedList(list):
 
         self.map_line_indices_before_after_change = [
             BeforeAfterMapping(i + 1, i + 1) for i, line in enumerate(lines_before_change)]
+
+    def __repr__(self):
+        return super().__repr__() + "with fields: 'lines_before_change'=" + repr(self.lines_before_change) + " 'map_line_indices_before_after_change'" + repr(self.map_line_indices_before_after_change)
 
     def insert(self, index: int, object: any):
         super().insert(index, object)
@@ -66,6 +72,9 @@ class ChangeTrackedList(list):
 
 class BeforeAfterMapping():
 
-    def __init__(self, before_line, after_line):
+    def __init__(self, before_line: int, after_line: int):
         self.before_line = before_line
         self.after_line = after_line
+
+    def __repr__(self):
+        return f"({str(self.before_line)}, {str(self.after_line)})"

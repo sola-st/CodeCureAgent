@@ -4,6 +4,7 @@ import os
 from autogpt.commands import change_approver
 from autogpt.commands import repository_operations
 from autogpt.commands import path_utils
+from autogpt.commands import sonar_qube_analysis
 from autogpt.logs.logger import logger
 from autogpt.agents.base import BaseAgent
 from autogpt.command_decorator import command
@@ -38,6 +39,8 @@ DENYLIST_CONTROL = "denylist"
     },
 )
 def write_fix(changes_dicts: list, agent: BaseAgent) -> str:
+    agent.write_fix_attempts += 1
+
     feedback = ""
 
     if len(changes_dicts) == 0:
@@ -88,12 +91,34 @@ def execute_write_range(changes_dicts: list[dict], agent: BaseAgent) -> list[Fil
 
     all_files_with_changes = []
 
-    change_dicts_merged_by_path = []
-
     project_dir = os.path.join(
         agent.config.workspace_path, agent.ai_config.warning_repository_name)
 
-    # Merge separate dicts for the same file, for correct change tracking
+    change_dicts_merged_by_path = merge_changes_dicts_with_same_file_path(
+        changes_dicts, agent)
+
+    # Apply the changes from all of the grouped change_dicts
+    for (file_relative_path_from_list, change_dicts) in change_dicts_merged_by_path:
+        file_full_path_from_list = os.path.join(
+            project_dir, file_relative_path_from_list)
+
+        # If the file is not in the agent's list of initial analysis reports, create and add it
+        add_new_file_to_initial_analysis_report(
+            file_relative_path_from_list, agent)
+
+        changed_file = apply_changes(
+            change_dicts, file_relative_path_from_list, file_full_path_from_list)
+        all_files_with_changes.append(changed_file)
+
+    return all_files_with_changes
+
+
+def merge_changes_dicts_with_same_file_path(changes_dicts: list[dict], agent: BaseAgent) -> list[str, list[dict]]:
+    """
+    Merge separate dicts for the same file, for correct change tracking
+    """
+    change_dicts_merged_by_path: list[tuple[str, list[dict]]] = []
+
     for change_dict in changes_dicts:
 
         file_relative_path = change_dict.get("file_name", None)
@@ -111,34 +136,40 @@ def execute_write_range(changes_dicts: list[dict], agent: BaseAgent) -> list[Fil
                          "The path couldn't be processed with error: " + str(ve))
             raise ApplyChangesError(str(ve))
 
-        file_full_path = os.path.join(project_dir, file_relative_path)
-
-        try:
-            index_change_dict_with_same_path = list(map(
-                lambda change_dict_merged_by_path: change_dict_merged_by_path[0], change_dicts_merged_by_path)).index(file_full_path)
-
-            change_dicts_merged_by_path[index_change_dict_with_same_path][1].append(
-                change_dict)
-        except ValueError as ve:
+        change_dicts_with_same_file_path = list(filter(
+            lambda change_dict_merged_by_path: change_dict_merged_by_path[0] == file_relative_path, change_dicts_merged_by_path))
+        if len(change_dicts_with_same_file_path) == 0:
             # No change_dict for the current file path present yet, so add it
             change_dicts_merged_by_path.append(
-                (file_full_path, [change_dict]))
+                (file_relative_path, [change_dict]))
+        else:
+            change_dicts_with_same_file_path[0][1].append(change_dict)
 
-    # Apply the changes from all of the grouped change_dicts
-    for (file_full_path, change_dicts) in change_dicts_merged_by_path:
-        changed_file = apply_changes(
-            change_dicts, file_relative_path, file_full_path)
-        all_files_with_changes.append(changed_file)
+    return change_dicts_merged_by_path
 
-    return all_files_with_changes
+
+def add_new_file_to_initial_analysis_report(file_relative_path: str, agent: BaseAgent) -> None:
+    """
+    If the file is not in the agent's list of initial analysis reports, create and add it
+    """
+
+    if file_relative_path not in agent.initial_analysis_reports:
+
+        sanitized_warning_file_path = agent.ai_config.warning_file_path.replace(
+            "/", ".")
+        sanitized_file_relative_path = file_relative_path.replace("/", ".")
+        initial_analysis_report_new_file = sonar_qube_analysis.analyze_file_and_parse_report(file_relative_path, agent.sonar_qube_rules_in_active_profile, agent.ai_config.warning_repository_name,
+                                                                                             f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_initial_analysis_report_file_{sanitized_file_relative_path}.json", agent)
+
+        agent.initial_analysis_reports[file_relative_path] = initial_analysis_report_new_file
 
 
 def apply_changes(change_dicts_with_same_file_path: list[dict], file_relative_path: str, file_full_path: str) -> FileChanges:
     """
-    Applies the changes from a single change_dict (one file's changes) and writes them to the file.
+    Applies the changes from all change_dicts regarding one file and writes them back to the file.
 
     Returns:
-        dict: the lines of the file with the changes applied. Contains file_name and file_content.
+        FileChanges: Object tracking all of the made changes in a file and how they relate to the initial file.
 
     Throws:
         ApplyChangesError: If one of the lines to change (delete/modify/insert) is out of the file's range
@@ -170,7 +201,7 @@ def apply_changes(change_dicts_with_same_file_path: list[dict], file_relative_pa
             insertions.extend(new_insertions)
         if new_deletions is not None:
             deletions.extend(new_deletions)
-        if modifications is not None:
+        if new_modifications is not None:
             modifications.extend(new_modifications)
 
     # Mark deletions via an identifier first to avoid conflicts with line number changes
@@ -206,11 +237,22 @@ def apply_changes(change_dicts_with_same_file_path: list[dict], file_relative_pa
             raise ApplyChangesError(
                 f"Line {line_number} to modify was out of range for the file {file_relative_path}. The file only has {len(file_changes.change_tracked_lines)} lines.")
 
-    # Apply insertions
-    sorted_insertions = sorted(insertions, key=itemgetter('line_number'))
+    # Apply insertions, from last to first for correct line referencing
+    sorted_insertions = sorted(
+        insertions, key=itemgetter('line_number'), reverse=True)
     for insertion in sorted_insertions:
         line_number = int(insertion.get("line_number", 0))
-        for new_line in insertion.get("new_lines", []):
+
+        # There might be items in new_lines that hold multiple lines in one string (via \n), or if commas are missing between the items.
+        # So we clean this into one proper list of singular lines, by splitting by \n and then adding it back at the end of each line item.
+        new_lines_uncleaned: list[str] = insertion.get("new_lines", [])
+        new_lines_cleaned_with_new_line = [
+            line + "\n"
+            for item in new_lines_uncleaned
+            for line in item.split("\n") if line
+        ]
+
+        for new_line in new_lines_cleaned_with_new_line:
             # If the line to insert is multiple lines out of the files line range
             # then fill up with newlines until the index to insert is reached
             while int(line_number) > len(file_changes.change_tracked_lines) + 1:
@@ -223,7 +265,7 @@ def apply_changes(change_dicts_with_same_file_path: list[dict], file_relative_pa
     # Finally delete all the lines from the list that are flagged as to be deleted.
     # It is possible that a modification of the same line as a deletion overwrites the flag.
     # This is intended and therefore in this case the modification wins.
-    for line_index, line in enumerate(file_changes.change_tracked_lines):
+    for line_index, line in reversed(list(enumerate(file_changes.change_tracked_lines))):
         if line == deleted_lines_identifier + "\n":
             file_changes.change_tracked_lines.pop(line_index)
 

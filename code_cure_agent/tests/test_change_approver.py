@@ -20,7 +20,7 @@ class ChangeApproverTestCase(unittest.TestCase):
         if os.path.exists("experimental_setups/experiment_test"):
             shutil.rmtree("experimental_setups/experiment_test")
         os.mkdir("experimental_setups/experiment_test")
-        os.mkdir("experimental_setups/experiment_test/initial_analysis_reports")
+        os.mkdir("experimental_setups/experiment_test/analysis_reports")
         os.mkdir("experimental_setups/experiment_test/plausible_patches")
         os.mkdir("experimental_setups/experiment_test/implausible_patches")
 
@@ -74,12 +74,10 @@ class ChangeApproverTestCase(unittest.TestCase):
 
         write_fix.apply_changes(
             change_dict_list, file_relative_path, file_full_path)
-        rejected, build_message = change_approver.try_to_build_changed_project(
-            self.agent)
-        rejected, build_message = change_approver.try_to_build_changed_project(
+        accepted, build_message = change_approver.try_to_build_changed_project(
             self.agent)
         print(build_message)
-        self.assertFalse(rejected)
+        self.assertTrue(accepted)
 
     def test_try_to_build_changed_project_fails(self):
         change_dict_list = [{
@@ -98,12 +96,168 @@ class ChangeApproverTestCase(unittest.TestCase):
 
         write_fix.apply_changes(
             change_dict_list, file_relative_path, file_full_path)
-        rejected, build_message = change_approver.try_to_build_changed_project(
+        accepted, build_message = change_approver.try_to_build_changed_project(
             self.agent)
         print(build_message)
-        self.assertTrue(rejected)
+        self.assertFalse(accepted)
         self.assertNotEqual(build_message.find(
             "[ERROR] COMPILATION ERROR :"), -1)
         self.assertNotEqual(build_message.find(
             "main/src/main/java/net/sourceforge/argparse4j/internal/TerminalWidth.java"), -1)
         self.assertNotEqual(build_message.find("47"), -1)
+
+    def test_check_sonar_qube_report_target_warning_removed_no_new_warnings(self):
+        change_dict_list = [{
+            "file_name": self.agent.ai_config.warning_file_path,
+            "insertions": [{
+                "line_number": 3,
+                "new_lines": [" * Added lines\n", " * Added lines\n", " * Added lines\n"]
+            }],
+            "deletions": [11, 12, 13, 14, 15],
+            "modifications": [{
+                "line_number": 94,
+                "modified_line": "        } catch (InterruptedException e) { //NOSONAR\n"
+            }]
+        }]
+
+        all_file_changes = write_fix.execute_write_range(
+            change_dict_list, self.agent)
+        accepted, sonar_qube_message = change_approver.check_sonar_qube_report(
+            all_file_changes, self.agent)
+
+        print(sonar_qube_message)
+        self.assertTrue(accepted)
+        self.assertEqual(
+            sonar_qube_message, "Rerunning the SonarQube analysis confirmed that your fix successfully removed the targeted rule violation and didn't introduce any new violations.")
+
+    def test_check_sonar_qube_report_target_warning_removed_new_warning_introduced(self):
+        change_dict_list = [{
+            "file_name": self.agent.ai_config.warning_file_path,
+            "modifications": [{
+                "line_number": 94,
+                "modified_line": "        } catch (InterruptedException e) { //NOSONAR\n"
+            }],
+            "insertions": [{
+                "line_number": 94,
+                "new_lines": ["            if (1 == 1) {\n",
+                              "                return UNKNOWN_WIDTH;\n",
+                              "            }\n"]
+            }]
+        }]
+
+        all_file_changes = write_fix.execute_write_range(
+            change_dict_list, self.agent)
+        accepted, sonar_qube_message = change_approver.check_sonar_qube_report(
+            all_file_changes, self.agent)
+
+        print(sonar_qube_message)
+        self.assertFalse(accepted)
+        self.assertEqual(sonar_qube_message, """Rerunning the SonarQube analysis found the following new rule violations that weren't present before:  
+In file main/src/main/java/net/sourceforge/argparse4j/internal/TerminalWidth.java:  
+Rule S1764: 'Identical expressions should not be used on both sides of a binary operator' at line 94: 'if (1 == 1) {'  
+
+You must not introduce any new rule violations.""")
+
+    def test_check_sonar_qube_report_target_warning_not_removed(self):
+        change_dict_list = [{
+            "file_name": self.agent.ai_config.warning_file_path,
+            "modifications": [],
+            "insertions": [{
+                "line_number": 94,
+                "new_lines": ["            if (1 == 1) {\n",
+                              "                return UNKNOWN_WIDTH;\n",
+                              "            }\n"]
+            }]
+        }]
+
+        all_file_changes = write_fix.execute_write_range(
+            change_dict_list, self.agent)
+        accepted, sonar_qube_message = change_approver.check_sonar_qube_report(
+            all_file_changes, self.agent)
+
+        print(sonar_qube_message)
+        self.assertFalse(accepted)
+        self.assertEqual(
+            sonar_qube_message, "Rerunning the SonarQube analysis found that the targeted rule violation has not yet been removed by your fix. It was still present in the SonarQube report.")
+
+    def test_check_sonar_qube_report_target_warning_file_had_no_changes(self):
+        change_dict_list = [{
+            "file_name": "NEWS",
+            "modifications": [{
+                "line_number": 2,
+                "modified_line": "Some change\n"
+            },],
+            "insertions": [{
+                "line_number": 94,
+                "new_lines": ["Other change\n",
+                              "New line\n",
+                              "here\n"]
+            }]
+        }]
+
+        all_file_changes = write_fix.execute_write_range(
+            change_dict_list, self.agent)
+        accepted, sonar_qube_message = change_approver.check_sonar_qube_report(
+            all_file_changes, self.agent)
+
+        print(sonar_qube_message)
+        self.assertFalse(accepted)
+        self.assertEqual(
+            sonar_qube_message, "Rerunning the SonarQube analysis found that the targeted rule violation has not yet been removed by your fix. It was still present in the SonarQube report.")
+
+    def test_check_sonar_qube_report_target_warning_line_was_removed_and_added_at_new_line_again(self):
+        change_dict_list = [{
+            "file_name": self.agent.ai_config.warning_file_path,
+            "insertions": [{
+                "line_number": 3,
+                "new_lines": [" * Added line 1\n", " * Added line 2\n", " * Added line 3\n"]
+            }, {
+                "line_number": 94,
+                "new_lines": ["        } catch (InterruptedException e) { \n"]
+            }],
+            "deletions": [11, 12, 13, 14, 15, 94]
+        }]
+
+        all_file_changes = write_fix.execute_write_range(
+            change_dict_list, self.agent)
+        accepted, sonar_qube_message = change_approver.check_sonar_qube_report(
+            all_file_changes, self.agent)
+
+        print(sonar_qube_message)
+        self.assertFalse(accepted)
+        self.assertEqual(sonar_qube_message, """Rerunning the SonarQube analysis found the following new rule violations that weren't present before:  
+In file main/src/main/java/net/sourceforge/argparse4j/internal/TerminalWidth.java:  
+Rule S2142: '"InterruptedException" should not be ignored' at line 92: '} catch (InterruptedException e) {'  
+
+You must not introduce any new rule violations.""")
+
+    def test_check_sonar_qube_report_multiple_files(self):
+        change_dict_list = [{
+            "file_name": self.agent.ai_config.warning_file_path,
+            "insertions": [{
+                "line_number": 3,
+                "new_lines": [" * Added line 1\n", " * Added line 2\n", " * Added line 3\n"]
+            }],
+            "deletions": [11, 12, 13, 14, 15],
+            "modifications": [{
+                "line_number": 94,
+                "modified_line": "        } catch (InterruptedException e) { //NOSONAR\n"
+            }]
+        },
+            {
+            "file_name": "main/src/main/java/net/sourceforge/argparse4j/internal/SubparsersImpl.java",
+            "insertions": [{
+                "line_number": 3,
+                "new_lines": [" * Added line 1\n", " * Added line 2\n", " * Added line 3\n"]
+            }]
+        }]
+
+        all_file_changes = write_fix.execute_write_range(
+            change_dict_list, self.agent)
+        accepted, sonar_qube_message = change_approver.check_sonar_qube_report(
+            all_file_changes, self.agent)
+
+        print(sonar_qube_message)
+        self.assertTrue(accepted)
+        self.assertEqual(
+            sonar_qube_message, "Rerunning the SonarQube analysis confirmed that your fix successfully removed the targeted rule violation and didn't introduce any new violations.")

@@ -156,10 +156,10 @@ class Agent(BaseAgent):
                 arguments=command_args,
                 agent=self,
             )
-            if len(str(command_result)) < 4000:
-                result = f"Command `{command_name}` returned:  \n" f"{command_result}"
+            if len(str(command_result)) < self.truncation_limit:
+                result = f"Command `{command_name}` returned:  \n{command_result}"
             else:
-                result = f"Command {command_name} returned a lengthy response, we truncated it to the first 4000 characters: " f"{str(command_result)[:4000]}"
+                result = f"Command {command_name} returned a lengthy response, we truncated it to the first {str(self.truncation_limit)} characters: \n{str(command_result)[:self.truncation_limit]}"
             result_tlength = count_string_tokens(
                 str(command_result), self.llm.name)
             memory_tlength = count_string_tokens(

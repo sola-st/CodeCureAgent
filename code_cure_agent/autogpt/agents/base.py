@@ -128,6 +128,10 @@ class BaseAgent(metaclass=ABCMeta):
         defaults to 75% of `llm.max_tokens`.
         """
 
+        # Number of characters that command responses are truncated to.
+        # This is a safe bound to ensure not exceeding the 128000 token GPT-4o context window
+        self.truncation_limit = 12500
+
         self.history = MessageHistory(
             self.llm,
             max_summary_tlength=summary_max_tlength or self.send_token_limit // 6,

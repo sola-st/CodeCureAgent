@@ -361,8 +361,8 @@ def approve(messages: list[str], changes_dicts: list[dict], agent: BaseAgent) ->
         "/", ".")
     with open(os.path.join("experimental_setups", agent.exps[-1], "plausible_patches",
                            f"plausible_patches_{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}.json"), "a+") as exps:
-        exps.write("  \n### PLAUSIBLE FIX\n{}\n\n ###CHANGE APPROVER FEEDBACK:  \n{}".format(
-            str(changes_dicts), "  \n".join(messages)))
+        exps.write(
+            f"  \n### PLAUSIBLE FIX (fix no. {str(agent.write_fix_attempts)})\n{json.dumps(changes_dicts, indent=4)}\n\n ###CHANGE APPROVER FEEDBACK:  \n" + "  \n".join(messages))
 
     return "APPROVED  \n" + "  \n".join(messages) + "  \nThe repository has been restored to its original state. \nIf you think that your write_fix solved the problem then use the command goals_accomplished to conclude the task."
 
@@ -375,7 +375,7 @@ def reject(messages: list[str], changes_dicts: list[dict], agent: BaseAgent) -> 
         "/", ".")
     with open(os.path.join("experimental_setups", agent.exps[-1], "implausible_patches",
                            f"implausible_patches_{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}.json"), "a+") as exps:
-        exps.write("  \n### IMPLAUSIBLE FIX\n{}\n\n ###CHANGE APPROVER FEEDBACK:  \n{}".format(
-            str(changes_dicts), "  \n".join(messages)))
+        exps.write(
+            f"  \n### IMPLAUSIBLE FIX (fix no. {str(agent.write_fix_attempts)})\n{json.dumps(changes_dicts, indent=4)}\n\n ###CHANGE APPROVER FEEDBACK:  \n" + "  \n".join(messages))
 
     return "REJECTED  \n" + "  \n".join(messages) + "  \n\nIMPORTANT: The repository has been restored to its original state! You need to start applying changes from scratch again."

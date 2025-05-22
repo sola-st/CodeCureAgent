@@ -37,5 +37,5 @@ class AgentMock():
         with open("sonarqube_quality_profile/quality_profile_rule_keys.txt") as rule_keys_file:
             self.sonar_qube_rules_in_active_profile = rule_keys_file.read().split(",")
 
-        self.write_fix_attempts = 1
+        self.write_fix_attempts = 0
         self.initial_analysis_reports = {}

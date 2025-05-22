@@ -13,6 +13,7 @@ from autogpt.utils.write_fix_utils.change_tracking import FileChanges
 
 
 import hashlib
+import json
 
 
 from typing import TYPE_CHECKING
@@ -64,8 +65,8 @@ def write_fix(changes_dicts: list, agent: BaseAgent) -> str:
             "/", ".")
         with open(os.path.join("experimental_setups", agent.exps[-1], "implausible_patches",
                                f"implausible_patches_{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}.json"), "a+") as exps:
-            exps.write("  \n### IMPLAUSIBLE FIX\n{}\n\n ###CHANGE APPROVER FEEDBACK:  \n{}".format(
-                str(changes_dicts), feedback))
+            exps.write(
+                f"  \n### IMPLAUSIBLE FIX (fix no. {str(agent.write_fix_attempts)})\n{json.dumps(changes_dicts, indent=4)}\n\n ###CHANGE APPROVER FEEDBACK:  \n{feedback}")
 
         if state_switched:
             feedback += "  \n**Note:** You are automatically switched to the state 'Trying out Fix Candidates'"
@@ -143,7 +144,7 @@ def merge_changes_dicts_with_same_file_path(changes_dicts: list[dict], agent: Ba
             raise ApplyChangesError(str(ve))
 
         change_dicts_with_same_file_path = list(filter(
-            lambda change_dict_merged_by_path: change_dict_merged_by_path[0] == file_relative_path, change_dicts_merged_by_path))
+            lambda change_dict_merged_by_path, file_relative_path=file_relative_path: change_dict_merged_by_path[0] == file_relative_path, change_dicts_merged_by_path))
         if len(change_dicts_with_same_file_path) == 0:
             # No change_dict for the current file path present yet, so add it
             change_dicts_merged_by_path.append(

@@ -4,7 +4,7 @@ Each dictionary must include:
 
 * "file_name": A string indicating the path or name of the file to be modified.  
 * "insertions": A list of dictionaries representing insertions in the file. Each insertion dictionary includes:  
-  * "line_number": An integer indicating the line number where the insertion should occur.  
+  * "line_number": An integer indicating the line number before which we insert lines. The previous content of the line and all following lines are moved down accordingly.  
   * "new_lines": A list of strings representing the new lines to be inserted.  
 * "deletions": A list of integers representing line numbers to be deleted from the file.  
 * "modifications": A list of dictionaries representing modifications in the file. Each modification dictionary includes:  
@@ -65,7 +65,7 @@ Here is an example:
 ```
 
 A "modification" overwrites the specified "line_number" with the string that you specify in "modified_line". This means any relevant code at that line will be lost. So be very careful about which lines you modify!  
-Only ever use it if your goal is really to modify an existing line. In all other cases, where you want to add some new code, specify such lines in "insertions". These are inserted as a new line at the specified "line_number" and don't overwrite any code.
+Only ever use it if your goal is really to modify an existing line. In all other cases, where you want to add some new code, specify such lines in "insertions". These are inserted as a new line before the specified "line_number" and don't overwrite any code.  
 
 You must always apply all relevant changes in a single write_fix all at once.  
 After each write_fix attempt, the project is restored to its original state and all your made changes are lost.  

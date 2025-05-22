@@ -190,7 +190,7 @@ class BaseAgent(metaclass=ABCMeta):
 
         self.unknown_commands = []
 
-        self.write_fix_attempts = 1
+        self.write_fix_attempts = 0
 
         # Here we put the initial values for the collected context sections
         self.initial_bug_report = {
@@ -1150,9 +1150,9 @@ please use the indicated format and produce a list, like this:
             cycle_instruction += "\nYou have, so far, executed {} commands, you have only {} commands left.\n".format(
                 self.cycle_count, self.hyperparams["commands_limit"]-self.cycle_count)
         elif self.hyperparams["budget_control"]["name"] == "FULL-TRACK" and self.hyperparams["budget_control"]["params"] != {}:
-            n_fixes = self.hyperparams["budget_control"]["params"]["#fixes"]
-            cycle_instruction += "\nYou have, so far, executed, {} commands and suggested {} fixes. You have {} commands left. However, you need to suggest {} fixes before consuming all the left commands.\n".format(
-                self.cycle_count, len(self.suggested_fixes), self.hyperparams["commands_limit"]-self.cycle_count, n_fixes - len(self.suggested_fixes))
+            minimum_number_fixes = self.hyperparams["budget_control"]["params"]["#fixes"]
+            cycle_instruction += "\nYou have, so far, executed, {} commands and suggested {} fixes. You have {} commands left. However, you need to suggest at least {} fixes before consuming all the left commands.\n".format(
+                self.cycle_count, self.write_fix_attempts, self.hyperparams["commands_limit"] - self.cycle_count, max(minimum_number_fixes - self.write_fix_attempts, 0))
         elif self.hyperparams["budget_control"]["name"] == "FORCED" and self.current_state != "no_state_machine":
             t1 = self.hyperparams["budget_control"]["T1"]
             t2 = self.hyperparams["budget_control"]["T2"]

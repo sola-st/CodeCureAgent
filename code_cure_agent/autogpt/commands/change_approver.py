@@ -364,7 +364,7 @@ def approve(messages: list[str], changes_dicts: list[dict], agent: BaseAgent) ->
         exps.write("  \n### PLAUSIBLE FIX\n{}\n\n ###CHANGE APPROVER FEEDBACK:  \n{}".format(
             str(changes_dicts), "  \n".join(messages)))
 
-    return "APPROVED  \n" + "  \n".join(messages)
+    return "APPROVED  \n" + "  \n".join(messages) + "  \nThe repository has been restored to its original state. \nIf you think that your write_fix solved the problem then use the command goals_accomplished to conclude the task."
 
 
 def reject(messages: list[str], changes_dicts: list[dict], agent: BaseAgent) -> str:
@@ -378,4 +378,4 @@ def reject(messages: list[str], changes_dicts: list[dict], agent: BaseAgent) -> 
         exps.write("  \n### IMPLAUSIBLE FIX\n{}\n\n ###CHANGE APPROVER FEEDBACK:  \n{}".format(
             str(changes_dicts), "  \n".join(messages)))
 
-    return "REJECTED  \n" + "  \n".join(messages)
+    return "REJECTED  \n" + "  \n".join(messages) + "  \n\nIMPORTANT: The repository has been restored to its original state! You need to start applying changes from scratch again."

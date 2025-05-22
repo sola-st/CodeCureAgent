@@ -78,7 +78,6 @@ def write_fix(changes_dicts: list, agent: BaseAgent) -> str:
     feedback += "  \n" + change_approver_feedback
 
     rollback_changes(agent)
-    feedback += "  \n\nIMPORTANT: The repository has been restored to its original state! You need to start applying changes from scratch again."
 
     if state_switched:
         feedback += "  \n**Note:** You are automatically switched to the state 'Trying out Fix Candidates'"

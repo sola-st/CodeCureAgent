@@ -64,7 +64,8 @@ Here is an example:
 ]
 ```
 
-When using "modifications", take care that you do not accidentally write over a unrelated line which needs to be retained. In such cases use "insertions" instead, which moves successive lines without overwriting them.
+A "modification" overwrites the specified "line_number" with the string that you specify in "modified_line". This means any relevant code at that line will be lost. So be very careful about which lines you modify!  
+Only ever use it if your goal is really to modify an existing line. In all other cases, where you want to add some new code, specify such lines in "insertions". These are inserted as a new line at the specified "line_number" and don't overwrite any code.
 
 You must always apply all relevant changes in a single write_fix all at once.  
 After each write_fix attempt, the project is restored to its original state and all your made changes are lost.  

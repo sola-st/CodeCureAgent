@@ -52,7 +52,11 @@ def chunk_content(
 
     max_chunk_length = max_chunk_length or _max_chunk_length(for_model)
 
-    tokenizer = tiktoken.encoding_for_model(for_model)
+    # Hard coded encoding for gpt 4.1, because tiktoken is not up to date
+    if for_model.startswith("gpt-4.1"):
+        tokenizer = tiktoken.get_encoding("o200k_base")
+    else:
+        tokenizer = tiktoken.encoding_for_model(for_model)
 
     tokenized_text = tokenizer.encode(content)
     total_length = len(tokenized_text)

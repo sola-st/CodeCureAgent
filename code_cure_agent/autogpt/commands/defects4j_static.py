@@ -519,7 +519,11 @@ def extract_function_def_context(project_name, bug_index, method_name, file_path
     if start_index == -1:
         raise ValueError("METHOD BODY NOT FOUD, INDEX = -1, SHOULD NOT HAPPEN")
     context = file_content[:start_index]
-    enc = tiktoken.encoding_for_model(agent.config.fast_llm)
+    # Hard coded encoding for gpt 4.1, because tiktoken is not up to date
+    if agent.config.fast_llm.startswith("gpt-4.1"):
+        enc = tiktoken.get_encoding("o200k_base")
+    else:
+        enc = tiktoken.encoding_for_model(agent.config.fast_llm)
     encoded_context = enc.encode(context)
     if len(encoded_context) < input_limit:
         return context

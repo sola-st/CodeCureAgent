@@ -13,7 +13,11 @@ sys.path.append(str(Path(__file__).parent.parent))
 
 
 def calculate_tokens(folder_path, fixed_file_path, model_name="gpt-3.5-turbo"):
-    encoder = tiktoken.encoding_for_model(model_name)
+    # Hard coded encoding for gpt 4.1, because tiktoken is not up to date
+    if model_name.startswith("gpt-4.1"):
+        encoder = tiktoken.get_encoding("o200k_base")
+    else:
+        encoder = tiktoken.encoding_for_model(model_name)
 
     file_input_tokens = []
     file_output_tokens = []

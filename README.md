@@ -237,9 +237,6 @@ Change the model_version to one of the following supported models:
 - gpt-4-turbo-2024-04-09
 - gpt-4o-mini-2024-07-18
 - gpt-4o-2024-08-06
-
-Soon supported, when dependency tiktoken is updated to support the new models:
-
 - gpt-4.1-nano-2025-04-14
 - gpt-4.1-mini-2025-04-14
 - gpt-4.1-2025-04-14

@@ -58,7 +58,11 @@ def count_message_tokens(
         encoding_model = model
 
     try:
-        encoding = tiktoken.encoding_for_model(encoding_model)
+        # Hard coded encoding for gpt 4.1, because tiktoken is not up to date
+        if encoding_model.startswith("gpt-4.1"):
+            encoding = tiktoken.get_encoding("o200k_base")
+        else:
+            encoding = tiktoken.encoding_for_model(encoding_model)
     except KeyError:
         logger.warn("Warning: model not found. Using cl100k_base encoding.")
         encoding = tiktoken.get_encoding("cl100k_base")
@@ -86,5 +90,9 @@ def count_string_tokens(string: str, model_name: str) -> int:
     Returns:
         int: The number of tokens in the text string.
     """
-    encoding = tiktoken.encoding_for_model(model_name)
+    # Hard coded encoding for gpt 4.1, because tiktoken is not up to date
+    if model_name.startswith("gpt-4.1"):
+        encoding = tiktoken.get_encoding("o200k_base")
+    else:
+        encoding = tiktoken.encoding_for_model(model_name)
     return len(encoding.encode(string))

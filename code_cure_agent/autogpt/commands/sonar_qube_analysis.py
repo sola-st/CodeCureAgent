@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from autogpt.agents import BaseAgent
 
 from autogpt.command_decorator import command
-from autogpt.commands import path_utils
+from autogpt.utils.path_utils import path_utils
 
 COMMAND_CATEGORY = "sonarQubeAnalysis"
 COMMAND_CATEGORY_TITLE = "Run SonarQube analysis"

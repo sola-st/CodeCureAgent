@@ -3,7 +3,7 @@ from operator import itemgetter
 import os
 from autogpt.commands import change_approver
 from autogpt.commands import repository_operations
-from autogpt.commands import path_utils
+from autogpt.utils.path_utils import path_utils
 from autogpt.commands import sonar_qube_analysis
 from autogpt.logs.logger import logger
 from autogpt.agents.base import BaseAgent

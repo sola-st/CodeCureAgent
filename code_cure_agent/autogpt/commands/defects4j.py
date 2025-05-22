@@ -677,8 +677,8 @@ def create_mutants_from_fix(assistant_reply_dict: dict, agent: BaseAgent):
             agent.project_name, agent.bug_index)
 
         # create mutation prompt
-        mutant_prompt = agent.construct_mutation_prompt(
-            fix_content, detailed_buggies)
+        mutant_prompt = construct_mutation_prompt(
+            fix_content, detailed_buggies, agent)
         # save mutation prompt
         with open(os.path.join("experimental_setups", exps[-1], "mutations_history", "mutations_prompt_{}_{}".format(agent.project_name, agent.bug_index)), "a") as mph:
             mph.write(mutant_prompt)
@@ -697,7 +697,7 @@ def create_mutants_from_fix(assistant_reply_dict: dict, agent: BaseAgent):
             raw_m.write(mutants)
 
         try:
-            mutants_json = agent.save_to_json(
+            mutants_json = save_to_json(
                 mutants_save_path, json.loads(mutants))
             logger.info("MUTANTS LENGTH: " + str(len(mutants_json)) + "\n\n")
             if isinstance(mutants_json, dict):
@@ -727,6 +727,103 @@ def create_mutants_from_fix(assistant_reply_dict: dict, agent: BaseAgent):
         except Exception as e:
             logger.info(
                 "Error in loading the mutants response: " + str(e) + "\n\n")
+
+
+def construct_mutation_prompt(last_patch, detailed_buggies, agent):
+    hypothesis_string = agent.construct_hypothesises_context()
+    read_files_section = agent.construct_read_files_context()
+    suggested_fixes_section = agent.construct_fixes_context()
+    search_queries = agent.construct_search_context()
+    bug_report = agent.construct_bug_report_context()
+    commands_history = agent.construct_commands_history_context()
+    similar_calls_context = agent.construct_similar_calls_context()
+    extracted_methods_context = agent.construct_extracted_methods_context()
+    fix_template = create_fix_template(agent.project_name, agent.bug_index)
+    info_sections = []
+    if "No info was collected about the bug so far. You can get more info about the bug by running the commands: get_info and run_tests.\n" not in bug_report:
+        info_sections.append(bug_report)
+
+    if "No files have been read so far.\n" not in read_files_section:
+        info_sections.append(read_files_section)
+
+    if "No fixes were suggested yet.\n" not in suggested_fixes_section:
+        info_sections.append(suggested_fixes_section)
+
+    if "No extracted methods so far.\n" not in extracted_methods_context:
+        info_sections.append(extracted_methods_context)
+
+    if "No similar functions  calls were extracted.\n" not in similar_calls_context:
+        info_sections.append(similar_calls_context)
+
+    if "No search queries executed so far.\n" not in search_queries:
+        info_sections.append(search_queries)
+
+    context_prompt = "What follows are sections of the most important information that we have gathered so far about the bug.\
+    Make usage of the following information to suggest mutations of fixes:\n"
+
+    context_prompt += "\n".join(info_sections)
+    context_prompt += "\n" + \
+        "\n".join(agent.prompt_dictionary["fix format"])
+    # context_prompt += "\n" + "For reference, here is a patch that you can start mutating from (if not available create your own):\n" + str(last_patch) +"\n\n"
+    with open("agent_config_and_prompt_files/hints.txt") as htt:
+        hints = htt.read()
+
+    list_example = '[{"file_name": "org/apache/commons/codec/binary/Base64.java", "insertions": [], "deletions": [], "modifications": [{"line_number": 225, "modified_line": "        this(true);"}]}, {"file_name": "org/apache/commons/codec/binary/Base64.java", "insertions": [], "deletions": [], "modifications": [{"line_number": 225, "modified_line": "        this(null);"}]}, {"file_name": "org/apache/commons/codec/binary/Base64.java", "insertions": [], "deletions": [], "modifications": [{"line_number": 225, "modified_line": "        this(1==0);"}]}, {"file_name": "org/apache/commons/codec/binary/Base64.java", "insertions": [], "deletions": [], "modifications": [{"line_number": 225, "modified_line": "        this(1 - 2);"}]}, ...]'
+    context_prompt += "Here are some hints that might help you in suggesting good mutations:\n" + hints + "\n\n"
+    context_prompt += detailed_buggies
+    context_prompt += "Task for assistant:  generate 30 mutants of the target buggy lines. Respect the fix format, only change values (never touch keys). For every mutant generate a full fix dictionary. Put the 30 mutants in a main list."
+    # For example: {}. Make sure your output is json parsable.".format(list_example)
+
+    context_prompt += "To generate the list of your mutations, fillout the following template multiple time with different variants:\n"
+    context_prompt += fix_template + "\n"
+    return context_prompt
+
+
+def save_to_json(path, json_content, mode="a"):
+    if not os.path.exists(path):
+
+        if isinstance(json_content, list):
+            with open(path, "w") as json_file:
+                json.dump(json_content, json_file)
+            return json_content
+        elif isinstance(json_content, dict):
+            file_content = []
+            new_contents = []
+            if any(x in [k.lower() for k in json_content.keys()] for x in ["mutants", "mutants list", "mutants_list", "possible_mutants", "possible_mutants", "mutations", "possible mutations", "possible_mutations", "mutations_list", "mutations list", "fixes", "possible fixes", "possible_fixes", "fixes list", "fixes_list"]):
+                for _, v in json_content.items():
+                    file_content.extend(v)
+                    new_contents.extend(v)
+            else:
+                file_content.append(json_content)
+                new_contents.append(json_content)
+            with open(path, "w") as json_file:
+                json.dump(file_content, json_file)
+
+            return new_contents
+    else:
+        with open(path) as json_file:
+            file_content: list = json.load(json_file)
+
+        if isinstance(json_content, list):
+            file_content.extend(json_content)
+            with open(path, "w") as json_file:
+                json.dump(file_content, json_file)
+            return json_content
+
+        elif isinstance(json_content, dict):
+            new_contents = []
+            if any(x in [k.lower() for k in json_content.keys()] for x in ["mutants", "mutants list", "mutants_list", "possible_mutants", "possible_mutants", "mutations", "possible mutations", "possible_mutations", "mutations_list", "mutations list", "fixes", "possible fixes", "possible_fixes", "fixes list", "fixes_list"]):
+                for _, v in json_content.items():
+                    file_content.extend(v)
+                    new_contents.extend(v)
+            else:
+                file_content.append(json_content)
+                new_contents.append(json_content)
+
+            with open(path, "w") as json_file:
+                json.dump(file_content, json_file)
+
+            return new_contents
 
 
 def get_edited_files(name, index):

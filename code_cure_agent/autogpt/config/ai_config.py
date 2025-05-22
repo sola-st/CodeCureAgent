@@ -180,7 +180,7 @@ class AIConfig:
 
     def construct_full_prompt(
         self, config: Config, prompt_generator: Optional[PromptGenerator] = None
-    ) -> str:
+    ) -> dict[str, str]:
         """
         Returns a prompt to the user with the class information in an organized fashion.
 

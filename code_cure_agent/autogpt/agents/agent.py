@@ -70,60 +70,6 @@ class Agent(BaseAgent):
         self.log_cycle_handler = LogCycleHandler()
         """LogCycleHandler for structured debug logging."""
 
-    def construct_base_prompt(self, *args, **kwargs) -> ChatSequence:
-        if kwargs.get("prepend_messages") is None:
-            kwargs["prepend_messages"] = []
-
-        # Add budget information (if any) to prompt
-        api_manager = ApiManager()
-        if api_manager.get_total_budget() > 0.0:
-            remaining_budget = (
-                api_manager.get_total_budget() - api_manager.get_total_cost()
-            )
-            if remaining_budget < 0:
-                remaining_budget = 0
-
-            budget_msg = Message(
-                "system",
-                f"Your remaining API budget is ${remaining_budget:.3f}"
-                + (
-                    " BUDGET EXCEEDED! SHUT DOWN!\n\n"
-                    if remaining_budget == 0
-                    else " Budget very nearly exceeded! Shut down gracefully!\n\n"
-                    if remaining_budget < 0.005
-                    else " Budget nearly exceeded. Finish up.\n\n"
-                    if remaining_budget < 0.01
-                    else ""
-                ),
-            )
-            logger.debug(budget_msg)
-
-            if kwargs.get("append_messages") is None:
-                kwargs["append_messages"] = []
-            kwargs["append_messages"].append(budget_msg)
-
-        return super().construct_base_prompt(*args, **kwargs)
-
-    def on_before_think(self, *args, **kwargs) -> ChatSequence:
-        prompt = super().on_before_think(*args, **kwargs)
-
-        self.log_cycle_handler.log_count_within_cycle = 0
-        self.log_cycle_handler.log_cycle(
-            self.ai_config.ai_name,
-            self.created_at,
-            self.cycle_count,
-            self.history.raw(),
-            FULL_MESSAGE_HISTORY_FILE_NAME,
-        )
-        self.log_cycle_handler.log_cycle(
-            self.project_name+"_"+self.bug_index,
-            self.created_at,
-            self.cycle_count,
-            prompt.raw(),
-            CURRENT_CONTEXT_FILE_NAME,
-        )
-        return prompt
-
     def execute(
         self,
         command_name: str | None,
@@ -149,7 +95,7 @@ class Agent(BaseAgent):
             for plugin in self.config.plugins:
                 if not plugin.can_handle_pre_command():
                     continue
-                command_name, arguments = plugin.pre_command(
+                command_name, _ = plugin.pre_command(
                     command_name, command_args)
             command_result = execute_command(
                 command_name=command_name,

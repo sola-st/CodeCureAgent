@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 import os
 
 from autogpt.command_decorator import command
-from autogpt.commands import path_utils
+from autogpt.utils.path_utils import path_utils
 
 COMMAND_CATEGORY = "repository_reading_tools"
 COMMAND_CATEGORY_TITLE = "Commands to read lines or search strings in the repository"

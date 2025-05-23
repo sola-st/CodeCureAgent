@@ -360,7 +360,7 @@ def approve(messages: list[str], changes_dicts: list[dict], agent: BaseAgent) ->
     sanitized_warning_file_path = agent.ai_config.warning_file_path.replace(
         "/", ".")
     with open(os.path.join("experimental_setups", agent.exps[-1], "plausible_patches",
-                           f"plausible_patches_{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}.json"), "a+") as exps:
+                           f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_plausible_patches.json"), "a+") as exps:
         exps.write(
             f"  \n### PLAUSIBLE FIX (fix no. {str(agent.write_fix_attempts)})\n{json.dumps(changes_dicts, indent=4)}\n\n ###CHANGE APPROVER FEEDBACK:  \n" + "  \n".join(messages))
 
@@ -374,7 +374,7 @@ def reject(messages: list[str], changes_dicts: list[dict], agent: BaseAgent) -> 
     sanitized_warning_file_path = agent.ai_config.warning_file_path.replace(
         "/", ".")
     with open(os.path.join("experimental_setups", agent.exps[-1], "implausible_patches",
-                           f"implausible_patches_{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}.json"), "a+") as exps:
+                           f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_implausible_patches.json"), "a+") as exps:
         exps.write(
             f"  \n### IMPLAUSIBLE FIX (fix no. {str(agent.write_fix_attempts)})\n{json.dumps(changes_dicts, indent=4)}\n\n ###CHANGE APPROVER FEEDBACK:  \n" + "  \n".join(messages))
 

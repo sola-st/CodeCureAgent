@@ -210,12 +210,12 @@ class BaseAgent(metaclass=ABCMeta):
         # Save prompts at each step
         sanitized_warning_file_path = self.ai_config.warning_file_path.replace(
             "/", ".")
-        with open(os.path.join("experimental_setups", self.exps[-1], "logs", f"prompt_history_{str(self.ai_config.warning_ID)}_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(self.ai_config.warning_start_line)}"), "a+") as patf:
+        with open(os.path.join("experimental_setups", self.exps[-1], "prompt_history", f"{str(self.ai_config.warning_ID)}_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(self.ai_config.warning_start_line)}_prompt_history"), "a+") as patf:
             patf.write(prompt.dump())
 
         sanitized_warning_file_path = self.ai_config.warning_file_path.replace(
             "/", ".")
-        with open(os.path.join("experimental_setups", self.exps[-1], "logs", f"all_messages_{str(self.ai_config.warning_ID)}_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(self.ai_config.warning_start_line)}"), "w") as patf:
+        with open(os.path.join("experimental_setups", self.exps[-1], "all_messages", f"{str(self.ai_config.warning_ID)}_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(self.ai_config.warning_start_line)}_all_messages"), "w") as patf:
             patf.write(self.history.dump())
 
         raw_response = create_chat_completion(
@@ -536,7 +536,7 @@ class BaseAgent(metaclass=ABCMeta):
             )
         except SyntaxError as e:
             logger.error(f"Response could not be parsed: {e}")
-            with open(f"experimental_setups/{self.exps[-1]}/logs/parsing_erros_responses.txt", "a") as pers:
+            with open(f"experimental_setups/{self.exps[-1]}/parsing_erros_responses.txt", "a") as pers:
                 pers.write(llm_response.content+"\n")
 
             command_name, command_args, assistant_reply_dict = "error_when_parsing", {"error": "Your response could not be parsed."

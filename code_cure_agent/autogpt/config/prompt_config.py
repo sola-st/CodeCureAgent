@@ -7,6 +7,7 @@ from colorama import Fore
 
 from autogpt.utils.yaml_utils import yaml_utils
 from autogpt.logs import logger
+import logging
 
 
 class PromptConfig:
@@ -35,7 +36,8 @@ class PromptConfig:
         # Validate file
         (validated, message) = yaml_utils.validate_yaml_file(prompt_settings_file)
         if not validated:
-            logger.typewriter_log("FAILED FILE VALIDATION", Fore.RED, message)
+            logger.typewriter_log("FAILED FILE VALIDATION",
+                                  Fore.RED, message, level=logging.ERROR)
             logger.double_check()
             exit(1)
 

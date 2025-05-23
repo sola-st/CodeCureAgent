@@ -125,7 +125,7 @@ def run_auto_gpt(
                 "WARNING: ",
                 Fore.RED,
                 f"You are running on `{git_branch}` branch "
-                "- this is not a supported branch.",
+                "- this is not a supported branch.", level=logging.WARNING
             )
         if sys.version_info < (3, 10):
             logger.typewriter_log(
@@ -134,7 +134,7 @@ def run_auto_gpt(
                 "You are running on an older version of Python. "
                 "Some people have observed problems with certain "
                 "parts of Auto-GPT with this version. "
-                "Please consider upgrading to Python 3.10 or higher.",
+                "Please consider upgrading to Python 3.10 or higher.", level=logging.WARNING
             )
 
     if install_plugin_deps:
@@ -259,9 +259,9 @@ def run_interaction_loop(
             logger.typewriter_log(
                 "Interrupt signal received. Stopping continuous command execution "
                 "immediately.",
-                Fore.RED,
+                Fore.RED, level=logging.WARNING
             )
-            sys.exit()
+            shutdown(agent, 1)
         else:
             restart_spinner = spinner.running
             if spinner.running:
@@ -269,9 +269,9 @@ def run_interaction_loop(
 
             logger.typewriter_log(
                 "Interrupt signal received. Stopping continuous command execution.",
-                Fore.RED,
+                Fore.RED, level=logging.WARNING
             )
-            cycles_remaining = 1
+            cycles_remaining = 0
             if restart_spinner:
                 spinner.start()
 
@@ -337,9 +337,13 @@ def run_interaction_loop(
                     )
                 elif user_feedback == UserFeedback.EXIT:
                     logger.typewriter_log("Exiting...", Fore.YELLOW)
-                    exit()
+                    shutdown(agent, 0)
                 else:  # user_feedback == UserFeedback.TEXT
                     command_name = "human_feedback"
+
+                logger.typewriter_log(
+                    "AUTHORISED COMMANDS LEFT: ", Fore.CYAN, f"{cycles_remaining}"
+                )
         else:
             user_input = None
             # First log new-line so user can differentiate sections better in console
@@ -364,7 +368,17 @@ def run_interaction_loop(
             logger.typewriter_log("SYSTEM: ", Fore.YELLOW, result)
         else:
             logger.typewriter_log("SYSTEM: ", Fore.YELLOW,
-                                  "Unable to execute command")
+                                  "Unable to execute command", level=logging.WARNING)
+
+
+def shutdown(agent: Agent, signal: int):
+    # Save history one more time
+    sanitized_warning_file_path = agent.ai_config.warning_file_path.replace(
+        "/", ".")
+    with open(os.path.join("experimental_setups", agent.exps[-1], "all_messages", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_all_messages"), "w") as patf:
+        patf.write(agent.history.dump())
+
+    exit(signal)
 
 
 def update_user(
@@ -392,7 +406,7 @@ def update_user(
                 "ERROR: ",
                 Fore.RED,
                 f"The Agent failed to select an action. "
-                f"Error message: {command_name}",
+                f"Error message: {command_name}", level=logging.ERROR
             )
         else:
             if config.speak_mode:
@@ -410,7 +424,7 @@ def update_user(
         logger.typewriter_log(
             "NO ACTION SELECTED: ",
             Fore.RED,
-            f"The Agent failed to select an action.",
+            "The Agent failed to select an action.", level=logging.ERROR
         )
 
 

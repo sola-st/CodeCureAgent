@@ -5,6 +5,7 @@ from typing import Literal
 
 import click
 from colorama import Back, Fore, Style
+import logging
 
 from autogpt.utils.yaml_utils import yaml_utils
 from autogpt.config import Config
@@ -127,7 +128,8 @@ def create_config(
         # Validate file
         (validated, message) = yaml_utils.validate_yaml_file(file)
         if not validated:
-            logger.typewriter_log("FAILED FILE VALIDATION", Fore.RED, message)
+            logger.typewriter_log("FAILED FILE VALIDATION",
+                                  Fore.RED, message, level=logging.ERROR)
             logger.double_check()
             exit(1)
 
@@ -141,7 +143,8 @@ def create_config(
         # Validate file
         (validated, message) = yaml_utils.validate_yaml_file(file)
         if not validated:
-            logger.typewriter_log("FAILED FILE VALIDATION", Fore.RED, message)
+            logger.typewriter_log("FAILED FILE VALIDATION",
+                                  Fore.RED, message, level=logging.ERROR)
             logger.double_check()
             exit(1)
 
@@ -158,11 +161,11 @@ def create_config(
             Fore.YELLOW,
             f"{Back.LIGHTYELLOW_EX}Auto-GPT will now be able to download and save files to your machine.{Back.RESET} "
             + "It is recommended that you monitor any files it downloads carefully.",
-        )
+            level=logging.WARNING)
         logger.typewriter_log(
             "WARNING: ",
             Fore.YELLOW,
-            f"{Back.RED + Style.BRIGHT}ALWAYS REMEMBER TO NEVER OPEN FILES YOU AREN'T SURE OF!{Style.RESET_ALL}",
+            f"{Back.RED + Style.BRIGHT}ALWAYS REMEMBER TO NEVER OPEN FILES YOU AREN'T SURE OF!{Style.RESET_ALL}", level=logging.WARNING
         )
         config.allow_downloads = True
 
@@ -190,6 +193,6 @@ def check_model(
         "WARNING: ",
         Fore.YELLOW,
         f"You do not have access to {model_name}. Setting {model_type} to "
-        f"gpt-3.5-turbo.",
+        f"gpt-3.5-turbo.", level=logging.WARNING
     )
     return "gpt-3.5-turbo"

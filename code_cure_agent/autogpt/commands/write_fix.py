@@ -8,6 +8,7 @@ from autogpt.commands import sonar_qube_analysis
 from autogpt.logs.logger import logger
 from autogpt.agents.base import BaseAgent
 from autogpt.command_decorator import command
+from autogpt.app.main import shutdown
 
 from autogpt.utils.write_fix_utils.change_tracking import FileChanges
 
@@ -64,7 +65,7 @@ def write_fix(changes_dicts: list, agent: BaseAgent) -> str:
         sanitized_warning_file_path = agent.ai_config.warning_file_path.replace(
             "/", ".")
         with open(os.path.join("experimental_setups", agent.exps[-1], "implausible_patches",
-                               f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}implausible_patches.json"), "a+") as exps:
+                               f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_implausible_patches.json"), "a+") as exps:
             exps.write(
                 f"  \n### IMPLAUSIBLE FIX (fix no. {str(agent.write_fix_attempts)})\n{json.dumps(changes_dicts, indent=4)}\n\n ###CHANGE APPROVER FEEDBACK:  \n{feedback}")
 
@@ -291,7 +292,7 @@ def rollback_changes(agent: BaseAgent):
         # If it still fails, there is no way to recover anyways, because we require a clean version of the repo.
         logger.error(
             "Aborting", f"Re-checking out the project failed with Error: {git_error}. There is no way to recover from this. Therefore aborting the execution.")
-        exit(1)
+        shutdown(agent, 1)
 
 
 class ApplyChangesError(Exception):

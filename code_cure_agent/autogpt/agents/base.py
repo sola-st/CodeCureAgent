@@ -536,7 +536,7 @@ class BaseAgent(metaclass=ABCMeta):
             )
         except SyntaxError as e:
             logger.error(f"Response could not be parsed: {e}")
-            with open(f"experimental_setups/{self.exps[-1]}/parsing_erros_responses.txt", "a") as pers:
+            with open(f"experimental_setups/{self.exps[-1]}/parsing_errors_responses.txt", "a") as pers:
                 pers.write(llm_response.content+"\n")
 
             command_name, command_args, assistant_reply_dict = "error_when_parsing", {"error": "Your response could not be parsed."

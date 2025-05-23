@@ -6,6 +6,7 @@ from autogpt.commands import sonar_qube_analysis
 import subprocess
 from autogpt.logs import logger
 from autogpt.utils.write_fix_utils.change_tracking import FileChanges, BeforeAfterMapping
+from autogpt.app.main import shutdown
 
 import json
 import re
@@ -241,7 +242,7 @@ def is_target_violation_removed(all_file_changes: list[FileChanges], sonar_qube_
     if len(found_items_with_matching_before_line) != 1:
         logger.error("Aborting. Line of the target violation was not found in the before of the BeforeAfterMapping. This should never happen.",
                      f"Target violation line: {str(agent.ai_config.warning_start_line)}, Problematic FileChanges object: {repr(file_changes_of_target)}")
-        exit(1)
+        shutdown(agent, 1)
 
     target_violation_expected_changed_start_line = found_items_with_matching_before_line[
         0].after_line
@@ -328,7 +329,7 @@ def find_newly_introduced_violations(all_file_changes: list[FileChanges], sonar_
                     if len(found_line_mapping_start_line_after_before) != 1:
                         logger.error(f"Aborting. Line {str(start_line_warning_after)} was not found in the after of the BeforeAfterMapping, but there was a warning at that line. This should never happen.",
                                      f"Violation line after: {str(start_line_warning_after)}, Problematic FileChanges object: {repr(file_changes)}")
-                        exit(1)
+                        shutdown(agent, 1)
 
                     start_line_warning_before = found_line_mapping_start_line_after_before[
                         0].before_line

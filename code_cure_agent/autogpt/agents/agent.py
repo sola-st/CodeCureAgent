@@ -2,20 +2,18 @@ from __future__ import annotations
 
 import json
 import subprocess
-import time
 import os
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
     from autogpt.config import AIConfig, Config
-    from autogpt.llm.base import ChatModelResponse, ChatSequence
+    from autogpt.llm.base import ChatModelResponse
     from autogpt.memory.vector import VectorMemory
     from autogpt.models.command_registry import CommandRegistry
+    from autogpt.app.main import shutdown
 
 from autogpt.utils.json_utils.json_utilities import extract_dict_from_response, validate_dict
-from autogpt.llm.api_manager import ApiManager
-from autogpt.llm.base import Message
 from autogpt.llm.utils import count_string_tokens
 from autogpt.logs import logger
 from autogpt.logs.log_cycle import (
@@ -234,7 +232,7 @@ class Agent(BaseAgent):
                     "Error", f"The rule {self.ai_config.warning_rule_key} at line {str(self.ai_config.warning_start_line)} which was to fix wasn't part of the analysis report created by running Sorald on the file.")
                 logger.error(
                     "Aborting", "Preparing the target project failed. Therefore aborting the execution.")
-                exit(1)
+                shutdown(self, 1)
 
             repository_operations.build_project(self)
 
@@ -243,11 +241,11 @@ class Agent(BaseAgent):
                 "Error", f"Build failed with returncode {be.returncode}, stdout: \n{be.stdout}")
             logger.error(
                 "Aborting", "Preparing the target project failed. Therefore aborting the execution.")
-            exit(1)
+            shutdown(self, 1)
         except (sonar_qube_analysis.AnalysisError, GitError, subprocess.TimeoutExpired):
             logger.error(
                 "Aborting", "Preparing the target project failed. Therefore aborting the execution.")
-            exit(1)
+            shutdown(self, 1)
 
 
 def extract_command(

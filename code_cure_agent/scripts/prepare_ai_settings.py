@@ -36,14 +36,16 @@ ai_role: |+
   * Your decisions must always be made independently without seeking user assistance.
 
 api_budget: 0.0
-warning_ID: '{warning_ID}'
-warning_repository_URL: '{warning_repository_URL}'
-warning_repository_commit: '{warning_repository_commit}'
-warning_rule_key: '{warning_rule_key}'
-warning_file_path: '{warning_file_path}'
+warning_ID: {warning_ID}
+warning_repository_URL: {warning_repository_URL}
+warning_repository_commit: {warning_repository_commit}
+warning_rule_key: {warning_rule_key}
+warning_file_path: {warning_file_path}
 warning_start_line: {warning_start_line}
-warning_rule_name: '{warning_rule_name}'
-warning_specific_message: '{warning_specific_message}'
+warning_rule_name: >-
+  {warning_rule_name}
+warning_specific_message: >-
+  {warning_specific_message}
 """
 
 parser = argparse.ArgumentParser()

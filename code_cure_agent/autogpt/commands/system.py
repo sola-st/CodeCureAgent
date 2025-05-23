@@ -5,6 +5,7 @@ from autogpt.logs import logger
 from autogpt.command_decorator import command
 from autogpt.agents.agent import Agent
 from typing import NoReturn
+from autogpt.app.main import shutdown
 
 COMMAND_CATEGORY = "system"
 COMMAND_CATEGORY_TITLE = "System"
@@ -31,5 +32,8 @@ def goals_accomplished(reason: str, agent: Agent) -> NoReturn:
         A result string from create chat completion. A list of suggestions to
             improve the code.
     """
+
+    # Save the history one last time
+
     logger.info(title="Shutting down...\n", message=reason)
-    quit()
+    shutdown(agent, 0)

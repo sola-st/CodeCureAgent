@@ -234,11 +234,11 @@ def apply_changes(change_dicts_with_same_file_path: list[dict], file_relative_pa
         if 1 <= int(line_number) <= len(file_changes.change_tracked_lines):
 
             if modified_line.endswith("\n"):
-                file_changes.change_tracked_lines[int(
-                    line_number) - 1] = modified_line
+                file_changes.change_tracked_lines.update(
+                    int(line_number - 1), modified_line)
             else:
-                file_changes.change_tracked_lines[int(
-                    line_number) - 1] = modified_line + "\n"
+                file_changes.change_tracked_lines.update(
+                    int(line_number - 1), modified_line + "\n")
         else:
             logger.error("apply_changes failed",
                          f"Line {line_number} to modify was out of range for the file {file_relative_path}. The file only has {len(file_changes.change_tracked_lines)} lines.")
@@ -257,7 +257,7 @@ def apply_changes(change_dicts_with_same_file_path: list[dict], file_relative_pa
         new_lines_cleaned_with_new_line = [
             line + "\n"
             for item in new_lines_uncleaned
-            for line in item.split("\n") if line
+            for line in item.rstrip("\n").split("\n")
         ]
 
         for new_line in new_lines_cleaned_with_new_line:

@@ -72,10 +72,10 @@ class ChangeApproverTestCase(unittest.TestCase):
 
         file_full_path = os.path.join(project_dir, file_relative_path)
 
-        write_fix.apply_changes(
-            change_dict_list, file_relative_path, file_full_path)
-        accepted, build_message = change_approver.try_to_build_changed_project(
-            self.agent)
+        all_file_changes = [write_fix.apply_changes(
+            change_dict_list, file_relative_path, file_full_path)]
+        accepted, build_message = change_approver.try_to_build_changed_project(all_file_changes,
+                                                                               self.agent)
         print(build_message)
         self.assertTrue(accepted)
 
@@ -94,10 +94,10 @@ class ChangeApproverTestCase(unittest.TestCase):
 
         file_full_path = os.path.join(project_dir, file_relative_path)
 
-        write_fix.apply_changes(
-            change_dict_list, file_relative_path, file_full_path)
-        accepted, build_message = change_approver.try_to_build_changed_project(
-            self.agent)
+        all_file_changes = [write_fix.apply_changes(
+            change_dict_list, file_relative_path, file_full_path)]
+        accepted, build_message = change_approver.try_to_build_changed_project(all_file_changes,
+                                                                               self.agent)
         print(build_message)
         self.assertFalse(accepted)
         self.assertNotEqual(build_message.find(
@@ -105,6 +105,108 @@ class ChangeApproverTestCase(unittest.TestCase):
         self.assertNotEqual(build_message.find(
             "main/src/main/java/net/sourceforge/argparse4j/internal/TerminalWidth.java"), -1)
         self.assertNotEqual(build_message.find("47"), -1)
+
+    def test_show_changed_code(self):
+        change_dict_list = [{
+            "file_name": self.agent.ai_config.warning_file_path,
+            "insertions": [{
+                "line_number": 3,
+                "new_lines": [" * Added lines\n", " * Added lines\n", " * Added lines\n"]
+            }],
+            "deletions": [11, 12, 13, 14, 15],
+            "modifications": [{
+                "line_number": 94,
+                "modified_line": "        } catch (InterruptedException e) { //NOSONAR\n"
+            }]
+        }]
+        file_relative_path = self.agent.ai_config.warning_file_path
+
+        project_dir = os.path.join(
+            self.agent.config.workspace_path, self.agent.ai_config.warning_repository_name)
+
+        file_full_path = os.path.join(project_dir, file_relative_path)
+
+        all_file_changes = [write_fix.apply_changes(
+            change_dict_list, file_relative_path, file_full_path)]
+        changed_code_message = change_approver.show_changed_code(all_file_changes,
+                                                                 self.agent)
+        print(changed_code_message)
+
+        self.assertEqual(len(changed_code_message.splitlines()), 106)
+
+    def test_show_changed_code_full_file_no_overrun(self):
+        change_dict_list = [{
+            "file_name": self.agent.ai_config.warning_file_path,
+            "insertions": [{
+                "line_number": 1,
+                "new_lines": ["First line\n", " * Added lines\n", " * Added lines\n"]
+            }],
+            "deletions": [11, 12, 13, 14, 15],
+            "modifications": [{
+                "line_number": 133,
+                "modified_line": "last line\n"
+            }]
+        }]
+        file_relative_path = self.agent.ai_config.warning_file_path
+
+        project_dir = os.path.join(
+            self.agent.config.workspace_path, self.agent.ai_config.warning_repository_name)
+
+        file_full_path = os.path.join(project_dir, file_relative_path)
+
+        all_file_changes = [write_fix.apply_changes(
+            change_dict_list, file_relative_path, file_full_path)]
+        changed_code_message = change_approver.show_changed_code(all_file_changes,
+                                                                 self.agent)
+        print(changed_code_message)
+
+        self.assertEqual(changed_code_message.splitlines(
+        )[-2], "modified line: before:'}' after:'last line'")
+        self.assertEqual(changed_code_message.splitlines()
+                         [3], "inserted line:First line")
+
+    def test_show_changed_code_complex_example(self):
+        change_dict_list = [
+            {
+                "file_name": "main/src/test/java/net/sourceforge/argparse4j/impl/type/FileVerificationOrTest.java",
+                "insertions": [
+                    {
+                        "line_number": 5,
+                        "new_lines": [
+                            "import java.nio.file.Files;",
+                            "import java.io.IOException;"
+                        ]
+                    },
+                    {
+                        "line_number": 38,
+                        "new_lines": [
+                            "    public static void deleteTestFiles() {",
+                            "        writableFile.delete();",
+                            "",
+                            "        nonWritableFile.setWritable(true);",
+                            "        try {",
+                            "            Files.delete(nonWritableFile.toPath());",
+                            "        } catch (IOException e) {",
+                            "            throw new RuntimeException(e);",
+                            "        }"
+                        ]
+                    }
+                ],
+                "deletions": [39, 42, 43]
+            }
+        ]
+        file_relative_path = self.agent.ai_config.warning_file_path
+
+        project_dir = os.path.join(
+            self.agent.config.workspace_path, self.agent.ai_config.warning_repository_name)
+
+        file_full_path = os.path.join(project_dir, file_relative_path)
+
+        all_file_changes = [write_fix.apply_changes(
+            change_dict_list, file_relative_path, file_full_path)]
+        changed_code_message = change_approver.show_changed_code(all_file_changes,
+                                                                 self.agent)
+        print(changed_code_message)
 
     def test_check_sonar_qube_report_target_warning_removed_no_new_warnings(self):
         change_dict_list = [{

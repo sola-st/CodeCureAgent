@@ -82,4 +82,7 @@ apply_changes failed The path couldn't be processed with error: The file_path sr
 Problem: Agent tried to create a new file, that didn't exist before (it tried to rename the file actually). Later it pivoted from this plan as it didn't work  
 
 literal_eval error could not parse  
-Problem: maybe: when single hyphens are used in the agent's answer the literal_eval fails. But there are other cases where it doesn't.  
+GPT repeats the same pattern multiple times before it breaks of.  
+Problem: This is LLM repetition degeneration. So a problem on the LLM side.  
+Aliviation: Better prompt design, with less repetitions can help (maybe giving the history as normal separate messages instead of adding it to the main prompt)  
+For now: Track how regularly it occurs  

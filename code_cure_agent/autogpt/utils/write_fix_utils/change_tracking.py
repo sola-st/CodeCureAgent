@@ -1,4 +1,7 @@
+from autogpt.logs import logger
+
 # Classes for tracking changes applied via apply_changes in write_fix.py
+
 
 class FileChanges():
 
@@ -33,41 +36,59 @@ class ChangeTrackedList(list):
     def __repr__(self):
         return super().__repr__() + "with fields: 'lines_before_change'=" + repr(self.lines_before_change) + " 'map_line_indices_before_after_change'" + repr(self.map_line_indices_before_after_change)
 
+    def update(self, index: int, object: any):
+        self[index] = object
+
+        line_mappings_of_line = list(filter(
+            lambda line_mapping: line_mapping.before_line == index + 1, self.map_line_indices_before_after_change))
+
+        if len(line_mappings_of_line) == 1:
+            line_mapping_of_line = line_mappings_of_line[0]
+            line_mapping_of_line.modified = True
+        else:
+            logger.error(
+                f"Expected to find only one before after mapping with before_line {index + 1}", "This should never happen.")
+
     def insert(self, index: int, object: any):
         super().insert(index, object)
 
-        map_only_after_lines = list(
-            map(lambda map_lines: map_lines.after_line, self.map_line_indices_before_after_change))
-
         # Move remembered line correspondence by one line forward for all lines after the inserted one
-        for line_number in range(index + 1, len(self)):
-            self.map_line_indices_before_after_change[map_only_after_lines.index(
-                line_number)].after_line += 1
+        for line_number in reversed(range(index + 1, len(self))):
+            found_items = filter(lambda mapping, line_number=line_number: mapping.after_line ==
+                                 line_number, self.map_line_indices_before_after_change)
+            for item in found_items:
+                item.after_line += 1
 
         # Only insert after updating the other line numbers
+        inserted_mapping = BeforeAfterMapping(-1, index + 1)
+        inserted_mapping.inserted = True
         self.map_line_indices_before_after_change.insert(
-            index, BeforeAfterMapping(-1, index + 1))
+            index, inserted_mapping)
 
     def append(self, object: any):
         super().append(object)
 
-        self.map_line_indices_before_after_change.append(
-            BeforeAfterMapping(-1, len(self)))
+        appended_mapping = BeforeAfterMapping(-1, len(self))
+        appended_mapping.inserted = True
+        self.map_line_indices_before_after_change.append(appended_mapping)
 
-    def pop(self, index: int):
-        super().pop(index)
+    def pop(self, index: int) -> any:
+        removed_line = super().pop(index)
+
+        # Set to deleted
+        found_items = filter(lambda mapping, line_number=index + 1: mapping.after_line ==
+                             line_number, self.map_line_indices_before_after_change)
+        for item in found_items:
+            item.deleted = True
 
         # Move remembered line correspondence by one line back for all lines after the deleted one
-        map_only_after_lines = list(
-            map(lambda map_lines: map_lines.after_line, self.map_line_indices_before_after_change))
-
         for line_number in range(index + 2, len(self) + 2):
-            self.map_line_indices_before_after_change[map_only_after_lines.index(
-                line_number)].after_line -= 1
+            found_items = filter(lambda mapping, line_number=line_number: mapping.after_line ==
+                                 line_number, self.map_line_indices_before_after_change)
+            for item in found_items:
+                item.after_line -= 1
 
-        # Set to -1 after updating the succeeding lines
-        self.map_line_indices_before_after_change[map_only_after_lines.index(
-            index + 1)].after_line = -1
+        return removed_line
 
 
 class BeforeAfterMapping():
@@ -75,6 +96,9 @@ class BeforeAfterMapping():
     def __init__(self, before_line: int, after_line: int):
         self.before_line = before_line
         self.after_line = after_line
+        self.inserted = False
+        self.modified = False
+        self.deleted = False
 
     def __repr__(self):
-        return f"({str(self.before_line)}, {str(self.after_line)})"
+        return f"({str(self.before_line)}, {str(self.after_line)}, inserted={self.inserted}, modified={self.modified}, deleted={self.deleted})"

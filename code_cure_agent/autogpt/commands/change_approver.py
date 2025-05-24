@@ -23,7 +23,8 @@ def approve_changes(changes_dicts: list[dict], all_file_changes: list[FileChange
 
     accepted = True
 
-    accepted, build_message = try_to_build_changed_project(agent)
+    accepted, build_message = try_to_build_changed_project(
+        all_file_changes, agent)
 
     if not accepted:
         return reject([build_message], changes_dicts, agent)
@@ -43,7 +44,7 @@ def approve_changes(changes_dicts: list[dict], all_file_changes: list[FileChange
         return reject([build_message, sonar_qube_message, reviewer_llm_message], changes_dicts, agent)
 
 
-def try_to_build_changed_project(agent: BaseAgent) -> tuple[bool, str]:
+def try_to_build_changed_project(all_file_changes: list[FileChanges], agent: BaseAgent) -> tuple[bool, str]:
     """
     Tries to build the project with the applied changes.
     If the maven build wasn't successful we return a cleaned build output.
@@ -60,13 +61,69 @@ def try_to_build_changed_project(agent: BaseAgent) -> tuple[bool, str]:
         return True, "Project was successfully built with the applied changes."
 
     except BuildError as build_error:
-        return False, extract_build_error_information(build_error, agent)
+        return False, show_changed_code(all_file_changes, agent) + extract_build_error_information(build_error, agent)
 
     except subprocess.TimeoutExpired as timeout_error:
         return False, f"Building the project failed with a timeout after {timeout_error.timeout / 60} minutes."
 
 
-def extract_build_error_information(build_error: BuildError, agent: BaseAgent):
+def show_changed_code(all_file_changes: list[FileChanges], agent: BaseAgent) -> str:
+    """
+    Show the changed lines of code of the changed files to give the agent an idea about what it has done and what it maybe has done wrong.
+    """
+
+    changed_code_message = "After applying your changes the relevant lines of code look like this:  "
+
+    for file_changes in all_file_changes:
+        changed_code_message += f"\n\nFile {file_changes.file_path}:\n"
+
+        first_changed_line = -1
+        last_changed_line = -1
+
+        for mapping in file_changes.change_tracked_lines.map_line_indices_before_after_change:
+            if mapping.inserted or mapping.deleted or mapping.modified:
+                if first_changed_line == -1 or first_changed_line > mapping.after_line:
+                    first_changed_line = mapping.after_line
+                if last_changed_line < mapping.after_line:
+                    last_changed_line = mapping.after_line
+
+        if first_changed_line == -1 or last_changed_line == -1:
+            logger.error("A FileChanges object had no first and/or last line of changed lines.",
+                         "This should only happen if a changes_dict was empty.")
+            continue
+        first_line_to_read = max(first_changed_line - 5, 1)
+        last_line_to_read = min(last_changed_line + 5,
+                                len(file_changes.change_tracked_lines))
+
+        map_line_indices_before_after_change = file_changes.change_tracked_lines.map_line_indices_before_after_change
+
+        for i in range(first_line_to_read - 1, last_line_to_read):
+
+            line_mappings_of_line = list(filter(
+                lambda line_mapping, index=i: line_mapping.after_line == index + 1, map_line_indices_before_after_change))
+
+            for line_mapping_of_line in line_mappings_of_line:
+                if line_mapping_of_line.inserted:
+                    changed_code_message += "inserted line:" + \
+                        file_changes.change_tracked_lines[i].strip(
+                            "\n") + "\n"
+                elif line_mapping_of_line.modified:
+                    changed_code_message += "modified line: before:'" + \
+                        file_changes.change_tracked_lines.lines_before_change[line_mapping_of_line.before_line - 1].strip(
+                            "\n") + "' after:'" + file_changes.change_tracked_lines[i].strip("\n") + "'\n"
+                elif line_mapping_of_line.deleted:
+                    changed_code_message += "deleted_line:" + \
+                        file_changes.change_tracked_lines.lines_before_change[
+                            line_mapping_of_line.before_line - 1].strip("\n") + "\n"
+                else:
+                    changed_code_message += "unchanged line:" + \
+                        file_changes.change_tracked_lines[i].strip(
+                            "\n") + "\n"
+
+    return changed_code_message + "\n"
+
+
+def extract_build_error_information(build_error: BuildError, agent: BaseAgent) -> str:
     """
     Cleans the potentially long maven build output and only extracts the lines, where the relevant compilation errors are described.
     """
@@ -244,13 +301,14 @@ def is_target_violation_removed(all_file_changes: list[FileChanges], sonar_qube_
                      f"Target violation line: {str(agent.ai_config.warning_start_line)}, Problematic FileChanges object: {repr(file_changes_of_target)}")
         shutdown(agent, 1)
 
-    target_violation_expected_changed_start_line = found_items_with_matching_before_line[
-        0].after_line
-
-    if target_violation_expected_changed_start_line == -1:
+    if found_items_with_matching_before_line[
+            0].deleted:
         logger.warn(title="The line with the target violation was removed by using write_fix.",
                     message="We accept this as removing the target violation, but it is likely that there are semantic changes due to this, which should be catched by the LLM Reviewer Prompt.")
         return True
+
+    target_violation_expected_changed_start_line = found_items_with_matching_before_line[
+        0].after_line
 
     # Check if the Warning is in the new report
     return not sonar_qube_analysis.rule_violation_present_in_analysis_report(sonar_qube_report_of_target_file, agent.ai_config.warning_rule_key, target_violation_expected_changed_start_line)
@@ -324,7 +382,7 @@ def find_newly_introduced_violations(all_file_changes: list[FileChanges], sonar_
                     start_line_warning_after = warning_location_after["startLine"]
 
                     found_line_mapping_start_line_after_before: list[BeforeAfterMapping] = list(filter(
-                        lambda line_mapping, start_line_warning_after=start_line_warning_after: line_mapping.after_line == start_line_warning_after, file_changes.change_tracked_lines.map_line_indices_before_after_change))
+                        lambda line_mapping, start_line_warning_after=start_line_warning_after: not line_mapping.deleted and line_mapping.after_line == start_line_warning_after, file_changes.change_tracked_lines.map_line_indices_before_after_change))
 
                     if len(found_line_mapping_start_line_after_before) != 1:
                         logger.error(f"Aborting. Line {str(start_line_warning_after)} was not found in the after of the BeforeAfterMapping, but there was a warning at that line. This should never happen.",

@@ -889,14 +889,19 @@ public final class ArgumentParserImpl implements ArgumentParser {
     private String formatUnrecognizedArgumentErrorMessage(ParseState state,
             String args) {
         // Extract nested ternary operator into a separate variable to comply with S3358
-        String prefixCharsStr = config_.fromFilePrefixPattern_.getPrefixChars().length() == 1 ?
+        String prefixCharsStr = null;
+        if (config_.fromFilePrefixPattern_ != null){
+            prefixCharsStr = config_.fromFilePrefixPattern_.getPrefixChars().length() == 1 ?
                 config_.fromFilePrefixPattern_.getPrefixChars() :
                 "[" + config_.fromFilePrefixPattern_.getPrefixChars() + "]";
+        }
+        
         return String
-            .format(TextHelper.LOCALE_ROOT,
-                    localize("unrecognizedArgumentsError"),
-                    args,
-                        state.index > state.lastFromFileArgIndex ? "" : String.format(TextHelper.LOCALE_ROOT, localize("trailingWhiteSpacesInFileTip"), prefixCharsStr));
+        .format(TextHelper.LOCALE_ROOT,
+                localize("unrecognizedArgumentsError"),
+                args,
+                state.index > state.lastFromFileArgIndex ? "" : String.format(TextHelper.LOCALE_ROOT, localize("trailingWhiteSpacesInFileTip"), prefixCharsStr));
+
     }
 
     /**

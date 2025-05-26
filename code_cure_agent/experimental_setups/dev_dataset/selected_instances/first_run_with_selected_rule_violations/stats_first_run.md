@@ -99,7 +99,7 @@ ID 28:
 "Correct", it suppressed the warning which is correct as it is a False Positive. However, it did do that because it messed up creating a proper fix before and then finally fell back to that solution.  
 
 ID 179:  
-Correct. Nice solution.  
+Incorrect. Evaluating the string first leads to NullPointerException when running tests. 
 
 ID 198:  
 Incorrect: Should have been a False Positive, as it is a test. The valueOf() method is needed internally when calling at.convert(). This changes the semantics and doesn't test the expected thing anymore.  
@@ -135,10 +135,76 @@ Correct fix: Nicely solves the problem without any semantic changes
 ID 2030:  
 Correct fix: Suppressing it is the best choice, because it is a deprecated class that should still be usable for compatibility. The agent first tried to rename the file which was not possible.  
 
-## Summary
+## Summary of correctness
 
 Total correct fixes: 9/15  
 Non-suppressing correct fixes: 6/15  
+
+## Test case coverage
+
+ID 8:  
+Covered (because it is code in a test case itself)  
+Passes
+
+ID 10:  
+Covered  
+No fix given
+
+ID 28:  
+Not directly covered (class is tested but not the method)
+
+ID 179:
+Covered  
+Doesn't pass. Proposed fix had a NullpointerException.
+
+ID 198:
+Covered (because it is code in a test case itself)  
+Passes (The test doesn't recognized the incorrect change)
+
+ID 205:  
+Covered  
+No fix given
+
+ID 268:  
+Covered  
+Passes
+
+ID 362:  
+Not covered  
+=> Passes (eventhough incorrect)
+
+ID 404:  
+Not covered  
+=> Passes
+
+ID 406:  
+Not covered  
+=> Passes
+
+ID 449:  
+Not covered (It is code in a test case but the test case is not added to the test suite)  
+
+ID 542:  
+Covered (because it is code in a test case itself)  
+Passes (eventhough incorrect (should be FP))
+
+ID 817:  
+Covered  
+Passes  
+
+ID 1470:
+Not covered
+=> Passes  
+
+ID 2030:  
+Covered
+Passes (Suppressed)
+
+### Test summary
+
+Covered: 9/15  
+Problem exposing: 1/3 (of the incorrect fixes that are covered)  
+Correctness asserting (given that covered and the fix is correct => does the test pass): 4
 
 ## Improvement vectors
 

@@ -2,9 +2,7 @@ package net.sourceforge.argparse4j.impl.type;
 
 import java.io.File;
 import java.nio.File;
-import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.io.IOException;
 
 import net.sourceforge.argparse4j.ArgumentParsers;
@@ -44,7 +42,7 @@ public class FileVerificationOrTest {
 
         nonWritableFile.setWritable(true);
         // or use deleteIfExits() and maybe handle IOException directly.
-        Files.delete(nonWritableFile);
+        Files.delete(nonWritableFile.toPath());
     }
 
     @Test(expected = ArgumentParserException.class)

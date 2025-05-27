@@ -72,6 +72,9 @@ class BaseAgent(metaclass=ABCMeta):
         self.cycle_count = 0
         """The number of cycles that the agent has run since its initialization."""
 
+        # Initializes the logger with the agent object.
+        logger.agent = self
+
         with open(experiment_file) as hper:
             self.hyperparams = json.load(hper)
 
@@ -132,15 +135,8 @@ class BaseAgent(metaclass=ABCMeta):
 
         }
 
+        # Experiments_list is expected to exist, because "increment_experiment.py" creates it if it doesn't exist.
         experiments_list = "experimental_setups/experiments_list.txt"
-
-        # Create experiments_list.txt if not yet created
-        if not os.path.isfile(experiments_list):
-            try:
-                with open(experiments_list, "x"):
-                    pass
-            except FileExistsError:
-                pass
 
         with open(experiments_list) as eht:
             self.exps = eht.read().splitlines()

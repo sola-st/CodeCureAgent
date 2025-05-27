@@ -33,6 +33,9 @@ class AgentMock():
         self.ai_config = AIConfig(-1, warning_repository_URL, warning_repository_commit, warning_file_path,
                                   warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message)
         self.exps = ["experiment_test"]
+
+        logger.agent = self
+
         self.current_state = current_state
         with open("sonarqube_quality_profile/quality_profile_rule_keys.txt") as rule_keys_file:
             self.sonar_qube_rules_in_active_profile = rule_keys_file.read().split(",")

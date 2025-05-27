@@ -9,6 +9,7 @@ from colorama import Fore
 
 if TYPE_CHECKING:
     from autogpt.config import Config
+    from autogpt.agents import BaseAgent
 
 from autogpt.singleton import Singleton
 
@@ -25,7 +26,6 @@ class Logger(metaclass=Singleton):
 
     def __init__(self):
         # create log directory if it doesn't exist
-        # TODO: use workdir from config
         self.log_dir = Path(__file__).parent.parent.parent / "logs"
         if not self.log_dir.exists():
             self.log_dir.mkdir()
@@ -50,7 +50,7 @@ class Logger(metaclass=Singleton):
             self.log_dir / log_file, "a", "utf-8")
         self.file_handler.setLevel(logging.DEBUG)
         info_formatter = AutoGptFormatter(
-            "%(asctime)s %(levelname)s %(title)s %(message_no_color)s"
+            "%(asctime)s %(warning_ID)s %(levelname)s %(title)s %(message_no_color)s"
         )
         self.file_handler.setFormatter(info_formatter)
 
@@ -59,7 +59,7 @@ class Logger(metaclass=Singleton):
             self.log_dir / error_file, "a", "utf-8")
         error_handler.setLevel(logging.ERROR)
         error_formatter = AutoGptFormatter(
-            "%(asctime)s %(levelname)s %(module)s:%(funcName)s:%(lineno)d %(title)s"
+            "%(asctime)s %(warning_ID)s %(levelname)s %(module)s:%(funcName)s:%(lineno)d %(title)s"
             " %(message_no_color)s"
         )
         error_handler.setFormatter(error_formatter)
@@ -82,6 +82,7 @@ class Logger(metaclass=Singleton):
         self.json_logger.setLevel(logging.DEBUG)
 
         self._config: Optional[Config] = None
+        self._agent: Optional[BaseAgent] = None
         self.chat_plugins = []
 
     @property
@@ -94,6 +95,14 @@ class Logger(metaclass=Singleton):
         if config.plain_output:
             self.typing_logger.removeHandler(self.typing_console_handler)
             self.typing_logger.addHandler(self.console_handler)
+
+    @property
+    def agent(self) -> BaseAgent | None:
+        return self._agent
+
+    @agent.setter
+    def agent(self, agent: BaseAgent):
+        self._agent = agent
 
     def typewriter_log(
         self,
@@ -117,9 +126,15 @@ class Logger(metaclass=Singleton):
         else:
             content = ""
 
-        self.typing_logger.log(
-            level, content, extra={"title": title, "color": title_color}
-        )
+        if self.agent is not None:
+            self.typing_logger.log(
+                level, content, extra={"warning_ID": "ID: " + str(self.agent.ai_config.warning_ID),
+                                       "title": title, "color": title_color}
+            )
+        else:
+            self.typing_logger.log(
+                level, content, extra={"title": title, "color": title_color}
+            )
 
     def debug(
         self,
@@ -158,10 +173,17 @@ class Logger(metaclass=Singleton):
         if message:
             if isinstance(message, list):
                 message = " ".join(message)
-        self.logger.log(
-            level, message, extra={"title": str(
-                title), "color": str(title_color)}
-        )
+
+        if self.agent is not None:
+            self.logger.log(
+                level, message, extra={"warning_ID": "ID: " + str(self.agent.ai_config.warning_ID), "title": str(
+                    title), "color": str(title_color)}
+            )
+        else:
+            self.logger.log(
+                level, message, extra={"title": str(
+                    title), "color": str(title_color)}
+            )
 
     def set_level(self, level: logging._Level) -> None:
         self.logger.setLevel(level)
@@ -171,9 +193,7 @@ class Logger(metaclass=Singleton):
         if not additionalText:
             additionalText = (
                 "Please ensure you've setup and configured everything"
-                " correctly. Read https://github.com/Torantulino/Auto-GPT#readme to "
-                "double check. You can also create a github issue or join the discord"
-                " and ask there!"
+                " correctly."
             )
 
         self.typewriter_log("DOUBLE CHECK CONFIGURATION",
@@ -187,7 +207,11 @@ class Logger(metaclass=Singleton):
 
         # Log the JSON data using the custom file handler
         self.json_logger.addHandler(json_data_handler)
-        self.json_logger.debug(data)
+        if self.agent is not None:
+            self.json_logger.debug(
+                data, extra={"warning_ID": "ID: " + str(self.agent.ai_config.warning_ID)})
+        else:
+            self.json_logger.debug(data)
         self.json_logger.removeHandler(json_data_handler)
 
 

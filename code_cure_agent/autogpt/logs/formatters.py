@@ -29,6 +29,7 @@ class AutoGptFormatter(logging.Formatter):
                 getattr(record, "msg"))
         else:
             record.message_no_color = ""
+        record.warning_ID = getattr(record, "warning_ID", "")
         return super().format(record)
 
 
@@ -39,4 +40,5 @@ def remove_color_codes(s: str) -> str:
 
 class JsonFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord):
-        return record.msg
+        record.warning_ID = getattr(record, "warning_ID", "")
+        return super().format(record)

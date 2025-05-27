@@ -17,9 +17,9 @@ public class Cli {
     @CommandLine.Command(
             name = "sorald",
             mixinStandardHelpOptions = true,
-            subcommands = {RepairCommand.class, MineCommand.class},
+            subcommands = {RepairCommand.class, MineCommand.class, ReadRuleDocuCommand.class},
             description =
-                    "The Sorald command line application for automatic repair of Sonar rule violations.",
+                    "The Sorald command line application for automatic repair of Sonar rule violations, adapted and extended for CodeCureAgent, including a command for reading the docu of a rule.",
             synopsisSubcommandLabel = "<COMMAND>",
             versionProvider = SoraldVersionProvider.class)
     static class SoraldCLI implements Callable<Integer> {

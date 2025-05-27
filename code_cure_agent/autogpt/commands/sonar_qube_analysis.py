@@ -13,7 +13,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from autogpt.agents import BaseAgent
 
-from autogpt.command_decorator import command
 from autogpt.utils.path_utils import path_utils
 
 COMMAND_CATEGORY = "sonarQubeAnalysis"
@@ -21,26 +20,6 @@ COMMAND_CATEGORY_TITLE = "Run SonarQube analysis"
 
 ALLOWLIST_CONTROL = "allowlist"
 DENYLIST_CONTROL = "denylist"
-
-
-class AnalysisError(Exception):
-    def __init__(self, msg):
-        super().__init__(msg)
-
-
-@command(
-    "analyze_file",
-    "Run SonarQube analysis on a file",
-    {
-        "file_path": {
-            "type": "string",
-            "description": "The path to the file to analyze",
-            "required": True,
-        }
-    },
-)
-def analyze_file_command(file_path: str, agent: BaseAgent):
-    return analyze_file_and_parse_report(file_path, agent.sonar_qube_rules_in_active_profile, agent.ai_config.warning_repository_name, "analysis_report.json", agent)
 
 
 def analyze_file_and_parse_report(file_relative_path: str, rules: list[str], repo_name: str, analysis_report_file_name: str, agent: BaseAgent) -> dict:
@@ -62,23 +41,13 @@ def analyze_file_and_parse_report(file_relative_path: str, rules: list[str], rep
 
     if result.returncode == 0:
         logger.info("",
-                    f"Running SonarQube analysis was successful."
+                    "Running SonarQube analysis was successful."
                     )
         return parse_analysis_report(analysis_report_file_name, agent)
     else:
         logger.error(
             "Error", "Running SonarQube analysis failed with error: " + result.stderr)
         raise AnalysisError(f"Error: {result.stderr}")
-
-
-def rule_violation_present_in_analysis_report(analysis_report: dict, warning_rule_key: str, warning_start_line: int) -> bool:
-    """Checks whether the expected rule violation is present in the analysis report"""
-    mined_rules = analysis_report["minedRules"]
-    return any(map(lambda mined_rule: mined_rule["ruleKey"] == warning_rule_key and ___warning_locations_contains_start_line(mined_rule["warningLocations"], warning_start_line), mined_rules))
-
-
-def ___warning_locations_contains_start_line(warning_locations: dict, warning_start_line: int) -> bool:
-    return any(map(lambda warning_location: warning_location["startLine"] == warning_start_line, warning_locations))
 
 
 def analyze_file(file_relative_path: str, rules: list[str], repo_name: str, analysis_report_file_name: str, agent: BaseAgent) -> subprocess.CompletedProcess[str]:
@@ -138,3 +107,20 @@ def parse_analysis_report(analysis_report_file_name: str, agent: BaseAgent) -> d
                 agent.exps[-1], "analysis_reports", analysis_report_file_name))
 
     return analysis_report
+
+
+def rule_violation_present_in_analysis_report(analysis_report: dict, warning_rule_key: str, warning_start_line: int) -> bool:
+    """
+    Checks whether the expected rule violation is present in the analysis report
+    """
+    mined_rules = analysis_report["minedRules"]
+    return any(map(lambda mined_rule: mined_rule["ruleKey"] == warning_rule_key and ___warning_locations_contains_start_line(mined_rule["warningLocations"], warning_start_line), mined_rules))
+
+
+def ___warning_locations_contains_start_line(warning_locations: dict, warning_start_line: int) -> bool:
+    return any(map(lambda warning_location: warning_location["startLine"] == warning_start_line, warning_locations))
+
+
+class AnalysisError(Exception):
+    def __init__(self, msg):
+        super().__init__(msg)

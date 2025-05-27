@@ -34,8 +34,6 @@ You operate in three states, which each offer a unique set of commands:
 2. `Gathering Context for a Fix`, where you gather information about relevant files to fix the rule violation;
 3. `Trying out Fix Candidates`, where you suggest fixes for the rule violation that will be validated by rebuilding the project and rerunning the SonarQube analysis.  
 
-
-
 ## Goals
 
 For your task, you must fulfill the following goals:
@@ -163,7 +161,7 @@ The project to look at is `{project_name}`.
 The SonarQube rule violation is in the file:  
 `{file_path}`.  
 
-The SonarQube rule looked at is identified by squid `{rule_key}`.  
+The SonarQube rule looked at is identified by the rule key `{rule_key}`.  
 It has the short description:  
 `{rule_name}`  
 

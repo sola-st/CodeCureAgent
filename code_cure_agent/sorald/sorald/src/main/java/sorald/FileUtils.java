@@ -2,6 +2,7 @@ package sorald;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -72,6 +73,25 @@ public class FileUtils {
     public static String getExtension(File file) {
         String[] parts = file.getName().split("\\.");
         return parts.length <= 1 ? "" : "." + parts[parts.length - 1];
+    }
+
+    /**
+     * Write a core object and additional data as JSON to a stream.
+     *
+     * @param out The stream to print to
+     * @param coreObj The core object to form the basis of the JSON output. All getter methods are
+     *     recursively traversed to create the JSON output.
+     * @param additionalData Additional key/value pairs to put in the JSON output.
+     * @throws IOException If the writer can't be written to
+     */
+    public static void writeJSON(PrintStream out, Object coreObj, Map<String, Object> additionalData) {
+        // JSONObject's constructor recursively uses getter methods to produce a JSON object
+        JSONObject jo = new JSONObject(coreObj);
+
+        // Converting List and Arrays to JSONArray, and other objects to JSONObject
+        additionalData.forEach((k, v) -> jo.put(k, toJSONArrayOrObject(v)));
+        
+        out.println(jo.toString(4));
     }
 
     /**

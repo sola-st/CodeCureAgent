@@ -148,7 +148,7 @@ The project to look at is `{project_name}`.
 The SonarQube rule violation is in the file:  
 `{file_path}`.  
 
-The SonarQube rule looked at is identified by squid `{rule_key}`.  
+The SonarQube rule looked at is identified by the rule key `{rule_key}`.  
 It has the short description:  
 `{rule_name}`  
 

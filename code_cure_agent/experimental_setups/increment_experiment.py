@@ -43,6 +43,8 @@ while (not success and made_retries < max_retries):
                 "experimental_setups/experiment_{}/implausible_patches".format(last_exp + 1))
             os.mkdir(
                 "experimental_setups/experiment_{}/analysis_reports".format(last_exp + 1))
+            os.mkdir(
+                "experimental_setups/experiment_{}/docu_tool_outputs".format(last_exp + 1))
 
             expl.write("experiment_{}\n".format(last_exp + 1))
 

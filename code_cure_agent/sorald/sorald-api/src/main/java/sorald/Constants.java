@@ -7,6 +7,7 @@ public class Constants {
 
     public static final String REPAIR_COMMAND_NAME = "repair";
     public static final String MINE_COMMAND_NAME = "mine";
+    public static final String DOCU_COMMAND_NAME = "docu";
 
     public static final String ARG_RULE_KEY = "--rule-key";
     public static final String ARG_RULE_KEYS = "--rule-keys";

@@ -1,7 +1,7 @@
 """Commands to perform operations on files"""
 
 from __future__ import annotations
-from .file_operations_utils import read_textual_file
+from autogpt.utils.file_operation_utils.file_operations_utils import read_textual_file
 from .decorators import sanitize_path_arg
 from autogpt.memory.vector import MemoryItem, VectorMemory
 from autogpt.logs import logger

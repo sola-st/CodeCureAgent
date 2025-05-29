@@ -301,14 +301,24 @@ def is_target_violation_removed(all_file_changes: list[FileChanges], sonar_qube_
                      f"Target violation line: {str(agent.ai_config.warning_start_line)}, Problematic FileChanges object: {repr(file_changes_of_target)}")
         shutdown(agent, 1)
 
-    if found_items_with_matching_before_line[
-            0].deleted:
-        logger.warn(title="The line with the target violation was removed by using write_fix.",
-                    message="We accept this as removing the target violation, but it is likely that there are semantic changes due to this, which should be catched by the LLM Reviewer Prompt.")
-        return True
+    found_item_with_matching_before_line = found_items_with_matching_before_line[0]
 
-    target_violation_expected_changed_start_line = found_items_with_matching_before_line[
-        0].after_line
+    if found_item_with_matching_before_line.deleted:
+        # Look for a matching insertion for the deletion, that is inserted at the same place (and therefore might hold the same rule violation that was in the deleted line before)
+        found_insertions_paired_to_deletion = [
+            pair[0] for pair in file_changes_of_target.change_tracked_lines.paired_insertions_and_deletions if pair[1] is found_item_with_matching_before_line]
+
+        if len(found_insertions_paired_to_deletion) != 0:
+            found_insertion = found_insertions_paired_to_deletion[0]
+
+            target_violation_expected_changed_start_line = found_insertion.after_line
+
+        else:
+            logger.warn(title="The line with the target violation was removed by using write_fix and no corresponding line readded.",
+                        message="We accept this as removing the target violation, but it is likely that there are semantic changes due to this, which should be catched by the LLM Reviewer Prompt.")
+            return True
+    else:
+        target_violation_expected_changed_start_line = found_item_with_matching_before_line.after_line
 
     # Check if the Warning is in the new report
     return not sonar_qube_analysis.rule_violation_present_in_analysis_report(sonar_qube_report_of_target_file, agent.ai_config.warning_rule_key, target_violation_expected_changed_start_line)
@@ -381,29 +391,43 @@ def find_newly_introduced_violations(all_file_changes: list[FileChanges], sonar_
                 for warning_location_after in mined_rule_after["warningLocations"]:
                     start_line_warning_after = warning_location_after["startLine"]
 
-                    found_line_mapping_start_line_after_before: list[BeforeAfterMapping] = list(filter(
+                    found_line_mappings_start_line_after_before: list[BeforeAfterMapping] = list(filter(
                         lambda line_mapping, start_line_warning_after=start_line_warning_after: not line_mapping.deleted and line_mapping.after_line == start_line_warning_after, file_changes.change_tracked_lines.map_line_indices_before_after_change))
 
-                    if len(found_line_mapping_start_line_after_before) != 1:
+                    if len(found_line_mappings_start_line_after_before) != 1:
                         logger.error(f"Aborting. Line {str(start_line_warning_after)} was not found in the after of the BeforeAfterMapping, but there was a warning at that line. This should never happen.",
                                      f"Violation line after: {str(start_line_warning_after)}, Problematic FileChanges object: {repr(file_changes)}")
                         shutdown(agent, 1)
 
-                    start_line_warning_before = found_line_mapping_start_line_after_before[
-                        0].before_line
+                    found_line_mapping_start_line_after_before = found_line_mappings_start_line_after_before[
+                        0]
 
-                    if start_line_warning_before == -1:
-                        # The line with the rule violation was newly added
-                        newly_introduced_violations.append(
-                            (file_changes.file_path, rule_key, rule_name, warning_location_after))
-                    else:
-                        matched_warning_locations_before = list(filter(
-                            lambda warning_location_before, start_line_warning_before=start_line_warning_before: warning_location_before["startLine"] == start_line_warning_before, mined_rule_before["warningLocations"]))
+                    if found_line_mapping_start_line_after_before.inserted:
+                        # The start_line_warning_after currently looked at belongs to an insertion,
+                        # so look for a corresponding deletion of the same line and use this deletion's before_line for matching the warning.
+                        found_deletions_paired_to_insertions = [
+                            pair[1] for pair in file_changes.change_tracked_lines.paired_insertions_and_deletions if pair[0] is found_line_mapping_start_line_after_before]
 
-                        # The rule violation could not be resolved to a violation in the initial report
-                        if len(matched_warning_locations_before) == 0:
+                        if len(found_deletions_paired_to_insertions) != 0:
+                            found_deletion = found_deletions_paired_to_insertions[0]
+
+                            start_line_warning_before = found_deletion.before_line
+
+                        else:
+                            # Warning was in a newly added line, which had no corresponding deletion of the same line
                             newly_introduced_violations.append(
                                 (file_changes.file_path, rule_key, rule_name, warning_location_after))
+                            continue
+                    else:
+                        start_line_warning_before = found_line_mapping_start_line_after_before.before_line
+
+                    matched_warning_locations_before = list(filter(
+                        lambda warning_location_before, start_line_warning_before=start_line_warning_before: warning_location_before["startLine"] == start_line_warning_before, mined_rule_before["warningLocations"]))
+
+                    # The rule violation could not be resolved to a violation in the initial report
+                    if len(matched_warning_locations_before) == 0:
+                        newly_introduced_violations.append(
+                            (file_changes.file_path, rule_key, rule_name, warning_location_after))
 
     return newly_introduced_violations
 

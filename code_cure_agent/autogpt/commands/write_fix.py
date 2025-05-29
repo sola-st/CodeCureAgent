@@ -213,6 +213,31 @@ def apply_changes(change_dicts_with_same_file_path: list[dict], file_relative_pa
             modifications.extend(new_modifications)
 
     # Mark deletions via an identifier first to avoid conflicts with line number changes
+    deleted_lines_identifier = pre_mark_deletions(file_changes, deletions)
+
+    # Apply modifications
+    apply_modifications(file_changes, modifications)
+
+    # Apply insertions, from last to first for correct line referencing
+    apply_insertions(file_changes, insertions)
+
+    # Finally apply the deletions
+    apply_deletions(file_changes, deleted_lines_identifier)
+
+    # Remember pairs of insertions and deletions of the same line number (considered as a kind of modification)
+    file_changes.change_tracked_lines.find_insertion_deletion_pairs_forming_modification()
+
+    # Write the modified code back to the file
+    with open(file_full_path, 'w') as file:
+        file.writelines(file_changes.change_tracked_lines)
+
+    return file_changes
+
+
+def pre_mark_deletions(file_changes: FileChanges, deletions: list) -> str:
+    """
+    Marks deletions via an identifier in the file_changse object first to avoid conflicts with line number changes
+    """
     deleted_lines_identifier = hashlib.sha512(
         b"THIS_LINE_IS_TO_BE_DELETED_IDENTIFIER").hexdigest()
 
@@ -223,11 +248,17 @@ def apply_changes(change_dicts_with_same_file_path: list[dict], file_relative_pa
 
         else:
             logger.error("apply_changes failed",
-                         f"Line {line_number} to delete was out of range for the file {file_relative_path}. The file only has {len(file_changes.change_tracked_lines)} lines.")
+                         f"Line {line_number} to delete was out of range for the file {file_changes.file_path}. The file only has {len(file_changes.change_tracked_lines)} lines.")
             raise ApplyChangesError(
-                f"Line {line_number} to delete was out of range for the file {file_relative_path}. The file only has {len(file_changes.change_tracked_lines)} lines.")
+                f"Line {line_number} to delete was out of range for the file {file_changes.file_path}. The file only has {len(file_changes.change_tracked_lines)} lines.")
 
-    # Apply modifications
+    return deleted_lines_identifier
+
+
+def apply_modifications(file_changes: FileChanges, modifications: list[dict]):
+    """
+    Applies all the modifications to the file_changes object.
+    """
     for modification in modifications:
         line_number = modification.get("line_number", 0)
         modified_line = modification.get("modified_line", "")
@@ -239,11 +270,16 @@ def apply_changes(change_dicts_with_same_file_path: list[dict], file_relative_pa
                 int(line_number - 1), modified_line)
         else:
             logger.error("apply_changes failed",
-                         f"Line {line_number} to modify was out of range for the file {file_relative_path}. The file only has {len(file_changes.change_tracked_lines)} lines.")
+                         f"Line {line_number} to modify was out of range for the file {file_changes.file_path}. The file only has {len(file_changes.change_tracked_lines)} lines.")
             raise ApplyChangesError(
-                f"Line {line_number} to modify was out of range for the file {file_relative_path}. The file only has {len(file_changes.change_tracked_lines)} lines.")
+                f"Line {line_number} to modify was out of range for the file {file_changes.file_path}. The file only has {len(file_changes.change_tracked_lines)} lines.")
 
-    # Apply insertions, from last to first for correct line referencing
+
+def apply_insertions(file_changes: FileChanges, insertions: list[dict]):
+    """
+    Apply insertions, from last to first for correct line referencing
+    """
+
     sorted_insertions = sorted(
         insertions, key=itemgetter('line_number'), reverse=True)
     for insertion in sorted_insertions:
@@ -268,18 +304,17 @@ def apply_changes(change_dicts_with_same_file_path: list[dict], file_relative_pa
                 int(line_number) - 1, new_line)
             line_number += 1
 
-    # Finally delete all the lines from the list that are flagged as to be deleted.
-    # It is possible that a modification of the same line as a deletion overwrites the flag.
-    # This is intended and therefore in this case the modification wins.
+
+def apply_deletions(file_changes: FileChanges, deleted_lines_identifier: str):
+    """ 
+    Finally delete all the lines from the list that are flagged as to be deleted.
+    It is possible that a modification of the same line as a deletion overwrites the flag.
+    This is intended and therefore in this case the modification wins.
+    """
+
     for line_index, line in reversed(list(enumerate(file_changes.change_tracked_lines))):
         if line == deleted_lines_identifier + "\n":
             file_changes.change_tracked_lines.pop(line_index)
-
-    # Write the modified code back to the file
-    with open(file_full_path, 'w') as file:
-        file.writelines(file_changes.change_tracked_lines)
-
-    return file_changes
 
 
 def rollback_changes(agent: BaseAgent):

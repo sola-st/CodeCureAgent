@@ -21,8 +21,8 @@ class ChangeTrackedList(list):
 
     Fields:
         lines_before_change (list[str]): the initial state of the list when creating it
-        map_line_indices_before_after_change (list[BeforeAfterMapping]): Tracks the line correspondences. 
-                                                                                            before_index is -1 if the line was newly added. after_index is -1 if the line was removed.
+        map_line_indices_before_after_change (list[BeforeAfterMapping]): Tracks the line correspondences.
+        paired_insertions_and_deletions (list[tuple[BeforeAfterMapping, BeforeAfterMapping]]): List of pairings of insertions and deletions, that resemble a kind of modification (inserted and deleted at the same line number)
     """
 
     def __init__(self, lines_before_change: list[str]):
@@ -32,6 +32,9 @@ class ChangeTrackedList(list):
 
         self.map_line_indices_before_after_change = [
             BeforeAfterMapping(i + 1, i + 1) for i, line in enumerate(lines_before_change)]
+
+        self.paired_insertions_and_deletions: list[tuple[BeforeAfterMapping, BeforeAfterMapping]] = [
+        ]
 
     def __repr__(self):
         return super().__repr__() + "with fields: 'lines_before_change'=" + repr(self.lines_before_change) + " 'map_line_indices_before_after_change'" + repr(self.map_line_indices_before_after_change)
@@ -62,6 +65,7 @@ class ChangeTrackedList(list):
         # Only insert after updating the other line numbers
         inserted_mapping = BeforeAfterMapping(-1, index + 1)
         inserted_mapping.inserted = True
+        inserted_mapping.inserted_at_line = index + 1
         self.map_line_indices_before_after_change.insert(
             index, inserted_mapping)
 
@@ -70,6 +74,7 @@ class ChangeTrackedList(list):
 
         appended_mapping = BeforeAfterMapping(-1, len(self))
         appended_mapping.inserted = True
+        appended_mapping.inserted_at_line = len(self)
         self.map_line_indices_before_after_change.append(appended_mapping)
 
     def pop(self, index: int) -> any:
@@ -78,6 +83,8 @@ class ChangeTrackedList(list):
         # Set to deleted
         found_items = filter(lambda mapping, line_number=index + 1: mapping.after_line ==
                              line_number, self.map_line_indices_before_after_change)
+
+        # Might be multiple once if consecutive lines are being deleted
         for item in found_items:
             item.deleted = True
 
@@ -90,6 +97,22 @@ class ChangeTrackedList(list):
 
         return removed_line
 
+    def find_insertion_deletion_pairs_forming_modification(self):
+        """
+        Remember pairs of insertions and deletions of the same line number (considered as a kind of modification)
+        """
+        insertions = filter(lambda mapping: mapping.inserted,
+                            self.map_line_indices_before_after_change)
+
+        for insertion in insertions:
+            matched_deletions = list(filter(lambda mapping, insertion=insertion: mapping.deleted and mapping.before_line ==
+                                     insertion.inserted_at_line, self.map_line_indices_before_after_change))
+
+            # Can only be of length 0 or 1
+            if len(matched_deletions) == 1:
+                self.paired_insertions_and_deletions.append(
+                    (insertion, matched_deletions[0]))
+
 
 class BeforeAfterMapping():
 
@@ -97,6 +120,7 @@ class BeforeAfterMapping():
         self.before_line = before_line
         self.after_line = after_line
         self.inserted = False
+        self.inserted_at_line = -1
         self.modified = False
         self.deleted = False
 

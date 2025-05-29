@@ -307,6 +307,8 @@ You must not introduce any new rule violations.""")
         self.assertEqual(
             sonar_qube_message, "Rerunning the SonarQube analysis found that the targeted rule violation has not yet been removed by your fix. It was still present in the SonarQube report.")
 
+    # The "paired_insertions_and_deletions" insertion-deletion pairing functionality, recognizes deletion and insertion of the same line as a kind of modification
+    # and therefore resolves the warning of the changed file in this test to the targeted warning in the initial analysis report.
     def test_check_sonar_qube_report_target_warning_line_was_removed_and_added_at_new_line_again(self):
         change_dict_list = [{
             "file_name": self.agent.ai_config.warning_file_path,
@@ -327,11 +329,33 @@ You must not introduce any new rule violations.""")
 
         print(sonar_qube_message)
         self.assertFalse(accepted)
-        self.assertEqual(sonar_qube_message, """Rerunning the SonarQube analysis found the following new rule violations that weren't present before:  
-In file main/src/main/java/net/sourceforge/argparse4j/internal/TerminalWidth.java:  
-Rule S2142: '"InterruptedException" should not be ignored' at line 92: '} catch (InterruptedException e) {'  
+        self.assertEqual(
+            sonar_qube_message, "Rerunning the SonarQube analysis found that the targeted rule violation has not yet been removed by your fix. It was still present in the SonarQube report.")
 
-You must not introduce any new rule violations.""")
+    # Also in this case the deletion and insertion of the same line is recognized and therefore the inserted warning is resolved to before and isn't treated as newly introduced warning.
+    def test_check_sonar_qube_report_target_warning_removed_and_a_unrelated_warning_was_deleted_and_reinserted_at_same_line(self):
+        change_dict_list = [{
+            "file_name": self.agent.ai_config.warning_file_path,
+            "modifications": [{
+                "line_number": 94,
+                "modified_line": "        } catch (InterruptedException e) { //NOSONAR\n"
+            }],
+            "insertions": [{
+                "line_number": 88,
+                "new_lines": ["        // System.out.println(\"result=\" + result);\n"]
+            }],
+            "deletions": [88]
+        }]
+
+        all_file_changes = write_fix.execute_write_range(
+            change_dict_list, self.agent)
+        accepted, sonar_qube_message = change_approver.check_sonar_qube_report(
+            all_file_changes, self.agent)
+
+        print(sonar_qube_message)
+        self.assertTrue(accepted)
+        self.assertEqual(
+            sonar_qube_message, "Rerunning the SonarQube analysis confirmed that your fix successfully removed the targeted rule violation and didn't introduce any new violations.")
 
     def test_check_sonar_qube_report_multiple_files(self):
         change_dict_list = [{

@@ -612,3 +612,40 @@ class WriteFixTestCase(unittest.TestCase):
             expected_result = expected_file.readlines()
 
         self.assertEqual(change_result.change_tracked_lines, expected_result)
+
+    def test_apply_changes_pairing_of_insertion_deletion_pairs_that_form_modifications(self):
+        change_dict_list = [{
+            "file_name": self.agent.ai_config.warning_file_path,
+            "insertions": [{
+                "line_number": 20,
+                "new_lines": [
+                    "    // New line\n",
+                    "    // next new line\n"
+                ]
+            },],
+            "deletions": [20, 21],
+            "modifications": [{
+                "line_number": 133,
+                "modified_line": "    modified_here\n"
+            },
+                {
+                "line_number": 133,
+                "modified_line": "    modified_there\n"
+            }]
+        }]
+
+        file_relative_path = self.agent.ai_config.warning_file_path
+
+        project_dir = os.path.join(
+            self.agent.config.workspace_path, self.agent.ai_config.warning_repository_name)
+
+        file_full_path = os.path.join(project_dir, file_relative_path)
+
+        change_result: FileChanges = write_fix.apply_changes(
+            change_dict_list, file_relative_path, file_full_path)
+
+        resulting_pairing = [((pair[0].before_line, pair[0].after_line, pair[0].inserted), (pair[1].before_line, pair[1].after_line,
+                                                                                            pair[1].deleted)) for pair in change_result.change_tracked_lines.paired_insertions_and_deletions]
+        print(resulting_pairing)
+        self.assertEqual(resulting_pairing, [
+                         ((-1, 20, True), (20, 22, True)), ((-1, 21, True), (21, 22, True))])

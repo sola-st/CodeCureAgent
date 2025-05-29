@@ -233,12 +233,10 @@ def apply_changes(change_dicts_with_same_file_path: list[dict], file_relative_pa
         modified_line = modification.get("modified_line", "")
         if 1 <= int(line_number) <= len(file_changes.change_tracked_lines):
 
-            if modified_line.endswith("\n"):
-                file_changes.change_tracked_lines.update(
-                    int(line_number - 1), modified_line)
-            else:
-                file_changes.change_tracked_lines.update(
-                    int(line_number - 1), modified_line + "\n")
+            if not modified_line.endswith("\n"):
+                modified_line += "\n"
+            file_changes.change_tracked_lines.update(
+                int(line_number - 1), modified_line)
         else:
             logger.error("apply_changes failed",
                          f"Line {line_number} to modify was out of range for the file {file_relative_path}. The file only has {len(file_changes.change_tracked_lines)} lines.")

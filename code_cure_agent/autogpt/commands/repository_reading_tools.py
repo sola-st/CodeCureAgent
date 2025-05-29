@@ -84,8 +84,8 @@ def read_range(file_path: str, start_line: int, end_line: int, agent: BaseAgent)
             continue
 
         # Prevent reading further than the file is long (a last newline character without any character following it is not considered a new line)
-        if len(lines) <= i:
-            lines_str += "\nEOF"
+        if i >= len(lines):
+            lines_str += "EOF"
             break
         lines_str += "Line {}:".format(i+1) + lines[i]
     return lines_str.rstrip("\n")

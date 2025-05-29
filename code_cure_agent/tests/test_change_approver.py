@@ -334,18 +334,48 @@ You must not introduce any new rule violations.""")
 
     # Also in this case the deletion and insertion of the same line is recognized and therefore the inserted warning is resolved to before and isn't treated as newly introduced warning.
     def test_check_sonar_qube_report_target_warning_removed_and_a_unrelated_warning_was_deleted_and_reinserted_at_same_line(self):
-        change_dict_list = [{
-            "file_name": self.agent.ai_config.warning_file_path,
-            "modifications": [{
-                "line_number": 94,
-                "modified_line": "        } catch (InterruptedException e) { //NOSONAR\n"
-            }],
-            "insertions": [{
-                "line_number": 88,
-                "new_lines": ["        // System.out.println(\"result=\" + result);\n"]
-            }],
-            "deletions": [88]
-        }]
+        self.agent.ai_config.warning_file_path = "main/src/test/java/net/sourceforge/argparse4j/impl/type/FileVerificationOrTest.java"
+        self.agent.ai_config.warning_rule_key = "S4042"
+        self.agent.ai_config.warning_rule_name = "\"java.nio.Files#delete\" should be preferred"
+        self.agent.ai_config.warning_specific_message = "Use \"java.nio.file.Files#delete\" here for better messages on error conditions."
+        self.agent.ai_config.warning_start_line = 42
+
+        # This is a real world example that occured.
+        # "nonWritableFile.setWritable(true);" is the line with the unrelated warning. This line is first delted and then inserted again at the same line.
+        # This is catched by the change_approver and recognized as the same warning. Therfore this fix is now accepted.
+        change_dict_list = [
+            {
+                "file_name": "main/src/test/java/net/sourceforge/argparse4j/impl/type/FileVerificationOrTest.java",
+                "insertions": [
+                    {
+                        "line_number": 4,
+                        "new_lines": [
+                            "import java.nio.file.Files;",
+                            "import java.nio.file.Path;"
+                        ]
+                    },
+                    {
+                        "line_number": 38,
+                        "new_lines": [
+                            "    public static void deleteTestFiles() throws IOException {",
+                            "        Files.delete(writableFile.toPath());",
+                            "",
+                            "        nonWritableFile.setWritable(true);",
+                            "        Files.delete(nonWritableFile.toPath());",
+                            "    }"
+                        ]
+                    }
+                ],
+                "deletions": [
+                    38,
+                    39,
+                    40,
+                    41,
+                    42,
+                    43
+                ]
+            }
+        ]
 
         all_file_changes = write_fix.execute_write_range(
             change_dict_list, self.agent)

@@ -137,9 +137,8 @@ Correct fix: Suppressing it is the best choice, because it is a deprecated class
 
 ## Summary of correctness
 
-Total correct fixes: 9/15  
-Non-suppressing correct fixes: 6/15  
-
+Total correct fixes: 8/15  
+Non-suppressing correct fixes: 5/15  
 ## Test case coverage
 
 ID 8:  

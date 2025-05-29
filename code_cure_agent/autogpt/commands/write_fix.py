@@ -77,7 +77,7 @@ def write_fix(changes_dicts: list, agent: BaseAgent) -> str:
     change_approver_feedback = change_approver.approve_changes(
         changes_dicts, all_files_with_changes, agent)
 
-    feedback += "  \n" + change_approver_feedback
+    feedback += change_approver_feedback
 
     rollback_changes(agent)
 

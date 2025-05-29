@@ -8,6 +8,10 @@ import json
 read_range_desc = """read_range: Reads a range of lines in a given file.  
     Required params: (file_path: string, start_line: int, end_line: int)"""
 
+read_sonarqube_docu_desc = """read_sonarqube_docu: Returns the documentation for the given SonarQube rule.  
+The documentation can contain relevant details about the rule, when it applies, and how it can be fixed.  
+Required params: (rule_key: string)"""
+
 go_to_gather_context_for_fix_desc = """go_to_gather_context_for_fix: Transitions to the state `Gathering Context for a Fix`.  
     Call this command after you have collected enough information about the specific SonarQube rule.  
     Required params: ()"""
@@ -66,13 +70,13 @@ goals_accomplished_desc = """goals_accomplished: Call this function when you are
 
 commands_dict = {
     "Understanding the Violated Rule": "\n".join(["{}. {}".format(i+1, t) for i, t in enumerate(
-        [read_range_desc, go_to_gather_context_for_fix_desc])]),
+        [read_sonarqube_docu_desc, read_range_desc, go_to_gather_context_for_fix_desc])]),
     "Gathering Context for a Fix": "\n".join(["{}. {}".format(i+1, t) for i, t in enumerate(
         [formulate_plan_desc, read_range_desc, write_fix_desc, go_back_to_understanding_rule_desc])]),
     "Trying out Fix Candidates": "\n".join(["{}. {}".format(i+1, t) for i, t in enumerate(
         [write_fix_desc, read_range_desc, go_back_to_gather_context_for_fix_desc, go_back_to_understanding_rule_desc, goals_accomplished_desc])]),
     "no_state_machine": "\n".join(["{}. {}".format(i+1, t) for i, t in enumerate(
-        [read_range_desc, formulate_plan_desc, write_fix_desc, goals_accomplished_desc])])
+        [read_sonarqube_docu_desc, read_range_desc, formulate_plan_desc, write_fix_desc, goals_accomplished_desc])])
 }
 
 with open("agent_config_and_prompt_files/commands_by_state.json", "w") as cbs:

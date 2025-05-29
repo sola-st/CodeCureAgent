@@ -3,6 +3,7 @@ import shutil
 import unittest
 from tests.agent_mock import AgentMock
 from autogpt.commands import sonar_qube_docu
+from autogpt.commands import web_search
 
 
 class SonarQubeDocuTestCase(unittest.TestCase):
@@ -40,27 +41,41 @@ class SonarQubeDocuTestCase(unittest.TestCase):
         docu_tool_result = sonar_qube_docu.read_sonarqube_docu(
             rule_key, self.agent)
         print(docu_tool_result)
+        with open("tests/test_sonar_qube_docu_expected_outputs/expected_bug_type.txt") as expected_file:
+            expected = expected_file.read()
+        self.assertEqual(docu_tool_result, expected)
 
     def test_docu_tool_code_smell_type_rule(self):
         rule_key = "S864"
         docu_tool_result = sonar_qube_docu.read_sonarqube_docu(
             rule_key, self.agent)
         print(docu_tool_result)
+        with open("tests/test_sonar_qube_docu_expected_outputs/expected_code_smell_type.txt") as expected_file:
+            expected = expected_file.read()
+        self.assertEqual(docu_tool_result, expected)
 
+    # Hotspots use the desciptionSections instead of the htmlDescription in the docu object
     def test_docu_tool_security_hotspot_type_rule(self):
         rule_key = "S5852"
         docu_tool_result = sonar_qube_docu.read_sonarqube_docu(
             rule_key, self.agent)
         print(docu_tool_result)
+        with open("tests/test_sonar_qube_docu_expected_outputs/expected_security_hotspot_type.txt") as expected_file:
+            expected = expected_file.read()
+        self.assertEqual(docu_tool_result, expected)
 
     def test_docu_vulnerability_type_rule(self):
         rule_key = "S6437"
         docu_tool_result = sonar_qube_docu.read_sonarqube_docu(
             rule_key, self.agent)
         print(docu_tool_result)
+        with open("tests/test_sonar_qube_docu_expected_outputs/expected_vulnerability_type.txt") as expected_file:
+            expected = expected_file.read()
+        self.assertEqual(docu_tool_result, expected)
 
     def test_docu_none_existing_rule(self):
         rule_key = "S214200"
         docu_tool_result = sonar_qube_docu.read_sonarqube_docu(
             rule_key, self.agent)
         print(docu_tool_result)
+        self.assertEqual(docu_tool_result, "Error: Reading the SonarQube docu for rule S214200 failed with error:  \npicocli.CommandLine$ExecutionException: The rule S214200 could not be found. Maybe you mistyped the rule key.")

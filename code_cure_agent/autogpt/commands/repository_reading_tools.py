@@ -88,4 +88,4 @@ def read_range(file_path: str, start_line: int, end_line: int, agent: BaseAgent)
             lines_str += "\nEOF"
             break
         lines_str += "Line {}:".format(i+1) + lines[i]
-    return lines_str
+    return lines_str.rstrip("\n")

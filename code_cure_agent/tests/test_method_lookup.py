@@ -6,7 +6,7 @@ import shutil
 from tests.agent_mock import AgentMock
 
 from autogpt.commands.repository_operations import checkout_project, remove_folder_if_exists
-from autogpt.commands.method_lookup import look_up_definition
+from autogpt.commands.method_lookup import find_definition, find_references
 
 
 class MethodLookupTestCase(unittest.TestCase):
@@ -36,7 +36,7 @@ class MethodLookupTestCase(unittest.TestCase):
 
         checkout_project(self.agent)
 
-        print(look_up_definition(
+        print(find_definition(
             "src/main/java/jpass/data/DocumentRepository.java", "Entries", 114, self.agent))
 
     def test_go_to_definition_http_proxy_servlet(self):
@@ -49,7 +49,7 @@ class MethodLookupTestCase(unittest.TestCase):
 
         checkout_project(self.agent)
 
-        print(look_up_definition(
+        print(find_definition(
             "src/main/java/org/mitre/dsmiley/httpproxy/URITemplateProxyServlet.java", "ATTR_QUERY_STRING", 145, self.agent))
 
     def test_go_to_definition_junit4(self):
@@ -62,7 +62,7 @@ class MethodLookupTestCase(unittest.TestCase):
 
         checkout_project(self.agent)
 
-        print(look_up_definition(
+        print(find_definition(
             "src/test/java/junit/tests/framework/AssertTest.java", "AssertionFailedError", 26, self.agent))
 
     def test_go_to_definition_argparse4j_failing_due_to_broken_setup(self):
@@ -75,5 +75,18 @@ class MethodLookupTestCase(unittest.TestCase):
 
         checkout_project(self.agent)
 
-        print(look_up_definition(
+        print(find_definition(
             "main/src/main/java/net/sourceforge/argparse4j/internal/SubparserImpl.java", "addArgument", 62, self.agent))
+
+    def test_go_to_references_junit4(self):
+        warning_repository_URL = "https://github.com/junit-team/junit4.git"
+        warning_repository_commit = "7852b90cfe1cea1e0cdaa19d490c83f0d8684b50"
+        warning_repository_name = "junit4"
+
+        self.agent = AgentMock(warning_repository_URL, warning_repository_commit, None,
+                               warning_repository_name, None, None, None, None)
+
+        checkout_project(self.agent)
+
+        print(find_references(
+            "src/main/java/junit/framework/AssertionFailedError.java", "AssertionFailedError", 13, self.agent))

@@ -19,12 +19,21 @@ go_to_gather_context_for_fix_desc = """go_to_gather_context_for_fix: Transitions
 
 # Gathering Context for a Fix
 
-look_up_definition_desc = """"go_to_definition: Look up the definition of a project-local symbol (method, class, variable etc.).  
+find_definition_desc = """"find_definition: Look up the definition of a project-local symbol (method, class, variable etc.).  
     You can use this command to inform yourself about f.e. what a relevant method or class that is being referenced in the target file does.  
     Required params:  
         file_path: string - path to the file where the symbol is referenced  
-        symbol_to_look_up: string - the symbol that you want to look up. Needs to exactly match the symbol name, but without any braces or similar  
+        symbol: string - the symbol that you want to look up. Needs to exactly match the symbol name, but without any braces or similar  
         symbol_line: int - line number where the symbol is referenced"""
+
+find_references_desc = """"find_references: Look up all references (f.e. call-sites) of a project-local symbol (method, class, variable etc.).  
+    You can use this command to find out where and how a method/class etc. is used in the project.  
+    This might for example be relevant if you want to change the return value or return type of a method and need to check if there are any call-sites that need to be updated accordingly.  
+    But there might also be other scenarios where this can be useful.  
+    Required params:  
+        file_path: string - path to the file where the symbol is defined  
+        symbol: string - the symbol that you want to look up. Needs to exactly match the symbol name, but without any braces or similar  
+        symbol_line: int - line number where the symbol is defined"""
 
 formulate_plan_desc = """formulate_plan: Formulate or update a plan, with fine-grained steps, about how you want to fix the rule violation (i.e. which lines in which files to change and to what).  
     Call this command before calling write_fix for the first time. You can call it again at any time, if you received new information that requires a change of plan.  
@@ -79,11 +88,11 @@ commands_dict = {
     "Understanding the Violated Rule": "\n".join(["{}. {}".format(i+1, t) for i, t in enumerate(
         [read_sonarqube_docu_desc, read_range_desc, go_to_gather_context_for_fix_desc])]),
     "Gathering Context for a Fix": "\n".join(["{}. {}".format(i+1, t) for i, t in enumerate(
-        [look_up_definition_desc, formulate_plan_desc, read_range_desc, write_fix_desc, go_back_to_understanding_rule_desc])]),
+        [find_definition_desc, find_references_desc, formulate_plan_desc, read_range_desc, write_fix_desc, go_back_to_understanding_rule_desc])]),
     "Trying out Fix Candidates": "\n".join(["{}. {}".format(i+1, t) for i, t in enumerate(
         [write_fix_desc, read_range_desc, go_back_to_gather_context_for_fix_desc, go_back_to_understanding_rule_desc, goals_accomplished_desc])]),
     "no_state_machine": "\n".join(["{}. {}".format(i+1, t) for i, t in enumerate(
-        [read_sonarqube_docu_desc, read_range_desc, look_up_definition_desc, formulate_plan_desc, write_fix_desc, goals_accomplished_desc])])
+        [read_sonarqube_docu_desc, read_range_desc, find_definition_desc, find_references_desc, formulate_plan_desc, write_fix_desc, goals_accomplished_desc])])
 }
 
 with open("agent_config_and_prompt_files/commands_by_state.json", "w") as cbs:

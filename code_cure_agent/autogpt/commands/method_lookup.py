@@ -23,22 +23,22 @@ from autogpt.utils.path_utils import path_utils
 from autogpt.commands.repository_operations import checkout_project
 
 COMMAND_CATEGORY = "method_lookup"
-COMMAND_CATEGORY_TITLE = "Commands for looking up methods (go to definition and go to references)"
+COMMAND_CATEGORY_TITLE = "Commands for looking up methods (find_definition and find_references)"
 
 ALLOWLIST_CONTROL = "allowlist"
 DENYLIST_CONTROL = "denylist"
 
 
 @command(
-    "go_to_definition",
-    "Look up the definition of a project local symbol (method, class, variable etc.).",
+    "find_definition",
+    "Look up the definition of a project-local symbol (method, class, variable etc.).",
     {
         "file_path": {
             "type": "string",
             "description": "The path to the file where the symbol to look up occurs.",
             "required": True,
         },
-        "symbol_to_look_up": {
+        "symbol": {
             "type": "string",
             "description": "The symbol that you want to look up. Exactly match the symbol name, but don't include braces and similar.",
             "required": True
@@ -52,9 +52,43 @@ DENYLIST_CONTROL = "denylist"
         }
     },
 )
-def go_to_definition(file_path: str, symbol_to_look_up: str, symbol_line: int, agent: BaseAgent) -> str:
+def find_definition(file_path: str, symbol: str, symbol_line: int, agent: BaseAgent) -> str:
+    return run_go_to("definition", file_path, symbol, symbol_line, agent)
+
+
+@command(
+    "find_references",
+    "Look up all references (f.e. call-sites) of a project-local symbol (method, class, variable etc.).",
+    {
+        "file_path": {
+            "type": "string",
+            "description": "The path to the file where the symbol to look up is defined.",
+            "required": True,
+        },
+        "symbol": {
+            "type": "string",
+            "description": "The symbol that you want to look up. Exactly match the symbol name, but don't include braces and similar.",
+            "required": True
+
+        },
+        "symbol_line": {
+            "type": "integer",
+            "description": "The line number where the symbol is defined.",
+            "required": True
+
+        }
+    },
+)
+def find_references(file_path: str, symbol: str, symbol_line: int, agent: BaseAgent) -> str:
+    return run_go_to("references", file_path, symbol, symbol_line, agent)
+
+
+def run_go_to(go_to_method: str, file_path: str, symbol: str, symbol_line: int, agent: BaseAgent) -> str:
+    """
+    Run one of the go to methods. go_to_method can either be "definition" or "references".
+    """
     if symbol_line <= 0:
-        return f"Lookup of definition failed. The symbol_line was {str(symbol_line)}, but must be greater than 0."
+        return f"Lookup of {go_to_method} failed. The symbol_line was {str(symbol_line)}, but must be greater than 0."
 
     # LSP expects 0-indexed line
     symbol_line_zero_indexed = int(symbol_line) - 1
@@ -64,57 +98,36 @@ def go_to_definition(file_path: str, symbol_to_look_up: str, symbol_line: int, a
             agent.config.workspace_path, agent.ai_config.warning_repository_name, file_path)
 
         symbol_column_zero_indexed = find_column_of_symbol(
-            file_path, symbol_to_look_up, symbol_line_zero_indexed, agent)
+            file_path, symbol, symbol_line_zero_indexed, agent)
 
     except ValueError as ve:
-        logger.error("LSP definition lookup failed ",
+        logger.error(f"LSP {go_to_method} lookup failed ",
                      "Error was: " + str(ve))
-        return "Lookup of definition failed. " + str(ve)
+        return f"Lookup of {go_to_method} failed. " + str(ve)
 
     try:
-        lookup_result = lsp_definition_lookup(file_path, symbol_line_zero_indexed,
-                                              symbol_column_zero_indexed, agent)
+        lookup_result = lsp_lookup(go_to_method, file_path, symbol_line_zero_indexed,
+                                   symbol_column_zero_indexed, agent)
     except Exception as e:
-        logger.error("LSP definition lookup failed ",
+        logger.error(f"LSP {go_to_method} lookup failed ",
                      "Error was: " + str(e))
         checkout_project(agent)
-        return "Lookup of definition failed. " + str(e)
+        return f"Lookup of {go_to_method} failed. " + str(e)
+
+    logger.debug(lookup_result, title=f"find_{go_to_method} lookup result: ")
 
     if "result" not in lookup_result or len(lookup_result["result"]) == 0:
-        checkout_project(agent)
-        return f"Lookup of definition failed. No definition could be found for '{symbol_to_look_up}' at line {str(symbol_line)} in file '{file_path}'. " \
-            "\nDon't try the command with the same arguments again."
+        # checkout_project(agent)
+        return f"No {go_to_method} could be found for '{symbol}' at line {str(symbol_line)} in file '{file_path}'. " \
+            "\nDon't call the command with the same arguments again."
 
-    # TODO: test whether returning the full method/class/field etc. makes sense (esp. for long classes)
-    # or if we should instead only return the file and position of the definition. => let agent use read_range where it sees fit
-    try:
-        full_file_path: str = lookup_result["result"][0]["uri"]
-        full_file_path = full_file_path.lstrip("file:///")
-        full_file_path = "/" + full_file_path
-        repo_path = os.path.join(agent.config.workspace_path,
-                                 agent.ai_config.warning_repository_name)
-
-        file_found_definition = full_file_path.replace(f"{repo_path}/", "").replace(
-            f"{agent.config.workspace_path}/", "").replace(f"{agent.config.workspace_path}", "")
-
-        start_line_definition = lookup_result["result"][0]["range"]["start"]["line"] + 1
-
-        found_definition_code = extract_code_for_symbol(
-            symbol_to_look_up, full_file_path, start_line_definition)
-
-    except Exception as e:
-        logger.error("Accessing definition failed ",
-                     "Error was: " + str(e))
-        checkout_project(agent)
-        return "Lookup of definition failed. " + str(e)
-
-    checkout_project(agent)
-
-    return f"The definition of '{symbol_to_look_up}' was found in file '{file_found_definition}' starting at line {str(start_line_definition)}.  "\
-        "\nThe code of the definition is the following:  \n" + found_definition_code
+    if go_to_method == "definition":
+        return process_go_to_definition_lsp_result(lookup_result, symbol, agent)
+    else:
+        return process_go_to_references_lsp_result(lookup_result, symbol, agent)
 
 
-def find_column_of_symbol(file_path: str, symbol_to_look_up: str, symbol_line_zero_indexed: int, agent: BaseAgent) -> int:
+def find_column_of_symbol(file_path: str, symbol: str, symbol_line_zero_indexed: int, agent: BaseAgent) -> int:
 
     with open(os.path.join(agent.config.workspace_path, agent.ai_config.warning_repository_name, file_path)) as fp:
         file_lines = fp.readlines()
@@ -126,21 +139,21 @@ def find_column_of_symbol(file_path: str, symbol_to_look_up: str, symbol_line_ze
     target_line = file_lines[symbol_line_zero_indexed]
 
     try:
-        symbol_column_zero_indexed = target_line.index(symbol_to_look_up)
+        symbol_column_zero_indexed = target_line.index(symbol)
     except ValueError:
         raise ValueError(
-            f"The symbol_to_look_up '{symbol_to_look_up}' was not found in line {str(symbol_line_zero_indexed + 1)} of file '{file_path}'.")
+            f"The symbol '{symbol}' was not found in line {str(symbol_line_zero_indexed + 1)} of file '{file_path}'.")
 
     return symbol_column_zero_indexed
 
 
-def lsp_definition_lookup(file_path: str, symbol_line_zero_indexed: int, symbol_column_zero_indexed: int, agent: BaseAgent) -> str:
+def lsp_lookup(go_to_method: str, file_path: str, symbol_line_zero_indexed: int, symbol_column_zero_indexed: int, agent: BaseAgent) -> str:
 
     request_id = random.randint(100, 2147483647)
-    definition_request = {
+    go_to_request = {
         "jsonrpc": "2.0",
         "id": request_id,
-        "method": "textDocument/definition", "params": {
+        "method": f"textDocument/{go_to_method}", "params": {
             "textDocument": {
                 "uri": "file://" + os.path.join(agent.config.workspace_path, agent.ai_config.warning_repository_name, file_path)
             },
@@ -150,7 +163,12 @@ def lsp_definition_lookup(file_path: str, symbol_line_zero_indexed: int, symbol_
             }
         }}
 
-    string_request = json.dumps(definition_request)
+    if go_to_method == "references":
+        go_to_request["params"]["context"] = {
+            "includeDeclaration": False,
+        }
+
+    string_request = json.dumps(go_to_request)
     command = prepare_command(agent.config.workspace_path)
 
     logger.debug("COMMAND: " + command)
@@ -166,10 +184,10 @@ def lsp_definition_lookup(file_path: str, symbol_line_zero_indexed: int, symbol_
 
     clean_project_of_gradle_build_files(agent)
 
-    definition_lookup_result = execute_command(
+    go_to_result = execute_command(
         command, init_content, string_request, request_id)
 
-    return definition_lookup_result
+    return go_to_result
 
 
 def prepare_command(workspace_path: str):
@@ -222,7 +240,9 @@ def prepare_init_file(agent: BaseAgent):
 
 
 def clean_project_of_gradle_build_files(agent: BaseAgent) -> None:
-    # Remove gradle build files if present in the project to force using maven
+    """
+    Remove gradle build files if present in the project to force using maven.
+    """
     build_gradle_path = os.path.join(
         agent.config.workspace_path, agent.ai_config.warning_repository_name, "build.gradle")
     build_gradle_kts_path = os.path.join(
@@ -273,7 +293,7 @@ def execute_command(command: str, init_req: str, req: str, request_id: int) -> d
             process, request_id, timeout, False)
 
         logger.debug(json.dumps(
-            definition_lookup_result), title="LSP definition lookup result: ")
+            definition_lookup_result), title="LSP go to result: ")
 
         process.kill()
 
@@ -281,7 +301,7 @@ def execute_command(command: str, init_req: str, req: str, request_id: int) -> d
 
     # Be save that the process is killed if any unexpected exception occured
     except Exception as e:
-        logger.error("LSP definition lookup failed ",
+        logger.error("LSP lookup failed ",
                      "During running the subprocess an excpetion occured. " + str(e))
         process.kill()
         raise e
@@ -320,7 +340,44 @@ def read_message_from_subprocess(process: subprocess.Popen, target_message_id: i
                 f"The lookup ran into a timeout after {timeout} seconds.")
 
 
-def extract_code_for_symbol(symbol_to_look_up: str, full_file_path: str, start_line_definition: int) -> str:
+def process_go_to_definition_lsp_result(lookup_result: dict, symbol: str,  agent: BaseAgent) -> str:
+    # TODO: test whether returning the full method/class/field etc. makes sense (esp. for long classes)
+    # or if we should instead only return the file and position of the definition. => let agent use read_range where it sees fit
+    try:
+        full_file_path: str = lookup_result["result"][0]["uri"]
+        full_file_path = full_file_path.lstrip("file:///")
+        full_file_path = "/" + full_file_path
+        repo_path = os.path.join(agent.config.workspace_path,
+                                 agent.ai_config.warning_repository_name)
+
+        file_found_definition = full_file_path.replace(f"{repo_path}/", "").replace(
+            f"{agent.config.workspace_path}/", "").replace(f"{agent.config.workspace_path}", "")
+
+        start_line_definition = lookup_result["result"][0]["range"]["start"]["line"] + 1
+
+        found_definition_code = extract_code_for_symbol(
+            symbol, full_file_path, start_line_definition)
+
+    except Exception as e:
+        logger.error("Accessing definition failed ",
+                     "Error was: " + str(e))
+        checkout_project(agent)
+        return "Lookup of definition failed. " + str(e)
+
+    checkout_project(agent)
+
+    return f"The definition of '{symbol}' was found in file '{file_found_definition}' starting at line {str(start_line_definition)}.  " \
+        + "\nThe code of the definition is the following:  \n" + found_definition_code
+
+
+def process_go_to_references_lsp_result(lookup_result: dict, symbol: str,  agent: BaseAgent) -> str:
+    # TODO: Implement formating the result.
+    # Decide how much context should be displayed per reference (or if this is left to the agent). Might be a lot of references in some cases.
+    # => Maybe display code only if only a few references ~3, and only give positions and hint at using read_range if more
+    return json.dumps(lookup_result)
+
+
+def extract_code_for_symbol(symbol: str, full_file_path: str, start_line_definition: int) -> str:
 
     with open(full_file_path, encoding='utf-8', errors='ignore') as jf:
         content = jf.read()
@@ -328,7 +385,7 @@ def extract_code_for_symbol(symbol_to_look_up: str, full_file_path: str, start_l
     content_split = content.splitlines(True)
 
     for _, node in tree.filter(javalang.tree.Declaration):
-        if searched_tree_node(node, symbol_to_look_up, start_line_definition):
+        if searched_tree_node(node, symbol, start_line_definition):
             start, end = get_start_end_for_node(
                 node, tree, len(content_split))
             output = ""
@@ -346,13 +403,13 @@ def extract_code_for_symbol(symbol_to_look_up: str, full_file_path: str, start_l
         f"Code could not be extracted from the found definition location.")
 
 
-def searched_tree_node(node: javalang.tree.Declaration, symbol_to_look_up: str, start_line_definition: int) -> bool:
+def searched_tree_node(node: javalang.tree.Declaration, symbol: str, start_line_definition: int) -> bool:
     # Most Declarations types have a name field
-    if hasattr(node, "name") and node.name == symbol_to_look_up and node.position[0] == start_line_definition:
+    if hasattr(node, "name") and node.name == symbol and node.position[0] == start_line_definition:
         return True
 
     # VariableDeclaration or FieldDeclaration type nodes don't have a name field directly
-    elif hasattr(node, "declarators") and len(node.declarators) > 0 and node.declarators[0].name == symbol_to_look_up and node.position[0] == start_line_definition:
+    elif hasattr(node, "declarators") and len(node.declarators) > 0 and node.declarators[0].name == symbol and node.position[0] == start_line_definition:
         return True
 
     else:
@@ -364,7 +421,7 @@ def get_start_end_for_node(node_to_find, tree, max_end):
     end = None
     for path, node in tree:
         if start is not None and node_to_find not in path:
-            # Save upper bound of the end position (might include comments of following lines)
+            # Safe upper bound of the end position (might include comments of following lines)
             end = node.position[0]
             return start, end
         if start is None and node == node_to_find:

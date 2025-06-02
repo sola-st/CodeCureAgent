@@ -14,20 +14,19 @@ It can fix arbitrary SonarQube rule violations in Java code.
 Before you start using CodeCureAgent, ensure that your system meets the following requirements:
 
 - **Docker**: Version 20.04 or higher. For installation instructions, see the [Docker documentation](https://docs.docker.com/get-docker).
-- **VS Code**: Not a hard requirement but highly recommended. VS Code provides an easy way to interact with CodeCureAgent using DevContainers (see the instructions below).
+- **VS Code**: Not a hard requirement but highly recommended. VS Code provides an easy way to interact with CodeCureAgent using Dev Containers (see the instructions below).
 - **OpenAI Token and Credits**:
   - Create an account on the OpenAI website and purchase credits to use the API.
   - Generate an API token on the same website.
 - **Disk Space**:
   - At least 40GB of available disk space on your machine. The code itself does not take 40GB. However, the dependencies might take up to 8GB, and files generated from running on different instances may use more. 40GB is a safe estimate.
-  - If you are using VS Code DevContainers, you can avoid pulling the heavy Docker image (~22GB).
 - **Internet Access**: Required while running CodeCureAgent to connect to OpenAI's API.
 
 ---
 
 ## ⚙️ II. Setup CodeCureAgent
 
-### **STEP 1: Open CodeCureAgent in a DevContainer**
+### **STEP 1: Open CodeCureAgent in a Dev Container**
 
 1. Ensure you have the **Dev Containers** extension installed in VS Code. You can install it from the [Visual Studio Code Marketplace](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers).
 
@@ -40,7 +39,7 @@ Before you start using CodeCureAgent, ensure that your system meets the followin
 3. Open the repository folder in VS Code.
 
 4. When prompted by VS Code to "Reopen in Container," click it. If not prompted, open the Command Palette (Ctrl+Shift+P) and select "Dev Containers: Reopen in Container."  
-VS Code will now build and start the DevContainer, setting up the environment for you. This will take a while.
+VS Code will now build and start the Dev Container, setting up the environment for you. This will take a while.
 
 5. Within your VS Code terminal, move to the folder code_cure_agent
 
@@ -50,7 +49,7 @@ VS Code will now build and start the DevContainer, setting up the environment fo
 
 ### **STEP 2: Set the OpenAI API Key**
 
-Inside the DevContainer terminal, configure your OpenAI API key by running:
+Inside the Dev Container terminal, configure your OpenAI API key by running:
 
 ```bash
 python3.10 set_api_key.py
@@ -80,7 +79,7 @@ You can open the `hyperparams.json` file to review or customize its parameters (
 
 - CodeCureAgent goes through the input file line by line
 - For each line CodeCureAgent checks out the project with the given URL and commit.
-- It initiates the autonomous repair process, trying to fix occurences of the given warning type in the given file.
+- It initiates the autonomous repair process, trying to fix the given rule violation in the given file.
 - Logs detailing each step performed will be displayed in your terminal.
 
 #### **Creating your own csv input file, based on repositories you want to run CodeCureAgent on**
@@ -108,8 +107,8 @@ Example usage (run from `code_cure_agent` on the `sampled_repos_specific_commit.
    After running the mining tool the output is saved in a json file. In the example this is `specific_commit_handled_rules_mining_result.json`.
 
 3. Finally you can create your csv input file from the json report by using `code_cure_agent/experimental_setups/prepare_experiment_input_file.py`.  
-To this script provide the previously created json report as the first argument. Also --rule-violations-mode must be set to single.  
-Additionally you can provide the path, the csv-file is to be saved to via --target-csv-file-path.  
+To this script provide the previously created json report as the first argument. Also --rule-violations-mode must be set to `single`.  
+Additionally you can provide the path, the csv-file is to be saved to, via --target-csv-file-path.  
 Example:
 
   ```bash
@@ -123,11 +122,13 @@ CodeCureAgent saves the output in multiple files.
 
 - The primary logs are located in the folder `experimental_setups/experiment_X`, where `experiment_X` increments automatically with each run of the command `./run_on_dataset.sh`.
 
-- Within this folder, you may find several subfolders:
-  - **logs**: Full chat history (prompts) and command outputs (one file per bug).
-  - **plausible_patches**: Any plausible patches generated (one file per bug).
-  - **mutations_history**: Suggested fixes derived by mutating prior suggestions (one file per bug).
-  - **responses**: Responses from the agent (LLM) at each cycle (one file per bug).
+- Within this folder, you may find several subfolders, which each hold one file per rule violation:
+  - **prompt_history**: Prompt history (prompts made to the model)
+  - **responses**: History of agent answers and the results of running the commands
+  - **all_messages**: Full message history (prompts to the agent, answers of the agent, and result of running a command)
+  - **plausible_patches**: Any plausible patches generated
+  - **implausible_patches**: Any implausible patches generated (rejected by the ChangeApprover steps)
+  - further subfolders for debugging purposes
 
 #### **Analyze Logs**
 
@@ -229,7 +230,7 @@ Within the `experimental_setups` folder, several scripts are available to post-p
 
 In the `run_on_dataset.sh` file, locate the line:
 ```bash
-./run.sh --ai-settings agent_config_and_prompt_files/ai_settings.yaml --model-version gpt-4o-mini-2024-07-18 -c --none-interactive -m json_file --experiment-file "$2" --debug
+./run.sh --ai-settings agent_config_and_prompt_files/ai_settings.yaml --model-version gpt-4.1-mini-2025-04-14 -c --none-interactive -m json_file --experiment-file "$2"
 ```
 Change the model_version to one of the following supported models:  
 

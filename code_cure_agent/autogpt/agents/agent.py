@@ -242,7 +242,7 @@ class Agent(BaseAgent):
             logger.error(
                 "Aborting", "Preparing the target project failed. Therefore aborting the execution.")
             shutdown(self, 1)
-        except (sonar_qube_analysis.AnalysisError, GitError, subprocess.TimeoutExpired):
+        except (sonar_qube_analysis.AnalysisError, GitError, subprocess.TimeoutExpired, TimeoutError):
             logger.error(
                 "Aborting", "Preparing the target project failed. Therefore aborting the execution.")
             shutdown(self, 1)

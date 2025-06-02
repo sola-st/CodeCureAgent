@@ -46,8 +46,7 @@ class Agent():
 if __name__ == "__main__":
 
     auto_gpt_workspace = "./../../auto_gpt_workspace"
-    if os.path.exists(auto_gpt_workspace):
-        shutil.rmtree(auto_gpt_workspace)
+    repository_operations.remove_folder_if_exists(auto_gpt_workspace)
     os.mkdir(auto_gpt_workspace)
 
     with open("original_sorald_considered_repos_stats.csv", "r") as repos_file:

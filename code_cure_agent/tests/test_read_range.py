@@ -40,6 +40,8 @@ class ReadRangeTestCase(unittest.TestCase):
         if os.path.exists(auto_gpt_workspace):
             shutil.rmtree(auto_gpt_workspace)
         os.mkdir(auto_gpt_workspace)
+        if os.path.exists("experimental_setups/experiment_test"):
+            shutil.rmtree("experimental_setups/experiment_test")
 
     def test_reading_existing_lines_from_warning_file_path_file(self):
         range_read: str = read_range(

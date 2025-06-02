@@ -3,7 +3,6 @@ import shutil
 import unittest
 from tests.agent_mock import AgentMock
 from autogpt.commands import sonar_qube_docu
-from autogpt.commands import web_search
 
 
 class SonarQubeDocuTestCase(unittest.TestCase):
@@ -35,6 +34,8 @@ class SonarQubeDocuTestCase(unittest.TestCase):
         if os.path.exists(auto_gpt_workspace):
             shutil.rmtree(auto_gpt_workspace)
         os.mkdir(auto_gpt_workspace)
+        if os.path.exists("experimental_setups/experiment_test"):
+            shutil.rmtree("experimental_setups/experiment_test")
 
     def test_docu_tool_bug_type_rule(self):
         rule_key = "S2142"

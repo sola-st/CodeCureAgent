@@ -4,6 +4,7 @@ from git.exc import GitError
 from autogpt.agents.base import BaseAgent
 import os
 import shutil
+import time
 from autogpt.logs.logger import logger
 import subprocess
 
@@ -19,14 +20,7 @@ def checkout_project(agent: BaseAgent) -> None:
 
     logger.info("", "Project checkout procedure starting.")
 
-    if os.path.exists(repo_path):
-        logger.debug(
-            "", f"Folder '{repo_path}' already exists. Deleting the folder.")
-        try:
-            shutil.rmtree(repo_path)
-        except OSError as e:
-            logger.error("Failed removing folder", "Error: %s - %s." %
-                         (e.filename, e.strerror))
+    remove_folder_if_exists(repo_path)
 
     logger.info(
         "", f"Cloning from URL '{agent.ai_config.warning_repository_URL}' to path '{repo_path}'.")
@@ -45,11 +39,43 @@ def checkout_project(agent: BaseAgent) -> None:
         logger.info(
             "", f"Checking out commit '{agent.ai_config.warning_repository_commit}'.")
         try:
-            repo.git.checkout(agent.ai_config.warning_repository_commit)
+            repo.git.checkout(
+                agent.ai_config.warning_repository_commit, "--force")
 
         except GitError as e:
             logger.error("Git Checkout failed", f"Error: {e}")
             raise
+
+
+def remove_folder_if_exists(folder: str) -> None:
+    if os.path.exists(folder):
+        logger.debug(
+            "", f"Folder '{folder}' already exists. Deleting the folder.")
+        try:
+            shutil.rmtree(folder)
+
+            # shutil.rmtree can be very flakey (maybe due to using dev container).
+            # Parts of the folder sometimes reappear after a short time, so os.path.exists is briefly false and then true again.
+            # Therefore sleep 2 seconds and then retry removing, if the folder reappeared
+            time.sleep(2)
+            # Wait for a maximum of 60 seconds for folder being deleted
+            timeout = 60
+            timer_start = time.time()
+            while os.path.exists(folder):
+                # Retrigger deletion
+                shutil.rmtree(folder)
+                if time.time() - timer_start > timeout:
+                    logger.error(
+                        "Failed removing folder", f"Removing ran into a timeout after {str(timeout)} seconds.")
+                    raise TimeoutError(
+                        "Failed removing folder. Removing ran into a timeout.")
+                time.sleep(1)
+
+        except TimeoutError as te:
+            raise te
+        except OSError as e:
+            logger.error("Failed removing folder", "Error: %s - %s." %
+                         (e.filename, e.strerror))
 
 
 def build_project(agent: BaseAgent) -> None:

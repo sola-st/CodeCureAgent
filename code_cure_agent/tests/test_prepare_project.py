@@ -177,7 +177,8 @@ class AnalyzeFileTestCase(unittest.TestCase):
         if os.path.exists(auto_gpt_workspace):
             shutil.rmtree(auto_gpt_workspace)
         os.mkdir(auto_gpt_workspace)
-        shutil.rmtree("experimental_setups/experiment_test")
+        if os.path.exists("experimental_setups/experiment_test"):
+            shutil.rmtree("experimental_setups/experiment_test")
 
     def test_analyze_file_and_parser_report_single_rule(self):
         rules = ["S2142"]

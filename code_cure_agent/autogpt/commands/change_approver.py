@@ -357,7 +357,9 @@ def any_new_violations_introduced(all_file_changes: list[FileChanges], sonar_qub
             line_content = lines[int(
                 start_line_newly_introduced_violation) - 1]
             line_content = line_content.strip()
-            newly_introduced_violations_string += f"Rule {str(newly_introduced_violation[1])}: '{str(newly_introduced_violation[2])}' at line {str(start_line_newly_introduced_violation)}: '{line_content}'  \n"
+
+            specific_message = newly_introduced_violation[3]["specificMessage"]
+            newly_introduced_violations_string += f"Rule {str(newly_introduced_violation[1])}: '{str(newly_introduced_violation[2])}' (Context-specific message: '{str(specific_message)}') at line {str(start_line_newly_introduced_violation)}: '{line_content}'  \n"
         return True, newly_introduced_violations_string
 
 

@@ -258,7 +258,7 @@ class ChangeApproverTestCase(unittest.TestCase):
         self.assertFalse(accepted)
         self.assertEqual(sonar_qube_message, """Rerunning the SonarQube analysis found the following new rule violations that weren't present before:  
 In file main/src/main/java/net/sourceforge/argparse4j/internal/TerminalWidth.java:  
-Rule S1764: 'Identical expressions should not be used on both sides of a binary operator' at line 94: 'if (1 == 1) {'  
+Rule S1764: 'Identical expressions should not be used on both sides of a binary operator' (Context-specific message: 'Correct one of the identical sub-expressions on both sides of operator "=="') at line 94: 'if (1 == 1) {'  
 
 You must not introduce any new rule violations.""")
 

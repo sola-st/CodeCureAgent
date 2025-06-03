@@ -19,16 +19,17 @@ go_to_gather_context_for_fix_desc = """go_to_gather_context_for_fix: Transitions
 
 # Gathering Context for a Fix
 
-find_definition_desc = """"find_definition: Look up the definition of a project-local symbol (method, class, variable etc.).  
+find_definition_desc = """find_definition: Look up the definition of a project-local symbol. For example you can look up the implementation of a called method or of a class.  
+    The symbol can either be a method, class, field or variable.  
     You can use this command to inform yourself about f.e. what a relevant method or class that is being referenced in the target file does.  
     Required params:  
         file_path: string - path to the file where the symbol is referenced  
         symbol: string - the symbol that you want to look up. Needs to exactly match the symbol name, but without any braces or similar  
         symbol_line: int - line number where the symbol is referenced"""
 
-find_references_desc = """"find_references: Look up all references (f.e. call-sites) of a project-local symbol (method, class, variable etc.).  
+find_references_desc = """find_references: Look up all references (f.e. call-sites) of a project-local symbol (method, class, variable etc.).  
     You can use this command to find out where and how a method/class etc. is used in the project.  
-    This might for example be relevant if you want to change the return value or return type of a method and need to check if there are any call-sites that need to be updated accordingly.  
+    Use this command before changing the return value/return type or parameters of a method, to check if there are any call-sites that call the method that need to be updated accordingly.  
     But there might also be other scenarios where this can be useful.  
     Required params:  
         file_path: string - path to the file where the symbol is defined  

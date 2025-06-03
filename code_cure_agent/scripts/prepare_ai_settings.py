@@ -3,9 +3,10 @@ import argparse
 template =\
     """ai_goals:
 - Gather understanding of the rule: Read the rule documentation and look at similar examples to understand what the rule is about
+- Perform code analysis: Analyze the lines of code associated and related to the violation to understand which parts may require changes. Also watch out whether there might be references (call-sites etc.) to a method or class in other files that need to be changed accordingly.
+- Ask yourself: What influences does a possible fix have? Are there any semantic changes it might introduce somewhere else in the project? How does the proposed fixed need to look like to not introduce any semantic changes at all?
 - Formulate a plan: Formulate a plan that you want to follow to tackle the problem. Update the plan if necessary.
-- Perform code analysis: Analyze the lines of code associated with the violation to understand which parts may require changes.
-- Try fixes: Try out fixes that are aimed at resolving the rule violation. Proposed fixes mustn't introduce any breaking semantic changes.
+- Try fixes: Try out fixes that are aimed at resolving the rule violation. Proposed fixes mustn't introduce any breaking semantic changes. Before creating a fix, first check if a fix might lead to any semantic changes anywhere in the project by using other commands (especially find_references and find_definition).
 - False positive: If and only if you are 100% certain that the rule violation is unmistakably a false positive, then you can suppress the warning by adding //NOSONAR in the fix. You must first collect information and try other fixes before resorting to this option.
 ai_name: CodeCureAgent
 ai_role: |+
@@ -20,12 +21,6 @@ ai_role: |+
     * the line number where the violation occurs
     * the context-specific warning text of the violation
 
-  Your objective is to:  
-
-  1. Understand the rule violation
-  2. Collect information about its context
-  3. Fix the specified rule violation in the specified file.  
-
   Note:  
   In some cases, resolving the violation may require modifying additional files in the project to maintain correctness and consistency.
 
@@ -34,6 +29,7 @@ ai_role: |+
   * Do not introduce new warnings or errors.
   * Use best practices aligned with clean Java code and SonarQube rule compliance.
   * Your decisions must always be made independently without seeking user assistance.
+  * Use all commands at least once, before calling write_fix for the first time!
 
 api_budget: 0.0
 warning_ID: {warning_ID}

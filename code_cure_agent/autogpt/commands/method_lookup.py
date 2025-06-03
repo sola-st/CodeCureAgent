@@ -117,14 +117,20 @@ def run_go_to(go_to_method: str, file_path: str, symbol: str, symbol_line: int, 
     logger.debug(lookup_result, title=f"find_{go_to_method} lookup result: ")
 
     if "result" not in lookup_result or len(lookup_result["result"]) == 0:
-        # checkout_project(agent)
+        checkout_project(agent)
         return f"No {go_to_method} could be found for '{symbol}' at line {str(symbol_line)} in file '{file_path}'. " \
             "\nDon't call the command with the same arguments again."
 
     if go_to_method == "definition":
-        return process_go_to_definition_lsp_result(lookup_result, symbol, agent)
+        command_output = process_go_to_definition_lsp_result(
+            lookup_result, symbol, agent)
     else:
-        return process_go_to_references_lsp_result(lookup_result, symbol, agent)
+        command_output = process_go_to_references_lsp_result(
+            lookup_result, symbol, agent)
+
+    checkout_project(agent)
+
+    return command_output
 
 
 def find_column_of_symbol(file_path: str, symbol: str, symbol_line_zero_indexed: int, agent: BaseAgent) -> int:
@@ -343,41 +349,34 @@ def read_message_from_subprocess(process: subprocess.Popen, target_message_id: i
 def process_go_to_definition_lsp_result(lookup_result: dict, symbol: str,  agent: BaseAgent) -> str:
     # TODO: test whether returning the full method/class/field etc. makes sense (esp. for long classes)
     # or if we should instead only return the file and position of the definition. => let agent use read_range where it sees fit
+
+    full_file_path: str = lookup_result["result"][0]["uri"]
+    full_file_path = full_file_path.lstrip("file:///")
+    full_file_path = "/" + full_file_path
+    repo_path = os.path.join(agent.config.workspace_path,
+                             agent.ai_config.warning_repository_name)
+
+    file_found_definition = full_file_path.replace(f"{repo_path}/", "").replace(
+        f"{agent.config.workspace_path}/", "").replace(f"{agent.config.workspace_path}", "")
+
+    start_line_definition = lookup_result["result"][0]["range"]["start"]["line"] + 1
+
+    found_definition_code = ""
     try:
-        full_file_path: str = lookup_result["result"][0]["uri"]
-        full_file_path = full_file_path.lstrip("file:///")
-        full_file_path = "/" + full_file_path
-        repo_path = os.path.join(agent.config.workspace_path,
-                                 agent.ai_config.warning_repository_name)
-
-        file_found_definition = full_file_path.replace(f"{repo_path}/", "").replace(
-            f"{agent.config.workspace_path}/", "").replace(f"{agent.config.workspace_path}", "")
-
-        start_line_definition = lookup_result["result"][0]["range"]["start"]["line"] + 1
-
-        found_definition_code = extract_code_for_symbol(
+        found_definition_code = extract_definition_code_for_symbol(
             symbol, full_file_path, start_line_definition)
 
     except Exception as e:
-        logger.error("Accessing definition failed ",
+        logger.error("Accessing code of definition failed. Falling back to only given the file and line of the definition. ",
                      "Error was: " + str(e))
-        checkout_project(agent)
-        return "Lookup of definition failed. " + str(e)
-
-    checkout_project(agent)
+        return f"The definition of '{symbol}' was found in file '{file_found_definition}' starting at line {str(start_line_definition)}.  " \
+            + "\nIf you want to look at the definition code you can use the read_range command.  "
 
     return f"The definition of '{symbol}' was found in file '{file_found_definition}' starting at line {str(start_line_definition)}.  " \
         + "\nThe code of the definition is the following:  \n" + found_definition_code
 
 
-def process_go_to_references_lsp_result(lookup_result: dict, symbol: str,  agent: BaseAgent) -> str:
-    # TODO: Implement formating the result.
-    # Decide how much context should be displayed per reference (or if this is left to the agent). Might be a lot of references in some cases.
-    # => Maybe display code only if only a few references ~3, and only give positions and hint at using read_range if more
-    return json.dumps(lookup_result)
-
-
-def extract_code_for_symbol(symbol: str, full_file_path: str, start_line_definition: int) -> str:
+def extract_definition_code_for_symbol(symbol: str, full_file_path: str, start_line_definition: int) -> str:
 
     with open(full_file_path, encoding='utf-8', errors='ignore') as jf:
         content = jf.read()
@@ -429,3 +428,72 @@ def get_start_end_for_node(node_to_find, tree, max_end):
     if start is not None:
         end = max_end
     return start, end
+
+
+def process_go_to_references_lsp_result(lookup_result: dict, symbol: str,  agent: BaseAgent) -> str:
+
+    number_of_references = len(lookup_result["result"])
+    show_code = True
+
+    if number_of_references > 5:
+        show_code = False
+
+    command_output = f"Found {str(number_of_references)} references to the symbol '{symbol}'. They are listed in the following:  \n"
+
+    references_data_by_file_path = {}
+    for reference in lookup_result["result"]:
+        full_file_path: str = reference["uri"]
+        full_file_path = full_file_path.lstrip("file:///")
+        full_file_path = "/" + full_file_path
+        repo_path = os.path.join(agent.config.workspace_path,
+                                 agent.ai_config.warning_repository_name)
+
+        file_found = full_file_path.replace(f"{repo_path}/", "").replace(
+            f"{agent.config.workspace_path}/", "").replace(f"{agent.config.workspace_path}", "")
+
+        start_line = reference["range"]["start"]["line"] + 1
+        if show_code:
+            try:
+                found_code = extract_reference_code_for_symbol(
+                    full_file_path, start_line)
+            except Exception as e:
+                logger.error(f"Accessing code of reference at file {full_file_path} line {str(start_line)} failed. Falling back to only given the file and line of the references. ",
+                             "Error was: " + str(e))
+                show_code = False
+        else:
+            found_code = ""
+
+        # Add the reference info to a dict grouped by file path
+        if file_found not in references_data_by_file_path:
+            references_data_by_file_path[file_found] = []
+        references_data_by_file_path[file_found].append(
+            (start_line, found_code))
+
+    for file_path, references_at_file_path in references_data_by_file_path.items():
+        command_output += f"References in file '{file_path}':  \n"
+        for (start_line, found_code) in references_at_file_path:
+            if show_code:
+                command_output += f"At line {str(start_line)}:  \nCode context:  \n{found_code}  \n"
+            else:
+                command_output += f"Line {str(start_line)}  \n"
+
+    if not show_code:
+        command_output += "\nIf you want to look at the code of a reference you can use the read_range command.  "
+
+    return command_output
+
+
+def extract_reference_code_for_symbol(full_file_path: str, line_of_reference: int) -> str:
+
+    with open(full_file_path, encoding='utf-8', errors='ignore') as jf:
+        content = jf.readlines()
+
+    # Read a region of at most 5 before and after the line_of_reference
+    start_line_to_return = max(1, line_of_reference - 5)
+    end_line_to_return = min(len(content), line_of_reference + 5)
+
+    output = ""
+    for i in range(start_line_to_return - 1, end_line_to_return):
+        output += f"Line {str(i + 1)}:{content[i]}"
+
+    return output

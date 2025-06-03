@@ -78,6 +78,19 @@ class MethodLookupTestCase(unittest.TestCase):
         print(find_definition(
             "main/src/main/java/net/sourceforge/argparse4j/internal/SubparserImpl.java", "addArgument", 62, self.agent))
 
+    def test_go_to_references_http_proxy_servlet(self):
+        warning_repository_URL = "https://github.com/mitre/HTTP-Proxy-Servlet.git"
+        warning_repository_commit = "34edf588ad9a02fecffe5efbad0d42ec592838ae"
+        warning_repository_name = "HTTP-Proxy-Servlet"
+
+        self.agent = AgentMock(warning_repository_URL, warning_repository_commit, None,
+                               warning_repository_name, None, None, None, None)
+
+        checkout_project(self.agent)
+
+        print(find_references(
+            "src/main/java/org/mitre/dsmiley/httpproxy/URITemplateProxyServlet.java", "ATTR_QUERY_STRING", 59, self.agent))
+
     def test_go_to_references_junit4(self):
         warning_repository_URL = "https://github.com/junit-team/junit4.git"
         warning_repository_commit = "7852b90cfe1cea1e0cdaa19d490c83f0d8684b50"

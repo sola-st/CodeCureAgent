@@ -22,8 +22,8 @@ from autogpt.command_decorator import command
 from autogpt.utils.path_utils import path_utils
 from autogpt.commands.repository_operations import checkout_project
 
-COMMAND_CATEGORY = "method_lookup"
-COMMAND_CATEGORY_TITLE = "Commands for looking up methods (find_definition and find_references)"
+COMMAND_CATEGORY = "symbol_lookup"
+COMMAND_CATEGORY_TITLE = "Commands for looking up project-local symbols (find_definition and find_references)"
 
 ALLOWLIST_CONTROL = "allowlist"
 DENYLIST_CONTROL = "denylist"
@@ -85,7 +85,10 @@ def find_references(file_path: str, symbol: str, symbol_line: int, agent: BaseAg
 
 def run_go_to(go_to_method: str, file_path: str, symbol: str, symbol_line: int, agent: BaseAgent) -> str:
     """
-    Run one of the go to methods. go_to_method can either be "definition" or "references".
+    Run one of the goto methods. go_to_method can either be "definition" or "references".
+    First the symbol is located in the file and the zero indexed column and line of the symbol calculated.
+    Then a Java Language Server is initialized for the target project and then the go_to command executed with the calculated parameters.
+    The response is then processed and code lines read and formatted into the command result.
     """
     if symbol_line <= 0:
         return f"Lookup of {go_to_method} failed. The symbol_line was {str(symbol_line)}, but must be greater than 0."
@@ -118,7 +121,7 @@ def run_go_to(go_to_method: str, file_path: str, symbol: str, symbol_line: int, 
 
     if "result" not in lookup_result or len(lookup_result["result"]) == 0:
         checkout_project(agent)
-        return f"No {go_to_method} could be found for '{symbol}' at line {str(symbol_line)} in file '{file_path}'. " \
+        return f"No {go_to_method} could be found for '{symbol}' at line {str(symbol_line)} in file '{file_path}'.  " \
             "\nDon't call the command with the same arguments again."
 
     if go_to_method == "definition":
@@ -134,6 +137,9 @@ def run_go_to(go_to_method: str, file_path: str, symbol: str, symbol_line: int, 
 
 
 def find_column_of_symbol(file_path: str, symbol: str, symbol_line_zero_indexed: int, agent: BaseAgent) -> int:
+    """
+    Calculates the column (zero indexed) of the symbol, by reading the symbol's line in the file and searching for the symbol in this line.
+    """
 
     with open(os.path.join(agent.config.workspace_path, agent.ai_config.warning_repository_name, file_path)) as fp:
         file_lines = fp.readlines()
@@ -154,6 +160,11 @@ def find_column_of_symbol(file_path: str, symbol: str, symbol_line_zero_indexed:
 
 
 def lsp_lookup(go_to_method: str, file_path: str, symbol_line_zero_indexed: int, symbol_column_zero_indexed: int, agent: BaseAgent) -> str:
+    """
+    Executes the Java Language Server lookup request.
+    First the LSP is configured and initialized.
+    When it is ready the goto query is run.
+    """
 
     request_id = random.randint(100, 2147483647)
     go_to_request = {
@@ -269,6 +280,9 @@ def clean_project_of_gradle_build_files(agent: BaseAgent) -> None:
 
 
 def execute_command(command: str, init_req: str, req: str, request_id: int) -> dict:
+    """
+    Runs initialization request and the main goto request, both subject to a max timeout.
+    """
 
     # Open the subprocess with stdout redirected to a file
     process = subprocess.Popen(
@@ -299,7 +313,7 @@ def execute_command(command: str, init_req: str, req: str, request_id: int) -> d
             process, request_id, timeout, False)
 
         logger.debug(json.dumps(
-            definition_lookup_result), title="LSP go to result: ")
+            definition_lookup_result), title="LSP goto result: ")
 
         process.kill()
 
@@ -314,6 +328,11 @@ def execute_command(command: str, init_req: str, req: str, request_id: int) -> d
 
 
 def read_message_from_subprocess(process: subprocess.Popen, target_message_id: int, timeout: int, init_req: bool) -> dict:
+    """
+    Reads the output stream of the LSP subprocess, until it receives the expected json-response.
+    Then the response is returned.
+    If the timeout expires while waiting for the response a TimeoutError is thrown.
+    """
     start_time = time.time()
     while True:
         ready, _, _ = select.select([process.stdout], [], [], 1)
@@ -347,6 +366,10 @@ def read_message_from_subprocess(process: subprocess.Popen, target_message_id: i
 
 
 def process_go_to_definition_lsp_result(lookup_result: dict, symbol: str,  agent: BaseAgent) -> str:
+    """
+    Takes the response of a goto definition request and tries to retrieve the definition's code and formats it into a command result.
+    If the retrieval of the code should fail, then we don't give the code in the result but hint at using read_range to retrieve it.
+    """
     # TODO: test whether returning the full method/class/field etc. makes sense (esp. for long classes)
     # or if we should instead only return the file and position of the definition. => let agent use read_range where it sees fit
 
@@ -377,6 +400,9 @@ def process_go_to_definition_lsp_result(lookup_result: dict, symbol: str,  agent
 
 
 def extract_definition_code_for_symbol(symbol: str, full_file_path: str, start_line_definition: int) -> str:
+    """
+    Finds the node corresponding to the lookedup symbol and returns the code of this definition symbol.
+    """
 
     with open(full_file_path, encoding='utf-8', errors='ignore') as jf:
         content = jf.read()
@@ -403,6 +429,9 @@ def extract_definition_code_for_symbol(symbol: str, full_file_path: str, start_l
 
 
 def searched_tree_node(node: javalang.tree.Declaration, symbol: str, start_line_definition: int) -> bool:
+    """
+    Checks if the passed node is the node searched for, by checking name and start line.
+    """
     # Most Declarations types have a name field
     if hasattr(node, "name") and node.name == symbol and node.position[0] == start_line_definition:
         return True
@@ -416,6 +445,10 @@ def searched_tree_node(node: javalang.tree.Declaration, symbol: str, start_line_
 
 
 def get_start_end_for_node(node_to_find, tree, max_end):
+    """
+    Retrieves start and end lines of the node's code.
+    The end position might overestimate the true end of the definition.
+    """
     start = None
     end = None
     for path, node in tree:
@@ -431,6 +464,12 @@ def get_start_end_for_node(node_to_find, tree, max_end):
 
 
 def process_go_to_references_lsp_result(lookup_result: dict, symbol: str,  agent: BaseAgent) -> str:
+    """
+    Takes the response of a goto references request.
+    If there are few enough found references then a few lines of code around the reference are extracted and formatted into the command result.
+    If there are too many, only the line number of the reference is added to the result.
+    The references are grouped by file.
+    """
 
     number_of_references = len(lookup_result["result"])
     show_code = True
@@ -484,6 +523,9 @@ def process_go_to_references_lsp_result(lookup_result: dict, symbol: str,  agent
 
 
 def extract_reference_code_for_symbol(full_file_path: str, line_of_reference: int) -> str:
+    """
+    Extracts 5 lines before and 5 lines after the line of the reference and returns it formatted with line numbers.
+    """
 
     with open(full_file_path, encoding='utf-8', errors='ignore') as jf:
         content = jf.readlines()

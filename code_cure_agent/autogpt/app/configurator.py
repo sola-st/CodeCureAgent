@@ -56,23 +56,25 @@ def create_config(
     config.speak_mode = False
 
     if debug:
-        logger.typewriter_log("Debug Mode: ", Fore.GREEN, "ENABLED")
+        logger.info(title="Debug Mode: ",
+                    title_color=Fore.GREEN, message="ENABLED")
         config.debug_mode = True
 
     if continuous:
-        logger.typewriter_log("Continuous Mode: ", Fore.RED, "ENABLED")
-        logger.typewriter_log(
-            "WARNING: ",
-            Fore.RED,
-            "Continuous mode is not recommended. It is potentially dangerous and may"
+        logger.info(title="Continuous Mode: ",
+                    title_color=Fore.RED, message="ENABLED")
+        logger.warn(
+            title="WARNING: ",
+            title_color=Fore.RED,
+            message="Continuous mode is not recommended. It is potentially dangerous and may"
             " cause your AI to run forever or carry out actions you would not usually"
             " authorise. Use at your own risk.",
         )
         config.continuous_mode = True
 
         if continuous_limit:
-            logger.typewriter_log(
-                "Continuous Limit: ", Fore.GREEN, f"{continuous_limit}"
+            logger.info(
+                title="Continuous Limit: ", title_color=Fore.GREEN, message=f"{continuous_limit}"
             )
             config.continuous_limit = continuous_limit
 
@@ -82,14 +84,15 @@ def create_config(
             "--continuous-limit can only be used with --continuous")
 
     if speak:
-        logger.typewriter_log("Speak Mode: ", Fore.GREEN, "ENABLED")
+        logger.info(title="Speak Mode: ",
+                    title_color=Fore.GREEN, message="ENABLED")
         config.speak_mode = True
 
     # Set the used LLM model
     # If --model_version set, try to use this version of GPT model if available
     if (check_model(model_version, model_type="fast_llm", config=config) == model_version):
-        logger.typewriter_log(
-            f"LLM set to: {model_version}", Fore.GREEN, "ENABLED")
+        logger.info(
+            title="LLM set to", message=model_version, title_color=Fore.GREEN)
         config.fast_llm = model_version
         config.smart_llm = model_version
 
@@ -104,22 +107,24 @@ def create_config(
         supported_memory = get_supported_memory_backends()
         chosen = memory_type
         if chosen not in supported_memory:
-            logger.typewriter_log(
-                "ONLY THE FOLLOWING MEMORY BACKENDS ARE SUPPORTED: ",
-                Fore.RED,
-                f"{supported_memory}",
+            logger.info(
+                title="ONLY THE FOLLOWING MEMORY BACKENDS ARE SUPPORTED: ",
+                title_color=Fore.RED,
+                message=f"{supported_memory}",
             )
-            logger.typewriter_log(
-                "Defaulting to: ", Fore.YELLOW, config.memory_backend)
+            logger.info(
+                title="Defaulting to: ", title_color=Fore.YELLOW, message=config.memory_backend)
         else:
             config.memory_backend = chosen
 
     if skip_reprompt:
-        logger.typewriter_log("Skip Re-prompt: ", Fore.GREEN, "ENABLED")
+        logger.info(title="Skip Re-prompt: ",
+                    title_color=Fore.GREEN, message="ENABLED")
         config.skip_reprompt = True
 
     if none_interactive:
-        logger.typewriter_log("None-Interactive mode: ", Fore.GREEN, "ENABLED")
+        logger.info(title="None-Interactive mode: ",
+                    title_color=Fore.GREEN, message="ENABLED")
         config.none_interactive = True
 
     if ai_settings_file:
@@ -128,12 +133,12 @@ def create_config(
         # Validate file
         (validated, message) = yaml_utils.validate_yaml_file(file)
         if not validated:
-            logger.typewriter_log("FAILED FILE VALIDATION",
-                                  Fore.RED, message, level=logging.ERROR)
+            logger.error(title="FAILED FILE VALIDATION", message=message)
             logger.double_check()
             exit(1)
 
-        logger.typewriter_log("Using AI Settings File:", Fore.GREEN, file)
+        logger.info(title="Using AI Settings File:",
+                    title_color=Fore.GREEN, message=file)
         config.ai_settings_file = file
         config.skip_reprompt = True
 
@@ -143,29 +148,29 @@ def create_config(
         # Validate file
         (validated, message) = yaml_utils.validate_yaml_file(file)
         if not validated:
-            logger.typewriter_log("FAILED FILE VALIDATION",
-                                  Fore.RED, message, level=logging.ERROR)
+            logger.error("FAILED FILE VALIDATION", message)
             logger.double_check()
             exit(1)
 
-        logger.typewriter_log("Using Prompt Settings File:", Fore.GREEN, file)
+        logger.info(title="Using Prompt Settings File:",
+                    title_color=Fore.GREEN, message=file)
         config.prompt_settings_file = file
 
     if browser_name:
         config.selenium_web_browser = browser_name
 
     if allow_downloads:
-        logger.typewriter_log("Native Downloading:", Fore.GREEN, "ENABLED")
-        logger.typewriter_log(
-            "WARNING: ",
-            Fore.YELLOW,
-            f"{Back.LIGHTYELLOW_EX}Auto-GPT will now be able to download and save files to your machine.{Back.RESET} "
-            + "It is recommended that you monitor any files it downloads carefully.",
-            level=logging.WARNING)
-        logger.typewriter_log(
-            "WARNING: ",
-            Fore.YELLOW,
-            f"{Back.RED + Style.BRIGHT}ALWAYS REMEMBER TO NEVER OPEN FILES YOU AREN'T SURE OF!{Style.RESET_ALL}", level=logging.WARNING
+        logger.info(title="Native Downloading:",
+                    title_color=Fore.GREEN, message="ENABLED")
+        logger.warn(
+            title="WARNING: ",
+            title_color=Fore.YELLOW,
+            message=f"{Back.LIGHTYELLOW_EX}Auto-GPT will now be able to download and save files to your machine.{Back.RESET} "
+            + "It is recommended that you monitor any files it downloads carefully.")
+        logger.warn(
+            title="WARNING: ",
+            title_color=Fore.YELLOW,
+            message=f"{Back.RED + Style.BRIGHT}ALWAYS REMEMBER TO NEVER OPEN FILES YOU AREN'T SURE OF!{Style.RESET_ALL}"
         )
         config.allow_downloads = True
 
@@ -189,10 +194,10 @@ def check_model(
     if any(model_name in m["id"] for m in models):
         return model_name
 
-    logger.typewriter_log(
-        "WARNING: ",
-        Fore.YELLOW,
-        f"You do not have access to {model_name}. Setting {model_type} to "
-        f"gpt-3.5-turbo.", level=logging.WARNING
+    logger.warn(
+        title="WARNING: ",
+        title_color=Fore.YELLOW,
+        message=f"You do not have access to {model_name}. Setting {model_type} to "
+        f"gpt-3.5-turbo."
     )
     return "gpt-3.5-turbo"

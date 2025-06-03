@@ -36,8 +36,7 @@ class PromptConfig:
         # Validate file
         (validated, message) = yaml_utils.validate_yaml_file(prompt_settings_file)
         if not validated:
-            logger.typewriter_log("FAILED FILE VALIDATION",
-                                  Fore.RED, message, level=logging.ERROR)
+            logger.error(title="FAILED FILE VALIDATION", message=message)
             logger.double_check()
             exit(1)
 

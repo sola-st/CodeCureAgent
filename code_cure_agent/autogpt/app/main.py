@@ -119,22 +119,14 @@ def run_auto_gpt(
                     + Style.RESET_ALL
                 )
 
-        git_branch = get_current_git_branch()
-        if git_branch and git_branch != "stable":
-            logger.typewriter_log(
-                "WARNING: ",
-                Fore.RED,
-                f"You are running on `{git_branch}` branch "
-                "- this is not a supported branch.", level=logging.WARNING
-            )
         if sys.version_info < (3, 10):
-            logger.typewriter_log(
-                "WARNING: ",
-                Fore.RED,
-                "You are running on an older version of Python. "
+            logger.warn(
+                title="WARNING: ",
+                title_color=Fore.RED,
+                message="You are running on an older version of Python. "
                 "Some people have observed problems with certain "
                 "parts of Auto-GPT with this version. "
-                "Please consider upgrading to Python 3.10 or higher.", level=logging.WARNING
+                "Please consider upgrading to Python 3.10 or higher."
             )
 
     if install_plugin_deps:
@@ -191,11 +183,11 @@ def run_auto_gpt(
     # this is particularly important for indexing and referencing pinecone memory
     memory = get_memory(config)
     memory.clear()
-    logger.typewriter_log(
-        "Using memory of type:", Fore.GREEN, f"{memory.__class__.__name__}"
+    logger.info(
+        title="Using memory of type:", title_color=Fore.GREEN, message=f"{memory.__class__.__name__}"
     )
-    logger.typewriter_log("Using Browser:", Fore.GREEN,
-                          config.selenium_web_browser)
+    logger.info(title="Using Browser:", title_color=Fore.GREEN,
+                message=config.selenium_web_browser)
 
     agent = Agent(
         memory=memory,
@@ -256,10 +248,9 @@ def run_interaction_loop(
     def graceful_agent_interrupt(signum: int, frame: Optional[FrameType]) -> None:
         nonlocal cycle_budget, cycles_remaining, spinner
         if cycles_remaining in [0, 1, math.inf]:
-            logger.typewriter_log(
-                "Interrupt signal received. Stopping continuous command execution "
-                "immediately.",
-                Fore.RED, level=logging.WARNING
+            logger.warn(
+                title="Interrupt signal received. Stopping continuous command execution immediately.",
+                title_color=Fore.RED
             )
             shutdown(agent, 1)
         else:
@@ -267,9 +258,9 @@ def run_interaction_loop(
             if spinner.running:
                 spinner.stop()
 
-            logger.typewriter_log(
-                "Interrupt signal received. Stopping continuous command execution.",
-                Fore.RED, level=logging.WARNING
+            logger.warn(
+                title="Interrupt signal received. Stopping continuous command execution.",
+                title_color=Fore.RED
             )
             cycles_remaining = 0
             if restart_spinner:
@@ -323,35 +314,35 @@ def run_interaction_loop(
                     else:
                         # Case 1: Continuous iteration was interrupted -> resume
                         if cycle_budget > 1:
-                            logger.typewriter_log(
-                                "RESUMING CONTINUOUS EXECUTION: ",
-                                Fore.MAGENTA,
-                                f"The cycle budget is {cycle_budget}.",
+                            logger.info(
+                                title="RESUMING CONTINUOUS EXECUTION: ",
+                                title_color=Fore.MAGENTA,
+                                message=f"The cycle budget is {cycle_budget}.",
                             )
                         # Case 2: The agent used up its cycle budget -> reset
                         cycles_remaining = cycle_budget + 1
-                    logger.typewriter_log(
-                        "-=-=-=-=-=-=-= COMMAND AUTHORISED BY USER -=-=-=-=-=-=-=",
-                        Fore.MAGENTA,
-                        "",
+                    logger.info(
+                        title="-=-=-=-=-=-=-= COMMAND AUTHORISED BY USER -=-=-=-=-=-=-=",
+                        title_color=Fore.MAGENTA,
+                        message="",
                     )
                 elif user_feedback == UserFeedback.EXIT:
-                    logger.typewriter_log("Exiting...", Fore.YELLOW)
+                    logger.info(title="Exiting...", title_color=Fore.YELLOW)
                     shutdown(agent, 0)
                 else:  # user_feedback == UserFeedback.TEXT
                     command_name = "human_feedback"
 
-                logger.typewriter_log(
-                    "AUTHORISED COMMANDS LEFT: ", Fore.CYAN, f"{cycles_remaining}"
+                logger.info(
+                    title="AUTHORISED COMMANDS LEFT: ", title_color=Fore.CYAN, message=f"{cycles_remaining}"
                 )
         else:
             user_input = None
             # First log new-line so user can differentiate sections better in console
-            logger.typewriter_log("\n")
+            logger.info(message="\n")
             if cycles_remaining != math.inf:
                 # Print authorized commands left value
-                logger.typewriter_log(
-                    "AUTHORISED COMMANDS LEFT: ", Fore.CYAN, f"{cycles_remaining}"
+                logger.info(
+                    title="AUTHORISED COMMANDS LEFT: ", title_color=Fore.CYAN, message=f"{cycles_remaining}"
                 )
 
         ###################
@@ -365,10 +356,11 @@ def run_interaction_loop(
         result = agent.execute(command_name, command_args, user_input)
 
         if result is not None:
-            logger.typewriter_log("SYSTEM: ", Fore.YELLOW, result)
+            logger.info(title="SYSTEM: ",
+                        title_color=Fore.YELLOW, message=result)
         else:
-            logger.typewriter_log("SYSTEM: ", Fore.YELLOW,
-                                  "Unable to execute command", level=logging.WARNING)
+            logger.warn(title="SYSTEM: ", title_color=Fore.YELLOW,
+                        message="Unable to execute command")
 
 
 def shutdown(agent: Agent, signal: int):
@@ -402,29 +394,26 @@ def update_user(
 
     if command_name is not None:
         if command_name.lower().startswith("error"):
-            logger.typewriter_log(
-                "ERROR: ",
-                Fore.RED,
-                f"The Agent failed to select an action. "
-                f"Error message: {command_name}", level=logging.ERROR
+            logger.error(
+                title="ERROR: ",
+                message=f"The Agent failed to select an action. Error message: {command_name}"
             )
         else:
             if config.speak_mode:
                 say_text(f"I want to execute {command_name}", config)
 
             # First log new-line so user can differentiate sections better in console
-            logger.typewriter_log("\n")
-            logger.typewriter_log(
-                "NEXT ACTION: ",
-                Fore.CYAN,
-                f"COMMAND = {Fore.CYAN}{remove_ansi_escape(command_name)}{Style.RESET_ALL}  "
+            logger.info(message="\n")
+            logger.info(
+                title="NEXT ACTION: ",
+                title_color=Fore.CYAN,
+                message=f"COMMAND = {Fore.CYAN}{remove_ansi_escape(command_name)}{Style.RESET_ALL}  "
                 f"ARGUMENTS = {Fore.CYAN}{command_args}{Style.RESET_ALL}",
             )
     else:
-        logger.typewriter_log(
-            "NO ACTION SELECTED: ",
-            Fore.RED,
-            "The Agent failed to select an action.", level=logging.ERROR
+        logger.error(
+            title="NO ACTION SELECTED: ",
+            message="The Agent failed to select an action."
         )
 
 
@@ -540,15 +529,14 @@ def construct_main_ai_config(
         or (config.skip_reprompt
             and all([ai_config.ai_name, ai_config.ai_role, ai_config.ai_goals, ai_config.warning_ID, ai_config.warning_repository_URL, ai_config.warning_repository_commit, ai_config.warning_file_path, ai_config.warning_rule_key, ai_config.warning_start_line, ai_config.warning_rule_name, ai_config.warning_specific_message]))
     ):
-        logger.typewriter_log("ai_config found: ", Fore.GREEN,
-                              "The complete ai_config was successfully loaded from the ai_settings_file.")
+        logger.info(title="ai_config found: ", title_color=Fore.GREEN,
+                    message="The complete ai_config was successfully loaded from the ai_settings_file.")
 
     elif all([ai_config.ai_name, ai_config.ai_role, ai_config.ai_goals, ai_config.warning_ID, ai_config.warning_repository_URL, ai_config.warning_repository_commit, ai_config.warning_file_path, ai_config.warning_rule_key, ai_config.warning_start_line, ai_config.warning_rule_name, ai_config.warning_specific_message]):
-        logger.typewriter_log(
-            "Welcome back! ",
-            Fore.GREEN,
-            f"Would you like me to return to being {ai_config.ai_name}?",
-            speak_text=True,
+        logger.info(
+            title="Welcome back! ",
+            title_color=Fore.GREEN,
+            message=f"Would you like me to return to being {ai_config.ai_name}?"
         )
         should_continue = clean_input(
             config,
@@ -575,53 +563,54 @@ Continue ({config.authorise_key}/{config.exit_key}): """,
         ai_config.save(config.workdir / config.ai_settings_file)
 
     if config.restrict_to_workspace:
-        logger.typewriter_log(
-            "NOTE:All files/directories created by this agent can be found inside its workspace at:",
-            Fore.YELLOW,
-            f"{config.workspace_path}",
+        logger.info(
+            title="NOTE:All files/directories created by this agent can be found inside its workspace at:",
+            title_color=Fore.YELLOW,
+            message=f"{config.workspace_path}",
         )
     # set the total api budget
     api_manager = ApiManager()
     api_manager.set_total_budget(ai_config.api_budget)
 
     # Agent Created, print message
-    logger.typewriter_log(
-        ai_config.ai_name,
-        Fore.LIGHTBLUE_EX,
-        "has been created with the following details:",
-        speak_text=True,
+    logger.info(
+        title=ai_config.ai_name,
+        title_color=Fore.LIGHTBLUE_EX,
+        message="has been created with the following details:"
     )
 
     # Print the ai_config details
-    logger.typewriter_log("Name :", Fore.GREEN, ai_config.ai_name)
-    logger.typewriter_log("Role :", Fore.GREEN, ai_config.ai_role)
-    logger.typewriter_log("Goals:", Fore.GREEN, "", speak_text=False)
+    logger.info(title="Name :", title_color=Fore.GREEN,
+                message=ai_config.ai_name)
+    logger.info(title="Role :", title_color=Fore.GREEN,
+                message=ai_config.ai_role)
+    logger.info(title="Goals:", title_color=Fore.GREEN, message="")
     for goal in ai_config.ai_goals:
-        logger.typewriter_log("-", Fore.GREEN, goal, speak_text=False)
-    logger.typewriter_log("Warning ID: ",
-                          Fore.GREEN, str(ai_config.warning_ID))
-    logger.typewriter_log("Warning Repository URL: ",
-                          Fore.GREEN, ai_config.warning_repository_URL)
-    logger.typewriter_log("Warning Repository Commit: ",
-                          Fore.GREEN, ai_config.warning_repository_commit)
-    logger.typewriter_log("Warning Repository Name",
-                          Fore.GREEN, ai_config.warning_repository_name)
-    logger.typewriter_log("Warning File Path: ",
-                          Fore.GREEN, ai_config.warning_file_path)
-    logger.typewriter_log("Warning File Name: ",
-                          Fore.GREEN, ai_config.warning_file_name)
-    logger.typewriter_log("Warning Rule Key: ", Fore.GREEN,
-                          ai_config.warning_rule_key)
-    logger.typewriter_log("Warning Start Line: ", Fore.GREEN,
-                          str(ai_config.warning_start_line))
-    logger.typewriter_log("Warning Rule Name: ",
-                          Fore.GREEN, ai_config.warning_rule_name)
-    logger.typewriter_log("Warning Specific Message: ",
-                          Fore.GREEN, ai_config.warning_specific_message)
-    logger.typewriter_log(
-        "API Budget:",
-        Fore.GREEN,
-        "infinite" if ai_config.api_budget <= 0 else f"${ai_config.api_budget}",
+        logger.info(title="-", title_color=Fore.GREEN, message=goal)
+    logger.info(title="Warning ID: ",
+                title_color=Fore.GREEN, message=str(ai_config.warning_ID))
+    logger.info(title="Warning Repository URL: ",
+                title_color=Fore.GREEN, message=ai_config.warning_repository_URL)
+    logger.info(title="Warning Repository Commit: ",
+                title_color=Fore.GREEN, message=ai_config.warning_repository_commit)
+    logger.info(title="Warning Repository Name",
+                title_color=Fore.GREEN, message=ai_config.warning_repository_name)
+    logger.info(title="Warning File Path: ",
+                title_color=Fore.GREEN, message=ai_config.warning_file_path)
+    logger.info(title="Warning File Name: ",
+                title_color=Fore.GREEN, message=ai_config.warning_file_name)
+    logger.info(title="Warning Rule Key: ", title_color=Fore.GREEN,
+                message=ai_config.warning_rule_key)
+    logger.info(title="Warning Start Line: ", title_color=Fore.GREEN,
+                message=str(ai_config.warning_start_line))
+    logger.info(title="Warning Rule Name: ",
+                title_color=Fore.GREEN, message=ai_config.warning_rule_name)
+    logger.info(title="Warning Specific Message: ",
+                title_color=Fore.GREEN, message=ai_config.warning_specific_message)
+    logger.info(
+        title="API Budget:",
+        title_color=Fore.GREEN,
+        message="infinite" if ai_config.api_budget <= 0 else f"${ai_config.api_budget}",
     )
 
     return ai_config
@@ -634,50 +623,11 @@ def print_assistant_thoughts(
 ) -> None:
     from autogpt.speech import say_text
 
-    assistant_thoughts_reasoning = None
-    assistant_thoughts_plan = None
-    assistant_thoughts_speak = None
-    assistant_thoughts_criticism = None
-
     assistant_thoughts = assistant_reply_json_valid.get("thoughts", {})
-    # assistant_thoughts_text = remove_ansi_escape(assistant_thoughts.get("text", ""))
     if assistant_thoughts:
-        """assistant_thoughts_reasoning = remove_ansi_escape(
-            assistant_thoughts.get("reasoning", "")
+        logger.info(
+            title=f"{ai_name.upper()} THOUGHTS:", title_color=Fore.YELLOW, message=str(assistant_thoughts)
         )
-        assistant_thoughts_plan = remove_ansi_escape(assistant_thoughts.get("plan", ""))
-        assistant_thoughts_criticism = remove_ansi_escape(
-            assistant_thoughts.get("criticism", "")
-        )
-        assistant_thoughts_speak = remove_ansi_escape(
-            assistant_thoughts.get("speak", "")
-        )"""
-    logger.typewriter_log(
-        f"{ai_name.upper()} THOUGHTS:", Fore.YELLOW, str(assistant_thoughts)
-    )
-    # logger.typewriter_log("REASONING:", Fore.YELLOW, str(assistant_thoughts_reasoning))
-    """
-    if assistant_thoughts_plan:
-        logger.typewriter_log("PLAN:", Fore.YELLOW, "")
-        # If it's a list, join it into a string
-        if isinstance(assistant_thoughts_plan, list):
-            assistant_thoughts_plan = "\n".join(assistant_thoughts_plan)
-        elif isinstance(assistant_thoughts_plan, dict):
-            assistant_thoughts_plan = str(assistant_thoughts_plan)
-
-        # Split the input_string using the newline character and dashes
-        lines = assistant_thoughts_plan.split("\n")
-        for line in lines:
-            line = line.lstrip("- ")
-            logger.typewriter_log("- ", Fore.GREEN, line.strip())
-    logger.typewriter_log("CRITICISM:", Fore.YELLOW, f"{assistant_thoughts_criticism}")
-    # Speak the assistant's thoughts
-    if assistant_thoughts_speak:
-        if config.speak_mode:
-            say_text(assistant_thoughts_speak, config)
-        else:
-            logger.typewriter_log("SPEAK:", Fore.YELLOW, f"{assistant_thoughts_speak}")
-    """
 
 
 def remove_ansi_escape(s: str) -> str:

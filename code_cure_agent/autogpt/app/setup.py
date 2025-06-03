@@ -32,11 +32,10 @@ def prompt_user(
     """
 
     # Construct the prompt
-    logger.typewriter_log(
-        "Welcome to Auto-GPT! ",
-        Fore.GREEN,
-        "run with '--help' for more information.",
-        speak_text=True,
+    logger.info(
+        title="Welcome to Auto-GPT! ",
+        title_color=Fore.GREEN,
+        message="run with '--help' for more information."
     )
 
     ai_config_template_provided = ai_config_template is not None and any(
@@ -58,11 +57,10 @@ def prompt_user(
     user_desire = ""
     if not ai_config_template_provided:
         # Get user desire if command line overrides have not been passed in
-        logger.typewriter_log(
-            "Create an AI-Assistant:",
-            Fore.GREEN,
-            "input '--manual' to enter manual mode.",
-            speak_text=True,
+        logger.info(
+            title="Create an AI-Assistant:",
+            title_color=Fore.GREEN,
+            message="input '--manual' to enter manual mode."
         )
 
         user_desire = utils.clean_input(
@@ -74,10 +72,9 @@ def prompt_user(
 
     # If user desire contains "--manual" or we have overridden any of the AI configuration
     if "--manual" in user_desire or ai_config_template_provided:
-        logger.typewriter_log(
-            "Manual Mode Selected",
-            Fore.GREEN,
-            speak_text=True,
+        logger.info(
+            title="Manual Mode Selected",
+            title_color=Fore.GREEN
         )
         return generate_aiconfig_manual(config, ai_config_template)
 
@@ -85,11 +82,10 @@ def prompt_user(
         try:
             return generate_aiconfig_automatic(user_desire, config)
         except Exception as e:
-            logger.typewriter_log(
-                "Unable to automatically generate AI Config based on user desire.",
-                Fore.RED,
-                "Falling back to manual mode.",
-                speak_text=True,
+            logger.info(
+                title="Unable to automatically generate AI Config based on user desire.",
+                title_color=Fore.RED,
+                message="Falling back to manual mode."
             )
             logger.debug(f"Error during AIConfig generation: {e}")
 
@@ -115,12 +111,11 @@ def generate_aiconfig_manual(
     """
 
     # Manual Setup Intro
-    logger.typewriter_log(
-        "Create an AI-Assistant:",
-        Fore.GREEN,
-        "Enter the name of your AI and its role below. Entering nothing will load"
-        " defaults.",
-        speak_text=True,
+    logger.info(
+        title="Create an AI-Assistant:",
+        title_color=Fore.GREEN,
+        message="Enter the name of your AI and its role below. Entering nothing will load"
+        " defaults."
     )
 
     if ai_config_template and ai_config_template.ai_name:
@@ -128,25 +123,25 @@ def generate_aiconfig_manual(
     else:
         ai_name = ""
         # Get AI Name from User
-        logger.typewriter_log(
-            "Name your AI: ", Fore.GREEN, "For example, 'Entrepreneur-GPT'"
+        logger.info(
+            title="Name your AI: ", title_color=Fore.GREEN, message="For example, 'Entrepreneur-GPT'"
         )
         ai_name = utils.clean_input(config, "AI Name: ")
     if ai_name == "":
         ai_name = "Entrepreneur-GPT"
 
-    logger.typewriter_log(
-        f"{ai_name} here!", Fore.LIGHTBLUE_EX, "I am at your service.", speak_text=True
+    logger.info(
+        title=f"{ai_name} here!", title_color=Fore.LIGHTBLUE_EX, message="I am at your service."
     )
 
     if ai_config_template and ai_config_template.ai_role:
         ai_role = ai_config_template.ai_role
     else:
         # Get AI Role from User
-        logger.typewriter_log(
-            "Describe your AI's role: ",
-            Fore.GREEN,
-            "For example, 'an AI designed to autonomously develop and run businesses with"
+        logger.info(
+            title="Describe your AI's role: ",
+            title_color=Fore.GREEN,
+            message="For example, 'an AI designed to autonomously develop and run businesses with"
             " the sole goal of increasing your net worth.'",
         )
         ai_role = utils.clean_input(config, f"{ai_name} is: ")
@@ -158,10 +153,10 @@ def generate_aiconfig_manual(
         ai_goals = ai_config_template.ai_goals
     else:
         # Enter up to 5 goals for the AI
-        logger.typewriter_log(
-            "Enter up to 5 goals for your AI: ",
-            Fore.GREEN,
-            "For example: \nIncrease net worth, Grow Twitter Account, Develop and manage"
+        logger.info(
+            title="Enter up to 5 goals for your AI: ",
+            title_color=Fore.GREEN,
+            message="For example: \nIncrease net worth, Grow Twitter Account, Develop and manage"
             " multiple businesses autonomously'",
         )
         logger.info(
@@ -185,9 +180,9 @@ def generate_aiconfig_manual(
         warning_ID = ai_config_template.warning_ID
     else:
         # Get repository URL from User
-        logger.typewriter_log(
-            "Give a unique ID for the agent run identifying the specific warning: ",
-            Fore.GREEN, speak_text=False
+        logger.info(
+            title="Give a unique ID for the agent run identifying the specific warning: ",
+            title_color=Fore.GREEN
         )
         warning_ID = int(utils.clean_input(
             config, "Warning ID is: "))
@@ -196,9 +191,9 @@ def generate_aiconfig_manual(
         warning_repository_URL = ai_config_template.warning_repository_URL
     else:
         # Get repository URL from User
-        logger.typewriter_log(
-            "Give the Git repository URL of the project with the warning to fix: ",
-            Fore.GREEN, speak_text=False
+        logger.info(
+            title="Give the Git repository URL of the project with the warning to fix: ",
+            title_color=Fore.GREEN
         )
         warning_repository_URL = utils.clean_input(
             config, "Repository URL is: ")
@@ -207,9 +202,9 @@ def generate_aiconfig_manual(
         warning_repository_commit = ai_config_template.warning_repository_commit
     else:
         # Get repository Commit from User
-        logger.typewriter_log(
-            "Give the Git repository Commit of the project to use: ",
-            Fore.GREEN, speak_text=False
+        logger.info(
+            title="Give the Git repository Commit of the project to use: ",
+            title_color=Fore.GREEN
         )
         warning_repository_commit = utils.clean_input(
             config, "Repository Commit is: ")
@@ -218,9 +213,9 @@ def generate_aiconfig_manual(
         warning_file_path = ai_config_template.warning_file_path
     else:
         # Get warning file path from User
-        logger.typewriter_log(
-            "Give the File path of the file with warning to fix: ",
-            Fore.GREEN, speak_text=False
+        logger.info(
+            title="Give the File path of the file with warning to fix: ",
+            title_color=Fore.GREEN
         )
         warning_file_path = utils.clean_input(config, "File path: ")
 
@@ -228,9 +223,9 @@ def generate_aiconfig_manual(
         warning_rule_key = ai_config_template.warning_rule_key
     else:
         # Get rule key from User
-        logger.typewriter_log(
-            "Give the SonarQube rule key of the warning to fix: ",
-            Fore.GREEN, speak_text=False
+        logger.info(
+            title="Give the SonarQube rule key of the warning to fix: ",
+            title_color=Fore.GREEN
         )
         warning_rule_key = utils.clean_input(config, "Rule key: ")
 
@@ -238,9 +233,9 @@ def generate_aiconfig_manual(
         warning_start_line = ai_config_template.warning_start_line
     else:
         # Get repository URL from User
-        logger.typewriter_log(
-            "Give the start line of the rule violation: ",
-            Fore.GREEN, speak_text=False
+        logger.info(
+            title="Give the start line of the rule violation: ",
+            title_color=Fore.GREEN
         )
         warning_start_line = int(utils.clean_input(
             config, "Rule violation start line: "))
@@ -249,9 +244,9 @@ def generate_aiconfig_manual(
         warning_rule_name = ai_config_template.warning_rule_name
     else:
         # Get repository URL from User
-        logger.typewriter_log(
-            "Give the rule name (short description) of the warning to fix: ",
-            Fore.GREEN, speak_text=False
+        logger.info(
+            title="Give the rule name (short description) of the warning to fix: ",
+            title_color=Fore.GREEN
         )
         warning_rule_name = utils.clean_input(config, "Rule name: ")
 
@@ -259,18 +254,18 @@ def generate_aiconfig_manual(
         warning_specific_message = ai_config_template.warning_specific_message
     else:
         # Get repository URL from User
-        logger.typewriter_log(
-            "Give the rule violations specific message: ",
-            Fore.GREEN, speak_text=False
+        logger.info(
+            title="Give the rule violations specific message: ",
+            title_color=Fore.GREEN
         )
         warning_specific_message = utils.clean_input(
             config, "Specific message: ")
 
     # Get API Budget from User
-    logger.typewriter_log(
-        "Enter your budget for API calls: ",
-        Fore.GREEN,
-        "For example: $1.50",
+    logger.info(
+        title="Enter your budget for API calls: ",
+        title_color=Fore.GREEN,
+        message="For example: $1.50",
     )
     logger.info("Enter nothing to let the AI run without monetary limit")
     api_budget_input = utils.clean_input(
@@ -282,8 +277,8 @@ def generate_aiconfig_manual(
         try:
             api_budget = float(api_budget_input.replace("$", ""))
         except ValueError:
-            logger.typewriter_log(
-                "Invalid budget input. Setting budget to unlimited.", Fore.RED
+            logger.error(
+                title="Invalid budget input. Setting budget to unlimited."
             )
             api_budget = 0.0
 

@@ -69,8 +69,8 @@ async def interaction_step(
                 exps.write("### PLAUSIBLE FIX\n{}\n".format(
                     str(command_args["changes_dicts"])))
         if result is None:
-            logger.typewriter_log("SYSTEM: ", Fore.YELLOW,
-                                  "Unable to execute command")
+            logger.warn(title="SYSTEM: ", title_color=Fore.YELLOW,
+                        message="Unable to execute command")
             return
 
     next_command_name, next_command_args, assistant_reply_dict = agent.think()

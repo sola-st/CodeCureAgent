@@ -80,8 +80,8 @@ class BaseAgent(metaclass=ABCMeta):
 
         # Overwrite the continuos_limit with the commands_limit specified in hyperparams.json
         self.config.continuous_limit = self.hyperparams["commands_limit"]
-        logger.typewriter_log(
-            "Continuous Limit: ", Fore.GREEN, f"{self.config.continuous_limit}"
+        logger.info(
+            title="Continuous Limit: ", title_color=Fore.GREEN, message=f"{self.config.continuous_limit}"
         )
 
         with open("agent_config_and_prompt_files/commands_by_state.json") as cbs:

@@ -139,6 +139,19 @@ Correct fix: Suppressing it is the best choice, because it is a deprecated class
 
 Total correct fixes: 8/15  
 Non-suppressing correct fixes: 5/15  
+
+Correct fixes by TP/FP/Might fix:
+
+TP:
+3/5 (1 incorrect fix, 1 unfixed)
+
+Might fix:
+3/4 (1 incorrect fix, 1 is just suppressed)
+
+FP:
+2/6 (Suppresses them kind of by chance)
+
+
 ## Test case coverage
 
 ID 8:  

@@ -112,7 +112,7 @@ def show_changed_code(all_file_changes: list[FileChanges], agent: BaseAgent) -> 
                         file_changes.change_tracked_lines.lines_before_change[line_mapping_of_line.before_line - 1].strip(
                             "\n") + "' after:'" + file_changes.change_tracked_lines[i].strip("\n") + "'\n"
                 elif line_mapping_of_line.deleted:
-                    changed_code_message += "deleted_line:" + \
+                    changed_code_message += "deleted line:" + \
                         file_changes.change_tracked_lines.lines_before_change[
                             line_mapping_of_line.before_line - 1].strip("\n") + "\n"
                 else:
@@ -148,6 +148,10 @@ def extract_build_error_information(build_error: BuildError, agent: BaseAgent) -
             start_of_compilation_errors_section:]
 
         error_lines = compilation_errors_section.splitlines()
+
+        # Truncate the error output if it has more than 10 error lines (first two lines are headers)
+        if len(error_lines) > 12:
+            error_lines = error_lines[:10]
 
         error_lines = add_problem_context_information(
             error_lines, agent)
@@ -463,4 +467,4 @@ def reject(messages: list[str], changes_dicts: list[dict], agent: BaseAgent) -> 
         exps.write(
             f"  \n### IMPLAUSIBLE FIX (fix no. {str(agent.write_fix_attempts)})\n{json.dumps(changes_dicts, indent=4)}\n\n ###CHANGE APPROVER FEEDBACK:  \n" + "  \n".join(messages))
 
-    return "REJECTED  \n" + "  \n".join(messages) + "  \n\nIMPORTANT: The repository has been restored to its original state! You need to start applying changes from scratch again."
+    return "REJECTED  \nIMPORTANT: The repository has been restored to its original state! You need to start applying changes from scratch again.\n" + "  \n".join(messages)

@@ -1,13 +1,14 @@
-import csv
-import shutil
-import os
-from git.exc import GitError
-from autogpt.commands import repository_operations
-import subprocess
 import sys
 from os import path
 sys.path.append(path.dirname(path.dirname(
     path.dirname(path.abspath(__file__)))))
+import csv
+import os
+from git.exc import GitError
+from autogpt.commands import repository_operations
+import subprocess
+
+
 
 
 # This script goes through all of the reposiotries in the sorald list of repos and tries to build them
@@ -56,7 +57,7 @@ if __name__ == "__main__":
             csv_writer = csv.writer(out_file, dialect=csv.unix_dialect)
 
             csv_writer.writerow(
-                ["repositoryURL", "commit", "Build successful"])
+                ["repositoryURL", "commit", "Build successful", "Tests successful"])
 
             for i, row in enumerate(csv_reader):
                 if i > 0:
@@ -69,6 +70,8 @@ if __name__ == "__main__":
                     error = None
 
                     build_successful = False
+
+                    tests_successful = False
 
                     try:
                         repository_operations.checkout_project(agent)
@@ -86,9 +89,49 @@ if __name__ == "__main__":
                     except Exception as e:
                         error = str(e)
 
+                    # Run the tests
+                    if error is None:
+                        try:
+                            timeout_five_minutes = 5*60
+                            repo_path = os.path.join(agent.config.workspace_path,
+                                                     agent.ai_config.warning_repository_name)
+                            
+                            print("Running tests for target project " + agent.ai_config.warning_repository_name)
+
+                            result = subprocess.run(
+                                ["mvn", "clean", "test",
+                                    "--no-transfer-progress", "--batch-mode"],
+                                capture_output=True,
+                                encoding="utf8",
+                                cwd=repo_path,
+                                shell=False,
+                                timeout=timeout_five_minutes
+                            )
+
+                            if result.returncode == 0:
+                                tests_successful = True
+
+                                print("Running tests was successful.")
+
+                            else:
+                                print("Running tests failed with: " + result.stdout)
+                                raise repository_operations.BuildError(
+                                    result.returncode, result.stdout)
+
+                        except subprocess.TimeoutExpired as te:
+                            error = f"TimeoutExpired exception: Tests timed out after {te.timeout / 60} minutes. \nThe stdout was the following: \n\n{te.stdout.decode('utf-8')}"
+                        except repository_operations.BuildError as be:
+                            error = be.stdout
+                        except Exception as e:
+                            error = str(e)
+
+                        with open(os.path.join(auto_gpt_workspace, f"{agent.ai_config.warning_repository_name}_test_info.log"), "w") as log:
+                            log.write(result.stdout)
+
+
                     if error is not None:
                         with open(os.path.join(auto_gpt_workspace, f"{agent.ai_config.warning_repository_name}_error.log"), "w") as log:
                             log.write(str(error))
 
                     csv_writer.writerow(
-                        [repository_url, commit, build_successful])
+                        [repository_url, commit, build_successful, tests_successful])

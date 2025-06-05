@@ -135,6 +135,8 @@ class BaseAgent(metaclass=ABCMeta):
 
         }
 
+        self.lsp_server_initialized = False
+
         # Experiments_list is expected to exist, because "increment_experiment.py" creates it if it doesn't exist.
         experiments_list = "experimental_setups/experiments_list.txt"
 

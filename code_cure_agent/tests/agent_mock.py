@@ -42,3 +42,4 @@ class AgentMock():
 
         self.write_fix_attempts = 0
         self.initial_analysis_reports = {}
+        self.lsp_server_initialized = False

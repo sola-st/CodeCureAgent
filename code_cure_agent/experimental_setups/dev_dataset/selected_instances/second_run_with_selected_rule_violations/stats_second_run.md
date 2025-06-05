@@ -155,10 +155,10 @@ TP:
 3/5 (1 incorrect fix, 1 unfixed)  
 
 Might fix:  
-2/4  
+2/4  (2 unfixed)
 
 FP:  
-1/6 (Did not recognize as FPs. Once the change it made was ok and something one can accept. In all other cases it was changing some semantics.)  
+1/6 (3 incorrect fixes, 2 unfixed) (Did not recognize as FPs. Once the change it made was ok and something one can accept. In all other cases it was changing some semantics.)  
 
 => It behaves especially bad for False Positives as it doesn't recognize them as such (as this is not part of the task)
 

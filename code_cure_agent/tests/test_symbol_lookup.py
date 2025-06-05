@@ -1,5 +1,7 @@
 import unittest
 
+import time
+import random
 import os
 import shutil
 
@@ -22,8 +24,7 @@ class SymbolLookupTestCase(unittest.TestCase):
 
     def tearDown(self):
         auto_gpt_workspace = "auto_gpt_workspace"
-        if os.path.exists(auto_gpt_workspace):
-            shutil.rmtree(auto_gpt_workspace)
+        remove_folder_if_exists(auto_gpt_workspace)
         os.mkdir(auto_gpt_workspace)
 
     def test_go_to_definition_jpass(self):
@@ -233,6 +234,130 @@ References in file 'src/test/java/org/junit/tests/junit3compatibility/OldTestCla
 Line 25  
 
 If you want to look at the code of a reference you can use the read_range command.  """)
+
+    def test_multiple_go_to_ref_and_go_to_def_in_one_run(self):
+        warning_repository_URL = "https://github.com/junit-team/junit4.git"
+        warning_repository_commit = "7852b90cfe1cea1e0cdaa19d490c83f0d8684b50"
+        warning_repository_name = "junit4"
+
+        self.agent = AgentMock(warning_repository_URL, warning_repository_commit, None,
+                               warning_repository_name, None, None, None, None)
+
+        checkout_project(self.agent)
+
+        definition_result = find_definition(
+            "src/test/java/junit/tests/framework/AssertTest.java", "AssertionFailedError", 26, self.agent)
+
+        print(definition_result)
+
+        self.assertEqual(definition_result, """The definition of 'AssertionFailedError' was found in file 'src/main/java/junit/framework/AssertionFailedError.java' starting at line 13.  
+The code of the definition is the following:  
+Line 10:    /**
+Line 11:     * Constructs a new AssertionFailedError without a detail message.
+Line 12:     */
+Line 13:    public AssertionFailedError() {
+Line 14:    }
+Line 15:
+Line 16:    /**
+Line 17:     * Constructs a new AssertionFailedError with the specified detail message.
+Line 18:     * A null message is replaced by an empty String.
+Line 19:     * @param message the detail message. The detail message is saved for later 
+Line 20:     * retrieval by the {@code Throwable.getMessage()} method.
+Line 21:     */
+Line 22:    public AssertionFailedError(String message) {
+""")
+
+        time.sleep(random.randint(0, 15))
+
+        references_result = find_references(
+            "src/main/java/junit/framework/AssertionFailedError.java", "AssertionFailedError", 13, self.agent)
+        print(references_result)
+
+        self.assertEqual(references_result, """Found 7 references to the symbol 'AssertionFailedError'. They are listed in the following:  
+References in file 'src/main/java/junit/framework/Assert.java':  
+Line 55  
+References in file 'src/test/java/junit/tests/framework/AssertTest.java':  
+Line 26  
+Line 38  
+Line 50  
+References in file 'src/test/java/junit/tests/framework/AssertionFailedErrorTest.java':  
+Line 10  
+References in file 'src/test/java/junit/tests/runner/TextFeedbackTest.java':  
+Line 90  
+References in file 'src/test/java/org/junit/tests/junit3compatibility/OldTestClassAdaptingListenerTest.java':  
+Line 25  
+
+If you want to look at the code of a reference you can use the read_range command.  """)
+
+        time.sleep(random.randint(0, 15))
+
+        definition_result = find_definition(
+            "src/test/java/junit/tests/framework/AssertTest.java", "AssertionFailedError", 26, self.agent)
+
+        print(definition_result)
+
+        self.assertEqual(definition_result, """The definition of 'AssertionFailedError' was found in file 'src/main/java/junit/framework/AssertionFailedError.java' starting at line 13.  
+The code of the definition is the following:  
+Line 10:    /**
+Line 11:     * Constructs a new AssertionFailedError without a detail message.
+Line 12:     */
+Line 13:    public AssertionFailedError() {
+Line 14:    }
+Line 15:
+Line 16:    /**
+Line 17:     * Constructs a new AssertionFailedError with the specified detail message.
+Line 18:     * A null message is replaced by an empty String.
+Line 19:     * @param message the detail message. The detail message is saved for later 
+Line 20:     * retrieval by the {@code Throwable.getMessage()} method.
+Line 21:     */
+Line 22:    public AssertionFailedError(String message) {
+""")
+
+        time.sleep(random.randint(0, 15))
+
+        references_result = find_references(
+            "src/main/java/junit/framework/AssertionFailedError.java", "AssertionFailedError", 13, self.agent)
+        print(references_result)
+
+        self.assertEqual(references_result, """Found 7 references to the symbol 'AssertionFailedError'. They are listed in the following:  
+References in file 'src/main/java/junit/framework/Assert.java':  
+Line 55  
+References in file 'src/test/java/junit/tests/framework/AssertTest.java':  
+Line 26  
+Line 38  
+Line 50  
+References in file 'src/test/java/junit/tests/framework/AssertionFailedErrorTest.java':  
+Line 10  
+References in file 'src/test/java/junit/tests/runner/TextFeedbackTest.java':  
+Line 90  
+References in file 'src/test/java/org/junit/tests/junit3compatibility/OldTestClassAdaptingListenerTest.java':  
+Line 25  
+
+If you want to look at the code of a reference you can use the read_range command.  """)
+
+        time.sleep(random.randint(0, 15))
+
+        definition_result = find_definition(
+            "src/test/java/junit/tests/framework/AssertTest.java", "AssertionFailedError", 26, self.agent)
+
+        print(definition_result)
+
+        self.assertEqual(definition_result, """The definition of 'AssertionFailedError' was found in file 'src/main/java/junit/framework/AssertionFailedError.java' starting at line 13.  
+The code of the definition is the following:  
+Line 10:    /**
+Line 11:     * Constructs a new AssertionFailedError without a detail message.
+Line 12:     */
+Line 13:    public AssertionFailedError() {
+Line 14:    }
+Line 15:
+Line 16:    /**
+Line 17:     * Constructs a new AssertionFailedError with the specified detail message.
+Line 18:     * A null message is replaced by an empty String.
+Line 19:     * @param message the detail message. The detail message is saved for later 
+Line 20:     * retrieval by the {@code Throwable.getMessage()} method.
+Line 21:     */
+Line 22:    public AssertionFailedError(String message) {
+""")
 
     def test_go_to_references_junit4_non_existing_path(self):
         warning_repository_URL = "https://github.com/junit-team/junit4.git"

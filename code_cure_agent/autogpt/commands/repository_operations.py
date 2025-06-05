@@ -9,13 +9,18 @@ from autogpt.logs.logger import logger
 import subprocess
 
 
-def checkout_project(agent: BaseAgent) -> None:
+def checkout_project(agent: BaseAgent, overwrite_target_workspace_path: str = None) -> None:
     """
     Clone targeted repository and checkout targeted commit.
     If the target project folder already exists it is first removed.
     Throws a GitError if cloning or checking out fails.
     """
-    repo_path = os.path.join(agent.config.workspace_path,
+    if overwrite_target_workspace_path is None:
+        target_workspace_path = agent.config.workspace_path
+    else:
+        target_workspace_path = overwrite_target_workspace_path
+
+    repo_path = os.path.join(target_workspace_path,
                              agent.ai_config.warning_repository_name)
 
     logger.info("", "Project checkout procedure starting.")

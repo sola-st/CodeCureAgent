@@ -85,7 +85,8 @@ You can open the `hyperparams.json` file to review or customize its parameters (
 #### **Creating your own csv input file, based on repositories you want to run CodeCureAgent on**
 
 1. Create a .txt file with the URLs to the git repositories to use in each line. If you want to run on specific commits of the repositories you can add the commitID after the URL, separated by a comma.  
-For an example see [sampled_repos_specific_commit.txt](code_cure_agent/experimental_setups/dev_dataset/sampled_repos_specific_commit.txt).  
+For an example see [sampled_repos_specific_commit.txt](code_cure_agent/experimental_setups/dev_dataset/sampled_repos_specific_commit.txt). 
+Currently, CodeCureAgent only supports Maven projects that can be built by running a simple `mvn clean package` with Maven 3.6.3.  
 
 2. Use the Sorald mining tool to mine SonarQube warnings on the repositories specified in the file.  
 Example usage (run from `code_cure_agent` on the `sampled_repos_specific_commit.txt` file):  

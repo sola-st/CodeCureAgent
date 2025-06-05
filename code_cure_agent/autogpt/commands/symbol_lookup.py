@@ -20,7 +20,7 @@ from autogpt.logs.logger import logger
 
 from autogpt.command_decorator import command
 from autogpt.utils.path_utils import path_utils
-from autogpt.commands.repository_operations import checkout_project
+from autogpt.commands.repository_operations import checkout_project, remove_folder_if_exists
 
 COMMAND_CATEGORY = "symbol_lookup"
 COMMAND_CATEGORY_TITLE = "Commands for looking up project-local symbols (find_definition and find_references)"
@@ -97,6 +97,7 @@ def run_go_to(go_to_method: str, file_path: str, symbol: str, symbol_line: int, 
     symbol_line_zero_indexed = int(symbol_line) - 1
 
     try:
+        # Here we still use the original repo path
         file_path = path_utils.preprocess_paths(
             agent.config.workspace_path, agent.ai_config.warning_repository_name, file_path)
 
@@ -108,30 +109,29 @@ def run_go_to(go_to_method: str, file_path: str, symbol: str, symbol_line: int, 
                      "Error was: " + str(ve))
         return f"Lookup of {go_to_method} failed. " + str(ve)
 
+    # Use warning-unique folder for the lsp to prevent issues due to the folder not being deleted properly
+    lsp_sub_workspace = f"ID{str(agent.ai_config.warning_ID)}_symbol_lookup_commands_sub_workspace"
+
     try:
         lookup_result = lsp_lookup(go_to_method, file_path, symbol_line_zero_indexed,
-                                   symbol_column_zero_indexed, agent)
+                                   symbol_column_zero_indexed, lsp_sub_workspace, agent)
     except Exception as e:
         logger.error(f"LSP {go_to_method} lookup failed ",
                      "Error was: " + str(e))
-        checkout_project(agent)
         return f"Lookup of {go_to_method} failed. " + str(e)
 
     logger.debug(lookup_result, title=f"find_{go_to_method} lookup result: ")
 
     if "result" not in lookup_result or len(lookup_result["result"]) == 0:
-        checkout_project(agent)
         return f"No {go_to_method} could be found for '{symbol}' at line {str(symbol_line)} in file '{file_path}'.  " \
             "\nDon't call the command with the same arguments again."
 
     if go_to_method == "definition":
         command_output = process_go_to_definition_lsp_result(
-            lookup_result, symbol, agent)
+            lookup_result, symbol, lsp_sub_workspace, agent)
     else:
         command_output = process_go_to_references_lsp_result(
-            lookup_result, symbol, agent)
-
-    checkout_project(agent)
+            lookup_result, symbol, lsp_sub_workspace, agent)
 
     return command_output
 
@@ -159,7 +159,7 @@ def find_column_of_symbol(file_path: str, symbol: str, symbol_line_zero_indexed:
     return symbol_column_zero_indexed
 
 
-def lsp_lookup(go_to_method: str, file_path: str, symbol_line_zero_indexed: int, symbol_column_zero_indexed: int, agent: BaseAgent) -> str:
+def lsp_lookup(go_to_method: str, file_path: str, symbol_line_zero_indexed: int, symbol_column_zero_indexed: int, lsp_sub_workspace: str, agent: BaseAgent) -> str:
     """
     Executes the Java Language Server lookup request.
     First the LSP is configured and initialized.
@@ -172,7 +172,7 @@ def lsp_lookup(go_to_method: str, file_path: str, symbol_line_zero_indexed: int,
         "id": request_id,
         "method": f"textDocument/{go_to_method}", "params": {
             "textDocument": {
-                "uri": "file://" + os.path.join(agent.config.workspace_path, agent.ai_config.warning_repository_name, file_path)
+                "uri": "file://" + os.path.join(agent.config.workspace_path, lsp_sub_workspace, agent.ai_config.warning_repository_name, file_path)
             },
             "position": {
                 "line": symbol_line_zero_indexed,
@@ -186,29 +186,48 @@ def lsp_lookup(go_to_method: str, file_path: str, symbol_line_zero_indexed: int,
         }
 
     string_request = json.dumps(go_to_request)
-    command = prepare_command(agent.config.workspace_path)
+
+    command = prepare_command(os.path.join(
+        agent.config.workspace_path, lsp_sub_workspace))
 
     logger.debug("COMMAND: " + command)
 
-    if not os.path.exists(os.path.join(agent.config.workspace_path, "lspeclipse")):
-        prepare_lsp_env(agent.config.workspace_path)
+    if not agent.lsp_server_initialized:
 
-    if not os.path.exists(os.path.join(agent.config.workspace_path, "lspeclipse", "lsp_init_file.json")):
-        prepare_init_file(agent)
+        logger.debug("LSP server not yet initialized",
+                     title="Initializing LSP Server")
 
-    with open(os.path.join(agent.config.workspace_path, "lspeclipse", "lsp_init_file.json")) as inif:
-        init_content = inif.read()
+        # The sub_workspace has a unique name for each warning ID,
+        # so on a clean initial workspace this should not occur
+        remove_folder_if_exists(os.path.join(
+            agent.config.workspace_path, lsp_sub_workspace))
 
-    clean_project_of_gradle_build_files(agent)
+        # Create the subworkspace with the lsp folder (subworkspace allows reusing the lsp server for the same agent run)
+        os.mkdir(os.path.join(agent.config.workspace_path, lsp_sub_workspace))
+        prepare_lsp_env(os.path.join(agent.config.workspace_path,
+                        lsp_sub_workspace, "lspeclipse"))
+        prepare_init_file(lsp_sub_workspace, agent)
+
+        # Checkout the project to the subworkspace
+        checkout_project(agent, overwrite_target_workspace_path=os.path.join(
+            agent.config.workspace_path, lsp_sub_workspace))
+        clean_project_of_gradle_build_files(lsp_sub_workspace, agent)
+
+        with open(os.path.join(agent.config.workspace_path, lsp_sub_workspace, "lspeclipse", "lsp_init_file.json")) as inif:
+            init_content = inif.read()
+    else:
+        logger.debug("LSP server was already initialized",
+                     title="Reusing LSP Server")
+        init_content = ""
 
     go_to_result = execute_command(
-        command, init_content, string_request, request_id)
+        command, init_content, string_request, request_id, agent)
 
     return go_to_result
 
 
-def prepare_command(workspace_path: str):
-    cmd = [f'cd {str(os.path.join(workspace_path, "lspeclipse"))} &&',
+def prepare_command(full_workspace_path: str):
+    cmd = [f'cd {str(os.path.join(full_workspace_path, "lspeclipse"))} &&',
            '/usr/lib/jvm/java-17-openjdk-amd64/bin/java',
            '-Declipse.application=org.eclipse.jdt.ls.core.id1',
            '-Dosgi.bundles.defaultStartLevel=4',
@@ -223,7 +242,7 @@ def prepare_command(workspace_path: str):
            '-configuration',
            './config_linux',
            '-data',
-           str(workspace_path)
+           str(full_workspace_path)
            ]
     return " ".join(cmd)
 
@@ -237,11 +256,11 @@ def prepare_lsp_env(destination_path: str):
     subprocess.run(command, check=True)
 
 
-def prepare_init_file(agent: BaseAgent):
-    with open(os.path.join(agent.config.workspace_path, "lspeclipse", "lsp_init_template.json")) as lit:
+def prepare_init_file(lsp_sub_workspace: str, agent: BaseAgent):
+    with open(os.path.join(agent.config.workspace_path, lsp_sub_workspace, "lspeclipse", "lsp_init_template.json")) as lit:
         lsp_template = json.load(lit)
 
-    root_path = os.path.join(agent.config.workspace_path,
+    root_path = os.path.join(agent.config.workspace_path, lsp_sub_workspace,
                              agent.ai_config.warning_repository_name)
     root_uri = "file://" + root_path
 
@@ -252,22 +271,22 @@ def prepare_init_file(agent: BaseAgent):
     lsp_template["params"]["workspaceFolders"][0]["uri"] = root_uri
     lsp_template["params"]["workspaceFolders"][0]["name"] = agent.ai_config.warning_repository_name
 
-    with open(os.path.join(agent.config.workspace_path, "lspeclipse", "lsp_init_file.json"), "w") as json_handler:
+    with open(os.path.join(agent.config.workspace_path, lsp_sub_workspace, "lspeclipse", "lsp_init_file.json"), "w") as json_handler:
         json.dump(lsp_template, json_handler)
 
 
-def clean_project_of_gradle_build_files(agent: BaseAgent) -> None:
+def clean_project_of_gradle_build_files(lsp_sub_workspace: str, agent: BaseAgent) -> None:
     """
     Remove gradle build files if present in the project to force using maven.
     """
     build_gradle_path = os.path.join(
-        agent.config.workspace_path, agent.ai_config.warning_repository_name, "build.gradle")
+        agent.config.workspace_path, lsp_sub_workspace, agent.ai_config.warning_repository_name, "build.gradle")
     build_gradle_kts_path = os.path.join(
-        agent.config.workspace_path, agent.ai_config.warning_repository_name, "build.gradle.kts")
+        agent.config.workspace_path, lsp_sub_workspace, agent.ai_config.warning_repository_name, "build.gradle.kts")
     settings_gradle_path = os.path.join(
-        agent.config.workspace_path, agent.ai_config.warning_repository_name, "settings.gradle")
+        agent.config.workspace_path, lsp_sub_workspace, agent.ai_config.warning_repository_name, "settings.gradle")
     setting_gradle_kts_path = os.path.join(
-        agent.config.workspace_path, agent.ai_config.warning_repository_name, "settings.gradle.kts")
+        agent.config.workspace_path, lsp_sub_workspace, agent.ai_config.warning_repository_name, "settings.gradle.kts")
 
     if os.path.exists(build_gradle_path):
         os.remove(build_gradle_path)
@@ -279,7 +298,7 @@ def clean_project_of_gradle_build_files(agent: BaseAgent) -> None:
         os.remove(setting_gradle_kts_path)
 
 
-def execute_command(command: str, init_req: str, req: str, request_id: int) -> dict:
+def execute_command(command: str, init_req: str, req: str, request_id: int, agent: BaseAgent) -> dict:
     """
     Runs initialization request and the main goto request, both subject to a max timeout.
     """
@@ -288,19 +307,21 @@ def execute_command(command: str, init_req: str, req: str, request_id: int) -> d
     process = subprocess.Popen(
         command, stdout=subprocess.PIPE, stdin=subprocess.PIPE, text=True, shell=True)
     try:
-        content_length = len(init_req)
-        request = "Content-Length: {}\r\n\r\n{}".format(
-            content_length, init_req)
-        # Send the input to the subprocess
-        process.stdin.write(request)
-        process.stdin.flush()
+        if not agent.lsp_server_initialized:
+            content_length = len(init_req)
+            request = "Content-Length: {}\r\n\r\n{}".format(
+                content_length, init_req)
+            # Send the input to the subprocess
+            process.stdin.write(request)
+            process.stdin.flush()
 
-        initalization_msg_id = 1
-        timeout_initialization = 30
-        init_result = read_message_from_subprocess(
-            process, initalization_msg_id, timeout_initialization, True)
-        logger.debug(json.dumps(
-            init_result), title="LSP initialization result when running look_up_definition: ")
+            initalization_msg_id = 1
+            timeout_initialization = 30
+            init_result = read_message_from_subprocess(
+                process, initalization_msg_id, timeout_initialization, True)
+            logger.debug(json.dumps(
+                init_result), title="LSP initialization result when running look_up_definition: ")
+            agent.lsp_server_initialized = True
 
         content_length = len(req)
         request = "Content-Length: {}\r\n\r\n{}".format(content_length, req)
@@ -365,7 +386,7 @@ def read_message_from_subprocess(process: subprocess.Popen, target_message_id: i
                 f"The lookup ran into a timeout after {timeout} seconds.")
 
 
-def process_go_to_definition_lsp_result(lookup_result: dict, symbol: str,  agent: BaseAgent) -> str:
+def process_go_to_definition_lsp_result(lookup_result: dict, symbol: str, lsp_sub_workspace: str, agent: BaseAgent) -> str:
     """
     Takes the response of a goto definition request and tries to retrieve the definition's code and formats it into a command result.
     If the retrieval of the code should fail, then we don't give the code in the result but hint at using read_range to retrieve it.
@@ -376,11 +397,11 @@ def process_go_to_definition_lsp_result(lookup_result: dict, symbol: str,  agent
     full_file_path: str = lookup_result["result"][0]["uri"]
     full_file_path = full_file_path.lstrip("file:///")
     full_file_path = "/" + full_file_path
-    repo_path = os.path.join(agent.config.workspace_path,
+    repo_path = os.path.join(agent.config.workspace_path, lsp_sub_workspace,
                              agent.ai_config.warning_repository_name)
 
-    file_found_definition = full_file_path.replace(f"{repo_path}/", "").replace(
-        f"{agent.config.workspace_path}/", "").replace(f"{agent.config.workspace_path}", "")
+    file_found_definition = full_file_path.replace(f"{repo_path}/", "").replace(os.path.join(agent.config.workspace_path, lsp_sub_workspace), "").replace(
+        f"{agent.config.workspace_path}/", "").replace(f"{lsp_sub_workspace}/", "").replace(f"{agent.config.workspace_path}", "").replace(f"{lsp_sub_workspace}", "")
 
     start_line_definition = lookup_result["result"][0]["range"]["start"]["line"] + 1
 
@@ -463,7 +484,7 @@ def get_start_end_for_node(node_to_find, tree, max_end):
     return start, end
 
 
-def process_go_to_references_lsp_result(lookup_result: dict, symbol: str,  agent: BaseAgent) -> str:
+def process_go_to_references_lsp_result(lookup_result: dict, symbol: str, lsp_sub_workspace: str,  agent: BaseAgent) -> str:
     """
     Takes the response of a goto references request.
     If there are few enough found references then a few lines of code around the reference are extracted and formatted into the command result.
@@ -484,11 +505,11 @@ def process_go_to_references_lsp_result(lookup_result: dict, symbol: str,  agent
         full_file_path: str = reference["uri"]
         full_file_path = full_file_path.lstrip("file:///")
         full_file_path = "/" + full_file_path
-        repo_path = os.path.join(agent.config.workspace_path,
+        repo_path = os.path.join(agent.config.workspace_path, lsp_sub_workspace,
                                  agent.ai_config.warning_repository_name)
 
-        file_found = full_file_path.replace(f"{repo_path}/", "").replace(
-            f"{agent.config.workspace_path}/", "").replace(f"{agent.config.workspace_path}", "")
+        file_found = full_file_path.replace(f"{repo_path}/", "").replace(os.path.join(agent.config.workspace_path, lsp_sub_workspace), "").replace(
+            f"{agent.config.workspace_path}/", "").replace(f"{lsp_sub_workspace}/", "").replace(f"{agent.config.workspace_path}", "").replace(f"{lsp_sub_workspace}", "")
 
         start_line = reference["range"]["start"]["line"] + 1
         if show_code:

@@ -218,6 +218,7 @@ You can inspect the relevant declaration (the one you think is the matching one)
             "src/main/java/org/mitre/dsmiley/httpproxy/URITemplateProxyServlet.java", "ATTR_QUERY_STRING", 59, self.agent)
         print(references_result)
         self.assertEqual(references_result, """Found 2 references to the symbol 'ATTR_QUERY_STRING'. They are listed in the following:  
+
 References in file 'src/main/java/org/mitre/dsmiley/httpproxy/URITemplateProxyServlet.java':  
 At line 138:  
 Code context:  
@@ -260,18 +261,23 @@ Line 147:}
             "src/main/java/junit/framework/AssertionFailedError.java", "AssertionFailedError", 13, self.agent)
         print(references_result)
         self.assertEqual(references_result, """Found 7 references to the symbol 'AssertionFailedError'. They are listed in the following:  
+
 References in file 'src/main/java/junit/framework/Assert.java':  
-Line 55  
+At line 55: '            throw new AssertionFailedError();'  
+
 References in file 'src/test/java/junit/tests/framework/AssertTest.java':  
-Line 26  
-Line 38  
-Line 50  
+At line 26: '        throw new AssertionFailedError();'  
+At line 38: '        throw new AssertionFailedError();'  
+At line 50: '        throw new AssertionFailedError();'  
+
 References in file 'src/test/java/junit/tests/framework/AssertionFailedErrorTest.java':  
-Line 10  
+At line 10: '        AssertionFailedError error = new AssertionFailedError();'  
+
 References in file 'src/test/java/junit/tests/runner/TextFeedbackTest.java':  
-Line 90  
+At line 90: '                throw new AssertionFailedError();'  
+
 References in file 'src/test/java/org/junit/tests/junit3compatibility/OldTestClassAdaptingListenerTest.java':  
-Line 25  
+At line 25: '        adaptingListener.addFailure(testCase, new AssertionFailedError());'  
 
 If you want to look at the code of a reference you can use the read_range command.  """)
 
@@ -551,18 +557,23 @@ Line 22:    public AssertionFailedError(String message) {
         print(references_result)
 
         self.assertEqual(references_result, """Found 7 references to the symbol 'AssertionFailedError'. They are listed in the following:  
+
 References in file 'src/main/java/junit/framework/Assert.java':  
-Line 55  
+At line 55: '            throw new AssertionFailedError();'  
+
 References in file 'src/test/java/junit/tests/framework/AssertTest.java':  
-Line 26  
-Line 38  
-Line 50  
+At line 26: '        throw new AssertionFailedError();'  
+At line 38: '        throw new AssertionFailedError();'  
+At line 50: '        throw new AssertionFailedError();'  
+
 References in file 'src/test/java/junit/tests/framework/AssertionFailedErrorTest.java':  
-Line 10  
+At line 10: '        AssertionFailedError error = new AssertionFailedError();'  
+
 References in file 'src/test/java/junit/tests/runner/TextFeedbackTest.java':  
-Line 90  
+At line 90: '                throw new AssertionFailedError();'  
+
 References in file 'src/test/java/org/junit/tests/junit3compatibility/OldTestClassAdaptingListenerTest.java':  
-Line 25  
+At line 25: '        adaptingListener.addFailure(testCase, new AssertionFailedError());'  
 
 If you want to look at the code of a reference you can use the read_range command.  """)
 
@@ -597,18 +608,23 @@ Line 22:    public AssertionFailedError(String message) {
         print(references_result)
 
         self.assertEqual(references_result, """Found 7 references to the symbol 'AssertionFailedError'. They are listed in the following:  
+
 References in file 'src/main/java/junit/framework/Assert.java':  
-Line 55  
+At line 55: '            throw new AssertionFailedError();'  
+
 References in file 'src/test/java/junit/tests/framework/AssertTest.java':  
-Line 26  
-Line 38  
-Line 50  
+At line 26: '        throw new AssertionFailedError();'  
+At line 38: '        throw new AssertionFailedError();'  
+At line 50: '        throw new AssertionFailedError();'  
+
 References in file 'src/test/java/junit/tests/framework/AssertionFailedErrorTest.java':  
-Line 10  
+At line 10: '        AssertionFailedError error = new AssertionFailedError();'  
+
 References in file 'src/test/java/junit/tests/runner/TextFeedbackTest.java':  
-Line 90  
+At line 90: '                throw new AssertionFailedError();'  
+
 References in file 'src/test/java/org/junit/tests/junit3compatibility/OldTestClassAdaptingListenerTest.java':  
-Line 25  
+At line 25: '        adaptingListener.addFailure(testCase, new AssertionFailedError());'  
 
 If you want to look at the code of a reference you can use the read_range command.  """)
 

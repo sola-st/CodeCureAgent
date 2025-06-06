@@ -492,10 +492,10 @@ def process_go_to_references_lsp_result(lookup_result: dict, symbol: str, lsp_su
     """
 
     number_of_references = len(lookup_result["result"])
-    show_code = True
+    show_code_context = True
 
     if number_of_references > 5:
-        show_code = False
+        show_code_context = False
 
     command_output = f"Found {str(number_of_references)} references to the symbol '{symbol}'. They are listed in the following:  \n"
 
@@ -507,36 +507,45 @@ def process_go_to_references_lsp_result(lookup_result: dict, symbol: str, lsp_su
         repo_path = os.path.join(agent.config.workspace_path, lsp_sub_workspace,
                                  agent.ai_config.warning_repository_name)
 
-        file_found = full_file_path.replace(f"{repo_path}/", "").replace(os.path.join(agent.config.workspace_path, lsp_sub_workspace), "").replace(
-            f"{agent.config.workspace_path}/", "").replace(f"{lsp_sub_workspace}/", "").replace(f"{agent.config.workspace_path}", "").replace(f"{lsp_sub_workspace}", "")
-
         start_line = reference["range"]["start"]["line"] + 1
-        if show_code:
+        if show_code_context:
             try:
                 found_code = extract_reference_code_for_symbol(
                     full_file_path, start_line)
             except Exception as e:
                 logger.error(f"Accessing code of reference at file {full_file_path} line {str(start_line)} failed. Falling back to only given the file and line of the references. ",
                              "Error was: " + str(e))
-                show_code = False
+                show_code_context = False
         else:
             found_code = ""
 
         # Add the reference info to a dict grouped by file path
-        if file_found not in references_data_by_file_path:
-            references_data_by_file_path[file_found] = []
-        references_data_by_file_path[file_found].append(
+        if full_file_path not in references_data_by_file_path:
+            references_data_by_file_path[full_file_path] = []
+        references_data_by_file_path[full_file_path].append(
             (start_line, found_code))
 
-    for file_path, references_at_file_path in references_data_by_file_path.items():
-        command_output += f"References in file '{file_path}':  \n"
+    for full_file_path, references_at_file_path in references_data_by_file_path.items():
+        relative_file_path = full_file_path.replace(f"{repo_path}/", "").replace(os.path.join(agent.config.workspace_path, lsp_sub_workspace), "").replace(
+            f"{agent.config.workspace_path}/", "").replace(f"{lsp_sub_workspace}/", "").replace(f"{agent.config.workspace_path}", "").replace(f"{lsp_sub_workspace}", "")
+
+        command_output += f"\nReferences in file '{relative_file_path}':  \n"
         for (start_line, found_code) in references_at_file_path:
-            if show_code:
+            if show_code_context:
+
                 command_output += f"At line {str(start_line)}:  \nCode context:  \n{found_code}  \n"
             else:
-                command_output += f"Line {str(start_line)}  \n"
+                try:
+                    single_code_line = extract_single_code_line(
+                        full_file_path, start_line)
+                except Exception as e:
+                    logger.error(f"Accessing code of reference at file {relative_file_path} line {str(start_line)} failed. Falling back to only given the file and line of the references. ",
+                                 "Error was: " + str(e))
+                    single_code_line = ""
 
-    if not show_code:
+                command_output += f"At line {str(start_line)}: '{single_code_line}'  \n"
+
+    if not show_code_context:
         command_output += "\nIf you want to look at the code of a reference you can use the read_range command.  "
 
     return command_output
@@ -559,6 +568,16 @@ def extract_reference_code_for_symbol(full_file_path: str, line_of_reference: in
         output += f"Line {str(i + 1)}:{content[i]}"
 
     return output
+
+
+def extract_single_code_line(full_file_path: str, line_of_reference: int) -> str:
+    """
+    Extracts only the single line
+    """
+    with open(full_file_path, encoding='utf-8', errors='ignore') as jf:
+        content = jf.readlines()
+
+    return content[line_of_reference - 1].strip("\n")
 
 
 # Fallbacks in case the lsp-server approach returns an empty result

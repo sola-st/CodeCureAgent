@@ -639,8 +639,8 @@ def lookup_definition_fallback(go_to_method: str, file_path: str, symbol: str, s
         except javalang.parser.JavaParserBaseException as jpbe:
             message = jpbe.description if hasattr(
                 jpbe, "description") else str(jpbe)
-            logger.error("Symbol lookup fallback parsing error",
-                         f"The file {file} could not be parsed into a SyntaxTree. Skipping it in the search. Full error: {message}")
+            logger.warn(title="Symbol lookup fallback parsing error",
+                        message=f"The file {file} could not be parsed into a SyntaxTree. Skipping it in the search. Full error: {message}")
             continue
 
         repo_path = os.path.join(agent.config.workspace_path,
@@ -715,8 +715,8 @@ def lookup_references_fallback(go_to_method: str, file_path: str, symbol: str, s
         except javalang.parser.JavaParserBaseException as jpbe:
             message = jpbe.description if hasattr(
                 jpbe, "description") else str(jpbe)
-            logger.error("Symbol lookup fallback parsing error",
-                         f"The file {file} could not be parsed into a SyntaxTree. Skipping it in the search. Full error: {message}")
+            logger.warn(title="Symbol lookup fallback parsing error",
+                        message=f"The file {file} could not be parsed into a SyntaxTree. Skipping it in the search. Full error: {message}")
             continue
 
         repo_path = os.path.join(agent.config.workspace_path,

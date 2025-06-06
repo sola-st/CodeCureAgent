@@ -15,6 +15,7 @@ read_range_desc = """read_range:
 read_sonarqube_docu_desc = """read_sonarqube_docu:  
     Returns the documentation for the given SonarQube rule.  
     The documentation can contain relevant details about the rule, when it applies, and how it can be fixed.  
+    This command can only look up docu for SonarQube rules. It supports no other kind of documentation.  
     Required params:  
     - rule_key (string)"""
 

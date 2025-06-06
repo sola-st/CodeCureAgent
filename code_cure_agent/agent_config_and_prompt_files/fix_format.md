@@ -52,3 +52,10 @@ Take great care that you specify the correct line numbers and that you include a
 You must always apply all relevant changes in a single write_fix all at once.  
 After each write_fix attempt, the project is restored to its original state and all your made changes are lost.  
 However, you can then try again and attempt modfied fixes, if your previous attempts failed.  
+
+Limitations:  
+- You are not allowed to create, rename, move, or delete files.
+- You are not allowed to add new external dependencies to the project. You may only import:  
+    - Classes from the Java Standard Library,
+    - Libraries already included in the project’s dependencies,
+    - Project-local classes from other source files.

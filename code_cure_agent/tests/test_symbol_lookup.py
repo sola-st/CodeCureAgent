@@ -148,7 +148,7 @@ Line 21:     */
 Line 22:    public AssertionFailedError(String message) {
 """)
 
-    def test_go_to_definition_argparse4j_failing_due_to_broken_setup(self):
+    def test_go_to_definition_argparse4j_failing_due_to_broken_setup_fallback_shows_potential_defs(self):
         warning_repository_URL = "https://github.com/argparse4j/argparse4j.git"
         warning_repository_commit = "a0cef432451487d513382297cec2c5b14c147a30"
         warning_repository_name = "argparse4j"
@@ -161,8 +161,48 @@ Line 22:    public AssertionFailedError(String message) {
         definition_result = find_definition(
             "main/src/main/java/net/sourceforge/argparse4j/internal/SubparserImpl.java", "addArgument", 62, self.agent)
         print(definition_result)
-        self.assertEqual(definition_result, """No definition could be found for 'addArgument' at line 62 in file 'main/src/main/java/net/sourceforge/argparse4j/internal/SubparserImpl.java'.  
-Don't call the command with the same arguments again.""")
+        self.assertEqual(definition_result, """Searching the project for 'addArgument' found the following 5 candidate declarations of symbols (Only one of them will be the true definition you were searching for):  
+
+In file 'main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserImpl.java':  
+MethodDeclaration at line 98: '    public ArgumentImpl addArgument(String... nameOrFlags) {'  
+MethodDeclaration at line 102: '    public ArgumentImpl addArgument(ArgumentGroupImpl group,'  
+
+In file 'main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentGroupImpl.java':  
+MethodDeclaration at line 72: '    public ArgumentImpl addArgument(String... nameOrFlags) {'  
+
+In file 'main/src/main/java/net/sourceforge/argparse4j/internal/SubparserImpl.java':  
+MethodDeclaration at line 61: '    public Argument addArgument(String... nameOrFlags) {'  
+
+In file 'main/src/main/java/net/sourceforge/argparse4j/inf/ArgumentContainer.java':  
+MethodDeclaration at line 23: '    Argument addArgument(String... nameOrFlags);'  
+
+You can inspect the relevant declaration (the one you think is the matching one) by using read_range.  \n""")
+
+    def test_go_to_definition_argparse4j_field_definition_failing_due_to_broken_setup_fallback_shows_potential_defs(self):
+        warning_repository_URL = "https://github.com/argparse4j/argparse4j.git"
+        warning_repository_commit = "a0cef432451487d513382297cec2c5b14c147a30"
+        warning_repository_name = "argparse4j"
+
+        self.agent = AgentMock(warning_repository_URL, warning_repository_commit, None,
+                               warning_repository_name, None, None, None, None)
+
+        checkout_project(self.agent)
+
+        definition_result = find_definition(
+            "main/src/main/java/net/sourceforge/argparse4j/internal/SubparserImpl.java", "command_", 271, self.agent)
+        print(definition_result)
+        self.assertEqual(definition_result, """Searching the project for 'command_' found the following 3 candidate declarations of symbols (Only one of them will be the true definition you were searching for):  
+
+In file 'main/src/main/java/net/sourceforge/argparse4j/internal/UnrecognizedCommandException.java':  
+FieldDeclaration at line 35: '    private final String command_;'  
+
+In file 'main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserImpl.java':  
+FieldDeclaration at line 58: '    private final String command_;'  
+
+In file 'main/src/main/java/net/sourceforge/argparse4j/internal/SubparserImpl.java':  
+FieldDeclaration at line 48: '    private final String command_;'  
+
+You can inspect the relevant declaration (the one you think is the matching one) by using read_range.  \n""")
 
     def test_go_to_references_http_proxy_servlet_2_references_with_code(self):
         warning_repository_URL = "https://github.com/mitre/HTTP-Proxy-Servlet.git"
@@ -234,6 +274,243 @@ References in file 'src/test/java/org/junit/tests/junit3compatibility/OldTestCla
 Line 25  
 
 If you want to look at the code of a reference you can use the read_range command.  """)
+
+    def test_go_to_references_argparse4j_failing_due_to_broken_setup_fallback_shows_potential_refs(self):
+        warning_repository_URL = "https://github.com/argparse4j/argparse4j.git"
+        warning_repository_commit = "a0cef432451487d513382297cec2c5b14c147a30"
+        warning_repository_name = "argparse4j"
+
+        self.agent = AgentMock(warning_repository_URL, warning_repository_commit, None,
+                               warning_repository_name, None, None, None, None)
+
+        checkout_project(self.agent)
+
+        references_result = find_references(
+            "main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserImpl.java", "addArgument", 98, self.agent)
+        print(references_result)
+        self.assertEqual(references_result, """Searching the project for 'addArgument' found the following 175 candidate references of the symbol by searching for the symbol name (Not all of them are necessarily true references to the symbol):  
+
+In file 'main/src/test/java/net/sourceforge/argparse4j/ArgumentParsersTest.java':  
+MethodInvocation at line 43: '        ap.addArgument("+h");'  
+
+In file 'main/src/test/java/net/sourceforge/argparse4j/impl/type/FileVerificationOrTest.java':  
+MethodInvocation at line 18: '    private static final Argument SOME_ARGUMENT = SOME_PARSER'  
+
+In file 'main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentParserImplTest.java':  
+MethodInvocation at line 87: '        ap.addArgument("+h");'  
+MethodInvocation at line 92: '        ap.addArgument("--foo");'  
+MethodInvocation at line 93: '        ap.addArgument("--bar").nargs("?").setConst("c");'  
+MethodInvocation at line 94: '        ap.addArgument("suites").nargs("*");'  
+MethodInvocation at line 104: '        ap.addArgument("--foo").required(true);'  
+MethodInvocation at line 115: '        ap.addArgument("--foo").nargs("+").choices("bar", "baz");'  
+MethodInvocation at line 127: '        ap.addArgument("--foo").required(true);'  
+MethodInvocation at line 138: '        ap.addArgument("foo");'  
+MethodInvocation at line 149: '        ap.addArgument("foo").nargs(3);'  
+MethodInvocation at line 160: '        ap.addArgument("--foo");'  
+MethodInvocation at line 161: '        ap.addArgument("--foo");'  
+MethodInvocation at line 166: '        ap.addArgument("foo");'  
+MethodInvocation at line 167: '        ap.addArgument("foo");'  
+MethodInvocation at line 173: '        ap.addArgument("foo").nargs("*");'  
+MethodInvocation at line 181: '        ap.addArgument("-x");'  
+MethodInvocation at line 182: '        ap.addArgument("foo").nargs("?");'  
+MethodInvocation at line 193: '        ap.addArgument("-1").dest("one");'  
+MethodInvocation at line 194: '        ap.addArgument("foo").nargs("?");'  
+MethodInvocation at line 214: '        ap.addArgument("--foo").action(storeTrue());'  
+MethodInvocation at line 215: '        ap.addArgument("--bar").action(storeFalse());'  
+MethodInvocation at line 216: '        ap.addArgument("--baz").action(storeFalse());'  
+MethodInvocation at line 217: '        ap.addArgument("--sid").action(storeTrue());'  
+MethodInvocation at line 227: '        ap.addArgument("--foo").action(storeConst()).setConst("const");'  
+MethodInvocation at line 228: '        ap.addArgument("bar");'  
+MethodInvocation at line 236: '        ap.addArgument("--foo").action(append()).nargs("*");'  
+MethodInvocation at line 237: '        ap.addArgument("--bar").action(append());'  
+MethodInvocation at line 246: '        ap.addArgument("--foo").action(appendConst()).setConst("X");'  
+MethodInvocation at line 247: '        ap.addArgument("bar");'  
+MethodInvocation at line 255: '        ap.addArgument("-v", "--verbose").action(count());'  
+MethodInvocation at line 256: '        ap.addArgument("--foo");'  
+MethodInvocation at line 263: '        ap.addArgument("--foo").setConst("X").nargs("?");'  
+MethodInvocation at line 270: '        ap.addArgument("--foo").nargs("?").setConst("c").setDefault("d");'  
+MethodInvocation at line 271: '        ap.addArgument("bar").nargs("?").setDefault("d");'  
+MethodInvocation at line 286: '        ap.addArgument("-1").action(storeTrue());'  
+MethodInvocation at line 287: '        ap.addArgument("-2");'  
+MethodInvocation at line 288: '        ap.addArgument("-3");'  
+MethodInvocation at line 289: '        ap.addArgument("-ff");'  
+MethodInvocation at line 290: '        ap.addArgument("-f");'  
+MethodInvocation at line 291: '        ap.addArgument("-c").action(appendConst()).setConst(true);'  
+MethodInvocation at line 320: '        ap.addArgument("--foo").choices("chocolate", "icecream", "froyo");'  
+MethodInvocation at line 333: '        ap.addArgument("--foo").nargs(2);'  
+MethodInvocation at line 334: '        ap.addArgument("bar");'  
+MethodInvocation at line 345: '        ap.addArgument("--port").type(Integer.class)'  
+MethodInvocation at line 359: '        ap.addArgument("--input").type(FileInputStream.class);'  
+MethodInvocation at line 373: '        ap.addArgument("-a").action(Arguments.storeTrue());'  
+MethodInvocation at line 374: '        ap.addArgument("-b").action(Arguments.storeTrue());'  
+MethodInvocation at line 375: '        ap.addArgument("-c").action(Arguments.storeTrue());'  
+MethodInvocation at line 376: '        ap.addArgument("-d").action(Arguments.storeTrue());'  
+MethodInvocation at line 432: '        ap.addArgument("-a").action(Arguments.storeTrue());'  
+MethodInvocation at line 450: '        ap.addArgument("-f");'  
+MethodInvocation at line 451: '        ap.addArgument("--baz").nargs(2);'  
+MethodInvocation at line 452: '        ap.addArgument("x");'  
+MethodInvocation at line 453: '        ap.addArgument("y").nargs(2);'  
+MethodInvocation at line 456: '        subparser.addArgument("--foo");'  
+MethodInvocation at line 457: '        subparser.addArgument("--bar").action(Arguments.storeTrue());'  
+MethodInvocation at line 469: '        ap.addArgument("-f");'  
+MethodInvocation at line 472: '        parserA.addArgument("pkg1");'  
+MethodInvocation at line 475: '        parserB.addArgument("pkg2");'  
+MethodInvocation at line 516: '        ap.addArgument("-f").setDefault("foo");'  
+MethodInvocation at line 517: '        ap.addArgument("-g").setDefault("bar");'  
+MethodInvocation at line 518: '        ap.addArgument("-i").setDefault("alpha");'  
+MethodInvocation at line 528: '        ap.addArgument("--foo").nargs("*");'  
+MethodInvocation at line 529: '        ap.addArgument("--bar").nargs("*").setDefault("bar");'  
+MethodInvocation at line 530: '        ap.addArgument("--baz").nargs("*").action(append());'  
+MethodInvocation at line 531: '        ap.addArgument("--buzz").nargs("*").action(append()).setDefault("buzz");'  
+MethodInvocation at line 564: '        ap.addArgument("foo").nargs("*");'  
+MethodInvocation at line 569: '        ap.addArgument("foo").nargs("*").setDefault("foo");'  
+MethodInvocation at line 578: '        ap.addArgument("foo").nargs("*").action(append());'  
+MethodInvocation at line 584: '        ap.addArgument("foo").nargs("*").action(append()).setDefault("foo");'  
+MethodInvocation at line 612: '        ap.addArgument("f").nargs("*").setDefault(singletonList("default"));'  
+MethodInvocation at line 614: '        ap.addArgument("b").nargs("*").setDefault(false).action(action);'  
+MethodInvocation at line 623: '        ap.addArgument("-f");'  
+MethodInvocation at line 624: '        ap.addArgument("-g").setDefault(SUPPRESS);'  
+MethodInvocation at line 632: '        ap.addArgument("foo");'  
+MethodInvocation at line 644: '        ap.addArgument("--foo");'  
+MethodInvocation at line 645: '        ap.addArgument("-2");'  
+MethodInvocation at line 646: '        ap.addArgument("bar");'  
+MethodInvocation at line 647: '        ap.addArgument("car");'  
+MethodInvocation at line 655: '        ap.addArgument("a");'  
+MethodInvocation at line 656: '        ap.addArgument("b").nargs("*");'  
+MethodInvocation at line 657: '        ap.addArgument("c").nargs(2);'  
+MethodInvocation at line 658: '        ap.addArgument("d").nargs("?");'  
+MethodInvocation at line 659: '        ap.addArgument("e");'  
+MethodInvocation at line 660: '        ap.addArgument("f").nargs("*").setDefault("f1", "f2");'  
+MethodInvocation at line 674: '        ap.addArgument("a");'  
+MethodInvocation at line 675: '        ap.addArgument("b").nargs("+");'  
+MethodInvocation at line 686: '        ap.addArgument("foo").nargs("*").type(int.class);'  
+MethodInvocation at line 693: '        ap.addArgument("--foo");'  
+MethodInvocation at line 694: '        ap.addArgument("bar").nargs("*");'  
+MethodInvocation at line 703: '        group.addArgument("--foo");'  
+MethodInvocation at line 704: '        group.addArgument("--bar");'  
+MethodInvocation at line 712: '        group.addArgument("--foo");'  
+MethodInvocation at line 713: '        group.addArgument("--bar");'  
+MethodInvocation at line 725: '        group.addArgument("--foo");'  
+MethodInvocation at line 726: '        group.addArgument("--bar");'  
+MethodInvocation at line 734: '        group.addArgument("--foo");'  
+MethodInvocation at line 735: '        group.addArgument("--bar");'  
+MethodInvocation at line 747: '        group.addArgument("-a").action(Arguments.storeTrue());'  
+MethodInvocation at line 748: '        group.addArgument("-b").action(Arguments.storeTrue());'  
+MethodInvocation at line 749: '        ap.addArgument("-c").action(Arguments.storeTrue());'  
+MethodInvocation at line 760: '        group.addArgument("-a").action(Arguments.storeTrue());'  
+MethodInvocation at line 761: '        group.addArgument("-b").action(Arguments.storeTrue());'  
+MethodInvocation at line 762: '        ap.addArgument("-c");'  
+MethodInvocation at line 796: '        mutex1.addArgument("-a").help(Arguments.SUPPRESS);'  
+MethodInvocation at line 797: '        Argument b = mutex1.addArgument("-b");'  
+MethodInvocation at line 817: '        ap.addArgument("-a").action(storeTrue());'  
+MethodInvocation at line 818: '        ap.addArgument("-b");'  
+MethodInvocation at line 819: '        ap.addArgument("-aaa").action(storeTrue());'  
+MethodInvocation at line 820: '        ap.addArgument("-bbb").action(storeTrue());'  
+MethodInvocation at line 854: '        ap.addArgument("-a").required(true);'  
+MethodInvocation at line 855: '        ap.addArgument("b");'  
+MethodInvocation at line 856: '        ap.addMutuallyExclusiveGroup().required(true).addArgument("-c");'  
+MethodInvocation at line 867: '        ap.addArgument("+a").action(Arguments.storeTrue());'  
+MethodInvocation at line 868: '        ap.addArgument("+b");'  
+MethodInvocation at line 878: '        ap.addArgument("-f");'  
+MethodInvocation at line 889: '        ap.addArgument("-f");'  
+MethodInvocation at line 890: '        ap.addArgument("-g");'  
+MethodInvocation at line 891: '        ap.addArgument("+a").action(Arguments.storeTrue());'  
+MethodInvocation at line 892: '        ap.addArgument("path");'  
+MethodInvocation at line 939: '        install.addArgument("-f");'  
+MethodInvocation at line 952: '        ap.addSubparsers().addParser("install").addArgument("+f");'  
+MethodInvocation at line 953: '        ap.addSubparsers().addParser("check", true, "-").addArgument("-f");'  
+MethodInvocation at line 955: '            ap.addSubparsers().addParser("test", true, "-").addArgument("+f", "++f");'  
+MethodInvocation at line 966: '        subparsers.addParser("install").addArgument("--command")'  
+MethodInvocation at line 998: '        ap.addArgument("--foo").setDefault("alpha");'  
+MethodInvocation at line 1035: '        ap.addArgument("--username");'  
+MethodInvocation at line 1036: '        ap.addArgument("--host");'  
+MethodInvocation at line 1037: '        ap.addArgument("--attrs").nargs("*").type(Integer.class);'  
+MethodInvocation at line 1050: '        ap.addArgument("--port").type(Integer.class);'  
+MethodInvocation at line 1065: '        ap.addArgument("-a");'  
+MethodInvocation at line 1066: '        ap.addArgument("-b").required(true);'  
+MethodInvocation at line 1068: '        group.addArgument("-c").required(true);'  
+MethodInvocation at line 1069: '        group.addArgument("-d").required(true);'  
+MethodInvocation at line 1070: '        ap.addArgument("file");'  
+MethodInvocation at line 1076: '        fooSub.addArgument("hash");'  
+MethodInvocation at line 1106: '        group.addArgument("--foo");'  
+MethodInvocation at line 1128: '        group.addArgument("--foo");'  
+MethodInvocation at line 1150: '        group1.addArgument("foo").help("foo help");'  
+MethodInvocation at line 1153: '        group2.addArgument("--bar").help("bar help");'  
+MethodInvocation at line 1176: '        group.addArgument("--foo");'  
+MethodInvocation at line 1177: '        group.addArgument("--bar");'  
+MethodInvocation at line 1201: '        group.addArgument("--foo");'  
+MethodInvocation at line 1202: '        ap.addArgument("-b").action(Arguments.storeTrue());'  
+MethodInvocation at line 1237: '        ap.defaultHelp(true).addArgument("--foo").setDefault("alpha");'  
+MethodInvocation at line 1251: '        group.addArgument("--foo");'  
+MethodInvocation at line 1252: '        group.addArgument("--bar").help(Arguments.SUPPRESS);'  
+MethodInvocation at line 1253: '        ap.addArgument("-a").help(Arguments.SUPPRESS).required(true);'  
+MethodInvocation at line 1254: '        ap.addArgument("-b");'  
+MethodInvocation at line 1256: '        mutex1.addArgument("-c").help(Arguments.SUPPRESS);'  
+MethodInvocation at line 1257: '        mutex1.addArgument("-d");'  
+MethodInvocation at line 1260: '        mutex2.addArgument("-e").help(Arguments.SUPPRESS);'  
+MethodInvocation at line 1261: '        mutex2.addArgument("-f");'  
+MethodInvocation at line 1262: '        mutex2.addArgument("-g");'  
+MethodInvocation at line 1263: '        ap.addArgument("s");'  
+MethodInvocation at line 1264: '        ap.addArgument("t");'  
+MethodInvocation at line 1265: '        ap.addArgument("u").help(Arguments.SUPPRESS);'  
+MethodInvocation at line 1268: '        sap.addArgument("-i").help(Arguments.SUPPRESS);'  
+MethodInvocation at line 1269: '        sap.addArgument("-j");'  
+MethodInvocation at line 1309: '        ap.addArgument("--bar");'  
+MethodInvocation at line 1314: '        parser.addArgument("--foo");'  
+MethodInvocation at line 1331: '        ap.addArgument("--bar");'  
+MethodInvocation at line 1334: '        parser.addArgument("--foo").setDefault("alpha");'  
+MethodInvocation at line 1463: '        ap.addArgument("bar").help(h);'  
+MethodInvocation at line 1464: '        ap.addArgument("verylonglongpositionalargument").help(h);'  
+MethodInvocation at line 1465: '        ap.addArgument("-f", "--foo").help(h);'  
+MethodInvocation at line 1466: '        ap.addArgument("-1", "--1").metavar("X").nargs(2).help(h);'  
+MethodInvocation at line 1467: '        ap.addArgument("-2").metavar("X").nargs("*").help(h);'  
+MethodInvocation at line 1468: '        ap.addArgument("-3").metavar("X").nargs("+").help(h);'  
+MethodInvocation at line 1469: '        ap.addArgument("-4").metavar("X").nargs("?").help(h);'  
+
+In file 'main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserImpl.java':  
+MethodInvocation at line 90: '            addArgument(prefix + "h", prefix + prefix + "help")'  
+MethodInvocation at line 99: '        return addArgument(null, nameOrFlags);'  
+
+In file 'main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentGroupImpl.java':  
+MethodInvocation at line 73: '        ArgumentImpl arg = argumentParser_.addArgument(this, nameOrFlags);'  
+
+In file 'main/src/main/java/net/sourceforge/argparse4j/internal/SubparserImpl.java':  
+MethodInvocation at line 62: '        return parser_.addArgument(nameOrFlags);'  
+
+You can inspect the relevant references (the once you think are true matches) by using read_range.  \n""")
+
+    def test_go_to_references_argparse4j_field_lookup_failing_due_to_broken_setup_fallback_shows_potential_refs(self):
+        warning_repository_URL = "https://github.com/argparse4j/argparse4j.git"
+        warning_repository_commit = "a0cef432451487d513382297cec2c5b14c147a30"
+        warning_repository_name = "argparse4j"
+
+        self.agent = AgentMock(warning_repository_URL, warning_repository_commit, None,
+                               warning_repository_name, None, None, None, None)
+
+        checkout_project(self.agent)
+
+        references_result = find_references(
+            "main/src/main/java/net/sourceforge/argparse4j/internal/SubparserImpl.java", "command_", 48, self.agent)
+        print(references_result)
+        self.assertEqual(references_result, """Searching the project for 'command_' found the following 10 candidate references of the symbol by searching for the symbol name (Not all of them are necessarily true references to the symbol):  
+
+In file 'main/src/main/java/net/sourceforge/argparse4j/internal/UnrecognizedCommandException.java':  
+MemberReference at line 40: '        command_ = command;'  
+MemberReference at line 44: '        return command_;'  
+
+In file 'main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserImpl.java':  
+MemberReference at line 78: '        this.command_ = command;'  
+MemberReference at line 355: '        if (command_ != null) {'  
+MemberReference at line 356: '            opts.add(command_);'  
+MemberReference at line 436: '        if (parser.command_ != null) {'  
+MemberReference at line 437: '            opts.add(parser.command_);'  
+MemberReference at line 1474: '        return command_;'  
+
+In file 'main/src/main/java/net/sourceforge/argparse4j/internal/SubparserImpl.java':  
+MemberReference at line 56: '        command_ = command;'  
+MemberReference at line 271: '            String title = "  " + command_;'  
+
+You can inspect the relevant references (the once you think are true matches) by using read_range.  \n""")
 
     def test_multiple_go_to_ref_and_go_to_def_in_one_run(self):
         warning_repository_URL = "https://github.com/junit-team/junit4.git"

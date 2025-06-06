@@ -122,9 +122,10 @@ def run_go_to(go_to_method: str, file_path: str, symbol: str, symbol_line: int, 
 
     logger.debug(lookup_result, title=f"find_{go_to_method} lookup result: ")
 
+    # This can happen if there is actually no reference/definition findable, but also if there was an issue with setting up the lsp server for the target project.
     if "result" not in lookup_result or len(lookup_result["result"]) == 0:
-        return f"No {go_to_method} could be found for '{symbol}' at line {str(symbol_line)} in file '{file_path}'.  " \
-            "\nDon't call the command with the same arguments again."
+        # Use a more simple method for looking up potential references/definitions in case the lsp server failed
+        return lookup_fallback(go_to_method, file_path, symbol, symbol_line, agent)
 
     if go_to_method == "definition":
         command_output = process_go_to_definition_lsp_result(
@@ -391,8 +392,6 @@ def process_go_to_definition_lsp_result(lookup_result: dict, symbol: str, lsp_su
     Takes the response of a goto definition request and tries to retrieve the definition's code and formats it into a command result.
     If the retrieval of the code should fail, then we don't give the code in the result but hint at using read_range to retrieve it.
     """
-    # TODO: test whether returning the full method/class/field etc. makes sense (esp. for long classes)
-    # or if we should instead only return the file and position of the definition. => let agent use read_range where it sees fit
 
     full_file_path: str = lookup_result["result"][0]["uri"]
     full_file_path = full_file_path.lstrip("file:///")
@@ -560,3 +559,204 @@ def extract_reference_code_for_symbol(full_file_path: str, line_of_reference: in
         output += f"Line {str(i + 1)}:{content[i]}"
 
     return output
+
+
+# Fallbacks in case the lsp-server approach returns an empty result
+
+
+def lookup_fallback(go_to_method: str, file_path: str, symbol: str, symbol_line: int, agent: BaseAgent) -> str:
+    """
+    In case the lsp-server approach returned an empty result, try a more simple (and less precise) approach, 
+    as the empty result might be due to a setup problem of the lsp-server in the project.
+    """
+
+    if go_to_method == "definition":
+        return lookup_definition_fallback(
+            go_to_method, file_path, symbol, symbol_line, agent)
+    else:
+        return lookup_references_fallback(go_to_method, file_path, symbol, symbol_line, agent)
+
+
+class Match:
+    def __init__(self, line_number: int, full_line: str, symbol_type: type):
+        self.line_number = line_number
+        self.full_line = full_line
+
+        self.symbol_type = symbol_type
+
+
+class DeclarationMatches:
+    def __init__(self):
+        self.matches_by_file: dict[str, list[Match]] = {}
+        self.matches_count = 0
+
+    def add_if_matching_declaration(self, node: javalang.tree.Node, symbol: str, relative_file_path: str, code_split_into_lines: list[str]) -> None:
+        """
+        Check if it is a matching declaration and if so add it to the list
+        """
+        if isinstance(node, javalang.tree.Declaration):
+            if hasattr(node, "name"):
+                symbol_name = node.name
+
+                if symbol_name == symbol:
+                    self.matches_count += 1
+                    line_of_symbol = node.position[0]
+                    if relative_file_path not in self.matches_by_file:
+                        self.matches_by_file[relative_file_path] = []
+                    self.matches_by_file[relative_file_path].append(
+                        Match(line_of_symbol, code_split_into_lines[line_of_symbol - 1], type(node)))
+
+            elif hasattr(node, "declarators"):
+                for declarator in node.declarators:
+                    symbol_name = declarator.name
+
+                    if symbol_name == symbol:
+                        self.matches_count += 1
+                        line_of_symbol = node.position[0]
+                        if relative_file_path not in self.matches_by_file:
+                            self.matches_by_file[relative_file_path] = []
+                        self.matches_by_file[relative_file_path].append(
+                            Match(line_of_symbol, code_split_into_lines[line_of_symbol - 1], type(node)))
+
+
+def lookup_definition_fallback(go_to_method: str, file_path: str, symbol: str, symbol_line: int, agent: BaseAgent) -> str:
+    """
+    Fallback for the lsp goto definition.
+    Uses javalang to parse all java project files and returns all Declaration instances whose name match the symbol.
+    """
+
+    all_java_files = list_files(os.path.join(
+        agent.config.workspace_path, agent.ai_config.warning_repository_name))
+
+    matched_declarations = DeclarationMatches()
+    for file in all_java_files:
+
+        with open(file, encoding='utf-8', errors='ignore') as jf:
+            content = jf.read()
+        try:
+            tree = javalang.parse.parse(content)
+
+        except javalang.parser.JavaParserBaseException as jpbe:
+            message = jpbe.description if hasattr(
+                jpbe, "description") else str(jpbe)
+            logger.error("Symbol lookup fallback parsing error",
+                         f"The file {file} could not be parsed into a SyntaxTree. Skipping it in the search. Full error: {message}")
+            continue
+
+        repo_path = os.path.join(agent.config.workspace_path,
+                                 agent.ai_config.warning_repository_name)
+        relative_file_path = file.replace(f"{repo_path}/", "").replace(
+            f"{agent.config.workspace_path}/", "").replace(f"{agent.config.workspace_path}", "")
+        code_split_into_lines = content.splitlines(keepends=True)
+
+        for path, node in tree:
+            matched_declarations.add_if_matching_declaration(
+                node, symbol, relative_file_path, code_split_into_lines)
+
+    if matched_declarations.matches_count == 0:
+        return f"No {go_to_method} could be found for '{symbol}' at line {str(symbol_line)} in file '{file_path}'.  " \
+            "\nDon't call the command with the same arguments again."
+
+    if matched_declarations.matches_count > 1:
+        definition_command_output = f"Searching the project for '{symbol}' found the following {str(matched_declarations.matches_count)} candidate declarations of symbols (Only one of them will be the true definition you were searching for):  \n"
+    else:
+        definition_command_output = f"Searching the project for '{symbol}' found the following symbol declaration:  \n"
+
+    for matched_file, matches in matched_declarations.matches_by_file.items():
+        definition_command_output += f"\nIn file '{matched_file}':  \n"
+        for match in matches:
+            full_line_stripped = match.full_line.strip("\n")
+            definition_command_output += f"{match.symbol_type.__name__} at line {str(match.line_number)}: '{full_line_stripped}'  \n"
+
+    if matched_declarations.matches_count > 1:
+        definition_command_output += "\nYou can inspect the relevant declaration (the one you think is the matching one) by using read_range.  \n"
+    else:
+        definition_command_output += "\nYou can inspect the declaration by using read_range.  \n"
+
+    return definition_command_output
+
+
+class ReferenceMatches:
+    def __init__(self):
+        self.matches_by_file: dict[str, list[Match]] = {}
+        self.matches_count = 0
+
+    def add_if_matching_reference(self, node: javalang.tree.Node, symbol: str, relative_file_path: str, code_split_into_lines: list[str]) -> None:
+        """
+        Check if it is a matching symbol reference and if so add it to the list
+        """
+        if isinstance(node, javalang.tree.Primary):
+            if hasattr(node, "member") and node.member == symbol:
+                self.matches_count += 1
+                line_of_symbol = node.position[0]
+                if relative_file_path not in self.matches_by_file:
+                    self.matches_by_file[relative_file_path] = []
+                self.matches_by_file[relative_file_path].append(
+                    Match(line_of_symbol, code_split_into_lines[line_of_symbol - 1], type(node)))
+
+
+def lookup_references_fallback(go_to_method: str, file_path: str, symbol: str, symbol_line: int, agent: BaseAgent) -> str:
+    """
+    Fallback for the lsp goto references.
+    Uses javalang to parse all java project files and returns all Primary instances (with a member field) whose name match the symbol.
+    """
+
+    all_java_files = list_files(os.path.join(
+        agent.config.workspace_path, agent.ai_config.warning_repository_name))
+
+    matched_references = ReferenceMatches()
+    for file in all_java_files:
+
+        with open(file, encoding='utf-8', errors='ignore') as jf:
+            content = jf.read()
+        try:
+            tree = javalang.parse.parse(content)
+
+        except javalang.parser.JavaParserBaseException as jpbe:
+            message = jpbe.description if hasattr(
+                jpbe, "description") else str(jpbe)
+            logger.error("Symbol lookup fallback parsing error",
+                         f"The file {file} could not be parsed into a SyntaxTree. Skipping it in the search. Full error: {message}")
+            continue
+
+        repo_path = os.path.join(agent.config.workspace_path,
+                                 agent.ai_config.warning_repository_name)
+        relative_file_path = file.replace(f"{repo_path}/", "").replace(
+            f"{agent.config.workspace_path}/", "").replace(f"{agent.config.workspace_path}", "")
+        code_split_into_lines = content.splitlines(keepends=True)
+
+        for path, node in tree:
+            matched_references.add_if_matching_reference(
+                node, symbol, relative_file_path, code_split_into_lines)
+
+    if matched_references.matches_count == 0:
+        return f"No {go_to_method} could be found for '{symbol}' at line {str(symbol_line)} in file '{file_path}'.  " \
+            "\nDon't call the command with the same arguments again."
+
+    if matched_references.matches_count > 1:
+        references_command_output = f"Searching the project for '{symbol}' found the following {str(matched_references.matches_count)} candidate references of the symbol by searching for the symbol name (Not all of them are necessarily true references to the symbol):  \n"
+    else:
+        references_command_output = f"Searching the project for '{symbol}' found the following symbol reference by searching for the symbol name:  \n"
+
+    for matched_file, matches in matched_references.matches_by_file.items():
+        references_command_output += f"\nIn file '{matched_file}':  \n"
+        for match in matches:
+            full_line_stripped = match.full_line.strip("\n")
+            references_command_output += f"{match.symbol_type.__name__} at line {str(match.line_number)}: '{full_line_stripped}'  \n"
+
+    if matched_references.matches_count > 1:
+        references_command_output += "\nYou can inspect the relevant references (the once you think are true matches) by using read_range.  \n"
+    else:
+        references_command_output += "\nYou can inspect the reference by using read_range.  \n"
+
+    return references_command_output
+
+
+def list_files(start_path='.') -> list[str]:
+    file_list = []
+    for root, dirs, files in os.walk(start_path):
+        for file in files:
+            if file.endswith(".java"):
+                file_path = os.path.join(root, file)
+                file_list.append(file_path)
+    return file_list

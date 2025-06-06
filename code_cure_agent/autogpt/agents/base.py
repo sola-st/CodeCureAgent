@@ -604,7 +604,13 @@ class BaseAgent(metaclass=ABCMeta):
         if handling_strategy == "":
             return ""
         elif handling_strategy == "RESTRICT":
+            if "name" in repeated_command["command"] and repeated_command["command"]["name"] == "write_fix":
+
+                return "You have already tried the following write_fix command before: '{}'  ".format(repeated_command["command"]) \
+                    + "\n Try to change something in your write_fix to resolve the problems that led to rejection of the fix attempt."
+
             return "Your next command should be totally different from this command: {}".format(repeated_command["command"])
+
         elif handling_strategy == "TOP3":
             return "Suggest three commands that would make sense to execute given your current input. Give the full json object of each command with all attributes, put the three commands in a list, i.e, [{...}, {...}, {...}]. Do not add any text explanataion before or after the list of the three commands."
         else:

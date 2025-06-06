@@ -30,7 +30,7 @@ go_to_gather_context_for_fix_desc = """go_to_gather_context_for_fix:
 find_definition_desc = """find_definition:  
     Retrieve the definition of a project-local symbol (method, class, field, or variable) referenced in a file.  
     Use it to understand what a referenced symbol does by locating its implementation or declaration.  
-    Only works for symbols defined in the project. Not for external libraries or standard Java classes.  
+    Only works for symbols defined in the project. Not for external libraries or standard Java classes. The symbol must not be a keyword.  
     Required params:  
     - file_path (string): Path to the file where the symbol is referenced.
     - symbol (string): Exact name of the referenced symbol (e.g., getUser, MAX_COUNT) without parantheses or qualifiers (e.g., write getUser, not getUser()).
@@ -40,7 +40,7 @@ find_references_desc = """find_references:
     Find all project-local references (e.g., call sites or usages) of a symbol such as a method, class, field, or variable.  
     Use this to understand where and how a symbol is used across the project.  
     Use this before changing a method’s return value, return type or parameters to identify all call sites that may need updating. But there are also other situations where this can be helpful.  
-    Only works for symbols defined in the project. Not for external libraries or standard Java classes.  
+    Only works for symbols defined in the project. Not for external libraries or standard Java classes. The symbol must not be a keyword.  
     Required params:
     - file_path (string): Path to the file where the symbol occurs.
     - symbol (string): Exact name of the symbol (e.g., getUser, MAX_COUNT) without parantheses or qualifiers (e.g., write getUser, not getUser()).

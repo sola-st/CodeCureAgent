@@ -158,7 +158,7 @@ def extract_build_error_information(build_error: BuildError, agent: BaseAgent) -
 
         error_lines = clean_absolute_paths_in_output(error_lines, agent)
 
-        return "Build failed with the following maven error output:   \n\n" + "  \n".join(error_lines) + "  \n\n" + "The project had no compilation errors before. So they were introduced by your fix attempt, either directly or indirectly.  \n"
+        return "Build failed with the following maven error output:   \n\n" + "  \n".join(error_lines) + "  \n\n" + "The project had no compilation errors before. So they occurred due to your fix attempt! Try a new fix that doesn't introduce the compilation errors.  \n"
 
     else:
         logger.error("Failed extracting error info from maven log",

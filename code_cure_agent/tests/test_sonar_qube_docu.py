@@ -2,15 +2,15 @@ import os
 import shutil
 import unittest
 from tests.agent_mock import AgentMock
-from autogpt.commands import sonar_qube_docu
+from agent_core.commands import sonar_qube_docu
 
 
 class SonarQubeDocuTestCase(unittest.TestCase):
     def setUp(self):
-        auto_gpt_workspace = "auto_gpt_workspace"
-        if os.path.exists(auto_gpt_workspace):
-            shutil.rmtree(auto_gpt_workspace)
-        os.mkdir(auto_gpt_workspace)
+        cca_workspace = "cca_workspace"
+        if os.path.exists(cca_workspace):
+            shutil.rmtree(cca_workspace)
+        os.mkdir(cca_workspace)
 
         if os.path.exists("experimental_setups/experiment_test"):
             shutil.rmtree("experimental_setups/experiment_test")
@@ -30,10 +30,10 @@ class SonarQubeDocuTestCase(unittest.TestCase):
                                warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message)
 
     def tearDown(self):
-        auto_gpt_workspace = "auto_gpt_workspace"
-        if os.path.exists(auto_gpt_workspace):
-            shutil.rmtree(auto_gpt_workspace)
-        os.mkdir(auto_gpt_workspace)
+        cca_workspace = "cca_workspace"
+        if os.path.exists(cca_workspace):
+            shutil.rmtree(cca_workspace)
+        os.mkdir(cca_workspace)
         if os.path.exists("experimental_setups/experiment_test"):
             shutil.rmtree("experimental_setups/experiment_test")
 

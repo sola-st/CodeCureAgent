@@ -21,7 +21,7 @@ if $PYTHON_CMD -c "import sys; sys.exit(sys.version_info < (3, 10))"; then
         echo Installing missing packages...
         $PYTHON_CMD -m pip install -r requirements.txt
     fi
-    $PYTHON_CMD -m autogpt "$@"
+    $PYTHON_CMD -m agent_core "$@"
 else
-    echo "Python 3.10 or higher is required to run Auto GPT."
+    echo "Python 3.10 or higher is required to run CodeCureAgent."
 fi

@@ -1,5 +1,5 @@
 import subprocess
-from autogpt.commands import repository_operations
+from agent_core.commands import repository_operations
 from git.exc import GitError
 import os
 import csv
@@ -36,7 +36,7 @@ class AIConfig():
 
 class Agent():
     def __init__(self, warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message):
-        self.config = Config("./../../auto_gpt_workspace")
+        self.config = Config("./../../cca_workspace")
         self.ai_config = AIConfig(warning_repository_URL, warning_repository_commit, warning_file_path,
                                   warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message)
         self.exps = ["experiment_test"]
@@ -44,9 +44,9 @@ class Agent():
 
 if __name__ == "__main__":
 
-    auto_gpt_workspace = "./../../auto_gpt_workspace"
-    repository_operations.remove_folder_if_exists(auto_gpt_workspace)
-    os.mkdir(auto_gpt_workspace)
+    cca_workspace = "./../../cca_workspace"
+    repository_operations.remove_folder_if_exists(cca_workspace)
+    os.mkdir(cca_workspace)
 
     with open("original_sorald_considered_repos_stats.csv", "r") as repos_file:
         csv_reader = csv.reader(repos_file)
@@ -125,11 +125,11 @@ if __name__ == "__main__":
                         except Exception as e:
                             error = str(e)
 
-                        with open(os.path.join(auto_gpt_workspace, f"{agent.ai_config.warning_repository_name}_test_info.log"), "w") as log:
+                        with open(os.path.join(cca_workspace, f"{agent.ai_config.warning_repository_name}_test_info.log"), "w") as log:
                             log.write(result.stdout)
 
                     if error is not None:
-                        with open(os.path.join(auto_gpt_workspace, f"{agent.ai_config.warning_repository_name}_error.log"), "w") as log:
+                        with open(os.path.join(cca_workspace, f"{agent.ai_config.warning_repository_name}_error.log"), "w") as log:
                             log.write(str(error))
 
                     csv_writer.writerow(

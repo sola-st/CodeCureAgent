@@ -7,15 +7,15 @@ import shutil
 
 from tests.agent_mock import AgentMock
 
-from autogpt.commands.repository_operations import checkout_project, remove_folder_if_exists
-from autogpt.commands.symbol_lookup import find_definition, find_references
+from agent_core.commands.repository_operations import checkout_project, remove_folder_if_exists
+from agent_core.commands.symbol_lookup import find_definition, find_references
 
 
 class SymbolLookupTestCase(unittest.TestCase):
     def setUp(self):
-        auto_gpt_workspace = "auto_gpt_workspace"
-        remove_folder_if_exists(auto_gpt_workspace)
-        os.mkdir(auto_gpt_workspace)
+        cca_workspace = "cca_workspace"
+        remove_folder_if_exists(cca_workspace)
+        os.mkdir(cca_workspace)
 
         if os.path.exists("experimental_setups/experiment_test"):
             shutil.rmtree("experimental_setups/experiment_test")
@@ -23,9 +23,9 @@ class SymbolLookupTestCase(unittest.TestCase):
         os.mkdir("experimental_setups/experiment_test/analysis_reports")
 
     def tearDown(self):
-        auto_gpt_workspace = "auto_gpt_workspace"
-        remove_folder_if_exists(auto_gpt_workspace)
-        os.mkdir(auto_gpt_workspace)
+        cca_workspace = "cca_workspace"
+        remove_folder_if_exists(cca_workspace)
+        os.mkdir(cca_workspace)
 
     def test_go_to_definition_jpass(self):
         warning_repository_URL = "https://github.com/gaborbata/jpass.git"

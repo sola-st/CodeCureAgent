@@ -5,7 +5,7 @@ import os
 
 
 def main():
-    file_paths = ["autogpt/.env", ".env"]
+    file_paths = ["agent_core/.env", ".env"]
 
     print("Please provide your OpenAI API-KEY.")
     openai_api_key = input("OpenAI API-KEY: ").strip()

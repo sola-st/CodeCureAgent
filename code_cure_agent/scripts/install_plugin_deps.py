@@ -5,7 +5,7 @@ import zipfile
 from glob import glob
 from pathlib import Path
 
-from autogpt.logs import logger
+from agent_core.logs import logger
 
 
 def install_plugin_dependencies():

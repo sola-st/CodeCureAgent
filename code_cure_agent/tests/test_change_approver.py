@@ -6,17 +6,17 @@ import re
 
 from tests.agent_mock import AgentMock
 
-from autogpt.commands.repository_operations import checkout_project
-from autogpt.commands import write_fix
-from autogpt.commands import change_approver
+from agent_core.commands.repository_operations import checkout_project
+from agent_core.commands import write_fix
+from agent_core.commands import change_approver
 
 
 class ChangeApproverTestCase(unittest.TestCase):
     def setUp(self):
-        auto_gpt_workspace = "auto_gpt_workspace"
-        if os.path.exists(auto_gpt_workspace):
-            shutil.rmtree(auto_gpt_workspace)
-        os.mkdir(auto_gpt_workspace)
+        cca_workspace = "cca_workspace"
+        if os.path.exists(cca_workspace):
+            shutil.rmtree(cca_workspace)
+        os.mkdir(cca_workspace)
 
         if os.path.exists("experimental_setups/experiment_test"):
             shutil.rmtree("experimental_setups/experiment_test")
@@ -43,10 +43,10 @@ class ChangeApproverTestCase(unittest.TestCase):
             self.file_without_changes = orginal_file.readlines()
 
     def tearDown(self):
-        auto_gpt_workspace = "auto_gpt_workspace"
-        if os.path.exists(auto_gpt_workspace):
-            shutil.rmtree(auto_gpt_workspace)
-        os.mkdir(auto_gpt_workspace)
+        cca_workspace = "cca_workspace"
+        if os.path.exists(cca_workspace):
+            shutil.rmtree(cca_workspace)
+        os.mkdir(cca_workspace)
         if os.path.exists("experimental_setups/experiment_test"):
             shutil.rmtree("experimental_setups/experiment_test")
 

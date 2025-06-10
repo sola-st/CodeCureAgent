@@ -1,4 +1,4 @@
-from autogpt.agents.base import BaseAgent
+from agent_core.agents.base import BaseAgent
 import json
 
 SORALD_JAR_PATH = "/workspaces/master-thesis-pascal-joos/code_cure_agent/sorald/sorald.jar"
@@ -25,11 +25,11 @@ class AIConfig():
 
 class Agent():
     def __init__(self, warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message, plans, unknown_commands):
-        self.config = Config("auto_gpt_workspace/")
+        self.config = Config("cca_workspace/")
         self.ai_config = AIConfig(warning_repository_URL, warning_repository_commit, warning_file_path,
                                   warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message)
         self.exps = ["experiment_test"]
-        with open("/workspaces/master-thesis-pascal-joos/code_cure_agent/auto_gpt_workspace/argparse4j_S2142_main.src.main.java.net.sourceforge.argparse4j.internal.TerminalWidth.java_94_initial_analysis_report.json") as file:
+        with open("/workspaces/master-thesis-pascal-joos/code_cure_agent/cca_workspace/argparse4j_S2142_main.src.main.java.net.sourceforge.argparse4j.internal.TerminalWidth.java_94_initial_analysis_report.json") as file:
             self.initial_analysis_report = json.load(file)
 
         self.plans = plans

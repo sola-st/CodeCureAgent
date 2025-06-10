@@ -1,4 +1,4 @@
-from autogpt.llm.providers.openai import OPEN_AI_CHAT_MODELS
+from agent_core.llm.providers.openai import OPEN_AI_CHAT_MODELS
 import os
 import re
 import tiktoken

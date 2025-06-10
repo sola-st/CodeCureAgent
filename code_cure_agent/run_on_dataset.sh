@@ -21,7 +21,7 @@ skip_header=1
 
 
 # Open the input file with a file descriptor. 
-# Using a file descriptor instead of redirecting stdout ensures that autogpt runs in an interactive shell, 
+# Using a file descriptor instead of redirecting stdout ensures that agent_core runs in an interactive shell, 
 # so if needed, the user could be asked for input.
 exec 3< "$input"
 while IFS= read -r line <&3; do

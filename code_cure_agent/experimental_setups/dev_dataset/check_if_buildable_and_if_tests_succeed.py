@@ -1,14 +1,12 @@
+import subprocess
+from autogpt.commands import repository_operations
+from git.exc import GitError
+import os
+import csv
 import sys
 from os import path
 sys.path.append(path.dirname(path.dirname(
     path.dirname(path.abspath(__file__)))))
-import csv
-import os
-from git.exc import GitError
-from autogpt.commands import repository_operations
-import subprocess
-
-
 
 
 # This script goes through all of the reposiotries in the sorald list of repos and tries to build them
@@ -95,8 +93,9 @@ if __name__ == "__main__":
                             timeout_five_minutes = 5*60
                             repo_path = os.path.join(agent.config.workspace_path,
                                                      agent.ai_config.warning_repository_name)
-                            
-                            print("Running tests for target project " + agent.ai_config.warning_repository_name)
+
+                            print("Running tests for target project " +
+                                  agent.ai_config.warning_repository_name)
 
                             result = subprocess.run(
                                 ["mvn", "clean", "test",
@@ -114,7 +113,8 @@ if __name__ == "__main__":
                                 print("Running tests was successful.")
 
                             else:
-                                print("Running tests failed with: " + result.stdout)
+                                print("Running tests failed with: " +
+                                      result.stdout)
                                 raise repository_operations.BuildError(
                                     result.returncode, result.stdout)
 
@@ -127,7 +127,6 @@ if __name__ == "__main__":
 
                         with open(os.path.join(auto_gpt_workspace, f"{agent.ai_config.warning_repository_name}_test_info.log"), "w") as log:
                             log.write(result.stdout)
-
 
                     if error is not None:
                         with open(os.path.join(auto_gpt_workspace, f"{agent.ai_config.warning_repository_name}_error.log"), "w") as log:

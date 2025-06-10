@@ -2,6 +2,7 @@ import unittest
 
 import os
 import shutil
+import re
 
 from tests.agent_mock import AgentMock
 
@@ -419,3 +420,295 @@ You must not introduce any new rule violations.""")
         self.assertTrue(accepted)
         self.assertEqual(
             sonar_qube_message, "Rerunning the SonarQube analysis confirmed that your fix successfully removed the targeted rule violation and didn't introduce any new violations.")
+
+    def test_run_tests_passes_on_unchanged_project(self):
+        success, test_message = change_approver.try_to_run_tests(self.agent)
+        print(test_message)
+        self.assertTrue(success)
+        self.assertEqual(
+            test_message, "All tests in the project have been run and passed successfully.")
+
+    def test_run_tests_failing_due_to_introducing_NullPointerException(self):
+        # Real world example that passed previous checks but introduced a NullPointerException catched by a test.
+        change_dict_list = [
+            {
+                "file_name": "main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserImpl.java",
+                "insertions": [
+                    {
+                        "line_number": 891,
+                        "new_lines": [
+                            "        // Extract nested ternary operator into a separate variable to comply with S3358",
+                            "        String prefixCharsStr = config_.fromFilePrefixPattern_.getPrefixChars().length() == 1 ?",
+                            "                config_.fromFilePrefixPattern_.getPrefixChars() :",
+                            "                \"[\" + config_.fromFilePrefixPattern_.getPrefixChars() + \"]\";"
+                        ]
+                    }
+                ],
+                "deletions": [],
+                "modifications": [
+                    {
+                        "line_number": 895,
+                        "modified_line": "                        state.index > state.lastFromFileArgIndex ? \"\" : String.format(TextHelper.LOCALE_ROOT, localize(\"trailingWhiteSpacesInFileTip\"), prefixCharsStr));"
+                    },
+                    {
+                        "line_number": 896,
+                        "modified_line": ""
+                    },
+                    {
+                        "line_number": 897,
+                        "modified_line": ""
+                    },
+                    {
+                        "line_number": 898,
+                        "modified_line": ""
+                    },
+                    {
+                        "line_number": 899,
+                        "modified_line": ""
+                    },
+                    {
+                        "line_number": 900,
+                        "modified_line": ""
+                    },
+                    {
+                        "line_number": 901,
+                        "modified_line": ""
+                    },
+                    {
+                        "line_number": 902,
+                        "modified_line": ""
+                    },
+                    {
+                        "line_number": 903,
+                        "modified_line": ""
+                    }
+                ]
+            }
+        ]
+
+        all_file_changes = write_fix.execute_write_range(
+            change_dict_list, self.agent)
+        success, test_message = change_approver.try_to_run_tests(self.agent)
+        print(test_message)
+        self.assertFalse(success)
+        expected = """However, running the tests in the project failed with the following failing tests:  
+-------------------------------------------------------------------------------
+Test file with failure: main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentParserImplTest.java
+-------------------------------------------------------------------------------
+Tests run: 83, Failures: 0, Errors: 5, Skipped: 0, Time elapsed: 0.081 sec <<< FAILURE!
+Failing test method: testParseArgsWithNegativeNumberLikeFlag  Time elapsed: 0.008 sec  <<< ERROR!
+java.lang.NullPointerException
+\tat main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserImpl.java Method: formatUnrecognizedArgumentErrorMessage (line 892)
+\tat main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserImpl.java Method: parseArgs (line 829)
+\tat main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserImpl.java Method: parseArgsAtOffsetZero (line 703)
+\tat main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserImpl.java Method: parseArgs (line 572)
+\tat main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserImpl.java Method: parseArgs (line 557)
+\tat main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentParserImplTest.java Method: testParseArgsWithNegativeNumberLikeFlag (line 198)
+
+Failing test method: testParseArgsWithCommandAfterSeparator  Time elapsed: 0.006 sec  <<< ERROR!
+java.lang.NullPointerException
+\tat main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserImpl.java Method: formatUnrecognizedArgumentErrorMessage (line 892)
+\tat main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserImpl.java Method: parseArgs (line 861)
+\tat main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserImpl.java Method: parseArgsAtOffsetZero (line 703)
+\tat main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserImpl.java Method: parseArgs (line 572)
+\tat main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserImpl.java Method: parseArgs (line 557)
+\tat main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentParserImplTest.java Method: testParseArgsWithCommandAfterSeparator (line 773)
+
+Failing test method: testParseArgsWithUnrecognizedArgs  Time elapsed: 0.002 sec  <<< ERROR!
+java.lang.NullPointerException
+\tat main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserImpl.java Method: formatUnrecognizedArgumentErrorMessage (line 892)
+\tat main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserImpl.java Method: parseArgs (line 861)
+\tat main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserImpl.java Method: parseArgsAtOffsetZero (line 703)
+\tat main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserImpl.java Method: parseArgs (line 572)
+\tat main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserImpl.java Method: parseArgs (line 557)
+\tat main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentParserImplTest.java Method: testParseArgsWithUnrecognizedArgs (line 634)
+
+Failing test method: testSubparserWithoutAddHelp  Time elapsed: 0.001 sec  <<< ERROR!
+java.lang.NullPointerException
+\tat main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserImpl.java Method: formatUnrecognizedArgumentErrorMessage (line 892)
+\tat main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserImpl.java Method: parseArgs (line 829)
+\tat main/src/main/java/net/sourceforge/argparse4j/internal/SubparserImpl.java Method: parseArgs (line 266)
+\tat main/src/main/java/net/sourceforge/argparse4j/internal/SubparsersImpl.java Method: parseArg (line 198)
+\tat main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserImpl.java Method: parseArgs (line 857)
+\tat main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserImpl.java Method: parseArgsAtOffsetZero (line 703)
+\tat main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserImpl.java Method: parseArgs (line 572)
+\tat main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserImpl.java Method: parseArgs (line 557)
+\tat main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentParserImplTest.java Method: testSubparserWithoutAddHelp (line 989)
+
+Failing test method: testArgumentParserWithoutAddHelp  Time elapsed: 0.001 sec  <<< ERROR!
+java.lang.NullPointerException
+\tat main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserImpl.java Method: formatUnrecognizedArgumentErrorMessage (line 892)
+\tat main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserImpl.java Method: parseArgs (line 829)
+\tat main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserImpl.java Method: parseArgsAtOffsetZero (line 703)
+\tat main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserImpl.java Method: parseArgs (line 572)
+\tat main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserImpl.java Method: parseArgs (line 557)
+\tat main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentParserImplTest.java Method: testArgumentParserWithoutAddHelp (line 977)
+
+  
+"""
+        self.assertEqual(re.sub(
+            r'Time elapsed: [\d\.]+ sec', 'Time elapsed: <ignored>', test_message), re.sub(
+            r'Time elapsed: [\d\.]+ sec', 'Time elapsed: <ignored>', expected))
+
+    def test_run_tests_multiple_test_files_with_failures(self):
+        # The jolokia project is excluded, as it has failing tests in our environment
+        warning_repository_URL = "https://github.com/rhuss/jolokia.git"
+        warning_repository_commit = "913a35138235e8f53b31662b11b12992cf4bf702"
+        warning_repository_name = "jolokia"
+
+        self.agent = AgentMock(warning_repository_URL, warning_repository_commit, None,
+                               warning_repository_name, None, None, None, None)
+
+        checkout_project(self.agent)
+
+        success, test_message = change_approver.try_to_run_tests(self.agent)
+        print(test_message)
+        expected = """However, running the tests in the project failed with the following failing tests:  
+-------------------------------------------------------------------------------
+Test file with failure: agent/jvm/src/test/java/org/jolokia/jvmagent/security/DelegatingAuthenticatorTest.java
+-------------------------------------------------------------------------------
+Tests run: 11, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 4.798 sec <<< FAILURE! - in org.jolokia.jvmagent.security.DelegatingAuthenticatorTest
+Failing test method: invalidProtocol  Time elapsed: 2.046 sec  <<< FAILURE!
+java.lang.AssertionError: expected [401] but found [503]
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/security/DelegatingAuthenticatorTest.java Method: invalidProtocol (line 135)
+
+  
+-------------------------------------------------------------------------------
+Test file with failure: agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java
+-------------------------------------------------------------------------------
+Tests run: 27, Failures: 11, Errors: 0, Skipped: 0, Time elapsed: 2.386 sec <<< FAILURE! - in org.jolokia.jvmagent.JolokiaServerTest
+Failing test method: sslWithSpecialHttpsSettings  Time elapsed: 0.092 sec  <<< FAILURE!
+java.lang.AssertionError: Expected at least one connection to succeed on TLSv1.1
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: sslWithSpecialHttpsSettings (line 334)
+
+Failing test method: t_22_signed_client_cert  Time elapsed: 0.072 sec  <<< FAILURE!
+java.net.SocketException: Broken pipe (Write failed)
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: checkServer (line 498)
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: checkServer (line 456)
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: httpsRoundtrip (line 390)
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: t_22_signed_client_cert (line 147)
+
+Failing test method: t_231_with_extended_client_key_usage  Time elapsed: 0.053 sec  <<< FAILURE!
+java.net.SocketException: Broken pipe (Write failed)
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: checkServer (line 498)
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: checkServer (line 456)
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: httpsRoundtrip (line 390)
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: t_231_with_extended_client_key_usage (line 154)
+
+Failing test method: t_2331_without_extended_client_key_usage  Time elapsed: 0.05 sec  <<< FAILURE!
+org.testng.TestException: 
+The exception was thrown with the wrong message: expected ".*403.*" but got "Broken pipe (Write failed)"
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: checkServer (line 498)
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: checkServer (line 456)
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: httpsRoundtrip (line 390)
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: t_2331_without_extended_client_key_usage (line 168)
+
+Failing test method: t_2332_without_extended_client_key_usage_allowed  Time elapsed: 0.047 sec  <<< FAILURE!
+java.net.SocketException: Broken pipe (Write failed)
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: checkServer (line 498)
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: checkServer (line 456)
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: httpsRoundtrip (line 390)
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: t_2332_without_extended_client_key_usage_allowed (line 175)
+
+Failing test method: t_241_with_client_principal  Time elapsed: 0.048 sec  <<< FAILURE!
+java.net.SocketException: Broken pipe (Write failed)
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: checkServer (line 498)
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: checkServer (line 456)
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: httpsRoundtrip (line 390)
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: t_241_with_client_principal (line 189)
+
+Failing test method: t_242_with_wrong_client_principal  Time elapsed: 0.048 sec  <<< FAILURE!
+org.testng.TestException: 
+The exception was thrown with the wrong message: expected ".*403.*" but got "Broken pipe (Write failed)"
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: checkServer (line 498)
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: checkServer (line 456)
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: httpsRoundtrip (line 390)
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: t_242_with_wrong_client_principal (line 197)
+
+Failing test method: t_261_with_client_principal  Time elapsed: 0.046 sec  <<< FAILURE!
+java.net.SocketException: Broken pipe (Write failed)
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: checkServer (line 498)
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: checkServer (line 456)
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: httpsRoundtrip (line 390)
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: t_261_with_client_principal (line 215)
+
+Failing test method: t_262_with_wrong_client_principal  Time elapsed: 0.047 sec  <<< FAILURE!
+org.testng.TestException: 
+The exception was thrown with the wrong message: expected ".*401.*" but got "Broken pipe (Write failed)"
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: checkServer (line 498)
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: checkServer (line 456)
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: httpsRoundtrip (line 390)
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: t_262_with_wrong_client_principal (line 223)
+
+Failing test method: t_263_with_basic_auth  Time elapsed: 0.049 sec  <<< FAILURE!
+java.net.SocketException: Broken pipe (Write failed)
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: checkServer (line 498)
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: httpsRoundtrip (line 396)
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: t_263_with_basic_auth (line 231)
+
+Failing test method: t_264_with_wrong_basic_auth  Time elapsed: 0.046 sec  <<< FAILURE!
+org.testng.TestException: 
+The exception was thrown with the wrong message: expected ".*401.*" but got "Broken pipe (Write failed)"
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: checkServer (line 498)
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: httpsRoundtrip (line 396)
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: t_264_with_wrong_basic_auth (line 240)
+
+  
+"""
+        self.assertEqual(re.sub(
+            r'Time elapsed: [\d\.]+ sec', 'Time elapsed: <ignored>', test_message), re.sub(
+            r'Time elapsed: [\d\.]+ sec', 'Time elapsed: <ignored>', expected))
+
+    def test_run_tests_multiple_test_folders_and_files_with_failures(self):
+        # The project is composed of multiple modules with there separate test output folders that need to be found
+        warning_repository_URL = "https://github.com/rhuss/jolokia.git"
+        warning_repository_commit = "913a35138235e8f53b31662b11b12992cf4bf702"
+        warning_repository_name = "jolokia"
+        warning_file_path = "agent/jvm/src/test/java/org/jolokia/jvmagent/security/DelegatingAuthenticatorTest.java"
+
+        self.agent = AgentMock(warning_repository_URL, warning_repository_commit, warning_file_path,
+                               warning_repository_name, None, None, None, None)
+
+        checkout_project(self.agent)
+
+        # Artifical changes to introduce further failure in a different sub-module
+        change_dict_list = [
+            {
+                "file_name": "agent/osgi/src/test/java/org/jolokia/osgi/security/DelegatingRestrictorTest.java",
+                "insertions": [
+                    {
+                        "line_number": 74,
+                        "new_lines": [
+                            "        // Inserted test failure",
+                            "        assertTrue(false);"
+                        ]
+                    }
+                ],
+                "deletions": [],
+                "modifications": []
+            }
+        ]
+
+        all_file_changes = write_fix.execute_write_range(
+            change_dict_list, self.agent)
+
+        success, test_message = change_approver.try_to_run_tests(self.agent)
+        print(test_message)
+
+        # Here the test suite is not named by file but only one larger "TestSuite",
+        # so resolving the test class name in "Test set: TestSuite" is not possible
+        # and by extension also not in the "nullRestrictor(org.jolokia.osgi.security.DelegatingRestrictorTest)" line
+        expected = """However, running the tests in the project failed with the following failing tests:  
+-------------------------------------------------------------------------------
+Test set: TestSuite
+-------------------------------------------------------------------------------
+Tests run: 37, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.712 sec <<< FAILURE! - in TestSuite
+nullRestrictor(org.jolokia.osgi.security.DelegatingRestrictorTest)  Time elapsed: 0.003 sec  <<< FAILURE!
+java.lang.AssertionError: expected [true] but found [false]
+\tat agent/osgi/src/test/java/org/jolokia/osgi/security/DelegatingRestrictorTest.java Method: nullRestrictor (line 75)
+
+  
+"""
+        self.assertEqual(re.sub(
+            r'Time elapsed: [\d\.]+ sec', 'Time elapsed: <ignored>', test_message), re.sub(
+            r'Time elapsed: [\d\.]+ sec', 'Time elapsed: <ignored>', expected))

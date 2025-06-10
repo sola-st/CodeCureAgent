@@ -1,7 +1,5 @@
 import os
 
-# TODO: test and understand what this does in detail. Is it what we need?
-
 
 def preprocess_paths(workspace, project_name: str, file_path):
     project_dir = os.path.join(workspace, project_name)
@@ -14,11 +12,14 @@ def preprocess_paths(workspace, project_name: str, file_path):
         file_path = file_path.replace(".", "/")
 
     if not os.path.exists(os.path.join(project_dir, file_path)):
-        if not os.path.exists(os.path.join(project_dir, "files_index.txt")):
-            with open(os.path.join(project_dir, "files_index.txt"), "w") as fit:
-                fit.write("\n".join(list_java_files(project_dir)))
 
-        with open(os.path.join(project_dir, "files_index.txt")) as fit:
+        file_index_file_name = "cca_files_index_java_only.txt"
+
+        if not os.path.exists(os.path.join(project_dir, file_index_file_name)):
+            with open(os.path.join(project_dir, file_index_file_name), "w") as fit:
+                fit.write("\n".join(list_files(project_dir)))
+
+        with open(os.path.join(project_dir, file_index_file_name)) as fit:
             files_index = [f for f in fit.read().splitlines()
                            if file_path in f]
 
@@ -33,13 +34,29 @@ def preprocess_paths(workspace, project_name: str, file_path):
     return file_path
 
 
-def list_java_files(main_dir) -> list:
+def list_files(main_dir, java_only=True) -> list:
     directory = main_dir
     java_files = []
     for root, dirs, files in os.walk(directory):
         for file in files:
-            if file.endswith(".java"):
+            if not java_only or file.endswith(".java"):
                 java_files.append(os.path.join(
                     root.replace("{}/".format(main_dir), ""), file))
 
     return java_files
+
+
+def find_all_folders(workspace: str, project_name: str, folder_sub_path: str):
+    """
+    Finds the paths of all the folders that match the folder_sub_path in their full path
+    """
+    project_dir = os.path.join(workspace, project_name)
+
+    all_folders = []
+
+    for root, dirs, _ in os.walk(project_dir):
+        for dir in dirs:
+            if folder_sub_path in os.path.join(root, dir):
+                all_folders.append(os.path.join(root, dir))
+
+    return all_folders

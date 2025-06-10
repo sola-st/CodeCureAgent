@@ -7,6 +7,7 @@ import subprocess
 from autogpt.logs import logger
 from autogpt.utils.write_fix_utils.change_tracking import FileChanges, BeforeAfterMapping
 from autogpt.app.main import shutdown
+from autogpt.utils.path_utils.path_utils import find_all_folders, preprocess_paths
 
 import json
 import re
@@ -35,13 +36,18 @@ def approve_changes(changes_dicts: list[dict], all_file_changes: list[FileChange
     if not accepted:
         return reject([build_message, sonar_qube_message], changes_dicts, agent)
 
+    accepted, tests_message = try_to_run_tests(agent)
+
+    if not accepted:
+        return reject([build_message, sonar_qube_message, tests_message], changes_dicts, agent)
+
     accepted, reviewer_llm_message = ask_reviewer_llm(
         changes_dicts, all_file_changes, agent)
 
     if accepted:
-        return approve([build_message, sonar_qube_message, reviewer_llm_message], changes_dicts, agent)
+        return approve([build_message, sonar_qube_message, tests_message, reviewer_llm_message], changes_dicts, agent)
     else:
-        return reject([build_message, sonar_qube_message, reviewer_llm_message], changes_dicts, agent)
+        return reject([build_message, sonar_qube_message, tests_message, reviewer_llm_message], changes_dicts, agent)
 
 
 def try_to_build_changed_project(all_file_changes: list[FileChanges], agent: BaseAgent) -> tuple[bool, str]:
@@ -436,6 +442,166 @@ def find_newly_introduced_violations(all_file_changes: list[FileChanges], sonar_
                             (file_changes.file_path, rule_key, rule_name, warning_location_after))
 
     return newly_introduced_violations
+
+
+def try_to_run_tests(agent: BaseAgent) -> tuple[bool, str]:
+    """
+    Runs the tests via mvn clean test.
+    If there were failing test cases then the failing test reports are extracted and formatted appropriately for the agent.
+    This expects that the project is successfully buildable (ensured by running try_to_build_changed_project first in the ChangeApprover).
+    """
+
+    try:
+        test_result = repository_operations.run_tests(agent)
+
+    except subprocess.TimeoutExpired as te:
+        logger.error("TimeoutExpired",
+                     f"Test ran into timeout after {te.timeout / 60} minutes. Ignoring the test in the ChangeApprover.")
+        # Tests are just counted as accepted and no info is printed to the agent about the tests.
+        return True, ""
+
+    if test_result.returncode == 0:
+        return True, "All tests in the project have been run and passed successfully."
+    else:
+        return False, "However, running the tests in the project failed with the following failing tests:  \n" + extract_test_failure_information(test_result, agent)
+
+
+def extract_test_failure_information(test_result: subprocess.CompletedProcess[str], agent: BaseAgent) -> str:
+    """
+    Finds all the test reports in "target/surefire-reports" folders anywhere in the project.
+    Extracts the once that have either failures or errors and formats the stacktraces so that package identifiers 
+    are replaced by paths that the agent can use and references outside the project are removed.
+    """
+
+    test_report_folders = find_all_folders(
+        agent.config.workspace_path, agent.ai_config.warning_repository_name, "target/surefire-reports")
+
+    if len(test_report_folders) == 0:
+        logger.error("Extracting test reports failed",
+                     "There should have been test reports created. However no 'target/surefire-reports' folders could be found. Fallback to uncleaned printing of the output.")
+        return naive_test_extraction(test_result, agent)
+
+    test_output = ""
+
+    # Go through all the test report files
+    for test_report_folder in test_report_folders:
+        for root, _, files in os.walk(test_report_folder):
+            for file_name in files:
+                full_file_path = os.path.join(root, file_name)
+                if full_file_path.endswith(".txt"):
+                    with open(full_file_path, "r") as report_file:
+                        report_content = report_file.read()
+
+                    summary_pattern = re.compile(
+                        r"Tests run: \d+, Failures: (\d+), Errors: (\d+), Skipped: \d+, Time elapsed:")
+                    test_summary = re.search(summary_pattern, report_content)
+                    if test_summary is not None:
+                        number_of_failures = int(test_summary.group(1))
+                        number_of_errors = int(test_summary.group(2))
+                        # Include the report if there was a failure or error
+                        if number_of_failures > 0 or number_of_errors > 0:
+                            failing_test_file_path = ""
+                            package_path_failing_test: str = file_name.removesuffix(
+                                ".txt")
+                            try:
+                                failing_test_file_path = preprocess_paths(
+                                    agent.config.workspace_path, agent.ai_config.warning_repository_name, package_path_failing_test + ".java")
+                            except ValueError as ve:
+                                logger.warn(title="Couldn't resolve package path when formatting test failure output",
+                                            message=f"package_path was {package_path_failing_test}. Error was {str(ve)}")
+
+                            if failing_test_file_path != "":
+                                report_content = report_content.replace(
+                                    f"Test set: {package_path_failing_test}", f"Test file with failure: {failing_test_file_path}")
+
+                            report_lines = report_content.splitlines(
+                                keepends=True)
+                            report_cleaned = []
+                            for line in report_lines:
+                                report_cleaned.append(
+                                    clean_stacktrace_line(line, package_path_failing_test, agent))
+
+                            test_output += "".join(report_cleaned) + "  \n"
+
+    return test_output
+
+
+def clean_stacktrace_line(line: str, package_path_failing_test: str, agent: BaseAgent) -> str:
+    """
+    If the line is not part of the stacktrace it is returned as is, 
+    or if it is the info line about the failing method (before the stacktrace), then this is cleaned appropriately.
+    If it is matched as a stacktrace line then it is cleaned like the following example:
+    "at net.sourceforge.argparse4j.internal.ArgumentParserImpl.parseArgs(ArgumentParserImpl.java:829)"
+    becomes
+    "at main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserImpl.java Method: parseArgs (line 829)"
+    If the stacktrace line references a file outside the project it is dropped from the stacktrace.
+    """
+    if line.startswith("\tat "):
+        stack_trace_item_pattern = re.compile(
+            r"at (?P<package_path>([^\.]+\.)+)(?P<method>[^\.]+)(?P<info_in_braces>\(.+:(?P<line_number>\d+)\))")
+        matched_stack_trace_line = re.search(
+            stack_trace_item_pattern, line)
+        cleaned_line = ""
+        if matched_stack_trace_line is not None:
+            package_path_of_line_unclean = matched_stack_trace_line.group(
+                "package_path")
+            # the package of the file might end with a $2 or similar, so remove that
+            package_path_of_line = package_path_of_line_unclean.removesuffix(".").split("$")[
+                0]
+            try:
+                file_path_of_line = preprocess_paths(
+                    agent.config.workspace_path, agent.ai_config.warning_repository_name, package_path_of_line + ".java")
+
+            except ValueError as ve:
+                logger.debug("Package path in Stacktrace not resolved.",
+                             f"Likely it was a path outside the project so its excluded. Problem was: {str(ve)}")
+                # don't add the line, as the file is not project-local
+                return ""
+
+            cleaned_line = line.replace(
+                package_path_of_line_unclean, file_path_of_line + " Method: ")
+
+            method_line_number = matched_stack_trace_line.group(
+                "line_number")
+            info_in_braces = matched_stack_trace_line.group(
+                "info_in_braces")
+            cleaned_line = cleaned_line.replace(
+                info_in_braces, f" (line {str(method_line_number)})")
+
+            return cleaned_line
+
+        else:
+            # Failed to match the stacktrace line, ignore it
+            return ""
+    else:
+        # Not a stacktrace line
+
+        # Check if its the failing method's introduction
+        failing_method_intro_pattern = re.compile(
+            rf"\({package_path_failing_test}\)  Time elapsed: ")
+        matched_intro_pattern = re.search(failing_method_intro_pattern, line)
+        if matched_intro_pattern is not None:
+            cleaned_line = "Failing test method: " + \
+                line.replace(
+                    f"({package_path_failing_test})  Time elapsed: ",  "  Time elapsed: ")
+            return cleaned_line
+
+        else:
+            return line
+
+
+def naive_test_extraction(test_result: subprocess.CompletedProcess[str], agent: BaseAgent):
+    index_start_test_section = test_result.stdout.find("""-------------------------------------------------------
+ T E S T S
+-------------------------------------------------------""")
+    index_end_of_test_section = test_result.stdout.rfind("""[INFO] -------------------------------------------------------------
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for""")
+    test_section = test_result.stdout[index_start_test_section:index_end_of_test_section]
+    repo_path = os.path.join(agent.config.workspace_path,
+                             agent.ai_config.warning_repository_name)
+    return test_section.replace(f"{repo_path}/", "").replace(
+        f"{agent.config.workspace_path}/", "").replace(f"{agent.config.workspace_path}", "")
 
 
 def ask_reviewer_llm(changes_dicts: list[dict], all_files_with_changes: list[dict], agent: BaseAgent) -> tuple[bool, str]:

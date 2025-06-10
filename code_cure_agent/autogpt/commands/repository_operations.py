@@ -128,3 +128,31 @@ class BuildError(Exception):
         self.returncode = returncode
         self.stdout = stdout
         super().__init__(stdout)
+
+
+def run_tests(agent: BaseAgent) -> subprocess.CompletedProcess[str]:
+    """
+    Run the test-suite of the project.
+    Expects that the project is already checked out and can be built.
+    Expects the project to be a maven project compatible with JDK 11 and with the pom.xml in the root folder of the project.
+    """
+    repo_path = os.path.join(agent.config.workspace_path,
+                             agent.ai_config.warning_repository_name)
+
+    logger.info("",
+                f"Running tests on the target project {agent.ai_config.warning_repository_name} with maven."
+                )
+
+    timeout_five_minutes = 5*60
+
+    result = subprocess.run(
+        ["mvn", "clean", "test",
+            "--no-transfer-progress", "--batch-mode"],
+        capture_output=True,
+        encoding="utf8",
+        cwd=repo_path,
+        shell=False,
+        timeout=timeout_five_minutes
+    )
+
+    return result

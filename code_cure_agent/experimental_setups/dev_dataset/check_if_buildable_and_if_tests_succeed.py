@@ -1,12 +1,12 @@
+import sys
+from os import path
+sys.path.append(path.dirname(path.dirname(
+    path.dirname(path.abspath(__file__)))))
 import subprocess
 from agent_core.commands import repository_operations
 from git.exc import GitError
 import os
 import csv
-import sys
-from os import path
-sys.path.append(path.dirname(path.dirname(
-    path.dirname(path.abspath(__file__)))))
 
 
 # This script goes through all of the reposiotries in the sorald list of repos and tries to build them

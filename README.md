@@ -204,7 +204,6 @@ Within the `experimental_setups` folder, several scripts are available to post-p
 - **Budget Control Strategy**: Defines how the agent views the remaining cycles, suggested fixes, and minimum required fixes:
   - **FULL-TRACK**: Put the max, consumed and left budget in the prompt (default for our experiments).
   - **NO-TRACK**: Suppresses budget information.
-  - **FORCED**: Experimental and buggy—avoid use (we did not use this option).
   
   Example Configuration:
   
@@ -222,16 +221,18 @@ Within the `experimental_setups` folder, several scripts are available to post-p
   "repetition_handling": "RESTRICT",
   ```
 
-- **Command Limit**: Controls the maximum allowed cycles (budget).
+- **Command Limits**: Control the maximum allowed cycles (budget) in the different phases of the agent.
+  Default for our experiment:  
   ```json
-  "commands_limit": 40 // default for our experiment
+  "classification_commands_limit": 10,
+  "fix_commands_limit": 40 
   ```
 
 ### 2. Switching the used GPT model
 
 In the `run_on_dataset.sh` file, locate the line:
 ```bash
-./run.sh --ai-settings agent_config_and_prompt_files/ai_settings.yaml --model-version gpt-4.1-mini-2025-04-14 -c --none-interactive -m json_file --experiment-file "$2"
+./run.sh --ai-settings agent_config_and_prompt_files/ai_settings.yaml --model-version gpt-4.1-mini-2025-04-14 -m json_file --experiment-file "$2"
 ```
 Change the model_version to one of the following supported models:  
 

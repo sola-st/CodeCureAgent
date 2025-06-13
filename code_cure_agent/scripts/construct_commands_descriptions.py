@@ -1,9 +1,5 @@
 import json
 
-# The no_state_machine state corresponds to not using a state machine at all. It therefore includes all of the relevant commands (except commands for transitioning states)
-
-
-# Understanding the Violated Rule
 
 read_range_desc = """read_range:  
     Reads a range of lines in a given file.  
@@ -19,13 +15,6 @@ read_sonarqube_docu_desc = """read_sonarqube_docu:
     Required params:  
     - rule_key (string)"""
 
-go_to_gather_context_for_fix_desc = """go_to_gather_context_for_fix:  
-    Transitions to the state `Gathering Context for a Fix`.  
-    Call this command after you have collected enough information about the specific SonarQube rule.  
-    Required params: -"""
-
-
-# Gathering Context for a Fix
 
 find_definition_desc = """find_definition:  
     Retrieve the definition of a project-local symbol (method, class, field, or variable) referenced in a file.  
@@ -51,6 +40,40 @@ formulate_plan_desc = """formulate_plan:
     Call this command before calling write_fix for the first time. You can call it again at any time, if you received new information that requires a change of plan.  
     Required params:  
     - plan (string)"""
+
+write_fix_desc = """write_fix:  
+    Use this command to implement the fix you came up with.  
+    Only use this command if you think that you have collected all necessary information by using other commands.  
+    The project will automatically be rebuilt and reanalyzed by SonarQube, to check if your fix solves the rule violation. Afterwards the project is restored to its original state.  
+    Required params:  
+    - changes_dicts (list[dict]): The list should contain at least one non-empty dictionary of changes. Each dict must conform to the format defined in the section `## The format of the fix`.  
+    [RESPECT LINE NUMBERS AS GIVEN IN THE CODE SNIPPETS]"""
+
+
+goals_accomplished_desc = """goals_accomplished:  
+    Call this command if you are sure you fixed the rule violation and your write_fix attempt has been approved.  
+    Give a reason why you think the rule violation was fixed successfully.  
+    Required Params:  
+    - reason (string)"""
+
+
+answer_question_desc = """answer_question:
+    Use this command to answer the currently posed question in the 'Current Question to answer' section.  
+    Only call this command when you have collected enough information to answer the question.  
+    Give the answer to the question and also state how certain you are about your answer.
+    Required Params:  
+    - answer (string): Your answer to the question."""
+
+give_final_verdict_desc = """give_final_verdict:
+    Use this command to formulate a final verdict about whether the potential rule violation is a True Positive (should fix) or a False Positive (should not fix).  
+    Give an explanation why you decided for one or the other.  
+    Only use this command after answering all three questions, or if you only have one command left.  
+    Required Params:  
+    - verdict (string): Either 'TP' or 'FP'.
+    - reason (string): Explanation of what led you to your decision."""
+
+
+# RepairAgent unused commands:
 
 search_code_desc = """search_code_base:  
     Scans all Java files in a project for a list of keywords.  
@@ -95,49 +118,14 @@ generate_method_desc = """AI_generates_method_code:
     - file_path (string)
     - method_name (string)"""
 
-write_fix_desc = """write_fix:  
-    Use this command to implement the fix you came up with.  
-    Only use this command if you think that you have collected all necessary information by using other commands.  
-    The project will automatically be rebuilt and reanalyzed by SonarQube, to check if your fix solves the rule violation. Afterwards the project is restored to its original state.  
-    Required params:  
-    - changes_dicts (list[dict]): The list should contain at least one non-empty dictionary of changes. Each dict must conform to the format defined in the section `## The format of the fix`.  
-    [RESPECT LINE NUMBERS AS GIVEN IN THE CODE SNIPPETS]"""
-
-
-go_back_to_understanding_rule_desc = """go_back_to_understanding_rule:  
-    Allows you to return back to the state `Understanding the Violated Rule` where you can collect more information about the specific rule.  
-    Required Params:  
-    - reason_for_going_back (string)"""
-# also read_range
-
-
-# Trying out Fix Candidates
-
-go_back_to_gather_context_for_fix_desc = """go_back_to_gather_context_for_fix:  
-    Allows you to go back to the state `Gathering Context for a Fix` where you can collect more information about the code.  
-    Required Params:  
-    - reason_for_going_back (string)"""
-
-goals_accomplished_desc = """goals_accomplished:  
-    Call this command if you are sure you fixed the rule violation and your write_fix attempt has been approved.  
-    Give a reason why you think the rule violation was fixed successfully.  
-    Required Params:  
-    - reason: (string)"""
-
-# also write_fix
-# also read_range
-# also back_to_understanding_rule_desc
-
 
 commands_dict = {
-    "Understanding the Violated Rule": "\n".join(["{}. {}".format(i+1, t) for i, t in enumerate(
-        [read_sonarqube_docu_desc, read_range_desc, go_to_gather_context_for_fix_desc])]),
-    "Gathering Context for a Fix": "\n".join(["{}. {}".format(i+1, t) for i, t in enumerate(
-        [find_definition_desc, find_references_desc, formulate_plan_desc, read_range_desc, write_fix_desc, go_back_to_understanding_rule_desc])]),
-    "Trying out Fix Candidates": "\n".join(["{}. {}".format(i+1, t) for i, t in enumerate(
-        [write_fix_desc, read_range_desc, go_back_to_gather_context_for_fix_desc, go_back_to_understanding_rule_desc, goals_accomplished_desc])]),
-    "no_state_machine": "\n".join(["{}. {}".format(i+1, t) for i, t in enumerate(
-        [read_sonarqube_docu_desc, read_range_desc, find_definition_desc, find_references_desc, formulate_plan_desc, write_fix_desc, goals_accomplished_desc])])
+    "classification": "\n".join(["{}. {}".format(i+1, t) for i, t in enumerate(
+        [read_sonarqube_docu_desc, read_range_desc, find_definition_desc, find_references_desc, answer_question_desc, give_final_verdict_desc])]),
+    "fix_tp": "\n".join(["{}. {}".format(i+1, t) for i, t in enumerate(
+        [read_sonarqube_docu_desc, read_range_desc, find_definition_desc, find_references_desc, formulate_plan_desc, write_fix_desc, goals_accomplished_desc])]),
+    "fix_fp": "\n".join(["{}. {}".format(i+1, t) for i, t in enumerate(
+        [read_range_desc, write_fix_desc, goals_accomplished_desc])])
 }
 
 with open("agent_config_and_prompt_files/commands_by_state.json", "w") as cbs:

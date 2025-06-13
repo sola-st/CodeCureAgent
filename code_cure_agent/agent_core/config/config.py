@@ -12,14 +12,13 @@ from auto_gpt_plugin_template import AutoGPTPluginTemplate
 from colorama import Fore
 from pydantic import Field, validator
 
-from agent_core.core.configuration.schema import Configurable, SystemSettings
+from agent_core.models.config_schema import Configurable, SystemSettings
 from agent_core.llm.providers.openai import OPEN_AI_CHAT_MODELS
 from agent_core.plugins.plugins_config import PluginsConfig
 
 AI_SETTINGS_FILE = "agent_config_and_prompt_files/ai_settings.yaml"
 AZURE_CONFIG_FILE = "agent_config_and_prompt_files/azure.yaml"
 PLUGINS_CONFIG_FILE = "agent_config_and_prompt_files/plugins_config.yaml"
-PROMPT_SETTINGS_FILE = "agent_config_and_prompt_files/prompt_settings.yaml"
 
 
 class Config(SystemSettings, arbitrary_types_allowed=True):
@@ -30,7 +29,6 @@ class Config(SystemSettings, arbitrary_types_allowed=True):
     ########################
     skip_news: bool = False
     skip_reprompt: bool = False
-    none_interactive: bool = False
     authorise_key: str = "y"
     exit_key: str = "n"
     debug_mode: bool = False
@@ -47,7 +45,6 @@ class Config(SystemSettings, arbitrary_types_allowed=True):
     ##########################
     # Paths
     ai_settings_file: str = AI_SETTINGS_FILE
-    prompt_settings_file: str = PROMPT_SETTINGS_FILE
     workdir: Path = None
     workspace_path: Optional[Path] = None
     file_logger_path: Optional[Path] = None
@@ -60,8 +57,7 @@ class Config(SystemSettings, arbitrary_types_allowed=True):
     embedding_model: str = "text-embedding-ada-002"
     browse_spacy_language_model: str = "en_core_web_sm"
     # Run loop configuration
-    continuous_mode: bool = False
-    continuous_limit: int = 0
+    commands_limit: int = 0
 
     ##########
     # Memory #
@@ -215,9 +211,6 @@ class ConfigBuilder(Configurable[Config]):
             "plain_output": os.getenv("PLAIN_OUTPUT", "False") == "True",
             "shell_command_control": os.getenv("SHELL_COMMAND_CONTROL"),
             "ai_settings_file": os.getenv("AI_SETTINGS_FILE", AI_SETTINGS_FILE),
-            "prompt_settings_file": os.getenv(
-                "PROMPT_SETTINGS_FILE", PROMPT_SETTINGS_FILE
-            ),
             "fast_llm": os.getenv("FAST_LLM", os.getenv("FAST_LLM_MODEL")),
             "smart_llm": os.getenv("SMART_LLM", os.getenv("SMART_LLM_MODEL")),
             "embedding_model": os.getenv("EMBEDDING_MODEL"),

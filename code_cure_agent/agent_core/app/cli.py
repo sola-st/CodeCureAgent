@@ -6,18 +6,11 @@ import click
 
 
 @click.group(invoke_without_command=True)
-@click.option("-c", "--continuous", is_flag=True, help="Enable Continuous Mode")
 @click.option(
     "--skip-reprompt",
     "-y",
     is_flag=True,
     help="Skips the re-prompting messages at the beginning of the script",
-)
-@click.option(
-    "--none-interactive",
-    "-n",
-    is_flag=True,
-    help="If set the user will not be prompted for input when the last cycle was reached. This allows for running the agent without needing manual user feedback.",
 )
 @click.option(
     "--ai-settings",
@@ -26,18 +19,6 @@ import click
         "Specifies which ai_settings.yaml file to use, relative to the Auto-GPT"
         " root directory. Will also automatically skip the re-prompt."
     ),
-)
-@click.option(
-    "--prompt-settings",
-    "-P",
-    help="Specifies which prompt_settings.yaml file to use.",
-)
-# We don't use this flag but instead set the commands_limit via the hyperparams.json file and overwrite this parameter with that value
-@click.option(
-    "-l",
-    "--continuous-limit",
-    type=int,
-    help="Defines the number of times to run in continuous mode",
 )
 @click.option("--speak", is_flag=True, help="Enable Speak Mode")
 @click.option("--debug", is_flag=True, help="Enable Debug Mode")
@@ -83,11 +64,6 @@ import click
     help="AI name override",
 )
 @click.option(
-    "--ai-role",
-    type=str,
-    help="AI role override",
-)
-@click.option(
     "--warning-ID",
     type=int,
     help="A unique ID for the warning (the specific warning instance the agent runs on)"
@@ -128,12 +104,6 @@ import click
     help="The context-specific message of the SonarQube warning."
 )
 @click.option(
-    "--ai-goal",
-    type=str,
-    multiple=True,
-    help="AI goal override; may be used multiple times to pass multiple goals",
-)
-@click.option(
     "--experiment-file",
     type=str,
     multiple=False,
@@ -147,12 +117,8 @@ import click
 @click.pass_context
 def main(
     ctx: click.Context,
-    continuous: bool,
-    continuous_limit: int,
     ai_settings: str,
-    prompt_settings: str,
     skip_reprompt: bool,
-    none_interactive: bool,
     speak: bool,
     debug: bool,
     model_version: str,
@@ -164,7 +130,6 @@ def main(
     sorald_jar_path: str | None,
     install_plugin_deps: bool,
     ai_name: Optional[str],
-    ai_role: Optional[str],
     warning_id: Optional[int],
     warning_repository_url: Optional[str],
     warning_repository_commit: Optional[str],
@@ -173,7 +138,6 @@ def main(
     warning_start_line: Optional[int],
     warning_rule_name: Optional[str],
     warning_specific_message: Optional[str],
-    ai_goal: tuple[str],
     experiment_file: str
 ) -> None:
     """
@@ -186,12 +150,8 @@ def main(
 
     if ctx.invoked_subcommand is None:
         run_auto_gpt(
-            continuous=continuous,
-            continuous_limit=continuous_limit,
             ai_settings=ai_settings,
-            prompt_settings=prompt_settings,
             skip_reprompt=skip_reprompt,
-            none_interactive=none_interactive,
             speak=speak,
             debug=debug,
             model_version=model_version,
@@ -206,7 +166,6 @@ def main(
             sorald_jar_path=sorald_jar_path,
             install_plugin_deps=install_plugin_deps,
             ai_name=ai_name,
-            ai_role=ai_role,
             warning_ID=warning_id,
             warning_repository_URL=warning_repository_url,
             warning_repository_commit=warning_repository_commit,
@@ -215,7 +174,6 @@ def main(
             warning_start_line=warning_start_line,
             warning_rule_name=warning_rule_name,
             warning_specific_message=warning_specific_message,
-            ai_goals=ai_goal,
             experiment_file=experiment_file
         )
 

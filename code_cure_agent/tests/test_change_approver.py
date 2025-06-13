@@ -21,9 +21,10 @@ class ChangeApproverTestCase(unittest.TestCase):
         if os.path.exists("experimental_setups/experiment_test"):
             shutil.rmtree("experimental_setups/experiment_test")
         os.mkdir("experimental_setups/experiment_test")
-        os.mkdir("experimental_setups/experiment_test/analysis_reports")
-        os.mkdir("experimental_setups/experiment_test/plausible_patches")
-        os.mkdir("experimental_setups/experiment_test/implausible_patches")
+        os.mkdir("experimental_setups/experiment_test/fix_tp")
+        os.mkdir("experimental_setups/experiment_test/fix_tp/analysis_reports")
+        os.mkdir("experimental_setups/experiment_test/fix_tp/plausible_patches")
+        os.mkdir("experimental_setups/experiment_test/fix_tp/implausible_patches")
 
         warning_repository_URL = "https://github.com/argparse4j/argparse4j.git"
         warning_repository_commit = "a0cef432451487d513382297cec2c5b14c147a30"

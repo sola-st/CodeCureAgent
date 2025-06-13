@@ -1,3 +1,5 @@
+## The format of the fix
+
 Your fixes must follow this structure when calling write_fix:  
 This format is a list of dictionaries, each describing edits to a specific file.  
 Each dictionary must include:

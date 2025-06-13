@@ -8,7 +8,7 @@ import os
 
 if TYPE_CHECKING:
     from agent_core.config import AIConfig, Config
-
+    from agent_core.app.main import shutdown
     from agent_core.models.command_registry import CommandRegistry
 
 from agent_core.llm.base import ChatModelResponse, ChatSequence, Message
@@ -16,8 +16,8 @@ from agent_core.llm.providers.openai import OPEN_AI_CHAT_MODELS, get_openai_comm
 from agent_core.llm.utils import count_message_tokens, create_chat_completion
 from agent_core.logs import logger
 from agent_core.memory.message_history import MessageHistory
-from agent_core.prompts.prompt import DEFAULT_TRIGGERING_PROMPT
 from agent_core.utils.json_utils.json_utilities import extract_dict_from_response
+from agent_core.utils.file_operation_utils.read_file import read_file
 
 CommandName = str
 CommandArgs = dict[str, str]
@@ -35,10 +35,7 @@ class BaseAgent(metaclass=ABCMeta):
         command_registry: CommandRegistry,
         config: Config,
         big_brain: bool = True,
-        default_cycle_instruction: str = DEFAULT_TRIGGERING_PROMPT,
-        cycle_budget: Optional[int] = 1,
         send_token_limit: Optional[int] = None,
-        summary_max_tlength: Optional[int] = None,
         experiment_file: str = None
     ):
         self.experiment_file = experiment_file
@@ -57,20 +54,8 @@ class BaseAgent(metaclass=ABCMeta):
         as opposed to the configured fast LLM.
         """
 
-        self.default_cycle_instruction = default_cycle_instruction
-        """The default instruction passed to the AI for a thinking cycle."""
-
-        self.cycle_budget = cycle_budget
-        """
-        The number of cycles that the agent is allowed to run unsupervised.
-
-        `None` for unlimited continuous execution,
-        `1` to require user approval for every step,
-        `0` to stop the agent.
-        """
-
         self.cycle_count = 0
-        """The number of cycles that the agent has run since its initialization."""
+        """The number of cycles that the (sub-)agent has run since its initialization."""
 
         # Initializes the logger with the agent object.
         logger.agent = self
@@ -78,32 +63,28 @@ class BaseAgent(metaclass=ABCMeta):
         with open(experiment_file) as hper:
             self.hyperparams = json.load(hper)
 
-        # Overwrite the continuos_limit with the commands_limit specified in hyperparams.json
-        self.config.continuous_limit = self.hyperparams["commands_limit"]
+        # Set the commands_limit to the classification_commands_limit specified in hyperparams.json
+        self.config.commands_limit = self.hyperparams["classification_commands_limit"]
         logger.info(
-            title="Continuous Limit: ", title_color=Fore.GREEN, message=f"{self.config.continuous_limit}"
+            title="Commands Limit Classification: ", title_color=Fore.GREEN, message=f"{self.config.commands_limit}"
         )
 
         with open("agent_config_and_prompt_files/commands_by_state.json") as cbs:
             self.cmds_by_state = json.load(cbs)
 
-        with open("agent_config_and_prompt_files/states_description.json") as sdj:
-            self.descriptions = json.load(sdj)
-
         with open("sonarqube_quality_profile/quality_profile_rule_keys.txt") as rule_keys_file:
             self.sonar_qube_rules_in_active_profile = rule_keys_file.read().split(",")
 
-        # Change this to the initial state if a state machine is to be used.
-        # Also need to add info about the states in "prepare_ai_settings.py"
+        # Can be "classification", "fix_tp", or "fix_fp"
+        # Initially it is "classification"
+        self.current_state = "classification"
 
-        # By setting to no_state_machine, no state machine will
-        # be used but only a single state with all commands
-        self.current_state = "no_state_machine"
+        # We have questions 1 to 3 for the classification
+        self.current_question = 1
+        self.question_answers = []
+        self.number_of_questions = 3
 
-        self.prompt_dictionary = ai_config.construct_full_prompt(config)
-
-        self.prompt_dictionary["commands"][2] = self.cmds_by_state[self.current_state]
-        self.prompt_dictionary["current state"] = self.descriptions[self.current_state]
+        self.final_verdict_reason = ""
 
         llm_name = self.config.smart_llm if self.big_brain else self.config.fast_llm
         self.llm = OPEN_AI_CHAT_MODELS[llm_name]
@@ -120,8 +101,7 @@ class BaseAgent(metaclass=ABCMeta):
         self.truncation_limit = 12500
 
         self.history = MessageHistory(
-            self.llm,
-            max_summary_tlength=summary_max_tlength or self.send_token_limit // 6,
+            self.llm
         )
 
         self.plans = []
@@ -145,10 +125,12 @@ class BaseAgent(metaclass=ABCMeta):
 
     def save_context(self,):
         context = {
-            "cycle_budget": self.cycle_budget,
             "cycle_count": self.cycle_count,
+            "commands_limit": self.config.commands_limit,
             "current_state": self.current_state,
-            "prompt_dictionary": self.prompt_dictionary,
+            "current_question": self.current_question,
+            "question_answers": self.question_answers,
+            "final_verdict_reason": self.final_verdict_reason,
             "plans": self.plans,
             "unknown_commands": self.unknown_commands,
             "write_fix_attempts": self.write_fix_attempts,
@@ -163,20 +145,22 @@ class BaseAgent(metaclass=ABCMeta):
 
         sanitized_warning_file_path = self.ai_config.warning_file_path.replace(
             "/", ".")
-        with open(os.path.join("experimental_setups", exps[-1], "saved_contexts", f"saved_context_{str(self.ai_config.warning_ID)}_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(self.ai_config.warning_start_line)}"), "w") as patf:
+        with open(os.path.join("experimental_setups", exps[-1], self.current_state, "saved_contexts", f"saved_context_{str(self.ai_config.warning_ID)}_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(self.ai_config.warning_start_line)}"), "w") as patf:
             json.dump(context, patf)
 
     def load_context(self):
         exps = self.exps
         sanitized_warning_file_path = self.ai_config.warning_file_path.replace(
             "/", ".")
-        with open(os.path.join("experimental_setups", exps[-1], "saved_contexts", f"saved_context_{str(self.ai_config.warning_ID)}_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(self.ai_config.warning_start_line)}"), "r") as patf:
+        with open(os.path.join("experimental_setups", exps[-1], self.current_state, "saved_contexts", f"saved_context_{str(self.ai_config.warning_ID)}_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(self.ai_config.warning_start_line)}"), "r") as patf:
             context = json.load(patf)
 
-        self.cycle_budget = context["cycle_budget"]
         self.cycle_count = context["cycle_count"]
+        self.config.commands_limit = context["commands_limit"]
         self.current_state = context["current_state"]
-        self.prompt_dictionary = context["prompt_dictionary"]
+        self.current_question = context["current_question"]
+        self.question_answers = context["question_answers"]
+        self.final_verdict_reason = context["final_verdict_reason"]
         self.plans = context["plans"]
         self.unknown_commands = context["unknown_commands"]
         self.write_fix_attempts = context["write_fix_attempts"]
@@ -185,11 +169,7 @@ class BaseAgent(metaclass=ABCMeta):
         self.history = context["history"]
         self.initial_analysis_reports = context["initial_analysis_reports"]
 
-    def think(
-        self,
-        instruction: Optional[str] = None,
-        thought_process_id: ThoughtProcessID = "one-shot",
-    ) -> tuple[CommandName | None, CommandArgs | None, AgentThoughts]:
+    def think(self) -> tuple[CommandName | None, CommandArgs | None, AgentThoughts]:
         """Runs the agent for one cycle.
 
         Params:
@@ -199,21 +179,18 @@ class BaseAgent(metaclass=ABCMeta):
             The command name and arguments, if any, and the agent's thoughts.
         """
 
-        instruction = instruction or self.default_cycle_instruction
-
-        prompt: ChatSequence = self.construct_prompt(
-            instruction, thought_process_id)
-        prompt = self.on_before_think(prompt, thought_process_id, instruction)
+        prompt: ChatSequence = self.construct_prompt()
+        prompt = self.on_before_think(prompt)
 
         # Save prompts at each step
         sanitized_warning_file_path = self.ai_config.warning_file_path.replace(
             "/", ".")
-        with open(os.path.join("experimental_setups", self.exps[-1], "prompt_history", f"{str(self.ai_config.warning_ID)}_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(self.ai_config.warning_start_line)}_prompt_history"), "a+") as patf:
+        with open(os.path.join("experimental_setups", self.exps[-1], self.current_state, "prompt_history", f"{str(self.ai_config.warning_ID)}_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(self.ai_config.warning_start_line)}_prompt_history"), "a+") as patf:
             patf.write(prompt.dump())
 
         sanitized_warning_file_path = self.ai_config.warning_file_path.replace(
             "/", ".")
-        with open(os.path.join("experimental_setups", self.exps[-1], "all_messages", f"{str(self.ai_config.warning_ID)}_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(self.ai_config.warning_start_line)}_all_messages"), "w") as patf:
+        with open(os.path.join("experimental_setups", self.exps[-1], self.current_state, "all_messages", f"{str(self.ai_config.warning_ID)}_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(self.ai_config.warning_start_line)}_all_messages"), "w") as patf:
             patf.write(self.history.dump())
 
         raw_response = create_chat_completion(
@@ -223,8 +200,6 @@ class BaseAgent(metaclass=ABCMeta):
             if self.config.openai_functions
             else None,
         )
-
-        self.cycle_count += 1
 
         if self.hyperparams["repetition_handling"] != "NONE":
             try:
@@ -259,115 +234,172 @@ class BaseAgent(metaclass=ABCMeta):
             except SyntaxError as e:
                 logger.error("Error in repetition handling: " + e.msg)
 
-        return self.on_response(raw_response, thought_process_id, prompt, instruction)
+        return self.on_response(raw_response, prompt)
 
     def construct_prompt(
         self,
-        cycle_instruction: str,
-        thought_process_id: ThoughtProcessID,
     ) -> ChatSequence:
-        """Constructs and returns a prompt with the following structure:
-        1. System prompt
-        2. Message history of the agent, truncated & prepended with running summary as needed
-        3. `cycle_instruction`
-
-        Params:
-            cycle_instruction: The final instruction for a thinking cycle
+        """Constructs and returns a prompt.
         """
 
-        if not cycle_instruction:
-            raise ValueError("No instruction given")
+        prompt_content = self.create_prompt_content()
 
-        cycle_instruction_tlength = 0
-
-        append_messages: list[Message] = []
-
-        prompt = self.construct_base_prompt(
-            thought_process_id,
-            append_messages=append_messages,
-            reserve_tokens=cycle_instruction_tlength,
-        )
-
-        return prompt
-
-    def construct_base_prompt(
-        self,
-        thought_process_id: ThoughtProcessID,
-        prepend_messages: list[Message] = [],
-        append_messages: list[Message] = [],
-        reserve_tokens: int = 0,
-    ) -> ChatSequence:
-        """Constructs and returns a prompt with the following structure:
-        1. System prompt
-        2. `prepend_messages`
-        3. Message history of the agent, truncated & prepended with running summary as needed
-        4. `append_messages`
-
-        Params:
-            prepend_messages: Messages to insert between the system prompt and message history
-            append_messages: Messages to insert after the message history
-            reserve_tokens: Number of tokens to reserve for content that is added later
-        """
-
-        # self.save_context()
-
-        with open("agent_config_and_prompt_files/cycle_instruction_text.md") as cit:
-            cycle_instruction = cit.read()
-
-        if self.hyperparams["budget_control"]["name"] == "NO-TRACK":
-            pass
-        elif self.hyperparams["budget_control"]["name"] == "FULL-TRACK" and self.hyperparams["budget_control"]["params"] == {}:
-            cycle_instruction += "\nYou have, so far, executed {} commands, you have only {} commands left.\n".format(
-                self.cycle_count, self.hyperparams["commands_limit"]-self.cycle_count)
-        elif self.hyperparams["budget_control"]["name"] == "FULL-TRACK" and self.hyperparams["budget_control"]["params"] != {}:
-            minimum_number_fixes = self.hyperparams["budget_control"]["params"]["#fixes"]
-            cycle_instruction += "\nYou have, so far, executed, {} commands and suggested {} fixes. You have {} commands left. However, you need to suggest at least {} fixes before consuming all the left commands.\n".format(
-                self.cycle_count, self.write_fix_attempts, self.hyperparams["commands_limit"] - self.cycle_count, max(minimum_number_fixes - self.write_fix_attempts, 0))
-        elif self.hyperparams["budget_control"]["name"] == "FORCED" and self.current_state != "no_state_machine":
-            t1 = self.hyperparams["budget_control"]["T1"]
-            t2 = self.hyperparams["budget_control"]["T2"]
-            if self.cycle_count >= t2:
-                self.update_prompt_state("Trying out Fix Candidates")
-                cycle_instruction += "\nBecause of budget constaints, you were forced to transition to the state `Trying out Fix Candidates`"
-            elif self.cycle_count >= t1:
-                self.update_prompt_state("Gathering Context for a Fix")
-                cycle_instruction += "\nBecause of budget constaints, you were forced to transition to the state `Gathering Context for a Fix`"
-
-        context_prompt = self.construct_context_prompt()
         prompt = ChatSequence.for_model(
             self.llm.name,
-            [Message("system", self.prompt_dictionary["role"])])
-
-        definitions_prompt = ""
-        static_sections_names = ["goals", "commands", "general guidelines"]
-        if self.current_state != "no_state_machine":
-            static_sections_names.append("current state")
-        if self.current_state in ["no_state_machine", "Gathering Context for a Fix", "Trying out Fix Candidates"]:
-            static_sections_names.append("fix format")
-        for key in static_sections_names:
-            if isinstance(self.prompt_dictionary[key], list):
-                definitions_prompt += "\n".join(
-                    self.prompt_dictionary[key]) + "\n\n"
-            elif isinstance(self.prompt_dictionary[key], str):
-                definitions_prompt += self.prompt_dictionary[key] + "\n\n"
-            else:
-                raise TypeError("For now we only support list and str types.")
-
-        prompt.extend(ChatSequence.for_model(
-            self.llm.name,
-            [Message("user", definitions_prompt + "\n" + context_prompt +
-                     "\n\n" + cycle_instruction)] + prepend_messages,
-        ))
+            [Message("user", prompt_content)])
 
         return prompt
+
+    def create_prompt_content(self) -> str:
+        """
+        Creates a different prompt depending on the state.
+        """
+        if self.current_state == "classification":
+            return self.create_prompt_classification()
+        elif self.current_state == "fix_tp":
+            return self.create_prompt_fix()
+        elif self.current_state == "fix_fp":
+            return self.create_prompt_suppress()
+        else:
+            logger.error(f"Transitioned to unknown state '{self.current_state}' during execution.",
+                         "Only allowed are: 'classification', 'fix_tp' and 'fix_fp'.")
+            shutdown(self, 1)
+
+    def create_prompt_classification(self) -> str:
+        """
+        Creates all the parts of the classification task prompt
+        """
+
+        problem_introduction = read_file(
+            "agent_config_and_prompt_files/classification_prompt_files/classification_problem_introduction.md")
+
+        commands = self.construct_commands_context()
+
+        general_guidelines = read_file(
+            "agent_config_and_prompt_files/classification_prompt_files/classification_general_guidelines.md")
+        task = read_file(
+            "agent_config_and_prompt_files/classification_prompt_files/classification_task.md").format(project_name=self.ai_config.warning_repository_name, file_path=self.ai_config.warning_file_path, rule_key=self.ai_config.warning_rule_key,
+                                                                                                       rule_name=self.ai_config.warning_rule_name, warning_start_line=self.ai_config.warning_start_line, warning_specific_message=self.ai_config.warning_specific_message)
+        agent_history = self.construct_agent_history_context()
+        forbidden_commands_section = self.construct_forbidden_commands_context()
+        question_and_answer_section = self.construct_question_and_answer_context()
+        cycle_instruction_section = self.construct_cycle_instruction()
+
+        # Join the different parts together with a space inbetween. If one of the sections is None or an empty string then it is ignored.
+        return "\n\n".join(filter(None, [problem_introduction, commands, general_guidelines, task, agent_history, forbidden_commands_section, question_and_answer_section, cycle_instruction_section]))
+
+    def create_prompt_fix(self) -> str:
+        """
+        Creates all the parts of the fix task prompt
+        """
+
+        # TODO: add classification info and reason to the fix_tp prompt
+
+        problem_introduction = read_file(
+            "agent_config_and_prompt_files/fix_violation_prompt_parts/fix_problem_introduction.md")
+
+        commands = self.construct_commands_context()
+
+        fix_format_section = read_file(
+            "agent_config_and_prompt_files/fix_violation_prompt_parts/fix_format.md")
+        general_guidelines_section = read_file(
+            "agent_config_and_prompt_files/fix_violation_prompt_parts/fix_general_guidelines.md")
+        task_section = read_file(
+            "agent_config_and_prompt_files/fix_violation_prompt_parts/fix_task_section.md").format(project_name=self.ai_config.warning_repository_name, file_path=self.ai_config.warning_file_path, rule_key=self.ai_config.warning_rule_key,
+                                                                                                   rule_name=self.ai_config.warning_rule_name, warning_start_line=self.ai_config.warning_start_line, warning_specific_message=self.ai_config.warning_specific_message)
+        plan_section = self.construct_plan_context()
+        agent_history_section = self.construct_agent_history_context()
+        forbidden_commands_section = self.construct_forbidden_commands_context()
+        cycle_instruction_section = self.construct_cycle_instruction()
+
+        # Join the different parts together with a space inbetween. If one of the sections is None or an empty string then it is ignored.
+        return "\n\n".join(filter(None, [problem_introduction, commands, fix_format_section, general_guidelines_section, task_section, plan_section, agent_history_section, forbidden_commands_section, cycle_instruction_section]))
+
+    def create_prompt_suppress(self) -> str:
+        """
+        Creates all the parts of the suppress task prompt
+        """
+
+        problem_introduction = read_file(
+            "agent_config_and_prompt_files/suppress_violation_prompt_parts/suppress_problem_introduction.md")
+
+        commands = self.construct_commands_context()
+
+        fix_format_section = read_file(
+            "agent_config_and_prompt_files/suppress_violation_prompt_parts/suppress_fix_format.md")
+        general_guidelines_section = read_file(
+            "agent_config_and_prompt_files/suppress_violation_prompt_parts/suppress_general_guidelines.md")
+        task_section = read_file(
+            "agent_config_and_prompt_files/suppress_violation_prompt_parts/suppress_task.md").format(project_name=self.ai_config.warning_repository_name, file_path=self.ai_config.warning_file_path, rule_key=self.ai_config.warning_rule_key,
+                                                                                                     rule_name=self.ai_config.warning_rule_name, warning_start_line=self.ai_config.warning_start_line, warning_specific_message=self.ai_config.warning_specific_message)
+        agent_history_section = self.construct_agent_history_context()
+        forbidden_commands_section = self.construct_forbidden_commands_context()
+        cycle_instruction_section = self.construct_cycle_instruction()
+
+        # Join the different parts together with a space inbetween. If one of the sections is None or an empty string then it is ignored.
+        return "\n\n".join(filter(None, [problem_introduction, commands, fix_format_section, general_guidelines_section, task_section, agent_history_section, forbidden_commands_section, cycle_instruction_section]))
 
     # Methods for creating the relevant prompt contexts
 
-    def construct_task_context(self):
-        with open("agent_config_and_prompt_files/task_section.md") as task_section_file:
-            task_section = task_section_file.read().format(project_name=self.ai_config.warning_repository_name, file_path=self.ai_config.warning_file_path, rule_key=self.ai_config.warning_rule_key,
-                                                           rule_name=self.ai_config.warning_rule_name, warning_start_line=self.ai_config.warning_start_line, warning_specific_message=self.ai_config.warning_specific_message)
-        return task_section
+    def construct_commands_context(self) -> str:
+        return "## Commands\n\nYou have access to the following commands (EXCLUSIVELY):\n\n" + \
+            self.cmds_by_state[self.current_state]
+
+    def construct_question_and_answer_context(self) -> str:
+        """
+        Used for the classification state. Creates the section of answered questions and the next question to answer (or final verdict to give).
+        """
+
+        answered_question_text = ""
+
+        # Answered questions section
+        if self.current_question > 1:
+            answered_question_text = "## Answered Questions\n\n"
+
+            for question_number in range(1, min(self.current_question, self.number_of_questions + 1)):
+                with open(f"agent_config_and_prompt_files/classification_prompt_files/questions_prompt_parts/question_{str(question_number)}_text.md") as question_file:
+                    question = question_file.readline()
+                answered_question_text += f"Question {str(question_number)}: {question}Answer: {self.question_answers[question_number - 1]}  \n\n"
+
+        # Next question/ final verdict section
+        if self.current_question <= self.number_of_questions:
+            with open(f"agent_config_and_prompt_files/classification_prompt_files/questions_prompt_parts/question_{str(self.current_question)}_text.md") as question_file:
+                current_question_text = f"## Current Question to answer\n\nQuestion {str(self.current_question)}:" + \
+                    question_file.read()
+        else:
+            with open("agent_config_and_prompt_files/classification_prompt_files/questions_prompt_parts/final_verdict_text.md") as verdict_file:
+                current_question_text = "## Give a final verdict\n\n" + verdict_file.read()
+
+        return answered_question_text + current_question_text
+
+    def construct_cycle_instruction(self):
+        if self.current_state == "fix_tp" or self.current_state == "fix_fp":
+            with open("agent_config_and_prompt_files/fix_violation_prompt_parts/fix_cycle_instruction_text.md") as cit:
+                cycle_instruction = cit.read()
+
+            if self.hyperparams["budget_control"]["name"] == "NO-TRACK":
+                pass
+            elif self.hyperparams["budget_control"]["name"] == "FULL-TRACK" and self.hyperparams["budget_control"]["params"] == {}:
+                cycle_instruction += "\nYou have, so far, executed {} commands, you have only {} commands left.\n".format(
+                    self.cycle_count, self.hyperparams["fix_commands_limit"]-self.cycle_count)
+            elif self.hyperparams["budget_control"]["name"] == "FULL-TRACK" and self.hyperparams["budget_control"]["params"] != {}:
+                minimum_number_fixes = self.hyperparams["budget_control"]["params"]["#fixes"]
+                cycle_instruction += "\nYou have, so far, executed, {} commands and suggested {} fixes. You have {} commands left. However, you need to suggest at least {} fixes before consuming all the left commands.\n".format(
+                    self.cycle_count, self.write_fix_attempts, self.hyperparams["fix_commands_limit"] - self.cycle_count, max(minimum_number_fixes - self.write_fix_attempts, 0))
+            return cycle_instruction
+
+        # Classification subtask
+        else:
+            with open("agent_config_and_prompt_files/classification_prompt_files/classification_cycle_instruction_text.md") as cit:
+                cycle_instruction = cit.read()
+
+            if self.hyperparams["budget_control"]["name"] == "NO-TRACK":
+                pass
+            elif self.hyperparams["budget_control"]["name"] == "FULL-TRACK":
+                cycle_instruction += "\nYou have so far executed {} commands. You have {} commands left and must give a final verdict before exhausting the commands.\n".format(
+                    self.cycle_count, self.hyperparams["classification_commands_limit"]-self.cycle_count)
+
+            return cycle_instruction
 
     def construct_plan_context(self) -> str:
         plan_section = "## Your current plan for approaching the task\n\n"
@@ -450,32 +482,14 @@ class BaseAgent(metaclass=ABCMeta):
                 "  \n".join(self.unknown_commands)
         return forbidden_commands_section
 
-    def construct_context_prompt(self) -> str:
-        '''Constructs the context parts in the prompt including task description and history.
-        Returns:
-            str: The context prompt string
-        '''
-        task_section = self.construct_task_context()
-        plan_section = self.construct_plan_context()
-        agent_history_section = self.construct_agent_history_context()
-        forbidden_commands_section = self.construct_forbidden_commands_context()
-
-        # Join the different parts together with a space inbetween. If one of the sections is None or an empty string then it is ignored.
-        return "\n\n".join(filter(None, [task_section, plan_section, agent_history_section, forbidden_commands_section]))
-
     def on_before_think(
         self,
-        prompt: ChatSequence,
-        thought_process_id: ThoughtProcessID,
-        instruction: str,
+        prompt: ChatSequence
     ) -> ChatSequence:
         """Called after constructing the prompt but before executing it.
 
         Calls the `on_planning` hook of any enabled and capable plugins, adding their
         output to the prompt.
-
-        Params:
-            instruction: The instruction for the current cycle, also used in constructing the prompt
 
         Returns:
             The prompt to execute
@@ -506,9 +520,7 @@ class BaseAgent(metaclass=ABCMeta):
     def on_response(
         self,
         llm_response: ChatModelResponse,
-        thought_process_id: ThoughtProcessID,
         prompt: ChatSequence,
-        instruction: str,
     ) -> tuple[CommandName | None, CommandArgs | None, AgentThoughts]:
         """Called upon receiving a response from the chat model.
 
@@ -530,11 +542,10 @@ class BaseAgent(metaclass=ABCMeta):
 
         try:
             command_name, command_args, assistant_reply_dict = self.parse_and_process_response(
-                llm_response, thought_process_id, prompt, instruction
-            )
+                llm_response)
         except SyntaxError as e:
             logger.error(f"Response could not be parsed: {e}")
-            with open(f"experimental_setups/{self.exps[-1]}/parsing_errors_responses.txt", "a") as pers:
+            with open(f"experimental_setups/{self.exps[-1]}/{self.current_state}/parsing_errors_responses.txt", "a") as pers:
                 pers.write(llm_response.content+"\n")
 
             command_name, command_args, assistant_reply_dict = "error_when_parsing", {"error": "Your response could not be parsed."
@@ -546,6 +557,12 @@ class BaseAgent(metaclass=ABCMeta):
             "assistant", llm_response.content, "ai_response", command=command_name, args=command_args, agent_thoughts=assistant_reply_dict.get("thoughts", "No thoughts given."))
         self.history.append(response_message)
 
+        sanitized_warning_file_path = self.ai_config.warning_file_path.replace(
+            "/", ".")
+        with open(os.path.join("experimental_setups", self.exps[-1], self.current_state, "responses", f"{str(self.ai_config.warning_ID)}_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(self.ai_config.warning_start_line)}_model_responses"), "a+") as patf:
+            patf.write(MessageHistory(
+                self.llm, [response_message]).dump())
+
         return command_name, command_args, assistant_reply_dict
 
     @abstractmethod
@@ -554,7 +571,7 @@ class BaseAgent(metaclass=ABCMeta):
         command_name: str | None,
         command_args: dict[str, str] | None,
         user_input: str | None,
-    ) -> str:
+    ) -> None:
         """Executes the given command, if any, and returns the agent's response.
 
         Params:
@@ -570,10 +587,7 @@ class BaseAgent(metaclass=ABCMeta):
     @abstractmethod
     def parse_and_process_response(
         self,
-        llm_response: ChatModelResponse,
-        thought_process_id: ThoughtProcessID,
-        prompt: ChatSequence,
-        instruction: str,
+        llm_response: ChatModelResponse
     ) -> tuple[CommandName | None, CommandArgs | None, AgentThoughts]:
         """Validate, parse & process the LLM's response.
 
@@ -583,7 +597,6 @@ class BaseAgent(metaclass=ABCMeta):
         Params:
             llm_response: The raw response from the chat model
             prompt: The prompt that was executed
-            instruction: The instruction for the current cycle, also used in constructing the prompt
 
         Returns:
             The parsed command name and command args, if any, and the agent thoughts.
@@ -617,11 +630,35 @@ class BaseAgent(metaclass=ABCMeta):
             raise ValueError(
                 "The value given to the param handling_strategy is unsuported: {}".format(handling_strategy))
 
-    def update_prompt_state(self, state_name):
+    def update_prompt_state(self, final_verdict_is_true_positive: bool):
         """
-        Given a state name, this function would update the prompt dictionary to include the right description of the state 
-        and also the corresponding set of commands.
+        Go to the next state of the agent. Either to fix_tp or fix_fp. 
+        Prepare everything for the new state.
         """
-        self.prompt_dictionary["current state"] = self.descriptions[state_name]
-        self.prompt_dictionary["commands"][2] = self.cmds_by_state[state_name]
-        self.current_state = state_name
+
+        if final_verdict_is_true_positive:
+            self.current_state = "fix_tp"
+            classification = "TP"
+        else:
+            self.current_state = "fix_fp"
+            classification = "FP"
+
+        # Reset the history
+        self.history = MessageHistory(self.llm)
+
+        # Reset the cycle count, limit and remaining cycles
+        self.cycle_count = 0
+        self.config.commands_limit = self.hyperparams["fix_commands_limit"]
+
+        # Inform about state transition
+        logger.info(title="Classification subtask is completed.",
+                    title_color=Fore.GREEN, message="")
+        logger.info(title="Classification result is: ",
+                    title_color=Fore.GREEN, message=classification + "\n" + self.final_verdict_reason)
+        logger.info(title=f"Transitioned to state {self.current_state}", title_color=Fore.GREEN,
+                    message="All history is discarded. Agent will now tackle task of fixing (or suppressing) the violation.")
+        logger.info(
+            title="Commands Limit set for fixing violation to: ", title_color=Fore.GREEN, message=f"{self.config.commands_limit}"
+        )
+        logger.info(
+            title="CodeCureAgent is now running its main fixing loop.", title_color=Fore.GREEN, message="")

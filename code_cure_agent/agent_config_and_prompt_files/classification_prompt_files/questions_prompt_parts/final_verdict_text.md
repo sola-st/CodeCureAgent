@@ -1,0 +1,1 @@
+Based on the previously answered questions give a final verdict if the rule violation is a True Positive or a False Positive, so if the rule violation should and can be fixed, or if it should not be fixed and instead be suppressed.

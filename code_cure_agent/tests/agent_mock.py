@@ -26,7 +26,7 @@ class AIConfig():
 
 
 class AgentMock():
-    def __init__(self, warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message, current_state="no_state_machine", logger_level=logging.INFO):
+    def __init__(self, warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message, current_state="fix_tp", logger_level=logging.INFO):
         logger.set_level(logger_level)
         self.config = Config(
             "/workspaces/master-thesis-pascal-joos/code_cure_agent/cca_workspace/")

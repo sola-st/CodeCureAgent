@@ -18,12 +18,8 @@ from pathlib import Path
 
 def create_config(
     config: Config,
-    continuous: bool,
-    continuous_limit: int,
     ai_settings_file: str,
-    prompt_settings_file: str,
     skip_reprompt: bool,
-    none_interactive: bool,
     speak: bool,
     debug: bool,
     model_version: str,
@@ -36,12 +32,9 @@ def create_config(
     """Updates the config object with the given arguments.
 
     Args:
-        continuous (bool): Whether to run in continuous mode
-        continuous_limit (int): The number of times to run in continuous mode
+        config (Config): The already defined parts of the configuration
         ai_settings_file (str): The path to the ai_settings.yaml file
-        prompt_settings_file (str): The path to the prompt_settings.yaml file
         skip_reprompt (bool): Whether to skip the re-prompting messages at the beginning of the script
-        none_interactive (bool): If set the user will not be prompted for input when the last cycle was reached. This allows for running the agent without needing manual user feedback.
         speak (bool): Whether to enable speak mode
         debug (bool): Whether to enable debug mode
         model_version (str): The GPT model to use. Has to be passed as command line argument
@@ -52,36 +45,12 @@ def create_config(
         sorald_jar_path: (Path): The path to the sorald executable for mining SonarQube warnings
     """
     config.debug_mode = False
-    config.continuous_mode = False
     config.speak_mode = False
 
     if debug:
         logger.info(title="Debug Mode: ",
                     title_color=Fore.GREEN, message="ENABLED")
         config.debug_mode = True
-
-    if continuous:
-        logger.info(title="Continuous Mode: ",
-                    title_color=Fore.RED, message="ENABLED")
-        logger.warn(
-            title="WARNING: ",
-            title_color=Fore.RED,
-            message="Continuous mode is not recommended. It is potentially dangerous and may"
-            " cause your AI to run forever or carry out actions you would not usually"
-            " authorise. Use at your own risk.",
-        )
-        config.continuous_mode = True
-
-        if continuous_limit:
-            logger.info(
-                title="Continuous Limit: ", title_color=Fore.GREEN, message=f"{continuous_limit}"
-            )
-            config.continuous_limit = continuous_limit
-
-    # Check if continuous limit is used without continuous mode
-    if continuous_limit and not continuous:
-        raise click.UsageError(
-            "--continuous-limit can only be used with --continuous")
 
     if speak:
         logger.info(title="Speak Mode: ",
@@ -122,11 +91,6 @@ def create_config(
                     title_color=Fore.GREEN, message="ENABLED")
         config.skip_reprompt = True
 
-    if none_interactive:
-        logger.info(title="None-Interactive mode: ",
-                    title_color=Fore.GREEN, message="ENABLED")
-        config.none_interactive = True
-
     if ai_settings_file:
         file = ai_settings_file
 
@@ -141,20 +105,6 @@ def create_config(
                     title_color=Fore.GREEN, message=file)
         config.ai_settings_file = file
         config.skip_reprompt = True
-
-    if prompt_settings_file:
-        file = prompt_settings_file
-
-        # Validate file
-        (validated, message) = yaml_utils.validate_yaml_file(file)
-        if not validated:
-            logger.error("FAILED FILE VALIDATION", message)
-            logger.double_check()
-            exit(1)
-
-        logger.info(title="Using Prompt Settings File:",
-                    title_color=Fore.GREEN, message=file)
-        config.prompt_settings_file = file
 
     if browser_name:
         config.selenium_web_browser = browser_name

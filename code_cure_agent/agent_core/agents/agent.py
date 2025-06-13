@@ -1,36 +1,28 @@
 from __future__ import annotations
 
 import json
-import subprocess
 import os
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
+
+from colorama import Fore
 
 if TYPE_CHECKING:
     from agent_core.config import AIConfig, Config
     from agent_core.llm.base import ChatModelResponse
     from agent_core.memory.vector import VectorMemory
     from agent_core.models.command_registry import CommandRegistry
-    from agent_core.app.main import shutdown
 
 from agent_core.utils.json_utils.json_utilities import extract_dict_from_response, validate_dict
 from agent_core.llm.utils import count_string_tokens
 from agent_core.logs import logger
-from agent_core.logs.log_cycle import (
-    CURRENT_CONTEXT_FILE_NAME,
-    FULL_MESSAGE_HISTORY_FILE_NAME,
-    NEXT_ACTION_FILE_NAME,
-    USER_INPUT_FILE_NAME,
-    LogCycleHandler,
-)
+from agent_core.logs.log_cycle import LogCycleHandler
+from agent_core.memory.message_history import MessageHistory
+from agent_core.llm.base import Message
+
 from agent_core.workspace import Workspace
 
 from .base import AgentThoughts, BaseAgent, CommandArgs, CommandName
-
-from agent_core.commands import sonar_qube_analysis
-from agent_core.commands import repository_operations
-
-from git.exc import GitError
 
 
 class Agent(BaseAgent):
@@ -41,17 +33,13 @@ class Agent(BaseAgent):
         ai_config: AIConfig,
         command_registry: CommandRegistry,
         memory: VectorMemory,
-        triggering_prompt: str,
         config: Config,
-        cycle_budget: Optional[int] = None,
         experiment_file: str = None
     ):
         super().__init__(
             ai_config=ai_config,
             command_registry=command_registry,
             config=config,
-            default_cycle_instruction=triggering_prompt,
-            cycle_budget=cycle_budget,
             experiment_file=experiment_file
         )
 
@@ -73,7 +61,7 @@ class Agent(BaseAgent):
         command_name: str | None,
         command_args: dict[str, str] | None,
         user_input: str | None,
-    ) -> str:
+    ) -> None:
         # Execute command
         if command_name is not None and command_name.lower() == "error_when_parsing":
             result = command_args["error"]
@@ -81,14 +69,6 @@ class Agent(BaseAgent):
             result = f"Could not execute command: {command_name}{command_args}"
         elif command_name == "human_feedback":
             result = f"Human feedback: {user_input}"
-            self.log_cycle_handler.log_cycle(
-                self.ai_config.ai_name,
-                self.created_at,
-                self.cycle_count,
-                user_input,
-                USER_INPUT_FILE_NAME,
-            )
-
         else:
             for plugin in self.config.plugins:
                 if not plugin.can_handle_pre_command():
@@ -126,22 +106,24 @@ class Agent(BaseAgent):
 
         sanitized_warning_file_path = self.ai_config.warning_file_path.replace(
             "/", ".")
-        with open(os.path.join("experimental_setups", self.exps[-1], "responses", f"{str(self.ai_config.warning_ID)}_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(self.ai_config.warning_start_line)}_model_responses"), "a+") as patf:
+        with open(os.path.join("experimental_setups", self.exps[-1], self.current_state, "responses", f"{str(self.ai_config.warning_ID)}_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(self.ai_config.warning_start_line)}_model_responses"), "a+") as patf:
             patf.write(
                 "\nCommand execution based on model response:\n" + str(result) + "\n")
 
-        return result
+        if result is not None:
+            logger.info(title="SYSTEM: ",
+                        title_color=Fore.YELLOW, message=result)
+        else:
+            logger.warn(title="SYSTEM: ", title_color=Fore.YELLOW,
+                        message="Unable to execute command")
 
-    def parse_and_process_response(
-        self, llm_response: ChatModelResponse, *args, **kwargs
-    ) -> tuple[CommandName | None, CommandArgs | None, AgentThoughts]:
+        # Switch state if we were in the classification state and a final verdict was given
+        if command_name == "give_final_verdict" and str(command_result).startswith("Final verdict submitted:"):
+            self.update_prompt_state(str(command_result).endswith("TP"))
+
+    def parse_and_process_response(self, llm_response: ChatModelResponse) -> tuple[CommandName | None, CommandArgs | None, AgentThoughts]:
         if not llm_response.content:
             raise SyntaxError("Assistant response has no text content")
-
-        sanitized_warning_file_path = self.ai_config.warning_file_path.replace(
-            "/", ".")
-        with open(os.path.join("experimental_setups", self.exps[-1], "responses", f"{str(self.ai_config.warning_ID)}_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(self.ai_config.warning_start_line)}_model_responses"), "a+") as patf:
-            patf.write(llm_response.content)
 
         # Raises a SyntaxError, if it is not a valid json
         assistant_reply_dict = extract_dict_from_response(llm_response.content)
@@ -197,55 +179,7 @@ class Agent(BaseAgent):
             except Exception as e:
                 logger.error("Error: \n", str(e))
 
-        self.log_cycle_handler.log_cycle(
-            self.ai_config.ai_name,
-            self.created_at,
-            self.cycle_count,
-            assistant_reply_dict,
-            NEXT_ACTION_FILE_NAME,
-        )
         return response
-
-    def prepare_target_project(self) -> None:
-        '''
-        Clone and checkout the target project.
-        Then run the initial analysis on the target file.
-        Validate that the expected rule is present in the analysis report.
-        Then build the project to validate that it can be built succesfully.
-        '''
-
-        try:
-            repository_operations.checkout_project(self)
-
-            # Create the initial analysis report of the target file.
-            # If reports for further files are needed later (if the agent writes to some other file then the target file), then they are added on demand in write_fix.
-            sanitized_warning_file_path = self.ai_config.warning_file_path.replace(
-                "/", ".")
-            initial_analysis_report_target_file = sonar_qube_analysis.analyze_file_and_parse_report(self.ai_config.warning_file_path, self.sonar_qube_rules_in_active_profile, self.ai_config.warning_repository_name,
-                                                                                                    f"{str(self.ai_config.warning_ID)}_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(self.ai_config.warning_start_line)}_initial_analysis_report_file_{sanitized_warning_file_path}.json", self)
-
-            self.initial_analysis_reports[self.ai_config.warning_file_path] = initial_analysis_report_target_file
-
-            # Validate that the expected rule violation is present in the analysis report
-            if not sonar_qube_analysis.rule_violation_present_in_analysis_report(initial_analysis_report_target_file, self.ai_config.warning_rule_key, self.ai_config.warning_start_line):
-                logger.error(
-                    "Error", f"The rule {self.ai_config.warning_rule_key} at line {str(self.ai_config.warning_start_line)} which was to fix wasn't part of the analysis report created by running Sorald on the file.")
-                logger.error(
-                    "Aborting", "Preparing the target project failed. Therefore aborting the execution.")
-                shutdown(self, 1)
-
-            repository_operations.build_project(self)
-
-        except repository_operations.BuildError as be:
-            logger.error(
-                "Error", f"Build failed with returncode {be.returncode}, stdout: \n{be.stdout}")
-            logger.error(
-                "Aborting", "Preparing the target project failed. Therefore aborting the execution.")
-            shutdown(self, 1)
-        except (sonar_qube_analysis.AnalysisError, GitError, subprocess.TimeoutExpired, TimeoutError):
-            logger.error(
-                "Aborting", "Preparing the target project failed. Therefore aborting the execution.")
-            shutdown(self, 1)
 
 
 def extract_command(

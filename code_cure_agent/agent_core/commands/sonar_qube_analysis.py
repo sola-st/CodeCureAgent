@@ -104,7 +104,7 @@ def parse_analysis_report(analysis_report_file_name: str, agent: BaseAgent) -> d
         analysis_report = json.load(analysis_report_file)
 
     shutil.copy(analysis_report_path, os.path.join("experimental_setups",
-                agent.exps[-1], "analysis_reports", analysis_report_file_name))
+                agent.exps[-1], agent.current_state, "analysis_reports", analysis_report_file_name))
 
     return analysis_report
 

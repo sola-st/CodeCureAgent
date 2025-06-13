@@ -48,11 +48,6 @@ def write_fix(changes_dicts: list, agent: BaseAgent) -> str:
     if len(changes_dicts) == 0:
         return "REJECTED  \nThe fix you passed is empty. Please provide a non empty implementation of the fix."
 
-    state_switched = False
-    if agent.current_state != "no_state_machine" and agent.current_state != "Trying out Fix Candidates":
-        agent.update_prompt_state("Trying out Fix Candidates")
-        state_switched = True
-
     try:
         all_files_with_changes = execute_write_range(changes_dicts, agent)
 
@@ -64,13 +59,10 @@ def write_fix(changes_dicts: list, agent: BaseAgent) -> str:
 
         sanitized_warning_file_path = agent.ai_config.warning_file_path.replace(
             "/", ".")
-        with open(os.path.join("experimental_setups", agent.exps[-1], "implausible_patches",
+        with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "implausible_patches",
                                f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_implausible_patches.json"), "a+") as exps:
             exps.write(
                 f"  \n### IMPLAUSIBLE FIX (fix no. {str(agent.write_fix_attempts)})\n{json.dumps(changes_dicts, indent=4)}\n\n ###CHANGE APPROVER FEEDBACK:  \n{feedback}")
-
-        if state_switched:
-            feedback += "  \n**Note:** You are automatically switched to the state 'Trying out Fix Candidates'"
 
         return feedback
 
@@ -80,9 +72,6 @@ def write_fix(changes_dicts: list, agent: BaseAgent) -> str:
     feedback += change_approver_feedback
 
     rollback_changes(agent)
-
-    if state_switched:
-        feedback += "  \n**Note:** You are automatically switched to the state 'Trying out Fix Candidates'"
 
     return feedback
 

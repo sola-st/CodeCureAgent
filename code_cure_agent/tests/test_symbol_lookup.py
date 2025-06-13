@@ -20,7 +20,8 @@ class SymbolLookupTestCase(unittest.TestCase):
         if os.path.exists("experimental_setups/experiment_test"):
             shutil.rmtree("experimental_setups/experiment_test")
         os.mkdir("experimental_setups/experiment_test")
-        os.mkdir("experimental_setups/experiment_test/analysis_reports")
+        os.mkdir("experimental_setups/experiment_test/fix_tp")
+        os.mkdir("experimental_setups/experiment_test/fix_tp/analysis_reports")
 
     def tearDown(self):
         cca_workspace = "cca_workspace"

@@ -10,7 +10,7 @@ Each dictionary must include:
   * "new_lines": A list of strings representing the new lines to be inserted.  
 * "deletions": A list of integers representing line numbers to be deleted from the file.  
 
-Here is an example:  
+Here is an example (not related to your specific task):    
 
 ```json
 [

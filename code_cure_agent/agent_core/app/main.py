@@ -27,6 +27,7 @@ from agent_core.models.command_registry import CommandRegistry
 from agent_core.plugins import scan_plugins
 from agent_core.speech import say_text
 from agent_core.workspace import Workspace
+from agent_core.commands.classification_tasks import give_final_verdict
 from scripts.install_plugin_deps import install_plugin_dependencies
 
 from agent_core.commands import sonar_qube_analysis
@@ -265,6 +266,11 @@ def run_interaction_loop(
         logger.debug(
             f"Cycle budget: {agent.cycle_count}; remaining: {str(agent.config.commands_limit - agent.cycle_count)}")
 
+        # Print authorized commands left value
+        logger.info(
+            title="AUTHORISED COMMANDS LEFT: ", title_color=Fore.CYAN, message=f"{str(agent.config.commands_limit - agent.cycle_count)}"
+        )
+
         ########
         # Plan #
         ########
@@ -282,22 +288,23 @@ def run_interaction_loop(
         user_input = None
         # First log new-line so user can differentiate sections better in console
         logger.info(message="\n")
-        # Print authorized commands left value
-        logger.info(
-            title="AUTHORISED COMMANDS LEFT: ", title_color=Fore.CYAN, message=f"{str(agent.config.commands_limit - agent.cycle_count)}"
-        )
+
+        agent.cycle_count += 1
 
         ###################
         # Execute Command #
         ###################
+        # If in state "classification" and the command was "give_final_verdict" and running it was successful,
+        # then agent.execute automatically switches to the next state ("fix_tp" or "fix_fp") and resets the cycle_count, commands_limit and agent history.
         agent.execute(command_name, command_args, user_input)
 
-        agent.cycle_count += 1
-
-        # If the cycle budget is exhausted, go to the next phase of the agent (reseting the cycle_count), or finish if we are in the last phase
+        # If the cycle budget is exhausted and we are still in the state "classification",
+        # then the agent failed to call "give_final_verdict" before exhausting the commands, eventhough it was urged to do so in the last cycle.
+        # In this case we default to counting the violation as TP.
         if agent.cycle_count == agent.config.commands_limit and agent.current_state == "classification":
-            # TODO: make a further prompt to force a decision of TP/FP
             agent.final_verdict_reason = "No reason given."
+            # Call the command normally called by the agent directly, for logging of the verdict
+            give_final_verdict("TP", agent.final_verdict_reason, agent)
             agent.update_prompt_state(final_verdict_is_true_positive=True)
 
 

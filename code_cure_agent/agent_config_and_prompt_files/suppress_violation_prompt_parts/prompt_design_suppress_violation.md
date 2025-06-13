@@ -21,7 +21,7 @@ Don't make any other code modifications.
 
 There are different options of how to suppress a rule violation:  
 
-1. Add a comment `// NOSONAR` to the same line where the rule violation is raised. Ideally also add an explanation why it is suppressed to the comment.
+1. Add a comment `// NOSONAR` to the same line where the rule violation is raised. This is the preferred solution, if possible. Ideally also add an explanation why it is suppressed to the comment.
 2. Add (or extend) the annotation `@SuppressWarnings({"java:S..."})` (where S... is the rule key) to a method or class or similar to suppress all violations of the rule in a method or class. Use this if adding a `// NOSONAR` doesn't work here.
 
 Constraints:
@@ -61,7 +61,7 @@ Each dictionary must include:
   * "new_lines": A list of strings representing the new lines to be inserted.  
 * "deletions": A list of integers representing line numbers to be deleted from the file.  
 
-Here is an example:  
+Here is an example usage of the format with a violation to suppress at a line 175 (not related to your specific task):  
 
 ```json
 [
@@ -72,18 +72,11 @@ Here is an example:
             {
                 "line_number": 175,
                 "new_lines": [
-                    "    // ... new lines to insert ...\n",
-                    "    // ... more new lines ...\n"
-                ]
-            },
-            {
-                "line_number": 180,
-                "new_lines": [
-                    "    // ... additional new lines ...\n"
+                    "    int someVariable = 22; // NOSONAR Ignoring rule S... because ...\n"
                 ]
             }
         ],
-        "deletions": [179, 183]
+        "deletions": [175]
     },
     // changes in file 2
     {
@@ -197,7 +190,7 @@ Respond strictly in the JSON format defined below:
 
 ```ts
 interface Response {
-    // Express your thoughts based on the information that you have collected so far, the possible steps that you could do next and also your reasoning about fixing the rule violation"
+    // Express your thoughts based on the information that you have collected so far, the possible steps that you could do next and also your reasoning about suppressing the rule violation"
     thoughts: string;
     command: {
         name: string;

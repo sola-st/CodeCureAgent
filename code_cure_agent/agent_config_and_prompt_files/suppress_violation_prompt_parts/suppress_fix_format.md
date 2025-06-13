@@ -10,40 +10,21 @@ Each dictionary must include:
   * "new_lines": A list of strings representing the new lines to be inserted.  
 * "deletions": A list of integers representing line numbers to be deleted from the file.  
 
-Here is an example:  
+Here is an example usage of the format with a violation to suppress at a line 175 (not related to your specific task):  
 
 ```json
 [
-    // changes in file 1
     {
         "file_name": "org/jfree/data/time/Week.java",
         "insertions": [
             {
                 "line_number": 175,
                 "new_lines": [
-                    "    // ... new lines to insert ...\n",
-                    "    // ... more new lines ...\n"
-                ]
-            },
-            {
-                "line_number": 180,
-                "new_lines": [
-                    "    // ... additional new lines ...\n"
+                    "    int someVariable = 22; // NOSONAR Ignoring rule S... because ...\n"
                 ]
             }
         ],
-        "deletions": [179, 183]
-    },
-    // changes in file 2
-    {
-        "file_name": "org/jfree/data/time/Day.java",
-        "insertions": [{
-                "line_number": 203,
-                "new_lines": [
-                    "    days = 0\n"
-                ]
-            }],
-        "deletions": []
+        "deletions": [175]
     }
 ]
 ```

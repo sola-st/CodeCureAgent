@@ -109,6 +109,7 @@ class BaseAgent(metaclass=ABCMeta):
         self.unknown_commands = []
 
         self.write_fix_attempts = 0
+        self.plausible_fixes = 0
 
         # Holds all the initial analysis reports of relevant files, with no changes to the project
         self.initial_analysis_reports = {
@@ -134,6 +135,7 @@ class BaseAgent(metaclass=ABCMeta):
             "plans": self.plans,
             "unknown_commands": self.unknown_commands,
             "write_fix_attempts": self.write_fix_attempts,
+            "plausible_fixes": self.plausible_fixes,
             "experiment_file": self.experiment_file,
             "hyperparams": self.hyperparams,
             "history": [msg for _, msg in enumerate(self.history)],
@@ -164,6 +166,7 @@ class BaseAgent(metaclass=ABCMeta):
         self.plans = context["plans"]
         self.unknown_commands = context["unknown_commands"]
         self.write_fix_attempts = context["write_fix_attempts"]
+        self.plausible_fixes = context["plausible_fixes"]
         self.experiment_file = context["experiment_file"]
         self.hyperparams = context["hyperparams"]
         self.history = context["history"]
@@ -384,14 +387,23 @@ class BaseAgent(metaclass=ABCMeta):
                     self.cycle_count, self.hyperparams["fix_commands_limit"]-self.cycle_count)
             elif self.hyperparams["budget_control"]["name"] == "FULL-TRACK" and self.hyperparams["budget_control"]["params"] != {}:
                 minimum_number_fixes = self.hyperparams["budget_control"]["params"]["#fixes"]
+                number_of_fixes_to_still_propose = max(
+                    minimum_number_fixes - self.write_fix_attempts, 0)
+                if self.plausible_fixes > 0:
+                    number_of_fixes_to_still_propose = 0
                 cycle_instruction += "\nYou have, so far, executed, {} commands and suggested {} fixes. You have {} commands left. However, you need to suggest at least {} fixes before consuming all the left commands.\n".format(
-                    self.cycle_count, self.write_fix_attempts, self.hyperparams["fix_commands_limit"] - self.cycle_count, max(minimum_number_fixes - self.write_fix_attempts, 0))
+                    self.cycle_count, self.write_fix_attempts, self.hyperparams["fix_commands_limit"] - self.cycle_count, number_of_fixes_to_still_propose)
             return cycle_instruction
 
         # Classification subtask
         else:
-            with open("agent_config_and_prompt_files/classification_prompt_files/classification_cycle_instruction_text.md") as cit:
-                cycle_instruction = cit.read()
+            # If we have only one command left use a different cycle instruction that forces towards calling the give_final_verdict command.
+            if self.cycle_count == self.config.commands_limit - 1:
+                with open("agent_config_and_prompt_files/classification_prompt_files/classification_cycle_instruction_text_force_final_verdict.md") as cit:
+                    cycle_instruction = cit.read()
+            else:
+                with open("agent_config_and_prompt_files/classification_prompt_files/classification_cycle_instruction_text.md") as cit:
+                    cycle_instruction = cit.read()
 
             if self.hyperparams["budget_control"]["name"] == "NO-TRACK":
                 pass

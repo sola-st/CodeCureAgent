@@ -619,6 +619,8 @@ def approve(messages: list[str], changes_dicts: list[dict], agent: BaseAgent) ->
         exps.write(
             f"  \n### PLAUSIBLE FIX (fix no. {str(agent.write_fix_attempts)})\n{json.dumps(changes_dicts, indent=4)}\n\n ###CHANGE APPROVER FEEDBACK:  \n" + "  \n".join(messages))
 
+    agent.plausible_fixes += 1
+
     return "APPROVED  \n" + "  \n".join(messages) + "  \nThe repository has been restored to its original state. \nIf you think that your write_fix solved the problem then use the command goals_accomplished to conclude the task."
 
 

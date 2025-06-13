@@ -6,7 +6,7 @@ Respond strictly in the JSON format defined below:
 
 ```ts
 interface Response {
-    // Express your thoughts based on the information that you have collected so far, the possible steps that you could do next and also your reasoning about fixing the rule violation"
+    // Express your thoughts based on the information that you have collected so far, the possible steps that you could do next and also your reasoning about suppressing the rule violation"
     thoughts: string;
     command: {
         name: string;

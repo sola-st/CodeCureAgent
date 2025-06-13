@@ -19,7 +19,7 @@ Don't make any other code modifications.
 
 There are different options of how to suppress a rule violation:  
 
-1. Add a comment `// NOSONAR` to the same line where the rule violation is raised. Ideally also add an explanation why it is suppressed to the comment.
+1. Add a comment `// NOSONAR` to the same line where the rule violation is raised. This is the preferred solution, if possible. Ideally also add an explanation why it is suppressed to the comment.
 2. Add (or extend) the annotation `@SuppressWarnings({"java:S..."})` (where S... is the rule key) to a method or class or similar to suppress all violations of the rule in a method or class. Use this if adding a `// NOSONAR` doesn't work here.
 
 Constraints:

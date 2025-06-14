@@ -15,6 +15,8 @@ You will be provided with the following inputs:
 We do not know whether the raised rule violation is a true violation of the rule and whether it can and should be fixed or not.  
 So it is your job to find that out, by collecting information about the rule violation and its code context and by answering questions that should guide you towards making an educated verdict.  
 
+Fixing some of the rule violations can require complicated changes, maybe even over multiple files. However, even such complicated rule violations can be True Positives.
+
 # Objective
 
 You have the following objectives:

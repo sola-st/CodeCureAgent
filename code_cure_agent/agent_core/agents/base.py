@@ -367,7 +367,7 @@ class BaseAgent(metaclass=ABCMeta):
         # Next question/ final verdict section
         if self.current_question <= self.number_of_questions:
             with open(f"agent_config_and_prompt_files/classification_prompt_files/questions_prompt_parts/question_{str(self.current_question)}_text.md") as question_file:
-                current_question_text = f"## Current Question to answer\n\nQuestion {str(self.current_question)}:" + \
+                current_question_text = f"## Current Question to answer\n\nQuestion {str(self.current_question)}: " + \
                     question_file.read()
         else:
             with open("agent_config_and_prompt_files/classification_prompt_files/questions_prompt_parts/final_verdict_text.md") as verdict_file:

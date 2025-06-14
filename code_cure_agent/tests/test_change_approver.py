@@ -25,6 +25,10 @@ class ChangeApproverTestCase(unittest.TestCase):
         os.mkdir("experimental_setups/experiment_test/fix_tp/analysis_reports")
         os.mkdir("experimental_setups/experiment_test/fix_tp/plausible_patches")
         os.mkdir("experimental_setups/experiment_test/fix_tp/implausible_patches")
+        os.mkdir("experimental_setups/experiment_test/fix_fp")
+        os.mkdir("experimental_setups/experiment_test/fix_fp/analysis_reports")
+        os.mkdir("experimental_setups/experiment_test/fix_fp/plausible_patches")
+        os.mkdir("experimental_setups/experiment_test/fix_fp/implausible_patches")
 
         warning_repository_URL = "https://github.com/argparse4j/argparse4j.git"
         warning_repository_commit = "a0cef432451487d513382297cec2c5b14c147a30"
@@ -132,8 +136,8 @@ class ChangeApproverTestCase(unittest.TestCase):
 
         all_file_changes = [write_fix.apply_changes(
             change_dict_list, file_relative_path, file_full_path)]
-        changed_code_message = change_approver.show_changed_code(all_file_changes,
-                                                                 self.agent)
+        changed_code_message = change_approver.show_changed_code(
+            all_file_changes)
         print(changed_code_message)
 
         self.assertEqual(len(changed_code_message.splitlines()), 106)
@@ -160,8 +164,8 @@ class ChangeApproverTestCase(unittest.TestCase):
 
         all_file_changes = [write_fix.apply_changes(
             change_dict_list, file_relative_path, file_full_path)]
-        changed_code_message = change_approver.show_changed_code(all_file_changes,
-                                                                 self.agent)
+        changed_code_message = change_approver.show_changed_code(
+            all_file_changes)
         print(changed_code_message)
 
         self.assertEqual(changed_code_message.splitlines(
@@ -208,9 +212,97 @@ class ChangeApproverTestCase(unittest.TestCase):
 
         all_file_changes = [write_fix.apply_changes(
             change_dict_list, file_relative_path, file_full_path)]
-        changed_code_message = change_approver.show_changed_code(all_file_changes,
-                                                                 self.agent)
+        changed_code_message = change_approver.show_changed_code(
+            all_file_changes)
         print(changed_code_message)
+
+    def test_check_if_suppression_literal_inserted_NOSONAR_is_inserted(self):
+        self.agent.current_state = "fix_fp"
+
+        change_dict_list = [{
+            "file_name": self.agent.ai_config.warning_file_path,
+            "insertions": [{
+                "line_number": 94,
+                "new_lines": ["//something", "//something else", "        } catch (InterruptedException e) { //NOSONAR\n"]
+            }],
+            "deletions": [94],
+            "modifications": []
+        }]
+
+        all_file_changes = write_fix.execute_write_range(
+            change_dict_list, self.agent)
+        change_approver_result = change_approver.approve_changes(
+            change_dict_list, all_file_changes, self.agent)
+
+        print(change_approver_result)
+        self.assertEqual(
+            change_approver_result, """APPROVED  
+Project was successfully built with the applied changes.  
+Rerunning the SonarQube analysis confirmed that your fix successfully removed the targeted rule violation and didn't introduce any new violations.  
+All tests in the project have been run and passed successfully.  
+  
+The repository has been restored to its original state. 
+If you think that your write_fix solved the problem then use the command goals_accomplished to conclude the task.""")
+
+    def test_check_if_suppression_literal_inserted_SuppressWarnings_is_inserted_somewhere_with_correct_rule_key(self):
+        self.agent.current_state = "fix_fp"
+
+        change_dict_list = [{
+            "file_name": self.agent.ai_config.warning_file_path,
+            "insertions": [{
+                "line_number": 94,
+                "new_lines": ["//something", "//something else", "        } catch (InterruptedException e) { \n"]
+            }, {
+                "line_number": 62,
+                "new_lines": ["@SuppressWarnings({\"java:S2142\"})"]
+            }],
+            "deletions": [94],
+            "modifications": []
+        }]
+
+        all_file_changes = write_fix.execute_write_range(
+            change_dict_list, self.agent)
+        change_approver_result = change_approver.approve_changes(
+            change_dict_list, all_file_changes, self.agent)
+
+        print(change_approver_result)
+        self.assertEqual(
+            change_approver_result, """APPROVED  
+Project was successfully built with the applied changes.  
+Rerunning the SonarQube analysis confirmed that your fix successfully removed the targeted rule violation and didn't introduce any new violations.  
+All tests in the project have been run and passed successfully.  
+  
+The repository has been restored to its original state. 
+If you think that your write_fix solved the problem then use the command goals_accomplished to conclude the task.""")
+
+    def test_check_if_suppression_literal_inserted_no_correct_suppression_inserted(self):
+        self.agent.current_state = "fix_fp"
+
+        change_dict_list = [{
+            "file_name": self.agent.ai_config.warning_file_path,
+            "insertions": [{
+                "line_number": 94,
+                "new_lines": ["//something", "//something else", "        } catch (InterruptedException e) { // NOSONAMI\n"]
+            }, {
+                "line_number": 62,
+                # a different rule
+                "new_lines": ["@SuppressWarnings({\"java:S5201\"})"]
+            }],
+            "deletions": [94],
+            "modifications": []
+        }]
+
+        all_file_changes = write_fix.execute_write_range(
+            change_dict_list, self.agent)
+        change_approver_result = change_approver.approve_changes(
+            change_dict_list, all_file_changes, self.agent)
+
+        print(change_approver_result)
+        self.assertEqual(
+            change_approver_result, """REJECTED  
+IMPORTANT: The repository has been restored to its original state! You need to start applying changes from scratch again.
+Project was successfully built with the applied changes.  
+However, you failed to insert a suppression. Neither a `// NOSONAR` nor a `@SuppressWarnings('java:S...')` was found in any of your insertions (where S... is the rule key).""")
 
     def test_check_sonar_qube_report_target_warning_removed_no_new_warnings(self):
         change_dict_list = [{

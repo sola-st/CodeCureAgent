@@ -41,5 +41,6 @@ class AgentMock():
             self.sonar_qube_rules_in_active_profile = rule_keys_file.read().split(",")
 
         self.write_fix_attempts = 0
+        self.plausible_fixes = 0
         self.initial_analysis_reports = {}
         self.lsp_server_initialized = False

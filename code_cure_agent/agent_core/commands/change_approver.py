@@ -30,6 +30,16 @@ def approve_changes(changes_dicts: list[dict], all_file_changes: list[FileChange
     if not accepted:
         return reject([build_message], changes_dicts, agent)
 
+    # Check if a suppression was actually added if we are in the task of suppressing the violation
+    # Else the agent could potentially pass the tests by only removing the target line (accidentally)
+    if agent.current_state == "fix_fp":
+        accepted, suppression_inserted_message = check_if_suppression_literal_inserted(
+            changes_dicts, agent)
+
+        # Only give the agent feedback about this check if the check failed
+        if not accepted:
+            return reject([build_message, suppression_inserted_message], changes_dicts, agent)
+
     accepted, sonar_qube_message = check_sonar_qube_report(
         all_file_changes, agent)
 
@@ -67,13 +77,13 @@ def try_to_build_changed_project(all_file_changes: list[FileChanges], agent: Bas
         return True, "Project was successfully built with the applied changes."
 
     except BuildError as build_error:
-        return False, show_changed_code(all_file_changes, agent) + extract_build_error_information(build_error, agent)
+        return False, show_changed_code(all_file_changes) + extract_build_error_information(build_error, agent)
 
     except subprocess.TimeoutExpired as timeout_error:
         return False, f"Building the project failed with a timeout after {timeout_error.timeout / 60} minutes."
 
 
-def show_changed_code(all_file_changes: list[FileChanges], agent: BaseAgent) -> str:
+def show_changed_code(all_file_changes: list[FileChanges]) -> str:
     """
     Show the changed lines of code of the changed files to give the agent an idea about what it has done and what it maybe has done wrong.
     """
@@ -230,6 +240,35 @@ def clean_absolute_paths_in_output(output_lines: list[str], agent: BaseAgent) ->
         f"{agent.config.workspace_path}/", "").replace(f"{agent.config.workspace_path}", "") for output_line in output_lines]
 
     return cleaned_path_lines
+
+
+def check_if_suppression_literal_inserted(changes_dicts: list[dict], agent: BaseAgent) -> tuple[bool, str]:
+    """
+    Check if a suppression was actually added if we are in the task of suppressing the violation
+    Else the agent could potentially pass the tests by only removing the target line (accidentally)
+    Returns:
+        (accepted, message): 
+        accepted: (bool) Flag if the check was successful\n
+        message: (str) Info message on the failure if it failed
+    """
+
+    logger.info("", "Checking if a suppression literal was inserted.")
+
+    for changes_dict in changes_dicts:
+        insertions: list[dict] = changes_dict.get("insertions", [])
+
+        for insertion in insertions:
+            inserted_lines: list[str] = insertion.get("new_lines", [])
+            for inserted_line in inserted_lines:
+                # Check if a NOSONAR was added. However, also @SuppressWarnings("java:S...") is a possible suppression syntax.
+                # Checking directly against this is however also not save, as there might be very rare cases, where such an annotation is already present and distributed over multiple lines.
+                # Then it might not always be necessary to delete and re-add the annotation.
+                # Therefore we instead only check if the rule key was added. This (or NOSONAR) is always a necessary insertion, when trying to suppress the warning.
+                if inserted_line.lower().find("nosonar") != -1 or inserted_line.lower().find(agent.ai_config.warning_rule_key.lower()) != -1:
+                    logger.info("", "Suppression literal found.")
+                    return True, ""
+
+    return False, "However, you failed to insert a suppression. Neither a `// NOSONAR` nor a `@SuppressWarnings('java:S...')` was found in any of your insertions (where S... is the rule key)."
 
 
 def check_sonar_qube_report(all_file_changes: list[FileChanges], agent: BaseAgent) -> tuple[bool, str]:

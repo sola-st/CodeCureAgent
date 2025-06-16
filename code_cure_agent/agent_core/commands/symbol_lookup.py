@@ -91,7 +91,7 @@ def run_go_to(go_to_method: str, file_path: str, symbol: str, symbol_line: int, 
     The response is then processed and code lines read and formatted into the command result.
     """
     if symbol_line <= 0:
-        return f"Lookup of {go_to_method} failed. The symbol_line was {str(symbol_line)}, but must be greater than 0."
+        return f"Error in find_{go_to_method}. The symbol_line was {str(symbol_line)}, but must be greater than 0."
 
     # LSP expects 0-indexed line
     symbol_line_zero_indexed = int(symbol_line) - 1
@@ -105,9 +105,9 @@ def run_go_to(go_to_method: str, file_path: str, symbol: str, symbol_line: int, 
             file_path, symbol, symbol_line_zero_indexed, agent)
 
     except ValueError as ve:
-        logger.error(f"LSP {go_to_method} lookup failed ",
+        logger.error(f"Error in find_{go_to_method} ",
                      "Error was: " + str(ve))
-        return f"Lookup of {go_to_method} failed. " + str(ve)
+        return f"Error in find_{go_to_method}. " + str(ve)
 
     # Use warning-unique folder for the lsp to prevent issues due to the folder not being deleted properly
     lsp_sub_workspace = f"ID{str(agent.ai_config.warning_ID)}_symbol_lookup_commands_sub_workspace"
@@ -116,9 +116,9 @@ def run_go_to(go_to_method: str, file_path: str, symbol: str, symbol_line: int, 
         lookup_result = lsp_lookup(go_to_method, file_path, symbol_line_zero_indexed,
                                    symbol_column_zero_indexed, lsp_sub_workspace, agent)
     except Exception as e:
-        logger.error(f"LSP {go_to_method} lookup failed ",
+        logger.error(f"Error in find_{go_to_method} ",
                      "Error was: " + str(e))
-        return f"Lookup of {go_to_method} failed. " + str(e)
+        return f"Error in find_{go_to_method}. " + str(e)
 
     logger.debug(lookup_result, title=f"find_{go_to_method} lookup result: ")
 
@@ -155,7 +155,7 @@ def find_column_of_symbol(file_path: str, symbol: str, symbol_line_zero_indexed:
         symbol_column_zero_indexed = target_line.index(symbol)
     except ValueError:
         raise ValueError(
-            f"The symbol '{symbol}' was not found in line {str(symbol_line_zero_indexed + 1)} of file '{file_path}'.")
+            f"There is no symbol '{symbol}' in line {str(symbol_line_zero_indexed + 1)} of file '{file_path}'. Maybe you accidentally used a wrong line number.")
 
     return symbol_column_zero_indexed
 

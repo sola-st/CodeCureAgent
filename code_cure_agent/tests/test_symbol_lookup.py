@@ -667,7 +667,7 @@ Line 22:    public AssertionFailedError(String message) {
             "src/main/java/junit/framework/AssertionFailedErrorNonExisting.java", "AssertionFailedError", 13, self.agent)
         print(references_result)
         self.assertEqual(
-            references_result, """Lookup of references failed. The file_path src/main/java/junit/framework/AssertionFailedErrorNonExisting.java does not exist.""")
+            references_result, """Error in find_references. The file_path src/main/java/junit/framework/AssertionFailedErrorNonExisting.java does not exist.""")
 
     def test_go_to_references_junit4_wrong_name_of_symbol(self):
         warning_repository_URL = "https://github.com/junit-team/junit4.git"
@@ -682,7 +682,7 @@ Line 22:    public AssertionFailedError(String message) {
         references_result = find_references(
             "src/main/java/junit/framework/AssertionFailedError.java", "AssertionFailedErrorNonExistingName", 13, self.agent)
         print(references_result)
-        self.assertEqual(references_result, """Lookup of references failed. The symbol 'AssertionFailedErrorNonExistingName' was not found in line 13 of file 'src/main/java/junit/framework/AssertionFailedError.java'.""")
+        self.assertEqual(references_result, """Error in find_references. There is no symbol 'AssertionFailedErrorNonExistingName' in line 13 of file 'src/main/java/junit/framework/AssertionFailedError.java'. Maybe you accidentally used a wrong line number.""")
 
     def test_go_to_references_junit4_wrong_line_of_symbol(self):
         warning_repository_URL = "https://github.com/junit-team/junit4.git"
@@ -698,7 +698,7 @@ Line 22:    public AssertionFailedError(String message) {
             "src/main/java/junit/framework/AssertionFailedError.java", "AssertionFailedError", 12, self.agent)
         print(references_result)
         self.assertEqual(
-            references_result, """Lookup of references failed. The symbol 'AssertionFailedError' was not found in line 12 of file 'src/main/java/junit/framework/AssertionFailedError.java'.""")
+            references_result, """Error in find_references. There is no symbol 'AssertionFailedError' in line 12 of file 'src/main/java/junit/framework/AssertionFailedError.java'. Maybe you accidentally used a wrong line number.""")
 
     def test_go_to_references_junit4_line_of_symbol_smaller_1(self):
         warning_repository_URL = "https://github.com/junit-team/junit4.git"
@@ -714,7 +714,7 @@ Line 22:    public AssertionFailedError(String message) {
             "src/main/java/junit/framework/AssertionFailedError.java", "AssertionFailedError", 0, self.agent)
         print(references_result)
         self.assertEqual(
-            references_result, """Lookup of references failed. The symbol_line was 0, but must be greater than 0.""")
+            references_result, """Error in find_references. The symbol_line was 0, but must be greater than 0.""")
 
     def test_go_to_references_junit4_line_of_symbol_greater_file_size(self):
         warning_repository_URL = "https://github.com/junit-team/junit4.git"
@@ -730,7 +730,7 @@ Line 22:    public AssertionFailedError(String message) {
             "src/main/java/junit/framework/AssertionFailedError.java", "AssertionFailedError", 30, self.agent)
         print(references_result)
         self.assertEqual(
-            references_result, """Lookup of references failed. The symbol_line 30 was out of range for the file 'src/main/java/junit/framework/AssertionFailedError.java' with 29 lines.""")
+            references_result, """Error in find_references. The symbol_line 30 was out of range for the file 'src/main/java/junit/framework/AssertionFailedError.java' with 29 lines.""")
 
     def test_go_to_definition_junit4_non_project_symbol(self):
         warning_repository_URL = "https://github.com/junit-team/junit4.git"

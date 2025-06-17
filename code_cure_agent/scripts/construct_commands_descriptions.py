@@ -37,6 +37,14 @@ find_references_desc = """find_references:
     - symbol (string): Exact name of the symbol (e.g., getUser, MAX_COUNT) without parantheses or qualifiers (e.g., write getUser, not getUser()).
     - symbol_line (int): Exact line number where the symbol occurs in the file. Without correctly providing this symbol_line the command doesn't work."""
 
+search_for_patterns_desc = """search_for_patterns:  
+    Searches for the provided patterns in all Java files in the project and returns at most the first 50 results.  
+    Internally this uses `grep` with the `-E` flag. So use the extended regular expression syntax for your patterns.  
+    This command should only be used if find_definition or find_references is not applicable for your use case (so in cases where you want to search for something that you don't have a known symbol reference or definition for that you could pass as parameters).  
+    In all other cases do not use search_for_patterns, as it can return many more irrelevant and distracting results!  
+    Required params:
+    - patterns (list[string]): The list of patterns. Must contain at least one pattern string. The patterns must adhere to the extended regular expression syntax of grep."""
+
 formulate_plan_desc = """formulate_plan:  
     Formulate or update a plan, with fine-grained steps, about how you want to fix the rule violation (i.e. which lines in which files to change and to what).  
     Call this command before calling write_fix for the first time. You can call it again at any time, if you received new information that requires a change of plan.  
@@ -123,9 +131,9 @@ generate_method_desc = """AI_generates_method_code:
 
 commands_dict = {
     "classification": "\n".join(["{}. {}".format(i+1, t) for i, t in enumerate(
-        [read_sonarqube_docu_desc, read_range_desc, find_definition_desc, find_references_desc, answer_question_desc, give_final_verdict_desc])]),
+        [read_sonarqube_docu_desc, read_range_desc, find_definition_desc, find_references_desc, search_for_patterns_desc, answer_question_desc, give_final_verdict_desc])]),
     "fix_tp": "\n".join(["{}. {}".format(i+1, t) for i, t in enumerate(
-        [read_sonarqube_docu_desc, read_range_desc, find_definition_desc, find_references_desc, formulate_plan_desc, write_fix_desc, goals_accomplished_desc])]),
+        [read_sonarqube_docu_desc, read_range_desc, find_definition_desc, find_references_desc, search_for_patterns_desc, formulate_plan_desc, write_fix_desc, goals_accomplished_desc])]),
     "fix_fp": "\n".join(["{}. {}".format(i+1, t) for i, t in enumerate(
         [read_range_desc, write_fix_desc, goals_accomplished_desc])])
 }

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 
+import subprocess
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -10,6 +11,7 @@ import os
 
 from agent_core.command_decorator import command
 from agent_core.utils.path_utils import path_utils
+from agent_core.logs.logger import logger
 
 COMMAND_CATEGORY = "repository_reading_tools"
 COMMAND_CATEGORY_TITLE = "Commands to read lines or search strings in the repository"
@@ -89,3 +91,61 @@ def read_range(file_path: str, start_line: int, end_line: int, agent: BaseAgent)
             break
         lines_str += "Line {}:".format(i+1) + lines[i]
     return lines_str.rstrip("\n")
+
+
+@command(
+    "search_for_patterns",
+    "Search for the patterns in java files using grep",
+    {
+        "patterns": {
+            "type": "list[string]",
+            "description": "The pattern or patterns to search for",
+            "required": True,
+        }
+    },
+)
+def search_for_patterns(patterns: list[str], agent: BaseAgent) -> str:
+    if len(patterns) == 0:
+        logger.error(
+            "search_for_patterns was called with an empty list of patterns")
+        return "Error in search_for_patterns: The 'patterns' list was empty. Provide at least one pattern to search for."
+
+    repo_path = os.path.join(agent.config.workspace_path,
+                             agent.ai_config.warning_repository_name)
+
+    cmd = "grep -rinHsIE --max-count=1000 --include '*.java'"
+    for pattern in patterns:
+        # Add the patterns with cleaned single quotes
+        pattern_cleaned = str(pattern).replace(
+            r"\'", "'").replace("'", r"'\''")
+        cmd += f" --regexp='{pattern_cleaned}'"
+
+    logger.info(title="search_for_patterns command:", message=cmd)
+
+    result = subprocess.run(
+        cmd,
+        capture_output=True,
+        encoding="utf8",
+        cwd=repo_path,
+        shell=True
+    )
+
+    if result.returncode > 1:
+        logger.error("search_for_patterns failed in subprocess",
+                     f"Error: {result.stderr};\n{result.stdout}")
+        return "Error in search_for_patterns. Don't use the command again."
+
+    # 1 indicates no results found
+    elif result.returncode == 1:
+        return "No search results found."
+
+    else:
+        search_results = result.stdout.splitlines()
+
+        number_of_results = len(search_results)
+
+        if number_of_results <= 50:
+            return f"Found {str(number_of_results)} search results:\n\n" + "\n".join(search_results)
+        else:
+            search_results = search_results[:50]
+            return f"Found {str(number_of_results)} search results. Only showing the first 50 results:\n\n" + "\n".join(search_results)

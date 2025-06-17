@@ -32,9 +32,9 @@ DENYLIST_CONTROL = "denylist"
     "write_fix",
     "Use this command to implement the fix you came up with. Only use this command if you think that you have collected all necessary information by using other commands. The project will automatically be rebuilt and reanalyzed by SonarQube. Changes are reverted automatically if the build fails or if the rule violation remains.",
     {
-        "changed_lines": {
-            "type": "dict",
-            "description": "a dictionary of the changed lines",
+        "changes_dicts": {
+            "type": "list",
+            "description": "a list of dictionaries of the changed lines in files",
             "required": True
 
         }

@@ -585,7 +585,7 @@ def extract_single_code_line(full_file_path: str, line_of_reference: int) -> str
 
 def lookup_fallback(go_to_method: str, file_path: str, symbol: str, symbol_line: int, agent: BaseAgent) -> str:
     """
-    In case the lsp-server approach returned an empty result, try a more simple (and less precise) approach, 
+    In case the lsp-server approach returned an empty result, try a more simple (and less precise) approach,
     as the empty result might be due to a setup problem of the lsp-server in the project.
     """
 
@@ -700,14 +700,42 @@ class ReferenceMatches:
         self.matches_by_file: dict[str, list[Match]] = {}
         self.matches_count = 0
 
-    def add_if_matching_reference(self, node: javalang.tree.Node, symbol: str, relative_file_path: str, code_split_into_lines: list[str]) -> None:
+    def add_if_matching_reference(self, node: javalang.tree.Node, symbol: str, relative_file_path: str, code_split_into_lines: list[str], parent_position=None) -> None:
         """
-        Check if it is a matching symbol reference and if so add it to the list
+        Recursively goes through the children and checks each of the children for a match.
         """
+
+        # Track the position through the children, as there are child-nodes whos position is None
+        parent_position = node.position if node.position is not None else parent_position
+
+        self.__check_and_add_single_sub_node(
+            node, symbol, relative_file_path, code_split_into_lines, parent_position)
+
+        for child in node.children:
+            if isinstance(child, javalang.tree.Node):
+                self.add_if_matching_reference(
+                    child, symbol, relative_file_path, code_split_into_lines, parent_position)
+            elif isinstance(child, list):
+                for el_in_list_child in child:
+                    if isinstance(el_in_list_child, javalang.tree.Node):
+                        self.add_if_matching_reference(
+                            el_in_list_child, symbol, relative_file_path, code_split_into_lines, parent_position)
+
+    def __check_and_add_single_sub_node(self, node: javalang.tree.Node, symbol: str, relative_file_path: str, code_split_into_lines: list[str], parent_position) -> None:
+        # Check if it is a matching symbol reference and if so add it to the list.
+
         if isinstance(node, javalang.tree.Primary):
-            if hasattr(node, "member") and node.member == symbol:
+            # all relevant reference-type node types either have a field member or type.name, which holds the symbol name
+            if (hasattr(node, "member") and node.member == symbol) or (hasattr(node, "type") and hasattr(node.type, "name") and node.type.name == symbol):
+
+                if node.position is not None:
+                    line_of_symbol = node.position[0]
+                elif parent_position is not None:
+                    line_of_symbol = parent_position[0]
+                else:
+                    return
+
                 self.matches_count += 1
-                line_of_symbol = node.position[0]
                 if relative_file_path not in self.matches_by_file:
                     self.matches_by_file[relative_file_path] = []
                 self.matches_by_file[relative_file_path].append(
@@ -744,9 +772,9 @@ def lookup_references_fallback(go_to_method: str, file_path: str, symbol: str, s
             f"{agent.config.workspace_path}/", "").replace(f"{agent.config.workspace_path}", "")
         code_split_into_lines = content.splitlines(keepends=True)
 
-        for path, node in tree:
-            matched_references.add_if_matching_reference(
-                node, symbol, relative_file_path, code_split_into_lines)
+        # Looks through the tree of the file and finds and adds any reference matches
+        matched_references.add_if_matching_reference(
+            tree, symbol, relative_file_path, code_split_into_lines)
 
     if matched_references.matches_count == 0:
         return f"No {go_to_method} could be found for '{symbol}' at line {str(symbol_line)} in file '{file_path}'.  " \

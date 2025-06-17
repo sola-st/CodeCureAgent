@@ -682,7 +682,7 @@ Line 22:    public AssertionFailedError(String message) {
         references_result = find_references(
             "src/main/java/junit/framework/AssertionFailedError.java", "AssertionFailedErrorNonExistingName", 13, self.agent)
         print(references_result)
-        self.assertEqual(references_result, """Error in find_references. There is no symbol 'AssertionFailedErrorNonExistingName' in line 13 of file 'src/main/java/junit/framework/AssertionFailedError.java'. Maybe you accidentally used a wrong line number.""")
+        self.assertEqual(references_result, """Error in find_references. There is no symbol 'AssertionFailedErrorNonExistingName' in line 13 of file 'src/main/java/junit/framework/AssertionFailedError.java'. Maybe you accidentally used a wrong line number. An occurence of your given symbol, which you want to find references for, must exist at your given line of the file. Else the find_references command doesn't work.""")
 
     def test_go_to_references_junit4_wrong_line_of_symbol(self):
         warning_repository_URL = "https://github.com/junit-team/junit4.git"
@@ -698,7 +698,7 @@ Line 22:    public AssertionFailedError(String message) {
             "src/main/java/junit/framework/AssertionFailedError.java", "AssertionFailedError", 12, self.agent)
         print(references_result)
         self.assertEqual(
-            references_result, """Error in find_references. There is no symbol 'AssertionFailedError' in line 12 of file 'src/main/java/junit/framework/AssertionFailedError.java'. Maybe you accidentally used a wrong line number.""")
+            references_result, """Error in find_references. There is no symbol 'AssertionFailedError' in line 12 of file 'src/main/java/junit/framework/AssertionFailedError.java'. Maybe you accidentally used a wrong line number. An occurence of your given symbol, which you want to find references for, must exist at your given line of the file. Else the find_references command doesn't work.""")
 
     def test_go_to_references_junit4_line_of_symbol_smaller_1(self):
         warning_repository_URL = "https://github.com/junit-team/junit4.git"

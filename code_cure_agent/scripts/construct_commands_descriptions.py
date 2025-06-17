@@ -20,20 +20,22 @@ find_definition_desc = """find_definition:
     Retrieve the definition of a project-local symbol (method, class, field, or variable) referenced in a file.  
     Use it to understand what a referenced symbol does by locating its implementation or declaration.  
     Only works for symbols defined in the project. Not for external libraries or standard Java classes. The symbol must not be a keyword.  
+    For using this command you need to correctly provide file_path, symbol and symbol_line of an occurence (reference) of the symbol, whose definition you want to find.  
     Required params:  
     - file_path (string): Path to the file where the symbol is referenced.
-    - symbol (string): Exact name of the referenced symbol (e.g., getUser, MAX_COUNT) without parantheses or qualifiers (e.g., write getUser, not getUser()).
-    - symbol_line (int): Line number where the symbol is referenced in the file."""
+    - symbol (string): Exact name of the symbol (e.g., getUser, MAX_COUNT) without parantheses or qualifiers (e.g., write getUser, not getUser()).
+    - symbol_line (int): Exact line number of a reference to the symbol in the file. Without correctly providing this symbol_line the command doesn't work."""
 
 find_references_desc = """find_references:  
     Find all project-local references (e.g., call sites or usages) of a symbol such as a method, class, field, or variable.  
     Use this to understand where and how a symbol is used across the project.  
     Use this before changing a method’s return value, return type or parameters to identify all call sites that may need updating. But there are also other situations where this can be helpful.  
     Only works for symbols defined in the project. Not for external libraries or standard Java classes. The symbol must not be a keyword.  
+    For using this command you need to provide file_path, symbol and symbol_line of an occurence (reference or definition) of the symbol, whose references you want to find.  
     Required params:
     - file_path (string): Path to the file where the symbol occurs.
     - symbol (string): Exact name of the symbol (e.g., getUser, MAX_COUNT) without parantheses or qualifiers (e.g., write getUser, not getUser()).
-    - symbol_line (int): Line number where the symbol occurs in the file."""
+    - symbol_line (int): Exact line number where the symbol occurs in the file. Without correctly providing this symbol_line the command doesn't work."""
 
 formulate_plan_desc = """formulate_plan:  
     Formulate or update a plan, with fine-grained steps, about how you want to fix the rule violation (i.e. which lines in which files to change and to what).  

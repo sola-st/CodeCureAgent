@@ -102,7 +102,7 @@ def run_go_to(go_to_method: str, file_path: str, symbol: str, symbol_line: int, 
             agent.config.workspace_path, agent.ai_config.warning_repository_name, file_path)
 
         symbol_column_zero_indexed = find_column_of_symbol(
-            file_path, symbol, symbol_line_zero_indexed, agent)
+            file_path, symbol, symbol_line_zero_indexed, go_to_method, agent)
 
     except ValueError as ve:
         logger.error(f"Error in find_{go_to_method} ",
@@ -137,7 +137,7 @@ def run_go_to(go_to_method: str, file_path: str, symbol: str, symbol_line: int, 
     return command_output
 
 
-def find_column_of_symbol(file_path: str, symbol: str, symbol_line_zero_indexed: int, agent: BaseAgent) -> int:
+def find_column_of_symbol(file_path: str, symbol: str, symbol_line_zero_indexed: int, go_to_method: str,  agent: BaseAgent) -> int:
     """
     Calculates the column (zero indexed) of the symbol, by reading the symbol's line in the file and searching for the symbol in this line.
     """
@@ -155,7 +155,7 @@ def find_column_of_symbol(file_path: str, symbol: str, symbol_line_zero_indexed:
         symbol_column_zero_indexed = target_line.index(symbol)
     except ValueError:
         raise ValueError(
-            f"There is no symbol '{symbol}' in line {str(symbol_line_zero_indexed + 1)} of file '{file_path}'. Maybe you accidentally used a wrong line number.")
+            f"There is no symbol '{symbol}' in line {str(symbol_line_zero_indexed + 1)} of file '{file_path}'. Maybe you accidentally used a wrong line number. An occurence of your given symbol, which you want to find {go_to_method} for, must exist at your given line of the file. Else the find_{go_to_method} command doesn't work.")
 
     return symbol_column_zero_indexed
 

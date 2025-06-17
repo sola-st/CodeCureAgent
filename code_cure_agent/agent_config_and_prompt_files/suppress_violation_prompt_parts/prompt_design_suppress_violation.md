@@ -129,6 +129,10 @@ The violation has the following context-specific warning text:
 
 Only address the specified rule violation; ignore all others.
 
+## Possible explanation why this needs to be suppressed (instead of fixed) (given by a LLM)
+
+The violation is incorrectly raised because the code uses System.out to print help information to the user, not for logging. The rule S106 targets logging to standard outputs, which does not apply here. The developer intentionally used System.out for this purpose, and replacing it with a logger would break the intended functionality. Hence, this violation should not be fixed.
+
 ## Agent History
 
 Below is a log of all previous steps that you have taken. For each step, you are given:

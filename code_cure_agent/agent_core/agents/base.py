@@ -335,12 +335,13 @@ class BaseAgent(metaclass=ABCMeta):
         task_section = read_file(
             "agent_config_and_prompt_files/suppress_violation_prompt_parts/suppress_task.md").format(project_name=self.ai_config.warning_repository_name, file_path=self.ai_config.warning_file_path, rule_key=self.ai_config.warning_rule_key,
                                                                                                      rule_name=self.ai_config.warning_rule_name, warning_start_line=self.ai_config.warning_start_line, warning_specific_message=self.ai_config.warning_specific_message)
+        classification_explanation_section = self.construct_classification_explanation_for_fp_context()
         agent_history_section = self.construct_agent_history_context()
         forbidden_commands_section = self.construct_forbidden_commands_context()
         cycle_instruction_section = self.construct_cycle_instruction()
 
         # Join the different parts together with a space inbetween. If one of the sections is None or an empty string then it is ignored.
-        return "\n\n".join(filter(None, [problem_introduction, commands, fix_format_section, general_guidelines_section, task_section, agent_history_section, forbidden_commands_section, cycle_instruction_section]))
+        return "\n\n".join(filter(None, [problem_introduction, commands, fix_format_section, general_guidelines_section, task_section, classification_explanation_section, agent_history_section, forbidden_commands_section, cycle_instruction_section]))
 
     # Methods for creating the relevant prompt contexts
 
@@ -421,6 +422,9 @@ class BaseAgent(metaclass=ABCMeta):
             plan_section += "No plan made yet."
 
         return plan_section
+
+    def construct_classification_explanation_for_fp_context(self) -> str:
+        return f"## Possible explanation why this needs to be suppressed (instead of fixed) (given by a LLM)\n\n{self.final_verdict_reason}"
 
     def construct_agent_history_context(self) -> str:
 

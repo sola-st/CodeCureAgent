@@ -682,9 +682,25 @@ Line 22:    public AssertionFailedError(String message) {
         references_result = find_references(
             "src/main/java/junit/framework/AssertionFailedError.java", "AssertionFailedErrorNonExistingName", 13, self.agent)
         print(references_result)
-        self.assertEqual(references_result, """Error in find_references. There is no symbol 'AssertionFailedErrorNonExistingName' in line 13 of file 'src/main/java/junit/framework/AssertionFailedError.java'. Maybe you accidentally used a wrong line number. An occurence of your given symbol, which you want to find references for, must exist at your given line of the file. Else the find_references command doesn't work.""")
+        self.assertEqual(references_result, """Error in find_references. There is no symbol 'AssertionFailedErrorNonExistingName' in line 13 of file 'src/main/java/junit/framework/AssertionFailedError.java'. Maybe you accidentally used a wrong symbol_line or used a wrong symbol. An occurence of your given symbol, which you want to find references for, must exist at your given line of the file. Else the find_references command doesn't work.""")
 
     def test_go_to_references_junit4_wrong_line_of_symbol(self):
+        warning_repository_URL = "https://github.com/junit-team/junit4.git"
+        warning_repository_commit = "7852b90cfe1cea1e0cdaa19d490c83f0d8684b50"
+        warning_repository_name = "junit4"
+
+        self.agent = AgentMock(warning_repository_URL, warning_repository_commit, None,
+                               warning_repository_name, None, None, None, None)
+
+        checkout_project(self.agent)
+
+        references_result = find_references(
+            "src/main/java/junit/framework/AssertionFailedError.java", "AssertionFailedError", 15, self.agent)
+        print(references_result)
+        self.assertEqual(
+            references_result, """Error in find_references. There is no symbol 'AssertionFailedError' in line 15 of file 'src/main/java/junit/framework/AssertionFailedError.java'. Maybe you accidentally used a wrong symbol_line or used a wrong symbol. An occurence of your given symbol, which you want to find references for, must exist at your given line of the file. Else the find_references command doesn't work.""")
+
+    def test_go_to_references_junit4_line_of_symbol_off_by_one_so_also_found(self):
         warning_repository_URL = "https://github.com/junit-team/junit4.git"
         warning_repository_commit = "7852b90cfe1cea1e0cdaa19d490c83f0d8684b50"
         warning_repository_name = "junit4"
@@ -698,7 +714,64 @@ Line 22:    public AssertionFailedError(String message) {
             "src/main/java/junit/framework/AssertionFailedError.java", "AssertionFailedError", 12, self.agent)
         print(references_result)
         self.assertEqual(
-            references_result, """Error in find_references. There is no symbol 'AssertionFailedError' in line 12 of file 'src/main/java/junit/framework/AssertionFailedError.java'. Maybe you accidentally used a wrong line number. An occurence of your given symbol, which you want to find references for, must exist at your given line of the file. Else the find_references command doesn't work.""")
+            references_result, """Found 7 references to the symbol 'AssertionFailedError'. They are listed in the following:  
+
+References in file 'src/main/java/junit/framework/Assert.java':  
+At line 55: '            throw new AssertionFailedError();'  
+
+References in file 'src/test/java/junit/tests/framework/AssertTest.java':  
+At line 26: '        throw new AssertionFailedError();'  
+At line 38: '        throw new AssertionFailedError();'  
+At line 50: '        throw new AssertionFailedError();'  
+
+References in file 'src/test/java/junit/tests/framework/AssertionFailedErrorTest.java':  
+At line 10: '        AssertionFailedError error = new AssertionFailedError();'  
+
+References in file 'src/test/java/junit/tests/runner/TextFeedbackTest.java':  
+At line 90: '                throw new AssertionFailedError();'  
+
+References in file 'src/test/java/org/junit/tests/junit3compatibility/OldTestClassAdaptingListenerTest.java':  
+At line 25: '        adaptingListener.addFailure(testCase, new AssertionFailedError());'  
+
+If you want to look at the code of a reference you can use the read_range command.  """)
+
+    def test_go_to_references_junit4_line_of_symbol_leads_to_timeout_then_fallback(self):
+        warning_repository_URL = "https://github.com/junit-team/junit4.git"
+        warning_repository_commit = "7852b90cfe1cea1e0cdaa19d490c83f0d8684b50"
+        warning_repository_name = "junit4"
+
+        self.agent = AgentMock(warning_repository_URL, warning_repository_commit, None,
+                               warning_repository_name, None, None, None, None)
+
+        checkout_project(self.agent)
+
+        references_result = find_references(
+            "src/main/java/junit/framework/AssertionFailedError.java", "AssertionFailedError", 11, self.agent)
+        print(references_result)
+        self.assertEqual(
+            references_result, """Searching the project for 'AssertionFailedError' found the following 10 candidate references of the symbol by searching for the symbol name (Not all of them are necessarily true references to the symbol):  
+
+In file 'src/test/java/junit/tests/framework/AssertTest.java':  
+ClassCreator at line 26: '        throw new AssertionFailedError();'  
+ClassCreator at line 38: '        throw new AssertionFailedError();'  
+ClassCreator at line 50: '        throw new AssertionFailedError();'  
+
+In file 'src/test/java/junit/tests/framework/AssertionFailedErrorTest.java':  
+ClassCreator at line 10: '        AssertionFailedError error = new AssertionFailedError();'  
+ClassCreator at line 15: '        AssertionFailedError error = new AssertionFailedError(ARBITRARY_MESSAGE);'  
+ClassCreator at line 20: '        AssertionFailedError error = new AssertionFailedError(null);'  
+
+In file 'src/test/java/junit/tests/runner/TextFeedbackTest.java':  
+ClassCreator at line 90: '                throw new AssertionFailedError();'  
+
+In file 'src/test/java/org/junit/tests/junit3compatibility/OldTestClassAdaptingListenerTest.java':  
+ClassCreator at line 25: '        adaptingListener.addFailure(testCase, new AssertionFailedError());'  
+
+In file 'src/main/java/junit/framework/Assert.java':  
+ClassCreator at line 55: '            throw new AssertionFailedError();'  
+ClassCreator at line 57: '        throw new AssertionFailedError(message);'  
+
+You can inspect the relevant references (the ones you think are true matches) by using read_range.  \n""")
 
     def test_go_to_references_junit4_line_of_symbol_smaller_1(self):
         warning_repository_URL = "https://github.com/junit-team/junit4.git"
@@ -732,7 +805,7 @@ Line 22:    public AssertionFailedError(String message) {
         self.assertEqual(
             references_result, """Error in find_references. The symbol_line 30 was out of range for the file 'src/main/java/junit/framework/AssertionFailedError.java' with 29 lines.""")
 
-    def test_go_to_definition_junit4_non_project_symbol(self):
+    def test_go_to_references_junit4_line_of_symbol_last_line_and_wrong(self):
         warning_repository_URL = "https://github.com/junit-team/junit4.git"
         warning_repository_commit = "7852b90cfe1cea1e0cdaa19d490c83f0d8684b50"
         warning_repository_name = "junit4"
@@ -743,8 +816,24 @@ Line 22:    public AssertionFailedError(String message) {
         checkout_project(self.agent)
 
         references_result = find_references(
-            "src/main/java/junit/runner/BaseTestRunner.java", "BufferedReader", 284, self.agent)
+            "src/main/java/junit/framework/AssertionFailedError.java", "AssertionFailedError", 29, self.agent)
         print(references_result)
         self.assertEqual(
-            references_result, """No references could be found for 'BufferedReader' at line 284 in file 'src/main/java/junit/runner/BaseTestRunner.java'.  
+            references_result, """Error in find_references. There is no symbol 'AssertionFailedError' in line 29 of file 'src/main/java/junit/framework/AssertionFailedError.java'. Maybe you accidentally used a wrong symbol_line or used a wrong symbol. An occurence of your given symbol, which you want to find references for, must exist at your given line of the file. Else the find_references command doesn't work.""")
+
+    def test_go_to_references_junit4_non_project_symbol(self):
+        warning_repository_URL = "https://github.com/junit-team/junit4.git"
+        warning_repository_commit = "7852b90cfe1cea1e0cdaa19d490c83f0d8684b50"
+        warning_repository_name = "junit4"
+
+        self.agent = AgentMock(warning_repository_URL, warning_repository_commit, None,
+                               warning_repository_name, None, None, None, None)
+
+        checkout_project(self.agent)
+
+        references_result = find_references(
+            "src/main/java/junit/framework/AssertionFailedError.java", "super", 23, self.agent)
+        print(references_result)
+        self.assertEqual(
+            references_result, """No references could be found for 'super' at line 23 in file 'src/main/java/junit/framework/AssertionFailedError.java'.  
 Don't call the command with the same arguments again.""")

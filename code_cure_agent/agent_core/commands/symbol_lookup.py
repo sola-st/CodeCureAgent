@@ -115,12 +115,14 @@ def run_go_to(go_to_method: str, file_path: str, symbol: str, symbol_line: int, 
     try:
         lookup_result = lsp_lookup(go_to_method, file_path, symbol_line_zero_indexed,
                                    symbol_column_zero_indexed, lsp_sub_workspace, agent)
-    except Exception as e:
-        logger.error(f"Error in find_{go_to_method} ",
-                     "Error was: " + str(e))
-        return f"Error in find_{go_to_method}. " + str(e)
 
-    logger.debug(lookup_result, title=f"find_{go_to_method} lookup result: ")
+        logger.debug(
+            lookup_result, title=f"find_{go_to_method} lookup result: ")
+
+    except Exception as e:
+        logger.error(f"Error in find_{go_to_method} Now using fallback. ",
+                     "Error was: " + str(e))
+        return lookup_fallback(go_to_method, file_path, symbol, symbol_line, agent)
 
     # This can happen if there is actually no reference/definition findable, but also if there was an issue with setting up the lsp server for the target project.
     if "result" not in lookup_result or len(lookup_result["result"]) == 0:
@@ -140,6 +142,7 @@ def run_go_to(go_to_method: str, file_path: str, symbol: str, symbol_line: int, 
 def find_column_of_symbol(file_path: str, symbol: str, symbol_line_zero_indexed: int, go_to_method: str,  agent: BaseAgent) -> int:
     """
     Calculates the column (zero indexed) of the symbol, by reading the symbol's line in the file and searching for the symbol in this line.
+    If not found in the line, surrounding lines are tried. If also not present there, then a ValueError is raised.
     """
 
     with open(os.path.join(agent.config.workspace_path, agent.ai_config.warning_repository_name, file_path)) as fp:
@@ -151,11 +154,33 @@ def find_column_of_symbol(file_path: str, symbol: str, symbol_line_zero_indexed:
 
     target_line = file_lines[symbol_line_zero_indexed]
 
-    try:
-        symbol_column_zero_indexed = target_line.index(symbol)
-    except ValueError:
+    symbol_column_zero_indexed = target_line.find(symbol)
+
+    if symbol_column_zero_indexed == -1:
+        symbol_column_zero_indexed = try_to_find_column_of_symbol_in_surrounding_lines(
+            file_lines, symbol, symbol_line_zero_indexed)
+
+    # Symbol also not found in surrounding lines
+    if symbol_column_zero_indexed == -1:
         raise ValueError(
-            f"There is no symbol '{symbol}' in line {str(symbol_line_zero_indexed + 1)} of file '{file_path}'. Maybe you accidentally used a wrong line number. An occurence of your given symbol, which you want to find {go_to_method} for, must exist at your given line of the file. Else the find_{go_to_method} command doesn't work.")
+            f"There is no symbol '{symbol}' in line {str(symbol_line_zero_indexed + 1)} of file '{file_path}'. Maybe you accidentally used a wrong symbol_line or used a wrong symbol. An occurence of your given symbol, which you want to find {go_to_method} for, must exist at your given line of the file. Else the find_{go_to_method} command doesn't work.")
+
+    return symbol_column_zero_indexed
+
+
+def try_to_find_column_of_symbol_in_surrounding_lines(file_lines: list[str], symbol: str, symbol_line_zero_indexed: int) -> int:
+    """
+    Searches for the symbol in the surrounding lines around symbol_line_zero_indexed and returns the start column if found.
+    First tries the line after, then the line before symbol_line_zero_indexed.
+    """
+    symbol_column_zero_indexed = -1
+    if len(file_lines) > symbol_line_zero_indexed + 1:
+        symbol_column_zero_indexed = file_lines[symbol_line_zero_indexed + 1].find(
+            symbol)
+
+    if symbol_column_zero_indexed == -1 and symbol_line_zero_indexed - 1 >= 0:
+        symbol_column_zero_indexed = file_lines[symbol_line_zero_indexed - 1].find(
+            symbol)
 
     return symbol_column_zero_indexed
 
@@ -330,7 +355,7 @@ def execute_command(command: str, init_req: str, req: str, request_id: int, agen
         process.stdin.write(request)
         process.stdin.flush()
 
-        timeout = 10
+        timeout = 20
         definition_lookup_result = read_message_from_subprocess(
             process, request_id, timeout, False)
 

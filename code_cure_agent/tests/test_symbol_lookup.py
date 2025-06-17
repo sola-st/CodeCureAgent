@@ -484,7 +484,7 @@ MethodInvocation at line 73: '        ArgumentImpl arg = argumentParser_.addArgu
 In file 'main/src/main/java/net/sourceforge/argparse4j/internal/SubparserImpl.java':  
 MethodInvocation at line 62: '        return parser_.addArgument(nameOrFlags);'  
 
-You can inspect the relevant references (the once you think are true matches) by using read_range.  \n""")
+You can inspect the relevant references (the ones you think are true matches) by using read_range.  \n""")
 
     def test_go_to_references_argparse4j_field_lookup_failing_due_to_broken_setup_fallback_shows_potential_refs(self):
         warning_repository_URL = "https://github.com/argparse4j/argparse4j.git"
@@ -517,7 +517,7 @@ In file 'main/src/main/java/net/sourceforge/argparse4j/internal/SubparserImpl.ja
 MemberReference at line 56: '        command_ = command;'  
 MemberReference at line 271: '            String title = "  " + command_;'  
 
-You can inspect the relevant references (the once you think are true matches) by using read_range.  \n""")
+You can inspect the relevant references (the ones you think are true matches) by using read_range.  \n""")
 
     def test_multiple_go_to_ref_and_go_to_def_in_one_run(self):
         warning_repository_URL = "https://github.com/junit-team/junit4.git"

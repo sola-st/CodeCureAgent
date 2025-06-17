@@ -508,7 +508,7 @@ def try_to_run_tests(agent: BaseAgent) -> tuple[bool, str]:
 def extract_test_failure_information(test_result: subprocess.CompletedProcess[str], agent: BaseAgent) -> str:
     """
     Finds all the test reports in "target/surefire-reports" folders anywhere in the project.
-    Extracts the once that have either failures or errors and formats the stacktraces so that package identifiers 
+    Extracts the ones that have either failures or errors and formats the stacktraces so that package identifiers 
     are replaced by paths that the agent can use and references outside the project are removed.
     """
 

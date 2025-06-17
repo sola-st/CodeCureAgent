@@ -84,7 +84,7 @@ class ChangeTrackedList(list):
         found_items = filter(lambda mapping, line_number=index + 1: mapping.after_line ==
                              line_number, self.map_line_indices_before_after_change)
 
-        # Might be multiple once if consecutive lines are being deleted
+        # Might be multiple ones if consecutive lines are being deleted
         for item in found_items:
             item.deleted = True
 

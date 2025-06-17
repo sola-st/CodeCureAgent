@@ -792,7 +792,7 @@ def lookup_references_fallback(go_to_method: str, file_path: str, symbol: str, s
             references_command_output += f"{match.symbol_type.__name__} at line {str(match.line_number)}: '{full_line_stripped}'  \n"
 
     if matched_references.matches_count > 1:
-        references_command_output += "\nYou can inspect the relevant references (the once you think are true matches) by using read_range.  \n"
+        references_command_output += "\nYou can inspect the relevant references (the ones you think are true matches) by using read_range.  \n"
     else:
         references_command_output += "\nYou can inspect the reference by using read_range.  \n"
 

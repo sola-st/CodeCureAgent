@@ -1,10 +1,15 @@
 from __future__ import annotations
 
+import os
+import time
 from typing import List, Literal, Optional
 
 from colorama import Fore
 
 from agent_core.config import Config
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from agent_core.agents.base import BaseAgent
 
 from ..api_manager import ApiManager
 from ..base import (
@@ -100,6 +105,7 @@ def create_chat_completion(
     model: Optional[str] = None,
     temperature: Optional[float] = None,
     max_tokens: Optional[int] = None,
+    agent: BaseAgent = None
 ) -> ChatModelResponse:
     """Create a chat completion using the OpenAI API
 
@@ -144,18 +150,6 @@ def create_chat_completion(
         "response_format": {"type": "json_object"}
     }
 
-    for plugin in config.plugins:
-        if plugin.can_handle_chat_completion(
-            messages=prompt.raw(),
-            **chat_completion_kwargs,
-        ):
-            message = plugin.handle_chat_completion(
-                messages=prompt.raw(),
-                **chat_completion_kwargs,
-            )
-            if message is not None:
-                return message
-
     chat_completion_kwargs.update(config.get_openai_credentials(model))
 
     if functions:
@@ -166,10 +160,24 @@ def create_chat_completion(
     # Print full prompt to debug log
     logger.debug(prompt.dump())
 
+    if agent is not None:
+        # Write the chat completion start to the execution info file
+        sanitized_warning_file_path = agent.ai_config.warning_file_path.replace(
+            "/", ".")
+        with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
+            patf.write(
+                "!! AI Chat Completion startup timestamp: " + str(time.time_ns()) + "\n")
     response = iopenai.create_chat_completion(
         messages=prompt.raw(),
         **chat_completion_kwargs,
     )
+
+    if agent is not None:
+        # Write the chat completion end to the execution info file
+        with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
+            patf.write(
+                "!! AI Chat Completion end timestamp: " + str(time.time_ns()) + "\n")
+
     logger.debug(f"Response: {response}")
 
     if hasattr(response, "error"):

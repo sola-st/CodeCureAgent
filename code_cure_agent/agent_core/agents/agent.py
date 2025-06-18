@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 from datetime import datetime
+import time
 from typing import TYPE_CHECKING, Any
 
 from colorama import Fore
@@ -70,11 +71,6 @@ class Agent(BaseAgent):
         elif command_name == "human_feedback":
             result = f"Human feedback: {user_input}"
         else:
-            for plugin in self.config.plugins:
-                if not plugin.can_handle_pre_command():
-                    continue
-                command_name, _ = plugin.pre_command(
-                    command_name, command_args)
             command_result = execute_command(
                 command_name=command_name,
                 arguments=command_args,
@@ -93,10 +89,6 @@ class Agent(BaseAgent):
                 result = f"Failure: command {command_name} returned too much output. \
                     Do not execute this command again with the same arguments."
 
-            for plugin in self.config.plugins:
-                if not plugin.can_handle_post_command():
-                    continue
-                result = plugin.post_command(command_name, result)
         # Check if there's a result from the command append it to the message
         if result is None:
             self.history.add(
@@ -257,17 +249,28 @@ def execute_command(
     try:
         # Execute a native command with the same name or alias, if it exists
         if command := agent.command_registry.get_command(command_name):
-            return command(**arguments, agent=agent)
 
-        # Handle non-native commands (e.g. from plugins)
-        for command in agent.ai_config.prompt_generator.commands:
-            if (
-                command_name == command.label.lower()
-                or command_name == command.name.lower()
-            ):
-                return command.function(**arguments)
+            # Write the command_execution start to the execution info file
+            sanitized_warning_file_path = agent.ai_config.warning_file_path.replace(
+                "/", ".")
+            with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
+                patf.write(
+                    f"!! Command {command_name} startup timestamp: " + str(time.time_ns()) + "\n")
+
+            execution_result = command(**arguments, agent=agent)
+
+            # Write the command_execution end to the execution info file
+            with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
+                patf.write(
+                    f"!! Command {command_name} end timestamp: " + str(time.time_ns()) + "\n")
+
+            return execution_result
 
         # The command_name was unknown. So add it to the list of unknown commands.
+
+        # Write the unknown command
+        with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
+            patf.write(f"!! Unknown command: {command_name}" + "\n")
 
         agent.unknown_commands.append(str(command_name))
         raise RuntimeError(

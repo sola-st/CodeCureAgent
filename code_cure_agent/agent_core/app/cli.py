@@ -1,5 +1,6 @@
 """Main script for the autogpt package."""
 from pathlib import Path
+import time
 from typing import Optional
 
 import click
@@ -165,6 +166,7 @@ def main(
             workspace_directory=workspace_directory,
             sorald_jar_path=sorald_jar_path,
             install_plugin_deps=install_plugin_deps,
+            start_up_timestamp=time.time_ns(),
             ai_name=ai_name,
             warning_ID=warning_id,
             warning_repository_URL=warning_repository_url,

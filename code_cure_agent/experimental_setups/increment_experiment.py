@@ -40,6 +40,8 @@ with open(experiments_list, "r+") as expl:
         "experimental_setups/experiment_{}/classification/analysis_reports".format(last_exp + 1))
     os.mkdir(
         "experimental_setups/experiment_{}/classification/docu_tool_outputs".format(last_exp + 1))
+    os.mkdir(
+        "experimental_setups/experiment_{}/classification/execution_info".format(last_exp + 1))
 
     os.mkdir(
         "experimental_setups/experiment_{}/fix_tp/prompt_history".format(last_exp + 1))
@@ -57,6 +59,8 @@ with open(experiments_list, "r+") as expl:
         "experimental_setups/experiment_{}/fix_tp/analysis_reports".format(last_exp + 1))
     os.mkdir(
         "experimental_setups/experiment_{}/fix_tp/docu_tool_outputs".format(last_exp + 1))
+    os.mkdir(
+        "experimental_setups/experiment_{}/fix_tp/execution_info".format(last_exp + 1))
 
     os.mkdir(
         "experimental_setups/experiment_{}/fix_fp/prompt_history".format(last_exp + 1))
@@ -72,5 +76,7 @@ with open(experiments_list, "r+") as expl:
         "experimental_setups/experiment_{}/fix_fp/implausible_patches".format(last_exp + 1))
     os.mkdir(
         "experimental_setups/experiment_{}/fix_fp/analysis_reports".format(last_exp + 1))
+    os.mkdir(
+        "experimental_setups/experiment_{}/fix_fp/execution_info".format(last_exp + 1))
 
     expl.write("experiment_{}\n".format(last_exp + 1))

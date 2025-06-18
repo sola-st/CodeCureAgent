@@ -6,6 +6,7 @@ from pathlib import Path
 from types import FrameType
 from typing import Optional
 import os
+import time
 
 
 from colorama import Fore, Style
@@ -52,6 +53,7 @@ def run_auto_gpt(
     workspace_directory: str | Path,
     sorald_jar_path: str | None,
     install_plugin_deps: bool,
+    start_up_timestamp: int,
     ai_name: str = "",
     warning_ID: Optional[int] = -1,
     warning_repository_URL: Optional[str] = None,
@@ -184,7 +186,20 @@ def run_auto_gpt(
         experiment_file=experiment_file
     )
 
+    # Write the saved startup time to the execution_info file
+    sanitized_warning_file_path = agent.ai_config.warning_file_path.replace(
+        "/", ".")
+    with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
+        patf.write("!! Start up timestamp: " + str(start_up_timestamp) + "\n")
+
     prepare_target_project(agent)
+
+    # Write end time of initialization
+    sanitized_warning_file_path = agent.ai_config.warning_file_path.replace(
+        "/", ".")
+    with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
+        patf.write("!! Initialization complete time: " +
+                   str(time.time_ns()) + "\n")
 
     run_interaction_loop(agent)
 
@@ -314,6 +329,10 @@ def shutdown(agent: Agent, signal: int):
         "/", ".")
     with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "all_messages", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_all_messages"), "w") as patf:
         patf.write(agent.history.dump())
+
+    # Write the time of shutdown to the execution info file
+    with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
+        patf.write("!! Shutdown timestamp: " + str(time.time_ns()) + "\n")
 
     exit(signal)
 

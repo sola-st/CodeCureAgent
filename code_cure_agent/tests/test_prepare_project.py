@@ -158,6 +158,7 @@ class AnalyzeFileTestCase(unittest.TestCase):
         os.mkdir("experimental_setups/experiment_test")
         os.mkdir("experimental_setups/experiment_test/fix_tp")
         os.mkdir("experimental_setups/experiment_test/fix_tp/analysis_reports")
+        os.mkdir("experimental_setups/experiment_test/fix_tp/execution_info")
 
         warning_repository_URL = "https://github.com/argparse4j/argparse4j.git"
         warning_repository_commit = "a0cef432451487d513382297cec2c5b14c147a30"

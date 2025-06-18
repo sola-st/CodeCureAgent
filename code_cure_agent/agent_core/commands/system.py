@@ -33,7 +33,5 @@ def goals_accomplished(reason: str, agent: Agent) -> NoReturn:
             improve the code.
     """
 
-    # Save the history one last time
-
     logger.info(title="Shutting down...\n", message=reason)
     shutdown(agent, 0)

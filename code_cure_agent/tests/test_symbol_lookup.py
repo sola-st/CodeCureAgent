@@ -22,6 +22,7 @@ class SymbolLookupTestCase(unittest.TestCase):
         os.mkdir("experimental_setups/experiment_test")
         os.mkdir("experimental_setups/experiment_test/fix_tp")
         os.mkdir("experimental_setups/experiment_test/fix_tp/analysis_reports")
+        os.mkdir("experimental_setups/experiment_test/fix_tp/execution_info")
 
     def tearDown(self):
         cca_workspace = "cca_workspace"

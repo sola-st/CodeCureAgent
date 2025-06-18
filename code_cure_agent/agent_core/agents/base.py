@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
+import time
 from typing import TYPE_CHECKING, Any, Literal, Optional
 from colorama import Fore
 import json
@@ -202,6 +203,7 @@ class BaseAgent(metaclass=ABCMeta):
             functions=get_openai_command_specs(self.command_registry)
             if self.config.openai_functions
             else None,
+            agent=self
         )
 
         if self.hyperparams["repetition_handling"] != "NONE":
@@ -224,6 +226,7 @@ class BaseAgent(metaclass=ABCMeta):
                             self.command_registry)
                         if self.config.openai_functions
                         else None,
+                        agent=self
                     )
                     if self.hyperparams["repetition_handling"] == "TOP3":
                         top3_list = json.loads(new_response.content)
@@ -652,12 +655,23 @@ class BaseAgent(metaclass=ABCMeta):
         Prepare everything for the new state.
         """
 
+        # Write the time of end of classification to the execution info file
+        current_time = time.time_ns()
+        sanitized_warning_file_path = self.ai_config.warning_file_path.replace(
+            "/", ".")
+        with open(os.path.join("experimental_setups", self.exps[-1], self.current_state, "execution_info", f"{str(self.ai_config.warning_ID)}_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(self.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
+            patf.write("!! Shutdown timestamp: " + str(current_time) + "\n")
+
         if final_verdict_is_true_positive:
             self.current_state = "fix_tp"
             classification = "TP"
         else:
             self.current_state = "fix_fp"
             classification = "FP"
+
+        # Write the time of start of fixing phase to the execution info file
+        with open(os.path.join("experimental_setups", self.exps[-1], self.current_state, "execution_info", f"{str(self.ai_config.warning_ID)}_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(self.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
+            patf.write("!! Start up timestamp: " + str(current_time) + "\n")
 
         # Reset the history
         self.history = MessageHistory(self.llm)

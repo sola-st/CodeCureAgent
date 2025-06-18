@@ -1,3 +1,9 @@
+
+# Workaround to have access to the autogpt package
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent.parent))
+
 from agent_core.llm.providers.openai import OPEN_AI_CHAT_MODELS
 import os
 import re
@@ -6,10 +12,7 @@ import statistics
 import matplotlib.pyplot as plt
 import argparse
 
-# Workaround to have access to the autogpt package
-import sys
-from pathlib import Path
-sys.path.append(str(Path(__file__).parent.parent))
+
 
 
 def calculate_tokens(folder_path, fixed_file_path, model_name="gpt-3.5-turbo"):

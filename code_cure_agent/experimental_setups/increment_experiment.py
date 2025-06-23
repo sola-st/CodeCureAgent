@@ -27,6 +27,8 @@ with open(experiments_list, "r+") as expl:
         "experimental_setups/experiment_{}/fix_tp".format(last_exp + 1))
     os.mkdir(
         "experimental_setups/experiment_{}/fix_fp".format(last_exp + 1))
+    os.mkdir(
+        "experimental_setups/experiment_{}/tasks".format(last_exp + 1))
 
     os.mkdir(
         "experimental_setups/experiment_{}/classification/prompt_history".format(last_exp + 1))

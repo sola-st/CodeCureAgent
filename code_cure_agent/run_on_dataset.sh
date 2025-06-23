@@ -29,8 +29,8 @@ while IFS= read -r line <&3; do
         ((skip_header--))
     else
         csv -a fields "$line"
-        echo "Current run input: " ${fields[0]}, ${fields[1]}, ${fields[2]}, ${fields[3]}, ${fields[4]}, ${fields[5]}, ${fields[6]} , ${fields[7]}
-        python3 scripts/prepare_ai_settings.py "${fields[0]}" "${fields[1]}" "${fields[2]}" "${fields[3]}" "${fields[4]}" "${fields[5]}" "${fields[6]}" "${fields[7]}"
+        echo "Current run input: " ${fields[0]}, ${fields[1]}, ${fields[2]}, ${fields[3]}, ${fields[4]}, ${fields[5]}, ${fields[6]} , ${fields[7]} , ${fields[8]}
+        python3 scripts/prepare_ai_settings.py "${fields[0]}" "${fields[1]}" "${fields[2]}" "${fields[3]}" "${fields[4]}" "${fields[5]}" "${fields[6]}" "${fields[7]}" "${fields[8]}"
 
         ./run.sh --ai-settings agent_config_and_prompt_files/ai_settings.yaml --model-version gpt-4.1-mini-2025-04-14 -m json_file --experiment-file "$2"
     fi

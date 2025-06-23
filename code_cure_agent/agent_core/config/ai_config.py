@@ -28,6 +28,7 @@ class AIConfig:
         warning_start_line (int): The line where the rule violation is located
         warning_rule_name (str): The name of the SonarQube warning to fix (short description)
         warning_specific_messgage (str): The context-specific message of the rule violation
+        warning_rule_type (str): Type of the SonarQube warning
     """
 
     def __init__(
@@ -41,6 +42,7 @@ class AIConfig:
         warning_start_line: int = -1,
         warning_rule_name: str = "",
         warning_specific_message: str = "",
+        warning_rule_type: str = ""
     ) -> None:
         """
         Initialize a class instance
@@ -55,6 +57,7 @@ class AIConfig:
             warning_start_line (int): The line where the rule violation is located
             warning_rule_name (str): The name of the SonarQube warning to fix (short description)
             warning_specific_messgage (str): The context-specific message of the rule violation
+            warning_rule_type (str): Type of the SonarQube warning
         Returns:
             None
         """
@@ -67,6 +70,7 @@ class AIConfig:
         self.warning_start_line = int(warning_start_line)
         self.warning_rule_name = warning_rule_name
         self.warning_specific_message = warning_specific_message
+        self.warning_rule_type = warning_rule_type
         self.command_registry: CommandRegistry | None = None
 
         # Retrieve the repository name from the repository URL
@@ -121,8 +125,10 @@ class AIConfig:
         warning_rule_name = config_params.get("warning_rule_name", "")
         warning_specific_message = config_params.get(
             "warning_specific_message", "")
+        warning_rule_type = config_params.get(
+            "warning_rule_type", "")
 
-        return AIConfig(ai_name, warning_ID, warning_repository_URL, warning_repository_commit, warning_file_path, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message)
+        return AIConfig(ai_name, warning_ID, warning_repository_URL, warning_repository_commit, warning_file_path, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message, warning_rule_type)
 
     def save(self, ai_settings_file: str | Path) -> None:
         """
@@ -144,6 +150,7 @@ class AIConfig:
             "warning_start_line": self.warning_start_line,
             "warning_rule_name": self.warning_rule_name,
             "warning_specific_message": self.warning_specific_message,
+            "warning_rule_type": self.warning_rule_type
         }
         with open(ai_settings_file, "w", encoding="utf-8") as file:
             yaml.dump(config, file, allow_unicode=True)

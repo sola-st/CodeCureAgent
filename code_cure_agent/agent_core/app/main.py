@@ -10,6 +10,7 @@ import time
 
 
 from colorama import Fore, Style
+import yaml
 
 from agent_core.agents import Agent, AgentThoughts, CommandArgs, CommandName
 from agent_core.app.configurator import create_config
@@ -63,6 +64,7 @@ def run_auto_gpt(
     warning_start_line: Optional[int] = None,
     warning_rule_name: Optional[str] = None,
     warning_specific_message: Optional[str] = None,
+    warning_rule_type: Optional[str] = None,
     experiment_file: str = None
 ):
     if not experiment_file:
@@ -156,6 +158,7 @@ def run_auto_gpt(
         warning_start_line=warning_start_line,
         warning_rule_name=warning_rule_name,
         warning_specific_message=warning_specific_message,
+        warning_rule_type=warning_rule_type
     )
     ai_config.command_registry = command_registry
     # print(prompt)
@@ -191,6 +194,15 @@ def run_auto_gpt(
         "/", ".")
     with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
         patf.write("!! Start up timestamp: " + str(start_up_timestamp) + "\n")
+
+    # Save task info
+    with open(os.path.join("experimental_setups", agent.exps[-1], "tasks", f"{str(agent.ai_config.warning_ID)}.yaml"), "w") as taskf:
+        taskf.write(yaml.dump({"warning_ID": agent.ai_config.warning_ID, "warning_repository_URL": agent.ai_config.warning_repository_URL,
+                               "warning_repository_commit": agent.ai_config.warning_repository_commit,
+                               "warning_repository_name": agent.ai_config.warning_repository_name,
+                               "warning_file_path": agent.ai_config.warning_file_path, "warning_file_name": agent.ai_config.warning_file_name,
+                               "warning_rule_key": agent.ai_config.warning_rule_key, "warning_start_line": agent.ai_config.warning_start_line,
+                               "warning_rule_name": agent.ai_config.warning_rule_name, "warning_specific_message": agent.ai_config.warning_specific_message, "warning_rule_type": agent.ai_config.warning_rule_type}))
 
     prepare_target_project(agent)
 
@@ -392,6 +404,7 @@ def construct_main_ai_config(
     warning_start_line: Optional[int] = None,
     warning_rule_name: Optional[str] = None,
     warning_specific_message: Optional[str] = None,
+    warning_rule_type: Optional[str] = None
 ) -> AIConfig:
     """Construct the prompt for the AI to respond to
 
@@ -421,9 +434,11 @@ def construct_main_ai_config(
         ai_config.warning_rule_name = warning_rule_name
     if warning_specific_message:
         ai_config.warning_specific_message = warning_specific_message
+    if warning_rule_type:
+        ai_config.warning_rule_type = warning_rule_type
     if (
         all([ai_config.ai_name, ai_config.warning_ID, ai_config.warning_repository_URL, ai_config.warning_repository_commit, ai_config.warning_file_path,
-            ai_config.warning_rule_key, ai_config.warning_start_line, ai_config.warning_rule_name, ai_config.warning_specific_message])
+            ai_config.warning_rule_key, ai_config.warning_start_line, ai_config.warning_rule_name, ai_config.warning_specific_message, ai_config.warning_rule_type])
     ):
         logger.info(title="ai_config found: ", title_color=Fore.GREEN,
                     message="The complete ai_config was successfully loaded from the ai_settings_file.")
@@ -472,6 +487,8 @@ def construct_main_ai_config(
                 title_color=Fore.GREEN, message=ai_config.warning_rule_name)
     logger.info(title="Warning Specific Message: ",
                 title_color=Fore.GREEN, message=ai_config.warning_specific_message)
+    logger.info(title="Warning Rule Type: ",
+                title_color=Fore.GREEN, message=ai_config.warning_rule_type)
     return ai_config
 
 

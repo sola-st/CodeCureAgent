@@ -105,6 +105,11 @@ import click
     help="The context-specific message of the SonarQube warning."
 )
 @click.option(
+    "--warning-rule-type",
+    type=str,
+    help="The type of the SonarQube warning."
+)
+@click.option(
     "--experiment-file",
     type=str,
     multiple=False,
@@ -139,6 +144,7 @@ def main(
     warning_start_line: Optional[int],
     warning_rule_name: Optional[str],
     warning_specific_message: Optional[str],
+    warning_rule_type: Optional[str],
     experiment_file: str
 ) -> None:
     """
@@ -176,6 +182,7 @@ def main(
             warning_start_line=warning_start_line,
             warning_rule_name=warning_rule_name,
             warning_specific_message=warning_specific_message,
+            warning_rule_type=warning_rule_type,
             experiment_file=experiment_file
         )
 

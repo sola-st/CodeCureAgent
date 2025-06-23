@@ -90,7 +90,7 @@ if __name__ == "__main__":
                     # Run the tests
                     if error is None:
                         try:
-                            timeout_five_minutes = 5*60
+                            timeout_five_minutes = 5 * 60
                             repo_path = os.path.join(agent.config.workspace_path,
                                                      agent.ai_config.warning_repository_name)
 

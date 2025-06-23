@@ -76,7 +76,7 @@ def write_fix(changes_dicts: list, agent: BaseAgent) -> str:
     return feedback
 
 
-def execute_write_range(changes_dicts: list[dict], agent: BaseAgent) -> list[FileChanges]:
+def execute_write_range(changes_dicts: list[dict], agent: BaseAgent, create_analysis_reports=True, overwrite_warning_repository_name=None) -> list[FileChanges]:
     """
     Applies all the changes from the full changes_dicts list and writes them to the respective files.
 
@@ -85,23 +85,29 @@ def execute_write_range(changes_dicts: list[dict], agent: BaseAgent) -> list[Fil
     Throws:
         ApplyChangesError: If one of the lines to change (delete/modify/insert) is out of the file's range
     """
+    if overwrite_warning_repository_name is None:
+        warning_repository_name = agent.ai_config.warning_repository_name
+    else:
+        warning_repository_name = overwrite_warning_repository_name
 
     all_files_with_changes = []
 
     project_dir = os.path.join(
-        agent.config.workspace_path, agent.ai_config.warning_repository_name)
+        agent.config.workspace_path, warning_repository_name)
 
     change_dicts_merged_by_path = merge_changes_dicts_with_same_file_path(
-        changes_dicts, agent)
+        changes_dicts, agent, warning_repository_name)
 
     # Apply the changes from all of the grouped change_dicts
     for (file_relative_path_from_list, change_dicts) in change_dicts_merged_by_path:
         file_full_path_from_list = os.path.join(
             project_dir, file_relative_path_from_list)
 
-        # If the file is not in the agent's list of initial analysis reports, create and add it
-        add_new_file_to_initial_analysis_report(
-            file_relative_path_from_list, agent)
+        # only to be ignored if we only want to apply changes (outside of normal agent execution)
+        if create_analysis_reports:
+            # If the file is not in the agent's list of initial analysis reports, create and add it
+            add_new_file_to_initial_analysis_report(
+                file_relative_path_from_list, agent)
 
         changed_file = apply_changes(
             change_dicts, file_relative_path_from_list, file_full_path_from_list)
@@ -110,7 +116,7 @@ def execute_write_range(changes_dicts: list[dict], agent: BaseAgent) -> list[Fil
     return all_files_with_changes
 
 
-def merge_changes_dicts_with_same_file_path(changes_dicts: list[dict], agent: BaseAgent) -> list[str, list[dict]]:
+def merge_changes_dicts_with_same_file_path(changes_dicts: list[dict], agent: BaseAgent, warning_repository_name: str) -> list[str, list[dict]]:
     """
     Merge separate dicts for the same file, for correct change tracking
     """
@@ -127,7 +133,7 @@ def merge_changes_dicts_with_same_file_path(changes_dicts: list[dict], agent: Ba
                 "The write_fix command was in a wrong format. Couldn't find `file_name` in the change_dict.")
         try:
             file_relative_path = path_utils.preprocess_paths(
-                agent.config.workspace_path, agent.ai_config.warning_repository_name, file_relative_path)
+                agent.config.workspace_path, warning_repository_name, file_relative_path)
         except ValueError as ve:
             logger.error("apply_changes failed",
                          "The path couldn't be processed with error: " + str(ve))

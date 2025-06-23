@@ -9,7 +9,7 @@ import csv
 import yaml
 
 
-@click.command()
+@click.command(help="This command adds the results of experiment runs to the evaluation_results.csv")
 @click.option(
     "--start-exp",
     type=int,
@@ -29,13 +29,10 @@ import yaml
     help="Overwrite the csv results file. Default is appending new Ids to the existing csv."
 )
 def write_experiment_results_to_csv_file(start_exp: int, end_exp: int, overwrite: bool):
-    print(start_exp)
-    print(end_exp)
-    print(overwrite)
 
     relevant_experiment_numbers = get_relevant_experiment_numbers(
         start_exp, end_exp)
-    print(relevant_experiment_numbers)
+    print("Experiments looked at: " + str(relevant_experiment_numbers))
 
     results_csv_path = "evaluation_results/evaluation_results.csv"
 
@@ -45,6 +42,8 @@ def write_experiment_results_to_csv_file(start_exp: int, end_exp: int, overwrite
         experiment_folder = f"experiment_{str(experiment_number)}"
         tasks_to_add = get_tasks_in_experiment_folder_to_add(
             experiment_folder, results_csv_path)
+        print(
+            f"Experiment {str(experiment_number)} warnings to add: {str(tasks_to_add)}")
 
         with open(results_csv_path, "a+") as results_csv_file:
             csv_writer = csv.writer(results_csv_file, dialect=csv.unix_dialect)
@@ -157,7 +156,8 @@ def retrieve_classification(experiment_folder: str, task_to_add: int) -> str:
         experiment_folder, "classification", classification_file_name)
     if index_final_verdict == -1:
         print(
-            f"ERROR: 'Final Verdict:  ' not found in file {relative_path_classification_file}")
+            f"WARN: 'Final Verdict:  ' not found in file {relative_path_classification_file}. This can happen if a question was answered, but no final verdict given.")
+        return "Unclassified"
     final_verdict = file_cont[index_final_verdict +
                               17: index_final_verdict + 19]
 

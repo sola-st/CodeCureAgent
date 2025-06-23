@@ -9,7 +9,7 @@ from agent_core.logs.logger import logger
 import subprocess
 
 
-def checkout_project(agent: BaseAgent, overwrite_target_workspace_path: str = None) -> None:
+def checkout_project(agent: BaseAgent, overwrite_target_workspace_path: str = None, overwrite_target_folder_name: str = None) -> None:
     """
     Clone targeted repository and checkout targeted commit.
     If the target project folder already exists it is first removed.
@@ -20,8 +20,13 @@ def checkout_project(agent: BaseAgent, overwrite_target_workspace_path: str = No
     else:
         target_workspace_path = overwrite_target_workspace_path
 
+    if overwrite_target_folder_name is None:
+        target_folder_name = agent.ai_config.warning_repository_name
+    else:
+        target_folder_name = overwrite_target_folder_name
+
     repo_path = os.path.join(target_workspace_path,
-                             agent.ai_config.warning_repository_name)
+                             target_folder_name)
 
     logger.info("", "Project checkout procedure starting.")
 

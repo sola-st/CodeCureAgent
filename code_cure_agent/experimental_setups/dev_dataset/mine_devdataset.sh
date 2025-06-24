@@ -36,7 +36,7 @@ echo Mining end: Specific commit, all rules
 # Consider rules part of the default SonarQube quality profile.
 echo Mining start: Specific commit, quality profile rules
 rm ./mining_results/specific_commit_all_rules_out.txt
-java -jar $SORALD_JAR_PATH mine --git-repos-list ./sampled_repos_specific_commit.txt --miner-output-file ./mining_results/specific_commit_all_rules_out.txt \
+java -jar $SORALD_JAR_PATH mine --git-repos-list ./sampled_repos_specific_commit.txt --miner-output-file ./mining_results/specific_commit_quality_profile_out.txt \
     --stats-output-file ./mining_results/specific_commit_quality_profile_rules_mining_result.json --temp-dir ./temp --stats-on-git-repos --rule-keys "$qualtiy_profile_rules" --rule-parameters ./../../sonarqube_quality_profile/quality_profile_rule_parameters.json
 
 python3 ./../prepare_experiment_input_file.py ./mining_results/specific_commit_quality_profile_rules_mining_result.json --target-csv-file-path ./mining_results/specific_commit_quality_profile_rules_input_file_aggregated_rule_violations.csv --rule-violations-mode all
@@ -69,7 +69,7 @@ echo Mining end: Newest commit, all rules
 # Consider rules part of the default SonarQube quality profile.
 echo Mining start: Newest commit, quality profile rules
 rm ./mining_results/newest_commit_all_rules_out.txt
-java -jar $SORALD_JAR_PATH mine --git-repos-list ./sampled_repos.txt --miner-output-file ./mining_results/newest_commit_all_rules_out.txt \
+java -jar $SORALD_JAR_PATH mine --git-repos-list ./sampled_repos.txt --miner-output-file ./mining_results/newest_commit_quality_profile_out.txt \
     --stats-output-file ./mining_results/newest_commit_quality_profile_rules_mining_result.json --temp-dir ./temp --stats-on-git-repos --rule-keys "$qualtiy_profile_rules" --rule-parameters ./../../sonarqube_quality_profile/quality_profile_rule_parameters.json
 
 python3 ./../prepare_experiment_input_file.py ./mining_results/newest_commit_quality_profile_rules_mining_result.json --target-csv-file-path ./mining_results/newest_commit_quality_profile_rules_input_file_aggregated_rule_violations.csv --rule-violations-mode all

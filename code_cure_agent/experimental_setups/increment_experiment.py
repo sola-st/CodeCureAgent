@@ -18,7 +18,7 @@ with open(experiments_list, "r+") as expl:
     else:
         last_exp = 0
 
-    print("Creating experiment folder:", last_exp+1)
+    print("Creating experiment folder:", last_exp + 1)
     os.mkdir("experimental_setups/experiment_{}".format(last_exp + 1))
 
     os.mkdir(
@@ -37,8 +37,6 @@ with open(experiments_list, "r+") as expl:
     os.mkdir(
         "experimental_setups/experiment_{}/classification/responses".format(last_exp + 1))
     os.mkdir(
-        "experimental_setups/experiment_{}/classification/saved_contexts".format(last_exp + 1))
-    os.mkdir(
         "experimental_setups/experiment_{}/classification/analysis_reports".format(last_exp + 1))
     os.mkdir(
         "experimental_setups/experiment_{}/classification/docu_tool_outputs".format(last_exp + 1))
@@ -51,8 +49,6 @@ with open(experiments_list, "r+") as expl:
         "experimental_setups/experiment_{}/fix_tp/all_messages".format(last_exp + 1))
     os.mkdir(
         "experimental_setups/experiment_{}/fix_tp/responses".format(last_exp + 1))
-    os.mkdir(
-        "experimental_setups/experiment_{}/fix_tp/saved_contexts".format(last_exp + 1))
     os.mkdir(
         "experimental_setups/experiment_{}/fix_tp/plausible_patches".format(last_exp + 1))
     os.mkdir(
@@ -70,8 +66,6 @@ with open(experiments_list, "r+") as expl:
         "experimental_setups/experiment_{}/fix_fp/all_messages".format(last_exp + 1))
     os.mkdir(
         "experimental_setups/experiment_{}/fix_fp/responses".format(last_exp + 1))
-    os.mkdir(
-        "experimental_setups/experiment_{}/fix_fp/saved_contexts".format(last_exp + 1))
     os.mkdir(
         "experimental_setups/experiment_{}/fix_fp/plausible_patches".format(last_exp + 1))
     os.mkdir(

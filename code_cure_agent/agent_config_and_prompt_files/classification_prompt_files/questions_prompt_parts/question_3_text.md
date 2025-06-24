@@ -1,4 +1,4 @@
-Can the rule violation be fixed (possibly by changing multiple lines of code, even in other files, callers etc.), without breaking important functionality? Even if you answered in Question 2 that the developer intentionally wrote the code like this, is there maybe still a way to fix the violation, without breaking the developer-intended functionality? If there is some way to fix the violation, even if it requires multiple changes over multiple files, then fixing it should be preferred.
+Can the rule violation be fixed (possibly by changing multiple lines of code, even in other files, callers etc.), without breaking important functionality? Even if you answered in Question 2 that the developer intentionally wrote the code like this, is there maybe still a way to fix the violation? If there is some way to fix the violation, even if it requires multiple changes over multiple files, then fixing it should be preferred.  
 
 ### Example of fixable rule violation
 

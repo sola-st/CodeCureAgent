@@ -125,54 +125,6 @@ class BaseAgent(metaclass=ABCMeta):
         with open(experiments_list) as eht:
             self.exps = eht.read().splitlines()
 
-    def save_context(self,):
-        context = {
-            "cycle_count": self.cycle_count,
-            "commands_limit": self.config.commands_limit,
-            "current_state": self.current_state,
-            "current_question": self.current_question,
-            "question_answers": self.question_answers,
-            "final_verdict_reason": self.final_verdict_reason,
-            "plans": self.plans,
-            "unknown_commands": self.unknown_commands,
-            "write_fix_attempts": self.write_fix_attempts,
-            "plausible_fixes": self.plausible_fixes,
-            "experiment_file": self.experiment_file,
-            "hyperparams": self.hyperparams,
-            "history": [msg for _, msg in enumerate(self.history)],
-            "initial_analysis_reports": self.initial_analysis_reports
-        }
-
-        # with open("experimental_setups/experiments_list.txt") as eht:
-        exps = self.exps
-
-        sanitized_warning_file_path = self.ai_config.warning_file_path.replace(
-            "/", ".")
-        with open(os.path.join("experimental_setups", exps[-1], self.current_state, "saved_contexts", f"saved_context_{str(self.ai_config.warning_ID)}_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(self.ai_config.warning_start_line)}"), "w") as patf:
-            json.dump(context, patf)
-
-    def load_context(self):
-        exps = self.exps
-        sanitized_warning_file_path = self.ai_config.warning_file_path.replace(
-            "/", ".")
-        with open(os.path.join("experimental_setups", exps[-1], self.current_state, "saved_contexts", f"saved_context_{str(self.ai_config.warning_ID)}_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(self.ai_config.warning_start_line)}"), "r") as patf:
-            context = json.load(patf)
-
-        self.cycle_count = context["cycle_count"]
-        self.config.commands_limit = context["commands_limit"]
-        self.current_state = context["current_state"]
-        self.current_question = context["current_question"]
-        self.question_answers = context["question_answers"]
-        self.final_verdict_reason = context["final_verdict_reason"]
-        self.plans = context["plans"]
-        self.unknown_commands = context["unknown_commands"]
-        self.write_fix_attempts = context["write_fix_attempts"]
-        self.plausible_fixes = context["plausible_fixes"]
-        self.experiment_file = context["experiment_file"]
-        self.hyperparams = context["hyperparams"]
-        self.history = context["history"]
-        self.initial_analysis_reports = context["initial_analysis_reports"]
-
     def think(self) -> tuple[CommandName | None, CommandArgs | None, AgentThoughts]:
         """Runs the agent for one cycle.
 
@@ -289,7 +241,7 @@ class BaseAgent(metaclass=ABCMeta):
         agent_history = self.construct_agent_history_context()
         forbidden_commands_section = self.construct_forbidden_commands_context()
         question_and_answer_section = self.construct_question_and_answer_context()
-        cycle_instruction_section = self.construct_cycle_instruction()
+        cycle_instruction_section = self.construct_cycle_instruction_classification()
 
         # Join the different parts together with a space inbetween. If one of the sections is None or an empty string then it is ignored.
         return "\n\n".join(filter(None, [problem_introduction, commands, general_guidelines, task, agent_history, forbidden_commands_section, question_and_answer_section, cycle_instruction_section]))
@@ -316,7 +268,7 @@ class BaseAgent(metaclass=ABCMeta):
         plan_section = self.construct_plan_context()
         agent_history_section = self.construct_agent_history_context()
         forbidden_commands_section = self.construct_forbidden_commands_context()
-        cycle_instruction_section = self.construct_cycle_instruction()
+        cycle_instruction_section = self.construct_cycle_instruction_fix_or_suppress()
 
         # Join the different parts together with a space inbetween. If one of the sections is None or an empty string then it is ignored.
         return "\n\n".join(filter(None, [problem_introduction, commands, fix_format_section, general_guidelines_section, task_section, plan_section, agent_history_section, forbidden_commands_section, cycle_instruction_section]))
@@ -341,7 +293,7 @@ class BaseAgent(metaclass=ABCMeta):
         classification_explanation_section = self.construct_classification_explanation_for_fp_context()
         agent_history_section = self.construct_agent_history_context()
         forbidden_commands_section = self.construct_forbidden_commands_context()
-        cycle_instruction_section = self.construct_cycle_instruction()
+        cycle_instruction_section = self.construct_cycle_instruction_fix_or_suppress()
 
         # Join the different parts together with a space inbetween. If one of the sections is None or an empty string then it is ignored.
         return "\n\n".join(filter(None, [problem_introduction, commands, fix_format_section, general_guidelines_section, task_section, classification_explanation_section, agent_history_section, forbidden_commands_section, cycle_instruction_section]))
@@ -379,43 +331,55 @@ class BaseAgent(metaclass=ABCMeta):
 
         return answered_question_text + current_question_text
 
-    def construct_cycle_instruction(self):
-        if self.current_state == "fix_tp" or self.current_state == "fix_fp":
-            with open("agent_config_and_prompt_files/fix_violation_prompt_parts/fix_cycle_instruction_text.md") as cit:
-                cycle_instruction = cit.read()
-
-            if self.hyperparams["budget_control"]["name"] == "NO-TRACK":
-                pass
-            elif self.hyperparams["budget_control"]["name"] == "FULL-TRACK" and self.hyperparams["budget_control"]["params"] == {}:
-                cycle_instruction += "\nYou have, so far, executed {} commands, you have only {} commands left.\n".format(
-                    self.cycle_count, self.hyperparams["fix_commands_limit"]-self.cycle_count)
-            elif self.hyperparams["budget_control"]["name"] == "FULL-TRACK" and self.hyperparams["budget_control"]["params"] != {}:
-                minimum_number_fixes = self.hyperparams["budget_control"]["params"]["#fixes"]
-                number_of_fixes_to_still_propose = max(
-                    minimum_number_fixes - self.write_fix_attempts, 0)
-                if self.plausible_fixes > 0:
-                    number_of_fixes_to_still_propose = 0
-                cycle_instruction += "\nYou have, so far, executed, {} commands and suggested {} fixes. You have {} commands left. However, you need to suggest at least {} fixes before consuming all the left commands.\n".format(
-                    self.cycle_count, self.write_fix_attempts, self.hyperparams["fix_commands_limit"] - self.cycle_count, number_of_fixes_to_still_propose)
-            return cycle_instruction
-
-        # Classification subtask
-        else:
-            # If we have only one command left use a different cycle instruction that forces towards calling the give_final_verdict command.
-            if self.cycle_count == self.config.commands_limit - 1:
-                with open("agent_config_and_prompt_files/classification_prompt_files/classification_cycle_instruction_text_force_final_verdict.md") as cit:
-                    cycle_instruction = cit.read()
+    def construct_cycle_instruction_fix_or_suppress(self) -> str:
+        if self.current_state == "fix_tp":
+            # If we have only 5 commands left use a different cycle instruction that forces towards using the write_fix command more often.
+            cycles_left = self.config.commands_limit - self.cycle_count
+            if cycles_left <= 5:
+                cycle_instruction = read_file(
+                    "agent_config_and_prompt_files/fix_violation_prompt_parts/fix_cycle_instruction_text_force_write_fix.md").format(cycles_left=str(cycles_left))
             else:
-                with open("agent_config_and_prompt_files/classification_prompt_files/classification_cycle_instruction_text.md") as cit:
-                    cycle_instruction = cit.read()
+                cycle_instruction = read_file(
+                    "agent_config_and_prompt_files/fix_violation_prompt_parts/fix_cycle_instruction_text.md")
+        else:
+            cycle_instruction = read_file(
+                "agent_config_and_prompt_files/suppress_violation_prompt_parts/suppress_cycle_instruction_text.md")
 
-            if self.hyperparams["budget_control"]["name"] == "NO-TRACK":
-                pass
-            elif self.hyperparams["budget_control"]["name"] == "FULL-TRACK":
-                cycle_instruction += "\nYou have so far executed {} commands. You have {} commands left and must give a final verdict before exhausting the commands.\n".format(
-                    self.cycle_count, self.hyperparams["classification_commands_limit"]-self.cycle_count)
+        if self.hyperparams["budget_control"]["name"] == "NO-TRACK":
+            pass
+        elif self.hyperparams["budget_control"]["name"] == "FULL-TRACK" and self.hyperparams["budget_control"]["params"] == {}:
+            cycle_instruction += "\nYou have, so far, executed {} commands, you have only {} commands left.\n".format(
+                self.cycle_count, self.hyperparams["fix_commands_limit"] - self.cycle_count)
+        elif self.hyperparams["budget_control"]["name"] == "FULL-TRACK" and self.hyperparams["budget_control"]["params"] != {}:
+            minimum_number_fixes = self.hyperparams["budget_control"]["params"]["#fixes"]
+            number_of_fixes_to_still_propose = max(
+                minimum_number_fixes - self.write_fix_attempts, 0)
+            if self.plausible_fixes > 0:
+                number_of_fixes_to_still_propose = 0
+            cycle_instruction += "\nYou have, so far, executed, {} commands and suggested {} fixes. You have {} commands left. However, you need to suggest at least {} fixes before consuming all the left commands.\n".format(
+                self.cycle_count, self.write_fix_attempts, self.hyperparams["fix_commands_limit"] - self.cycle_count, number_of_fixes_to_still_propose)
+        return cycle_instruction
 
-            return cycle_instruction
+    def construct_cycle_instruction_classification(self) -> str:
+        # If we have only one command left use a different cycle instruction that forces towards calling the give_final_verdict command.
+        if self.cycle_count == self.config.commands_limit - 1:
+            cycle_instruction = read_file(
+                "agent_config_and_prompt_files/classification_prompt_files/classification_cycle_instruction_text_force_final_verdict.md")
+        # If we are in the first cycle, instruct to call the read_sonarqube_docu command, to collect some initial info about the rule (to reduce hallucination from the LLMs potentially wrong knowledge about the rule)
+        elif self.cycle_count == 0:
+            cycle_instruction = read_file(
+                "agent_config_and_prompt_files/classification_prompt_files/classification_cycle_instruction_text_first_cycle_force_read_sonarqube_docu.md")
+        else:
+            cycle_instruction = read_file(
+                "agent_config_and_prompt_files/classification_prompt_files/classification_cycle_instruction_text.md")
+
+        if self.hyperparams["budget_control"]["name"] == "NO-TRACK":
+            pass
+        elif self.hyperparams["budget_control"]["name"] == "FULL-TRACK":
+            cycle_instruction += "\nYou have so far executed {} commands. You have {} commands left and must give a final verdict before exhausting the commands.\n".format(
+                self.cycle_count, self.hyperparams["classification_commands_limit"] - self.cycle_count)
+
+        return cycle_instruction
 
     def construct_plan_context(self) -> str:
         plan_section = "## Your current plan for approaching the task\n\n"
@@ -431,10 +395,8 @@ class BaseAgent(metaclass=ABCMeta):
 
     def construct_agent_history_context(self) -> str:
 
-        history_section = ""
-
-        with open("agent_config_and_prompt_files/agent_history_preamble.md") as history_section_file:
-            history_section = history_section_file.read()
+        history_section = read_file(
+            "agent_config_and_prompt_files/agent_history_preamble.md")
 
         cycle = 0
         for message in self.history:
@@ -565,7 +527,7 @@ class BaseAgent(metaclass=ABCMeta):
         except SyntaxError as e:
             logger.error(f"Response could not be parsed: {e}")
             with open(f"experimental_setups/{self.exps[-1]}/{self.current_state}/parsing_errors_responses.txt", "a") as pers:
-                pers.write(llm_response.content+"\n")
+                pers.write(llm_response.content + "\n")
 
             command_name, command_args, assistant_reply_dict = "error_when_parsing", {"error": "Your response could not be parsed."
                                                                                       f"\nTrying to parse the response failed with the following error message: {e}"

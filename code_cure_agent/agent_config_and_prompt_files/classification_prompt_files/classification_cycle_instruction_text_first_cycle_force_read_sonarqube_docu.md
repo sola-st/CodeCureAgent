@@ -1,0 +1,33 @@
+## Next Step
+
+Start by first calling the read_sonarqube_docu command, to collect some more background information about the potentially violated rule.  
+Respond strictly in the JSON format defined below:
+
+```ts
+interface Response {
+    // Express your thoughts based on the information that you have collected so far, the possible steps that you could take next and also your reasoning about classifying the violation or answering the questions."
+    thoughts: string;
+    command: {
+        name: string;
+        args: Record<string, any>;
+    };
+}
+```
+
+Example:
+
+```json
+{
+    "thoughts": "I have information about the rule violation, but I need to collect more information about the relevant lines in file foo.java.",
+    "command": {
+        "name": "read_range",
+        "args": {
+            "file_path": "the/file/path/foo.java", 
+            "start_line": 1, 
+            "end_line": 50,
+        }
+    }
+}
+```
+
+**IMPORTANT NOTE TO THE AGENT:** DO NOT include any English text or explanations outside the JSON object in your response.

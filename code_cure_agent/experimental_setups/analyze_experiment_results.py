@@ -9,9 +9,8 @@ import re
 import os
 
 
-
 def analyze_general_stats():
-    with open('experiments_list.txt', 'r') as experiments_list_file:
+    with open('experimental_setups/experiments_list.txt', 'r') as experiments_list_file:
         experiment_folders = experiments_list_file.read().splitlines()
 
     total_rule_violations, classified_tp, classified_fp, unclassified = calc_classification_stats(
@@ -42,7 +41,7 @@ def analyze_general_stats():
 
 def write_to_markdown(total_rule_violations, classified_tp, classified_fp, unclassified, tp_plausible_fix, fp_plausible_fix, total_plausible_fix, total_execution_time, execution_time_classification, execution_time_fix_tp, execution_time_fix_fp, avg_execution_time, avg_execution_time_classification, avg_execution_time_fix_tp, avg_execution_time_fix_fp, total_tokens_count, tokens_count_classification, tokens_count_fix_tp, tokens_count_fix_fp, total_tokens_cost, tokens_cost_classification, tokens_cost_fix_tp, tokens_cost_fix_fp, avg_cost, avg_cost_classification, avg_cost_fix_tp, avg_cost_fix_fp):
     mdFile = mdutils.MdUtils(
-        file_name='analysis_results_overview', title='Experiment Analysis Results', title_header_style="atx")
+        file_name='experimental_setups/analysis_results_overview', title='Experiment Analysis Results', title_header_style="atx")
     mdFile.new_header(level=2, title="Overall stats",
                       add_table_of_contents="n")
     mdFile.new_header(level=3, title="Total rule violations",
@@ -66,34 +65,35 @@ def write_to_markdown(total_rule_violations, classified_tp, classified_fp, uncla
     mdFile.new_header(level=3, title="Execution time",
                       add_table_of_contents="n")
     mdFile.new_line("Total execution time: " +
-                    str(nano_to_second(total_execution_time)/60) + " minutes  ")
+                    str(nano_to_second(total_execution_time) / 60) + " minutes  ")
     mdFile.new_line("Execution time by sub-agent:  ")
     mdFile.new_line("Classification: " +
-                    str(nano_to_second(execution_time_classification)/60) + " minutes  ")
+                    str(nano_to_second(execution_time_classification) / 60) + " minutes  ")
     mdFile.new_line(
-        "Fix_TP: " + str(nano_to_second(execution_time_fix_tp)/60) + " minutes  ")
+        "Fix_TP: " + str(nano_to_second(execution_time_fix_tp) / 60) + " minutes  ")
     mdFile.new_line(
-        "Fix_FP: " + str(nano_to_second(execution_time_fix_fp)/60) + " minutes  ")
+        "Fix_FP: " + str(nano_to_second(execution_time_fix_fp) / 60) + " minutes  ")
 
     mdFile.new_line()
     mdFile.new_line("Average execution time: " +
-                    str(nano_to_second(avg_execution_time)/60) + " minutes  ")
+                    str(nano_to_second(avg_execution_time) / 60) + " minutes  ")
     mdFile.new_line("Average execution time by sub-agent:  ")
     mdFile.new_line("Classification: " +
-                    str(nano_to_second(avg_execution_time_classification)/60) + " minutes  ")
+                    str(nano_to_second(avg_execution_time_classification) / 60) + " minutes  ")
     mdFile.new_line(
-        "Fix_TP: " + str(nano_to_second(avg_execution_time_fix_tp)/60) + " minutes  ")
+        "Fix_TP: " + str(nano_to_second(avg_execution_time_fix_tp) / 60) + " minutes  ")
     mdFile.new_line(
-        "Fix_FP: " + str(nano_to_second(avg_execution_time_fix_fp)/60) + " minutes  ")
-    
+        "Fix_FP: " + str(nano_to_second(avg_execution_time_fix_fp) / 60) + " minutes  ")
+
     mdFile.new_header(level=3, title="Cost",
                       add_table_of_contents="n")
-    
+
     mdFile.new_header(level=4, title="Tokens Count",
                       add_table_of_contents="n")
     mdFile.new_line("Total tokens count: " + str(total_tokens_count) + "  ")
     mdFile.new_line("Tokens by sub-agent:  ")
-    mdFile.new_line("Classification: " + str(tokens_count_classification) + "  ")
+    mdFile.new_line("Classification: " +
+                    str(tokens_count_classification) + "  ")
     mdFile.new_line("Fix_TP: " + str(tokens_count_fix_tp) + "  ")
     mdFile.new_line("Fix_FP: " + str(tokens_count_fix_fp) + "  ")
 
@@ -101,7 +101,8 @@ def write_to_markdown(total_rule_violations, classified_tp, classified_fp, uncla
                       add_table_of_contents="n")
     mdFile.new_line("Total Cost: " + str(total_tokens_cost) + " USD  ")
     mdFile.new_line("Cost by sub-agent:  ")
-    mdFile.new_line("Classification: " + str(tokens_cost_classification) + " USD  ")
+    mdFile.new_line("Classification: " +
+                    str(tokens_cost_classification) + " USD  ")
     mdFile.new_line("Fix_TP: " + str(tokens_cost_fix_tp) + " USD  ")
     mdFile.new_line("Fix_FP: " + str(tokens_cost_fix_fp) + " USD  ")
 
@@ -110,7 +111,7 @@ def write_to_markdown(total_rule_violations, classified_tp, classified_fp, uncla
     mdFile.new_line("Average Total Cost: " + str(avg_cost) + " USD  ")
     mdFile.new_line("Average cost by sub-agent:  ")
     mdFile.new_line("Classification: " +
-          str(avg_cost_classification) + " USD  ")
+                    str(avg_cost_classification) + " USD  ")
     mdFile.new_line("Fix_TP: " + str(avg_cost_fix_tp) + " USD  ")
     mdFile.new_line("Fix_FP: " + str(avg_cost_fix_fp) + " USD  ")
 
@@ -125,13 +126,13 @@ def calc_classification_stats(experiment_folders: list[str]):
 
     for experiment_folder in experiment_folders:
         classification_prompt_history_folder = os.path.join(
-            experiment_folder, "classification", 'prompt_history')
+            "experimental_setups", experiment_folder, "classification", 'prompt_history')
 
         classification_prompt_history_files = [f for f in os.listdir(
             classification_prompt_history_folder) if os.path.isfile(os.path.join(classification_prompt_history_folder, f))]
 
         classification_folder = os.path.join(
-            experiment_folder, "classification")
+            "experimental_setups", experiment_folder, "classification")
 
         classification_result_files = [f for f in os.listdir(
             classification_folder) if os.path.isfile(os.path.join(classification_folder, f))]
@@ -146,6 +147,7 @@ def calc_classification_stats(experiment_folders: list[str]):
             if index_final_verdict == -1:
                 print(
                     f"ERROR: 'Final Verdict:  ' not found in file {os.path.join(classification_folder, classification_result_file)}")
+                continue
             final_verdict = file_cont[index_final_verdict +
                                       17:index_final_verdict + 19]
 
@@ -171,7 +173,7 @@ def calc_plausible_fix_stats(experiment_folders: list[str], classified_tp: int, 
 
     for experiment_folder in experiment_folders:
         fix_tp_plausible_patches_folder = os.path.join(
-            experiment_folder, "fix_tp", 'plausible_patches')
+            "experimental_setups", experiment_folder, "fix_tp", 'plausible_patches')
 
         fix_tp_plausible_patches_files = [f for f in os.listdir(
             fix_tp_plausible_patches_folder) if os.path.isfile(os.path.join(fix_tp_plausible_patches_folder, f))]
@@ -179,7 +181,7 @@ def calc_plausible_fix_stats(experiment_folders: list[str], classified_tp: int, 
         tp_plausible_fix += len(fix_tp_plausible_patches_files)
 
         fix_fp_plausible_patches_folder = os.path.join(
-            experiment_folder, "fix_fp", 'plausible_patches')
+            "experimental_setups", experiment_folder, "fix_fp", 'plausible_patches')
 
         fix_fp_plausible_patches_files = [f for f in os.listdir(
             fix_fp_plausible_patches_folder) if os.path.isfile(os.path.join(fix_fp_plausible_patches_folder, f))]
@@ -208,13 +210,13 @@ def calc_total_execution_time(experiment_folders: list[str], classified_tp: int,
 
         # classification
         classification_execution_info_folder = os.path.join(
-            experiment_folder, "classification", "execution_info")
+            "experimental_setups", experiment_folder, "classification", "execution_info")
 
         classification_execution_info_files = [f for f in os.listdir(
             classification_execution_info_folder) if os.path.isfile(os.path.join(classification_execution_info_folder, f))]
 
         for classification_execution_info_file in classification_execution_info_files:
-            with open(os.path.join(experiment_folder, "classification", "execution_info", classification_execution_info_file)) as crf:
+            with open(os.path.join("experimental_setups", experiment_folder, "classification", "execution_info", classification_execution_info_file)) as crf:
                 execution_info_lines = crf.readlines()
 
             execution_time_classification += retrieve_execution_time_single_phase(
@@ -222,13 +224,13 @@ def calc_total_execution_time(experiment_folders: list[str], classified_tp: int,
 
         # fix_tp
         fix_tp_execution_info_folder = os.path.join(
-            experiment_folder, "fix_tp", 'execution_info')
+            "experimental_setups", experiment_folder, "fix_tp", 'execution_info')
 
         fix_tp_execution_info_files = [f for f in os.listdir(
             fix_tp_execution_info_folder) if os.path.isfile(os.path.join(fix_tp_execution_info_folder, f))]
 
         for fix_tp_execution_info_file in fix_tp_execution_info_files:
-            with open(os.path.join(experiment_folder, "fix_tp", "execution_info", fix_tp_execution_info_file)) as crf:
+            with open(os.path.join("experimental_setups", experiment_folder, "fix_tp", "execution_info", fix_tp_execution_info_file)) as crf:
                 fix_tp_execution_info_lines = crf.readlines()
 
             execution_time_fix_tp += retrieve_execution_time_single_phase(
@@ -236,13 +238,13 @@ def calc_total_execution_time(experiment_folders: list[str], classified_tp: int,
 
         # fix_fp
         fix_fp_execution_info_folder = os.path.join(
-            experiment_folder, "fix_fp", 'execution_info')
+            "experimental_setups", experiment_folder, "fix_fp", 'execution_info')
 
         fix_fp_execution_info_files = [f for f in os.listdir(
             fix_fp_execution_info_folder) if os.path.isfile(os.path.join(fix_fp_execution_info_folder, f))]
 
         for fix_fp_execution_info_file in fix_fp_execution_info_files:
-            with open(os.path.join(experiment_folder, "fix_fp", "execution_info", fix_fp_execution_info_file)) as crf:
+            with open(os.path.join("experimental_setups", experiment_folder, "fix_fp", "execution_info", fix_fp_execution_info_file)) as crf:
                 fix_fp_execution_info_lines = crf.readlines()
 
             execution_time_fix_fp += retrieve_execution_time_single_phase(
@@ -252,21 +254,21 @@ def calc_total_execution_time(experiment_folders: list[str], classified_tp: int,
         execution_time_fix_tp + execution_time_fix_fp
 
     print("Total Execution Time " +
-          str(nano_to_second(total_execution_time)/60) + " minutes")
+          str(nano_to_second(total_execution_time) / 60) + " minutes")
     if total_rule_violations != 0:
         avg_execution_time = total_execution_time / total_rule_violations
     else:
         avg_execution_time = 0
 
     print("Execution Time Classification " +
-          str(nano_to_second(execution_time_classification)/60) + " minutes")
+          str(nano_to_second(execution_time_classification) / 60) + " minutes")
     print("Execution Time Fix TP " +
-          str(nano_to_second(execution_time_fix_tp)/60) + " minutes")
+          str(nano_to_second(execution_time_fix_tp) / 60) + " minutes")
     print("Execution Time Fix FP " +
-          str(nano_to_second(execution_time_fix_fp)/60) + " minutes")
+          str(nano_to_second(execution_time_fix_fp) / 60) + " minutes")
 
     print("Average Execution Time " +
-          str(nano_to_second(avg_execution_time)/60) + " minutes")
+          str(nano_to_second(avg_execution_time) / 60) + " minutes")
 
     if total_rule_violations != 0:
         avg_execution_time_classification = execution_time_classification / total_rule_violations
@@ -274,7 +276,7 @@ def calc_total_execution_time(experiment_folders: list[str], classified_tp: int,
         avg_execution_time_classification = 0
 
     print("Average Execution Time Classification " +
-          str(nano_to_second(avg_execution_time_classification)/60) + " minutes")
+          str(nano_to_second(avg_execution_time_classification) / 60) + " minutes")
 
     if classified_tp != 0:
         avg_execution_time_fix_tp = execution_time_fix_tp / classified_tp
@@ -282,7 +284,7 @@ def calc_total_execution_time(experiment_folders: list[str], classified_tp: int,
         avg_execution_time_fix_tp = 0
 
     print("Average Execution Time Fix TP " +
-          str(nano_to_second(avg_execution_time_fix_tp)/60) + " minutes")
+          str(nano_to_second(avg_execution_time_fix_tp) / 60) + " minutes")
 
     if classified_fp != 0:
         avg_execution_time_fix_fp = execution_time_fix_fp / classified_fp
@@ -290,7 +292,7 @@ def calc_total_execution_time(experiment_folders: list[str], classified_tp: int,
         avg_execution_time_fix_fp = 0
 
     print("Average Execution Time Fix FP " +
-          str(nano_to_second(avg_execution_time_fix_fp)/60) + " minutes")
+          str(nano_to_second(avg_execution_time_fix_fp) / 60) + " minutes")
 
     return total_execution_time, execution_time_classification, execution_time_fix_tp, execution_time_fix_fp, avg_execution_time, avg_execution_time_classification, avg_execution_time_fix_tp, avg_execution_time_fix_fp
 
@@ -311,14 +313,19 @@ def retrieve_execution_time_single_phase(filename: str, execution_info_lines: li
 
     if start_time == -1:
         print(f"ERROR: No startup time in {filename}")
+        return 0
     if end_time == -1:
         print(f"ERROR: No shutdown time in {filename}")
+        # Use last timestamp of any kind as fallback
+        last_line_with_any_time = execution_info_lines[-1]
+        end_time = int(
+            last_line_with_any_time[last_line_with_any_time.find("timestamp: ") + 11:])
 
     return end_time - start_time
 
 
 def calc_total_cost(experiment_folders: list[str], classified_tp: int, classified_fp: int, total_rule_violations: int, model="gpt-4.1-mini-2025-04-14"):
-    # The cost is a very unprecise upper bound. In reality the cost is much lower. 
+    # The cost is a very unprecise upper bound. In reality the cost is much lower.
     # This is because cached input is much cheaper and ca. 5/6 are cached, as the prompt is largely always the same!
 
     # TODO: Calculate tokens also grouped by plausible /no plausible
@@ -334,73 +341,73 @@ def calc_total_cost(experiment_folders: list[str], classified_tp: int, classifie
         # The prompt_history holds the prompts to the model
         # The responses holds the responses of the model to the prompts
         classification_prompt_history_folder = os.path.join(
-            experiment_folder, "classification", 'prompt_history')
+            "experimental_setups", experiment_folder, "classification", 'prompt_history')
 
         classification_prompt_history_files = [f for f in os.listdir(
             classification_prompt_history_folder) if os.path.isfile(os.path.join(classification_prompt_history_folder, f))]
 
         classification_responses_folder = os.path.join(
-            experiment_folder, "classification", 'responses')
+            "experimental_setups", experiment_folder, "classification", 'responses')
 
         classification_responses_files = [f for f in os.listdir(
             classification_responses_folder) if os.path.isfile(os.path.join(classification_responses_folder, f))]
 
         fix_tp_prompt_history_folder = os.path.join(
-            experiment_folder, "fix_tp", 'prompt_history')
+            "experimental_setups", experiment_folder, "fix_tp", 'prompt_history')
 
         fix_tp_prompt_history_files = [f for f in os.listdir(
             fix_tp_prompt_history_folder) if os.path.isfile(os.path.join(fix_tp_prompt_history_folder, f))]
 
         fix_tp_responses_folder = os.path.join(
-            experiment_folder, "fix_tp", 'responses')
+            "experimental_setups", experiment_folder, "fix_tp", 'responses')
 
         fix_tp_responses_files = [f for f in os.listdir(
             fix_tp_responses_folder) if os.path.isfile(os.path.join(fix_tp_responses_folder, f))]
 
         fix_fp_prompt_history_folder = os.path.join(
-            experiment_folder, "fix_fp", 'prompt_history')
+            "experimental_setups", experiment_folder, "fix_fp", 'prompt_history')
 
         fix_fp_prompt_history_files = [f for f in os.listdir(
             fix_fp_prompt_history_folder) if os.path.isfile(os.path.join(fix_fp_prompt_history_folder, f))]
 
         fix_fp_responses_folder = os.path.join(
-            experiment_folder, "fix_fp", 'responses')
+            "experimental_setups", experiment_folder, "fix_fp", 'responses')
 
         fix_fp_responses_files = [f for f in os.listdir(
             fix_fp_responses_folder) if os.path.isfile(os.path.join(fix_fp_responses_folder, f))]
 
         for classification_prompt_history_file in classification_prompt_history_files:
-            with open(os.path.join(experiment_folder, "classification", "prompt_history", classification_prompt_history_file)) as crf:
+            with open(os.path.join("experimental_setups", experiment_folder, "classification", "prompt_history", classification_prompt_history_file)) as crf:
                 file_content = crf.read()
             tokens_count_classification_input += retrieve_tokens_count(
                 file_content)
 
         for classification_responses_file in classification_responses_files:
-            with open(os.path.join(experiment_folder, "classification", "responses", classification_responses_file)) as crf:
+            with open(os.path.join("experimental_setups", experiment_folder, "classification", "responses", classification_responses_file)) as crf:
                 file_content = crf.read()
             tokens_count_classification_output += retrieve_tokens_count(
                 file_content)
 
         for fix_tp_prompt_history_file in fix_tp_prompt_history_files:
-            with open(os.path.join(experiment_folder, "fix_tp", "prompt_history", fix_tp_prompt_history_file)) as crf:
+            with open(os.path.join("experimental_setups", experiment_folder, "fix_tp", "prompt_history", fix_tp_prompt_history_file)) as crf:
                 file_content = crf.read()
             tokens_count_fix_tp_input += retrieve_tokens_count(
                 file_content)
 
         for fix_tp_responses_file in fix_tp_responses_files:
-            with open(os.path.join(experiment_folder, "fix_tp", "responses", fix_tp_responses_file)) as crf:
+            with open(os.path.join("experimental_setups", experiment_folder, "fix_tp", "responses", fix_tp_responses_file)) as crf:
                 file_content = crf.read()
             tokens_count_fix_tp_output += retrieve_tokens_count(
                 file_content)
 
         for fix_fp_prompt_history_file in fix_fp_prompt_history_files:
-            with open(os.path.join(experiment_folder, "fix_fp", "prompt_history", fix_fp_prompt_history_file)) as crf:
+            with open(os.path.join("experimental_setups", experiment_folder, "fix_fp", "prompt_history", fix_fp_prompt_history_file)) as crf:
                 file_content = crf.read()
             tokens_count_fix_fp_input += retrieve_tokens_count(
                 file_content)
 
         for fix_fp_responses_file in fix_fp_responses_files:
-            with open(os.path.join(experiment_folder, "fix_fp", "responses", fix_fp_responses_file)) as crf:
+            with open(os.path.join("experimental_setups", experiment_folder, "fix_fp", "responses", fix_fp_responses_file)) as crf:
                 file_content = crf.read()
             tokens_count_fix_fp_output += retrieve_tokens_count(
                 file_content)
@@ -441,7 +448,6 @@ def calc_total_cost(experiment_folders: list[str], classified_tp: int, classifie
     print("tokens_cost_fix_tp: " + str(tokens_cost_fix_tp) + " USD")
     print("tokens_cost_fix_fp: " + str(tokens_cost_fix_fp) + " USD")
 
-
     if total_rule_violations != 0:
         avg_cost = total_tokens_cost / total_rule_violations
     else:
@@ -454,7 +460,7 @@ def calc_total_cost(experiment_folders: list[str], classified_tp: int, classifie
         avg_cost_fix_tp = tokens_cost_fix_tp / classified_tp
     else:
         avg_cost_fix_tp = 0
-    
+
     if classified_fp != 0:
         avg_cost_fix_fp = tokens_cost_fix_fp / classified_fp
     else:

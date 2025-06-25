@@ -33,5 +33,12 @@ def goals_accomplished(reason: str, agent: Agent) -> NoReturn:
             improve the code.
     """
 
+    if agent.plausible_fixes == 0:
+        return "Trying to set the goals as accomplished failed! You have not yet accomplished the goal!  "  \
+            "\nNone of your previous calls to write_fix have been approved. All of them have been labeled as 'REJECTED'.  " \
+            "\nYour goals are only accomplished after one of your write_fix calls returns 'APPROVED'.  " \
+            "\nAdhere to the information given to you about your failed write_fix attempts and propose a fix that resolves the issues.  "  \
+            "\nOnly call this command again after one of your write_fix attempts returns 'APPROVED'."
+
     logger.info(title="Shutting down...\n", message=reason)
     shutdown(agent, 0)

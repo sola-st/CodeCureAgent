@@ -145,7 +145,7 @@ def retrieve_classification(experiment_folder: str, task_to_add: int) -> str:
     try:
         classification_file_name = next(f for f in os.listdir(os.path.join("experimental_setups", experiment_folder, "classification"))
                                         if os.path.isfile(os.path.join(
-                                            "experimental_setups", experiment_folder, "classification", f)) and f.startswith(str(task_to_add)))
+                                            "experimental_setups", experiment_folder, "classification", f)) and f.startswith(str(task_to_add) + "_"))
     except StopIteration:
         return "Unclassified"
 
@@ -168,6 +168,7 @@ def retrieve_classification(experiment_folder: str, task_to_add: int) -> str:
     else:
         print(
             f"ERROR: Unknown Final Verdict '{final_verdict}' in file {relative_path_classification_file}.")
+        return "Unclassified"
 
 
 def retrieve_fix_info(experiment_folder: str, task_to_add: int, classification: str) -> tuple[bool, str]:
@@ -188,7 +189,7 @@ def retrieve_fix_info(experiment_folder: str, task_to_add: int, classification: 
 
     try:
         file_name_task_file_to_find = next(
-            file for file in fix_plausible_patches_files if file.startswith(str(task_to_add)))
+            file for file in fix_plausible_patches_files if file.startswith(str(task_to_add) + "_"))
     except StopIteration:
         return False, "Unknown"
 

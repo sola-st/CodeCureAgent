@@ -62,6 +62,7 @@ write_fix_desc = """write_fix:
 
 goals_accomplished_desc = """goals_accomplished:  
     Call this command if you are sure you fixed the rule violation and your write_fix attempt has been approved.  
+    You must not call this command yet if all your write_fix attempts up to now have been rejected. You need to first propose a fix that is successfully approved.  
     Give a reason why you think the rule violation was fixed successfully.  
     Required Params:  
     - reason (string)"""
@@ -130,11 +131,11 @@ generate_method_desc = """AI_generates_method_code:
 
 
 commands_dict = {
-    "classification": "\n".join(["{}. {}".format(i+1, t) for i, t in enumerate(
+    "classification": "\n".join(["{}. {}".format(i + 1, t) for i, t in enumerate(
         [read_sonarqube_docu_desc, read_range_desc, find_definition_desc, find_references_desc, search_for_patterns_desc, answer_question_desc, give_final_verdict_desc])]),
-    "fix_tp": "\n".join(["{}. {}".format(i+1, t) for i, t in enumerate(
+    "fix_tp": "\n".join(["{}. {}".format(i + 1, t) for i, t in enumerate(
         [read_sonarqube_docu_desc, read_range_desc, find_definition_desc, find_references_desc, search_for_patterns_desc, formulate_plan_desc, write_fix_desc, goals_accomplished_desc])]),
-    "fix_fp": "\n".join(["{}. {}".format(i+1, t) for i, t in enumerate(
+    "fix_fp": "\n".join(["{}. {}".format(i + 1, t) for i, t in enumerate(
         [read_range_desc, write_fix_desc, goals_accomplished_desc])])
 }
 

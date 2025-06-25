@@ -334,6 +334,9 @@ def run_interaction_loop(
             give_final_verdict("TP", agent.final_verdict_reason, agent)
             agent.update_prompt_state(final_verdict_is_true_positive=True)
 
+    # Clean shutdown when all cycles are exhausted in the second agent phase
+    shutdown(agent, 0)
+
 
 def shutdown(agent: Agent, signal: int):
     # Save history one more time

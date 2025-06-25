@@ -242,7 +242,6 @@ class ChangeApproverTestCase(unittest.TestCase):
 Project was successfully built with the applied changes.  
 Rerunning the SonarQube analysis confirmed that your fix successfully removed the targeted rule violation and didn't introduce any new violations.  
 All tests in the project have been run and passed successfully.  
-  
 The repository has been restored to its original state. 
 If you think that your write_fix solved the problem then use the command goals_accomplished to conclude the task.""")
 
@@ -273,7 +272,6 @@ If you think that your write_fix solved the problem then use the command goals_a
 Project was successfully built with the applied changes.  
 Rerunning the SonarQube analysis confirmed that your fix successfully removed the targeted rule violation and didn't introduce any new violations.  
 All tests in the project have been run and passed successfully.  
-  
 The repository has been restored to its original state. 
 If you think that your write_fix solved the problem then use the command goals_accomplished to conclude the task.""")
 
@@ -352,11 +350,11 @@ However, you failed to insert a suppression. Neither a `// NOSONAR` nor a `@Supp
 
         print(sonar_qube_message)
         self.assertFalse(accepted)
-        self.assertEqual(sonar_qube_message, """Rerunning the SonarQube analysis found the following new rule violations that weren't present before:  
+        self.assertEqual(sonar_qube_message, """Rerunning the SonarQube analysis found the following new rule violations that weren't present before, or that have moved:  
 In file main/src/main/java/net/sourceforge/argparse4j/internal/TerminalWidth.java:  
 Rule S1764: 'Identical expressions should not be used on both sides of a binary operator' (Context-specific message: 'Correct one of the identical sub-expressions on both sides of operator "=="') at line 94: 'if (1 == 1) {'  
 
-You must not introduce any new rule violations.""")
+You must not introduce any new rule violations. They need to be prevented/resolved, even if you think the rule violations were already present in the project before.""")
 
     def test_check_sonar_qube_report_target_warning_not_removed(self):
         change_dict_list = [{

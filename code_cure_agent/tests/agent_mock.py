@@ -2,6 +2,9 @@
 from agent_core.logs import logger
 import logging
 
+from agent_core.memory.message_history import MessageHistory
+from agent_core.llm.providers.openai import OPEN_AI_CHAT_MODELS
+
 SORALD_JAR_PATH = "/workspaces/master-thesis-pascal-joos/code_cure_agent/sorald/sorald.jar"
 
 
@@ -44,3 +47,6 @@ class AgentMock():
         self.plausible_fixes = 0
         self.initial_analysis_reports = {}
         self.lsp_server_initialized = False
+        self.history = MessageHistory(
+            OPEN_AI_CHAT_MODELS["gpt-4.1-mini-2025-04-14"]
+        )

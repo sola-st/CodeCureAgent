@@ -51,13 +51,10 @@ def approve_changes(changes_dicts: list[dict], all_file_changes: list[FileChange
     if not accepted:
         return reject([build_message, sonar_qube_message, tests_message], changes_dicts, agent)
 
-    accepted, reviewer_llm_message = ask_reviewer_llm(
-        changes_dicts, all_file_changes, agent)
-
     if accepted:
-        return approve([build_message, sonar_qube_message, tests_message, reviewer_llm_message], changes_dicts, agent)
+        return approve([build_message, sonar_qube_message, tests_message], changes_dicts, agent)
     else:
-        return reject([build_message, sonar_qube_message, tests_message, reviewer_llm_message], changes_dicts, agent)
+        return reject([build_message, sonar_qube_message, tests_message], changes_dicts, agent)
 
 
 def try_to_build_changed_project(all_file_changes: list[FileChanges], agent: BaseAgent) -> tuple[bool, str]:
@@ -77,7 +74,7 @@ def try_to_build_changed_project(all_file_changes: list[FileChanges], agent: Bas
         return True, "Project was successfully built with the applied changes."
 
     except BuildError as build_error:
-        return False, show_changed_code(all_file_changes) + extract_build_error_information(build_error, agent)
+        return False, "Building the project failed! There were new compilation errors introduced by your fix attempt.  \n" + show_changed_code(all_file_changes) + extract_build_error_information(build_error, agent)
 
     except subprocess.TimeoutExpired as timeout_error:
         return False, f"Building the project failed with a timeout after {timeout_error.timeout / 60} minutes."
@@ -321,7 +318,7 @@ def check_sonar_qube_report(all_file_changes: list[FileChanges], agent: BaseAgen
             all_file_changes, sonar_qube_reports_after_changes, agent)
 
         if new_violations_introduced:
-            return False, "Rerunning the SonarQube analysis found the following new rule violations that weren't present before:  \n" + introduced_violations_info + "\nYou must not introduce any new rule violations."
+            return False, "Rerunning the SonarQube analysis found the following new rule violations that weren't present before, or that have moved:  \n" + introduced_violations_info + "\nYou must not introduce any new rule violations. They need to be prevented/resolved, even if you think the rule violations were already present in the project before."
         else:
             return True, "Rerunning the SonarQube analysis confirmed that your fix successfully removed the targeted rule violation and didn't introduce any new violations."
     else:
@@ -622,7 +619,7 @@ def clean_stacktrace_line(line: str, package_path_failing_test: str, agent: Base
         if matched_intro_pattern is not None:
             cleaned_line = "Failing test method: " + \
                 line.replace(
-                    f"({package_path_failing_test})  Time elapsed: ",  "  Time elapsed: ")
+                    f"({package_path_failing_test})  Time elapsed: ", "  Time elapsed: ")
             return cleaned_line
 
         else:
@@ -641,10 +638,6 @@ def naive_test_extraction(test_result: subprocess.CompletedProcess[str], agent: 
                              agent.ai_config.warning_repository_name)
     return test_section.replace(f"{repo_path}/", "").replace(
         f"{agent.config.workspace_path}/", "").replace(f"{agent.config.workspace_path}", "")
-
-
-def ask_reviewer_llm(changes_dicts: list[dict], all_files_with_changes: list[dict], agent: BaseAgent) -> tuple[bool, str]:
-    return True, ""
 
 
 def approve(messages: list[str], changes_dicts: list[dict], agent: BaseAgent) -> str:

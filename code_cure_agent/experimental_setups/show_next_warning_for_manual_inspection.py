@@ -82,7 +82,6 @@ def show_next_warning_for_manual_inspection(evaluation_results_file: click.File,
 
     open_relevant_files_and_diffs(
         relative_path_inspection_folder, warning_csv_info, evaluation_results_file, line_in_evaluation_results_csv)
-    # TODO: Open relevant files and diffs
 
     print_brief_info_about_the_warning(warning_csv_info)
 
@@ -129,7 +128,7 @@ def copy_relevant_files_of_warning_experiment_run(relative_path_inspection_folde
     try:
         classification_file_name = next(f for f in os.listdir(os.path.join(experiment_folder_rel_path, "classification"))
                                         if os.path.isfile(os.path.join(
-                                            experiment_folder_rel_path, "classification", f)) and f.startswith(str(warning_id)))
+                                            experiment_folder_rel_path, "classification", f)) and f.startswith(str(warning_id) + "_"))
 
         shutil.copy2(os.path.join(experiment_folder_rel_path, "classification", classification_file_name), os.path.join(
             relative_path_inspection_folder, f"ID{str(warning_id)}_classification_result"))
@@ -149,7 +148,7 @@ def copy_relevant_files_of_warning_experiment_run(relative_path_inspection_folde
         try:
             plausible_patch_file_name = next(f for f in os.listdir(os.path.join(experiment_folder_rel_path, fix_folder, "plausible_patches"))
                                              if os.path.isfile(os.path.join(
-                                                 experiment_folder_rel_path, fix_folder, "plausible_patches", f)) and f.startswith(str(warning_id)))
+                                                 experiment_folder_rel_path, fix_folder, "plausible_patches", f)) and f.startswith(str(warning_id) + "_"))
 
             shutil.copy2(os.path.join(experiment_folder_rel_path, fix_folder, "plausible_patches", plausible_patch_file_name), os.path.join(
                 relative_path_inspection_folder, f"ID{str(warning_id)}_plausible_patches.json"))
@@ -159,7 +158,7 @@ def copy_relevant_files_of_warning_experiment_run(relative_path_inspection_folde
         try:
             implausible_patch_file_name = next(f for f in os.listdir(os.path.join(experiment_folder_rel_path, fix_folder, "implausible_patches"))
                                                if os.path.isfile(os.path.join(
-                                                   experiment_folder_rel_path, fix_folder, "implausible_patches", f)) and f.startswith(str(warning_id)))
+                                                   experiment_folder_rel_path, fix_folder, "implausible_patches", f)) and f.startswith(str(warning_id) + "_"))
 
             shutil.copy2(os.path.join(experiment_folder_rel_path, fix_folder, "implausible_patches", implausible_patch_file_name), os.path.join(
                 relative_path_inspection_folder, f"ID{str(warning_id)}_implausible_patches.json"))

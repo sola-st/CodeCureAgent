@@ -244,8 +244,126 @@ class WriteFixTestCase(unittest.TestCase):
         }]
         result = write_fix.write_fix(changes_dict, self.agent)
 
+        print(result)
         self.assertEqual(
-            result, "REJECTED  \nFailure when trying to apply the fix: The write_fix command was in a wrong format. Neither `insertions`, `deletions` nor `modifications` was given in the change_dict.  \n\nIMPORTANT: The repository has been restored to its original state! You need to start applying changes from scratch again.")
+            result, """REJECTED  
+Failure when trying to apply the fix: The write_fix command was in a wrong format. Neither `insertions`, `deletions` nor `modifications` was given in the change_dict: {'file_name': 'main/src/main/java/net/sourceforge/argparse4j/internal/SubparsersImpl.java'}  
+
+IMPORTANT: The repository has been restored to its original state! You need to start applying changes from scratch again.""")
+
+    def test_write_fix_with_wrong_format_deletions_inside_the_insertions_objects_still_handled(self):
+        warning_repository_URL = "https://github.com/argparse4j/argparse4j.git"
+        warning_repository_commit = "a0cef432451487d513382297cec2c5b14c147a30"
+        warning_repository_name = "argparse4j"
+        warning_file_path = "main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserConfigurationImpl.java"
+        warning_rule_key = "S107"
+        warning_start_line = 44
+        warning_rule_name = "Methods should not have too many parameters"
+        warning_specific_message = "Constructor has 9 parameters, which is greater than 7 authorized."
+
+        self.agent = AgentMock(warning_repository_URL, warning_repository_commit, warning_file_path,
+                               warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message)
+
+        # Real world example that happened (with slight modification for correctness)
+        changes_dict_list = [
+            {
+                "file_name": "main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserConfigurationImpl.java",
+                "insertions": [
+                    {
+                        "line_number": 23,
+                        "new_lines": [
+                            "    // Encapsulate related boolean flags to reduce constructor parameters and comply with S107",
+                            "    private static class Flags {",
+                            "        final boolean singleMetavar;",
+                            "        final boolean noDestConversionForPositionalArgs;",
+                            "        final int formatWidth;",
+                            "",
+                            "        Flags(boolean singleMetavar, boolean noDestConversionForPositionalArgs, int formatWidth) {",
+                            "            this.singleMetavar = singleMetavar;",
+                            "            this.noDestConversionForPositionalArgs = noDestConversionForPositionalArgs;",
+                            "            this.formatWidth = formatWidth;"
+                            "        }",
+                            "    }",
+                            ""
+                        ]
+                    },
+                    {
+                        "line_number": 44,
+                        "new_lines": [
+                            "    private ArgumentParserConfigurationImpl(String prog, boolean addHelp,",
+                            "            String prefixChars, String fromFilePrefix,",
+                            "            ResourceBundle resourceBundle, TextWidthCounter textWidthCounter,",
+                            "            Flags flags) {",
+                            "        prog_ = prog;",
+                            "        addHelp_ = addHelp;",
+                            "        prefixChars_ = prefixChars;",
+                            "        prefixPattern_ = new PrefixPattern(prefixChars);",
+                            "        fromFilePrefix_ = fromFilePrefix;",
+                            "        fromFilePrefixPattern_ = fromFilePrefix == null ? null : new PrefixPattern(",
+                            "                fromFilePrefix);",
+                            "        resourceBundle_ = resourceBundle;",
+                            "        textWidthCounter_ = textWidthCounter;",
+                            "        formatWidth_ = flags.formatWidth;",
+                            "        singleMetavar_ = flags.singleMetavar;",
+                            "        noDestConversionForPositionalArgs_ = flags.noDestConversionForPositionalArgs;",
+                            "    }"
+                        ],
+                        "deletions": [
+                            44,
+                            45,
+                            46,
+                            47,
+                            48,
+                            49,
+                            50,
+                            51,
+                            52,
+                            53,
+                            54,
+                            55,
+                            56,
+                            57,
+                            58,
+                            59,
+                            60,
+                            61
+                        ]
+                    },
+                    {
+                        "line_number": 63,
+                        "new_lines": [
+                            "    ArgumentParserConfigurationImpl forSubparser(boolean addHelp,",
+                            "            String prefixChars) {",
+                            "        Flags flags = new Flags(singleMetavar_, noDestConversionForPositionalArgs_, formatWidth_);",
+                            "        return new ArgumentParserConfigurationImpl(prog_, addHelp, prefixChars,",
+                            "                fromFilePrefix_, resourceBundle_, textWidthCounter_,",
+                            "                flags);",
+                            "    }"
+                        ],
+                        "deletions": [
+                            63,
+                            64,
+                            65,
+                            66,
+                            67,
+                            68,
+                            69
+                        ]
+                    }
+                ],
+                "deletions": []
+            }
+        ]
+
+        response = write_fix.write_fix(changes_dict_list, self.agent)
+        print(response)
+
+        self.assertEqual(response, """APPROVED  
+Project was successfully built with the applied changes.  
+Rerunning the SonarQube analysis confirmed that your fix successfully removed the targeted rule violation and didn't introduce any new violations.  
+All tests in the project have been run and passed successfully.  
+The repository has been restored to its original state. 
+If you think that your write_fix solved the problem then use the command goals_accomplished to conclude the task.""")
 
     def test_execute_write_range_multiple_dicts_with_same_file_path(self):
         changes_dict = [{
@@ -653,3 +771,84 @@ class WriteFixTestCase(unittest.TestCase):
         print(resulting_pairing)
         self.assertEqual(resulting_pairing, [
                          ((-1, 20, True), (20, 22, True)), ((-1, 21, True), (21, 22, True))])
+
+    def test_apply_changes_none_of_the_needed_fields_given(self):
+        change_dict_list = [{
+            "file_name": self.agent.ai_config.warning_file_path,
+            "insertions_wrong": [{
+                "line_number": 20,
+                "new_lines_wrong_field": [
+                    "    // New line\n",
+                    "    // next new line\n"
+                ]
+            },],
+            "deletions_wrong": [20, 21], }]
+
+        file_relative_path = self.agent.ai_config.warning_file_path
+
+        project_dir = os.path.join(
+            self.agent.config.workspace_path, self.agent.ai_config.warning_repository_name)
+
+        file_full_path = os.path.join(project_dir, file_relative_path)
+
+        with self.assertRaises(write_fix.ApplyChangesError) as ace:
+            change_result: FileChanges = write_fix.apply_changes(
+                change_dict_list, file_relative_path, file_full_path)
+
+        print(ace.exception.msg)
+        self.assertEqual(
+            ace.exception.msg, "The write_fix command was in a wrong format. Neither `insertions`, `deletions` nor `modifications` was given in the change_dict: {'file_name': 'main/src/main/java/net/sourceforge/argparse4j/internal/TerminalWidth.java', 'insertions_wrong': [{'line_number': 20, 'new_lines_wrong_field': ['    // New line\\n', '    // next new line\\n']}], 'deletions_wrong': [20, 21]}")
+
+    def test_apply_changes_insertion_object_without_new_lines(self):
+        change_dict_list = [{
+            "file_name": self.agent.ai_config.warning_file_path,
+            "insertions": [{
+                "line_number": 20,
+                "new_lines_wrong_field": [
+                    "    // New line\n",
+                    "    // next new line\n"
+                ]
+            },],
+            "deletions": [20, 21], }]
+
+        file_relative_path = self.agent.ai_config.warning_file_path
+
+        project_dir = os.path.join(
+            self.agent.config.workspace_path, self.agent.ai_config.warning_repository_name)
+
+        file_full_path = os.path.join(project_dir, file_relative_path)
+
+        with self.assertRaises(write_fix.ApplyChangesError) as ace:
+            change_result: FileChanges = write_fix.apply_changes(
+                change_dict_list, file_relative_path, file_full_path)
+
+        print(ace.exception.msg)
+        self.assertEqual(
+            ace.exception.msg, "At least one insertion object had no 'new_lines'. The insertion object was: {'line_number': 20, 'new_lines_wrong_field': ['    // New line\\n', '    // next new line\\n']}. Strictly follow the specified format of the fix.")
+
+    def test_apply_changes_insertion_object_without_line_number(self):
+        change_dict_list = [{
+            "file_name": self.agent.ai_config.warning_file_path,
+            "insertions": [{
+                "line_number_wrong_field": 20,
+                "new_lines": [
+                    "    // New line\n",
+                    "    // next new line\n"
+                ]
+            },],
+            "deletions": [20, 21], }]
+
+        file_relative_path = self.agent.ai_config.warning_file_path
+
+        project_dir = os.path.join(
+            self.agent.config.workspace_path, self.agent.ai_config.warning_repository_name)
+
+        file_full_path = os.path.join(project_dir, file_relative_path)
+
+        with self.assertRaises(write_fix.ApplyChangesError) as ace:
+            change_result: FileChanges = write_fix.apply_changes(
+                change_dict_list, file_relative_path, file_full_path)
+
+        print(ace.exception.msg)
+        self.assertEqual(
+            ace.exception.msg, "At least one insertion object had no 'line_number'. The insertion object was: {'line_number_wrong_field': 20, 'new_lines': ['    // New line\\n', '    // next new line\\n']}. Strictly follow the specified format of the fix.")

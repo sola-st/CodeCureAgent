@@ -191,14 +191,16 @@ def apply_changes(change_dicts_with_same_file_path: list[dict], file_relative_pa
     for change_dict in change_dicts_with_same_file_path:
         # Check for correct format
         new_insertions = change_dict.get("insertions", None)
-        new_deletions = change_dict.get("deletions", None)
+        new_deletions = collect_deletions_from_plausible_locations_in_the_dict(
+            change_dict, new_insertions)
         new_modifications = change_dict.get("modifications", None)
 
         if all(map(lambda element: element is None, [new_insertions, new_deletions, new_modifications])):
             logger.error("apply_changes failed",
-                         "The write_fix command was in a wrong format. Neither `insertions`, `deletions` nor `modifications` was given in the change_dict. change_dict:" + str(change_dict))
+                         "The write_fix command was in a wrong format. Neither `insertions`, `deletions` nor `modifications` was given in the change_dict. change_dict: " + str(change_dict))
             raise ApplyChangesError(
-                "The write_fix command was in a wrong format. Neither `insertions`, `deletions` nor `modifications` was given in the change_dict."
+                "The write_fix command was in a wrong format. Neither `insertions`, `deletions` nor `modifications` was given in the change_dict: " +
+                str(change_dict)
             )
         if new_insertions is not None:
             insertions.extend(new_insertions)
@@ -227,6 +229,39 @@ def apply_changes(change_dicts_with_same_file_path: list[dict], file_relative_pa
         file.writelines(file_changes.change_tracked_lines)
 
     return file_changes
+
+
+def collect_deletions_from_plausible_locations_in_the_dict(change_dict: dict, new_insertions: list[dict] | None) -> list[int] | None:
+    """"
+    Find all deletions in the change_dict. We look at the location defined by the fix format, 
+    but also check inside insertion objects, as the LLM sometimes mistakenly put deletions there.
+    """
+
+    all_found_deletions = []
+
+    any_deletions_found = False
+
+    deletions_from_correct_location = change_dict.get("deletions", None)
+
+    if deletions_from_correct_location is not None:
+        any_deletions_found = True
+        all_found_deletions.extend(deletions_from_correct_location)
+
+    # Look for deletions inside insertion objects, as the LLM sometimes mistakenly did that
+    if new_insertions is not None:
+        for new_insertion in new_insertions:
+            deletions_inside_insertion = new_insertion.get("deletions", None)
+            if deletions_inside_insertion is not None:
+                any_deletions_found = True
+                all_found_deletions.extend(
+                    deletions_inside_insertion)
+
+    if not any_deletions_found:
+        return None
+    else:
+        all_found_deletions = list(set(all_found_deletions))
+
+        return all_found_deletions
 
 
 def pre_mark_deletions(file_changes: FileChanges, deletions: list) -> str:
@@ -275,14 +310,31 @@ def apply_insertions(file_changes: FileChanges, insertions: list[dict]):
     Apply insertions, from last to first for correct line referencing
     """
 
+    # Check that all objects have the field "line_number" before sorting them
+    for insertion in insertions:
+        line_number_test = insertion.get("line_number", None)
+        if line_number_test is None:
+            logger.error("apply_changes failed",
+                         f"At least one insertion object had no 'line_number'. The insertion object was: {str(insertion)}. All insertions in the file-object: {str(insertions)}")
+            raise ApplyChangesError(
+                f"At least one insertion object had no 'line_number'. The insertion object was: {str(insertion)}. Strictly follow the specified format of the fix.")
+
     sorted_insertions = sorted(
         insertions, key=itemgetter('line_number'), reverse=True)
     for insertion in sorted_insertions:
-        line_number = int(insertion.get("line_number", 0))
+        line_number = int(insertion.get("line_number", None))
+
+        new_lines_uncleaned: list[str] | None = insertion.get(
+            "new_lines", None)
+
+        if new_lines_uncleaned is None:
+            logger.error("apply_changes failed",
+                         f"At least one insertion object had no 'new_lines'. The insertion object was: {str(insertion)}. All insertions in the file-object: {str(insertions)}")
+            raise ApplyChangesError(
+                f"At least one insertion object had no 'new_lines'. The insertion object was: {str(insertion)}. Strictly follow the specified format of the fix.")
 
         # There might be items in new_lines that hold multiple lines in one string (via \n), or if commas are missing between the items.
         # So we clean this into one proper list of singular lines, by splitting by \n and then adding it back at the end of each line item.
-        new_lines_uncleaned: list[str] = insertion.get("new_lines", [])
         new_lines_cleaned_with_new_line = [
             line + "\n"
             for item in new_lines_uncleaned

@@ -12,6 +12,8 @@ from agent_core.app.main import shutdown
 
 from agent_core.utils.write_fix_utils.change_tracking import FileChanges
 
+from agent_core.utils.json_utils import validate_changes_dicts
+
 
 import hashlib
 import json
@@ -45,16 +47,19 @@ def write_fix(changes_dicts: list, agent: BaseAgent) -> str:
 
     feedback = ""
 
-    if len(changes_dicts) == 0:
-        return "REJECTED  \nThe fix you passed is empty. Please provide a non empty implementation of the fix."
-
+    might_need_rollback = False
     try:
+        validate_changes_dicts.validate_changes_dicts_in_correct_format(
+            changes_dicts)
+        might_need_rollback = True
+
         all_files_with_changes = execute_write_range(changes_dicts, agent)
 
-    except ApplyChangesError as ace:
+    except (ApplyChangesError, validate_changes_dicts.ValidateChangesDictsError) as format_error:
         # Need to rollback in case one of the files to change was already overwritten successfully or partially
-        rollback_changes(agent)
-        feedback = "REJECTED  \nFailure when trying to apply the fix: " + ace.msg + \
+        if might_need_rollback:
+            rollback_changes(agent)
+        feedback = "REJECTED  \nFailure when trying to apply the fix: " + format_error.msg + \
             "  \n\nIMPORTANT: The repository has been restored to its original state! You need to start applying changes from scratch again."
 
         sanitized_warning_file_path = agent.ai_config.warning_file_path.replace(
@@ -116,7 +121,7 @@ def execute_write_range(changes_dicts: list[dict], agent: BaseAgent, create_anal
     return all_files_with_changes
 
 
-def merge_changes_dicts_with_same_file_path(changes_dicts: list[dict], agent: BaseAgent, warning_repository_name: str) -> list[str, list[dict]]:
+def merge_changes_dicts_with_same_file_path(changes_dicts: list[dict], agent: BaseAgent, warning_repository_name: str) -> list[tuple[str, list[dict]]]:
     """
     Merge separate dicts for the same file, for correct change tracking
     """
@@ -124,13 +129,8 @@ def merge_changes_dicts_with_same_file_path(changes_dicts: list[dict], agent: Ba
 
     for change_dict in changes_dicts:
 
-        file_relative_path = change_dict.get("file_name", None)
+        file_relative_path = change_dict.get("file_name")
 
-        if file_relative_path is None:
-            logger.error("apply_changes failed",
-                         "The write_fix command was in a wrong format. Couldn't find `file_name` in the change_dict. change_dict:" + str(change_dict))
-            raise ApplyChangesError(
-                "The write_fix command was in a wrong format. Couldn't find `file_name` in the change_dict.")
         try:
             file_relative_path = path_utils.preprocess_paths(
                 agent.config.workspace_path, warning_repository_name, file_relative_path)
@@ -170,6 +170,7 @@ def add_new_file_to_initial_analysis_report(file_relative_path: str, agent: Base
 def apply_changes(change_dicts_with_same_file_path: list[dict], file_relative_path: str, file_full_path: str) -> FileChanges:
     """
     Applies the changes from all change_dicts regarding one file and writes them back to the file.
+    Can handle insertions, deletions and modifications. However, currently the format of the fix given to the agent doesn't include modifications as an option, so they will not be used.
 
     Returns:
         FileChanges: Object tracking all of the made changes in a file and how they relate to the initial file.
@@ -189,19 +190,10 @@ def apply_changes(change_dicts_with_same_file_path: list[dict], file_relative_pa
 
     # Go through the change dicts with the same file path and collect the changes
     for change_dict in change_dicts_with_same_file_path:
-        # Check for correct format
         new_insertions = change_dict.get("insertions", None)
-        new_deletions = collect_deletions_from_plausible_locations_in_the_dict(
-            change_dict, new_insertions)
+        new_deletions = change_dict.get("deletions", None)
         new_modifications = change_dict.get("modifications", None)
 
-        if all(map(lambda element: element is None, [new_insertions, new_deletions, new_modifications])):
-            logger.error("apply_changes failed",
-                         "The write_fix command was in a wrong format. Neither `insertions`, `deletions` nor `modifications` was given in the change_dict. change_dict: " + str(change_dict))
-            raise ApplyChangesError(
-                "The write_fix command was in a wrong format. Neither `insertions`, `deletions` nor `modifications` was given in the change_dict: " +
-                str(change_dict)
-            )
         if new_insertions is not None:
             insertions.extend(new_insertions)
         if new_deletions is not None:
@@ -229,39 +221,6 @@ def apply_changes(change_dicts_with_same_file_path: list[dict], file_relative_pa
         file.writelines(file_changes.change_tracked_lines)
 
     return file_changes
-
-
-def collect_deletions_from_plausible_locations_in_the_dict(change_dict: dict, new_insertions: list[dict] | None) -> list[int] | None:
-    """"
-    Find all deletions in the change_dict. We look at the location defined by the fix format, 
-    but also check inside insertion objects, as the LLM sometimes mistakenly put deletions there.
-    """
-
-    all_found_deletions = []
-
-    any_deletions_found = False
-
-    deletions_from_correct_location = change_dict.get("deletions", None)
-
-    if deletions_from_correct_location is not None:
-        any_deletions_found = True
-        all_found_deletions.extend(deletions_from_correct_location)
-
-    # Look for deletions inside insertion objects, as the LLM sometimes mistakenly did that
-    if new_insertions is not None:
-        for new_insertion in new_insertions:
-            deletions_inside_insertion = new_insertion.get("deletions", None)
-            if deletions_inside_insertion is not None:
-                any_deletions_found = True
-                all_found_deletions.extend(
-                    deletions_inside_insertion)
-
-    if not any_deletions_found:
-        return None
-    else:
-        all_found_deletions = list(set(all_found_deletions))
-
-        return all_found_deletions
 
 
 def pre_mark_deletions(file_changes: FileChanges, deletions: list) -> str:
@@ -310,28 +269,12 @@ def apply_insertions(file_changes: FileChanges, insertions: list[dict]):
     Apply insertions, from last to first for correct line referencing
     """
 
-    # Check that all objects have the field "line_number" before sorting them
-    for insertion in insertions:
-        line_number_test = insertion.get("line_number", None)
-        if line_number_test is None:
-            logger.error("apply_changes failed",
-                         f"At least one insertion object had no 'line_number'. The insertion object was: {str(insertion)}. All insertions in the file-object: {str(insertions)}")
-            raise ApplyChangesError(
-                f"At least one insertion object had no 'line_number'. The insertion object was: {str(insertion)}. Strictly follow the specified format of the fix.")
-
     sorted_insertions = sorted(
         insertions, key=itemgetter('line_number'), reverse=True)
     for insertion in sorted_insertions:
         line_number = int(insertion.get("line_number", None))
 
-        new_lines_uncleaned: list[str] | None = insertion.get(
-            "new_lines", None)
-
-        if new_lines_uncleaned is None:
-            logger.error("apply_changes failed",
-                         f"At least one insertion object had no 'new_lines'. The insertion object was: {str(insertion)}. All insertions in the file-object: {str(insertions)}")
-            raise ApplyChangesError(
-                f"At least one insertion object had no 'new_lines'. The insertion object was: {str(insertion)}. Strictly follow the specified format of the fix.")
+        new_lines_uncleaned: list[str] = insertion.get("new_lines")
 
         # There might be items in new_lines that hold multiple lines in one string (via \n), or if commas are missing between the items.
         # So we clean this into one proper list of singular lines, by splitting by \n and then adding it back at the end of each line item.

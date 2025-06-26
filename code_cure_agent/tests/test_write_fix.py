@@ -174,8 +174,13 @@ class WriteFixTestCase(unittest.TestCase):
         }]
         result = write_fix.write_fix(changes_dict, self.agent)
 
+        print(result)
+
         self.assertEqual(
-            result, "REJECTED  \nFailure when trying to apply the fix: The write_fix command was in a wrong format. Couldn't find `file_name` in the change_dict.  \n\nIMPORTANT: The repository has been restored to its original state! You need to start applying changes from scratch again.")
+            result, """REJECTED  
+Failure when trying to apply the fix: The write_fix command was in a wrong format. At least one of the file-level change objects in changes_dicts had an unknown key 'file_path'. Only 'file_name', 'insertions' and 'deletions' are allowed as top-level keys. Strictly follow the specified format of the fix.  
+
+IMPORTANT: The repository has been restored to its original state! You need to start applying changes from scratch again.""")
 
     def test_write_fix_non_existent_file_name_key_in_second_dict(self):
         changes_dict = [{
@@ -217,6 +222,7 @@ class WriteFixTestCase(unittest.TestCase):
             }]
         }]
         result = write_fix.write_fix(changes_dict, self.agent)
+        print(result)
         self.assertEqual(result, """REJECTED  \nFailure when trying to apply the fix: The file_path main/src/main/java/net/sourceforge/argparse4j/internal/SubparsersImpl2.java does not exist.  \n\nIMPORTANT: The repository has been restored to its original state! You need to start applying changes from scratch again.""")
 
     def test_write_fix_no_insertions_deletions_and_modification_keys_in_second_dict(self):
@@ -247,11 +253,11 @@ class WriteFixTestCase(unittest.TestCase):
         print(result)
         self.assertEqual(
             result, """REJECTED  
-Failure when trying to apply the fix: The write_fix command was in a wrong format. Neither `insertions`, `deletions` nor `modifications` was given in the change_dict: {'file_name': 'main/src/main/java/net/sourceforge/argparse4j/internal/SubparsersImpl.java'}  
+Failure when trying to apply the fix: The write_fix command was in a wrong format. Neither `insertions` nor `deletions` was given in one of the elements in changes_dicts.  
 
 IMPORTANT: The repository has been restored to its original state! You need to start applying changes from scratch again.""")
 
-    def test_write_fix_with_wrong_format_deletions_inside_the_insertions_objects_still_handled(self):
+    def test_write_fix_with_wrong_format_deletions_inside_the_insertions_objects_rejected(self):
         warning_repository_URL = "https://github.com/argparse4j/argparse4j.git"
         warning_repository_commit = "a0cef432451487d513382297cec2c5b14c147a30"
         warning_repository_name = "argparse4j"
@@ -358,14 +364,12 @@ IMPORTANT: The repository has been restored to its original state! You need to s
         response = write_fix.write_fix(changes_dict_list, self.agent)
         print(response)
 
-        self.assertEqual(response, """APPROVED  
-Project was successfully built with the applied changes.  
-Rerunning the SonarQube analysis confirmed that your fix successfully removed the targeted rule violation and didn't introduce any new violations.  
-All tests in the project have been run and passed successfully.  
-The repository has been restored to its original state. 
-If you think that your write_fix solved the problem then use the command goals_accomplished to conclude the task.""")
+        self.assertEqual(response, """REJECTED  
+Failure when trying to apply the fix: The write_fix command was in a wrong format. At least one insertion object had an unknown key 'deletions'. Only 'line_number' and 'new_lines' are allowed. Strictly follow the specified format of the fix.  
 
-    def test_execute_write_range_multiple_dicts_with_same_file_path(self):
+IMPORTANT: The repository has been restored to its original state! You need to start applying changes from scratch again.""")
+
+    def test_write_fix_multiple_dicts_with_same_file_path(self):
         changes_dict = [{
             "file_name": self.agent.ai_config.warning_file_path,
             "insertions": [{
@@ -456,6 +460,104 @@ If you think that your write_fix solved the problem then use the command goals_a
 
         self.assertEqual(
             result_multiple_dicts_with_same_file[0].change_tracked_lines, expected_result[0].change_tracked_lines)
+
+    def test_write_fix_none_of_the_needed_fields_given(self):
+        change_dict_list = [{
+            "file_name": self.agent.ai_config.warning_file_path,
+        }]
+
+        change_result = write_fix.write_fix(
+            change_dict_list, self.agent)
+
+        print(change_result)
+        self.assertEqual(
+            change_result, """REJECTED  
+Failure when trying to apply the fix: The write_fix command was in a wrong format. Neither `insertions` nor `deletions` was given in one of the elements in changes_dicts.  
+
+IMPORTANT: The repository has been restored to its original state! You need to start applying changes from scratch again.""")
+
+    def test_write_fix_insertion_object_without_new_lines(self):
+        change_dict_list = [{
+            "file_name": self.agent.ai_config.warning_file_path,
+            "insertions": [{
+                "line_number": 20,
+            },],
+            "deletions": [20, 21], }]
+
+        change_result = write_fix.write_fix(
+            change_dict_list, self.agent)
+
+        print(change_result)
+        self.assertEqual(
+            change_result, """REJECTED  
+Failure when trying to apply the fix: The write_fix command was in a wrong format. At least one insertion object had no 'new_lines'. Strictly follow the specified format of the fix.  
+
+IMPORTANT: The repository has been restored to its original state! You need to start applying changes from scratch again.""")
+
+    def test_write_fix_insertion_object_without_line_number(self):
+        change_dict_list = [{
+            "file_name": self.agent.ai_config.warning_file_path,
+            "insertions": [{
+                "new_lines": [
+                    "    // New line\n",
+                    "    // next new line\n"
+                ]
+            },],
+            "deletions": [20, 21], }]
+
+        change_result = write_fix.write_fix(
+            change_dict_list, self.agent)
+
+        print(change_result)
+        self.assertEqual(
+            change_result, """REJECTED  
+Failure when trying to apply the fix: The write_fix command was in a wrong format. At least one insertion object had no 'line_number'. Strictly follow the specified format of the fix.  
+
+IMPORTANT: The repository has been restored to its original state! You need to start applying changes from scratch again.""")
+
+    def test_write_fix_deletions_includes_floats(self):
+        change_dict_list = [{
+            "file_name": self.agent.ai_config.warning_file_path,
+            "insertions": [{
+                "line_number": 10,
+                "new_lines": [
+                    "    // New line\n",
+                    "    // next new line\n"
+                ]
+            },],
+            "deletions": [20, 21.2], }]
+
+        change_result = write_fix.write_fix(
+            change_dict_list, self.agent)
+
+        print(change_result)
+        self.assertEqual(
+            change_result, """REJECTED  
+Failure when trying to apply the fix: The write_fix command was in a wrong format. 'deletions' must be an array of integer numbers. But at least one of the 'deletions' arrays of file-level change objects in changes_dicts had an element of type float. Strictly follow the specified format of the fix.  
+
+IMPORTANT: The repository has been restored to its original state! You need to start applying changes from scratch again.""")
+
+    def test_write_fix_deletions_is_no_array(self):
+        change_dict_list = [{
+            "file_name": self.agent.ai_config.warning_file_path,
+            "insertions": [{
+                "line_number": 10,
+                "new_lines": [
+                    "    // New line\n",
+                    "    // next new line\n"
+                ]
+            },],
+            "deletions": 20, }]
+
+        change_result = write_fix.write_fix(
+            change_dict_list, self.agent)
+
+        print(change_result)
+        self.assertEqual(
+            change_result, """REJECTED  
+Failure when trying to apply the fix: The write_fix command was in a wrong format. 'deletions' must be an array of integer numbers. But at least one of the 'deletions' keys of file-level change objects in changes_dicts had a value of type int. Strictly follow the specified format of the fix.  
+
+IMPORTANT: The repository has been restored to its original state! You need to start applying changes from scratch again.""")
 
     def test_apply_changes_no_changes(self):
         change_dict_list = [{
@@ -771,84 +873,3 @@ If you think that your write_fix solved the problem then use the command goals_a
         print(resulting_pairing)
         self.assertEqual(resulting_pairing, [
                          ((-1, 20, True), (20, 22, True)), ((-1, 21, True), (21, 22, True))])
-
-    def test_apply_changes_none_of_the_needed_fields_given(self):
-        change_dict_list = [{
-            "file_name": self.agent.ai_config.warning_file_path,
-            "insertions_wrong": [{
-                "line_number": 20,
-                "new_lines_wrong_field": [
-                    "    // New line\n",
-                    "    // next new line\n"
-                ]
-            },],
-            "deletions_wrong": [20, 21], }]
-
-        file_relative_path = self.agent.ai_config.warning_file_path
-
-        project_dir = os.path.join(
-            self.agent.config.workspace_path, self.agent.ai_config.warning_repository_name)
-
-        file_full_path = os.path.join(project_dir, file_relative_path)
-
-        with self.assertRaises(write_fix.ApplyChangesError) as ace:
-            change_result: FileChanges = write_fix.apply_changes(
-                change_dict_list, file_relative_path, file_full_path)
-
-        print(ace.exception.msg)
-        self.assertEqual(
-            ace.exception.msg, "The write_fix command was in a wrong format. Neither `insertions`, `deletions` nor `modifications` was given in the change_dict: {'file_name': 'main/src/main/java/net/sourceforge/argparse4j/internal/TerminalWidth.java', 'insertions_wrong': [{'line_number': 20, 'new_lines_wrong_field': ['    // New line\\n', '    // next new line\\n']}], 'deletions_wrong': [20, 21]}")
-
-    def test_apply_changes_insertion_object_without_new_lines(self):
-        change_dict_list = [{
-            "file_name": self.agent.ai_config.warning_file_path,
-            "insertions": [{
-                "line_number": 20,
-                "new_lines_wrong_field": [
-                    "    // New line\n",
-                    "    // next new line\n"
-                ]
-            },],
-            "deletions": [20, 21], }]
-
-        file_relative_path = self.agent.ai_config.warning_file_path
-
-        project_dir = os.path.join(
-            self.agent.config.workspace_path, self.agent.ai_config.warning_repository_name)
-
-        file_full_path = os.path.join(project_dir, file_relative_path)
-
-        with self.assertRaises(write_fix.ApplyChangesError) as ace:
-            change_result: FileChanges = write_fix.apply_changes(
-                change_dict_list, file_relative_path, file_full_path)
-
-        print(ace.exception.msg)
-        self.assertEqual(
-            ace.exception.msg, "At least one insertion object had no 'new_lines'. The insertion object was: {'line_number': 20, 'new_lines_wrong_field': ['    // New line\\n', '    // next new line\\n']}. Strictly follow the specified format of the fix.")
-
-    def test_apply_changes_insertion_object_without_line_number(self):
-        change_dict_list = [{
-            "file_name": self.agent.ai_config.warning_file_path,
-            "insertions": [{
-                "line_number_wrong_field": 20,
-                "new_lines": [
-                    "    // New line\n",
-                    "    // next new line\n"
-                ]
-            },],
-            "deletions": [20, 21], }]
-
-        file_relative_path = self.agent.ai_config.warning_file_path
-
-        project_dir = os.path.join(
-            self.agent.config.workspace_path, self.agent.ai_config.warning_repository_name)
-
-        file_full_path = os.path.join(project_dir, file_relative_path)
-
-        with self.assertRaises(write_fix.ApplyChangesError) as ace:
-            change_result: FileChanges = write_fix.apply_changes(
-                change_dict_list, file_relative_path, file_full_path)
-
-        print(ace.exception.msg)
-        self.assertEqual(
-            ace.exception.msg, "At least one insertion object had no 'line_number'. The insertion object was: {'line_number_wrong_field': 20, 'new_lines': ['    // New line\\n', '    // next new line\\n']}. Strictly follow the specified format of the fix.")

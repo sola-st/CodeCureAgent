@@ -102,7 +102,7 @@ def build_project(agent: BaseAgent) -> None:
                 f"Building the target project {agent.ai_config.warning_repository_name} with maven."
                 )
 
-    timeout_ten_minutes = 10*60
+    timeout_ten_minutes = 10 * 60
 
     try:
         result = subprocess.run(
@@ -123,6 +123,7 @@ def build_project(agent: BaseAgent) -> None:
     if result.returncode == 0:
         logger.info("", "Build was successful.")
     else:
+        logger.info("", "Build failed.")
         logger.debug(
             "Error", f"Build failed with returncode {result.returncode}, stdout: \n{result.stdout}\n stderr: {result.stderr}")
         raise BuildError(result.returncode, result.stdout)
@@ -148,7 +149,7 @@ def run_tests(agent: BaseAgent) -> subprocess.CompletedProcess[str]:
                 f"Running tests on the target project {agent.ai_config.warning_repository_name} with maven."
                 )
 
-    timeout_five_minutes = 5*60
+    timeout_five_minutes = 5 * 60
 
     result = subprocess.run(
         ["mvn", "clean", "test",

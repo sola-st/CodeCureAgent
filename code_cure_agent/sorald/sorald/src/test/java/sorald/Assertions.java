@@ -36,7 +36,8 @@ public class Assertions {
 
     /** Returns a pair (compileSuccess, diagnosticsOutput) */
     private static Pair<Boolean, String> compile(File javaFile) {
-        // inspired comment by user GETah on StackOverflow: https://stackoverflow.com/a/8364016
+        // inspired comment by user GETah on StackOverflow:
+        // https://stackoverflow.com/a/8364016
 
         var compiler = ToolProvider.getSystemJavaCompiler();
         assertThat(
@@ -46,16 +47,14 @@ public class Assertions {
 
         var diagnostics = new DiagnosticCollector<JavaFileObject>();
         var fileManager = compiler.getStandardFileManager(diagnostics, null, null);
-        var compilationUnits =
-                fileManager.getJavaFileObjectsFromStrings(List.of(javaFile.getAbsolutePath()));
+        var compilationUnits = fileManager.getJavaFileObjectsFromStrings(List.of(javaFile.getAbsolutePath()));
         var task = compiler.getTask(null, fileManager, diagnostics, null, null, compilationUnits);
 
         boolean success = task.call();
 
-        String diagnosticsOutput =
-                diagnostics.getDiagnostics().stream()
-                        .map(Diagnostic::toString)
-                        .collect(Collectors.joining(System.lineSeparator()));
+        String diagnosticsOutput = diagnostics.getDiagnostics().stream()
+                .map(Diagnostic::toString)
+                .collect(Collectors.joining(System.lineSeparator()));
 
         return Pair.of(success, diagnosticsOutput);
     }
@@ -67,7 +66,7 @@ public class Assertions {
      * @param rule A rule to analyze for.
      */
     public static void assertHasRuleViolation(File file, Rule rule) {
-        var violations = ProjectScanner.scanProject(file, file.getParentFile(), rule);
+        var violations = ProjectScanner.scanProject(file, file.getParentFile(), rule, null, file.getName());
         assertThat(violations, is(not(empty())));
     }
 
@@ -78,7 +77,7 @@ public class Assertions {
      * @param rule A rule to analyze for.
      */
     public static void assertNoRuleViolations(File file, Rule rule) {
-        var violations = ProjectScanner.scanProject(file, file.getParentFile(), rule);
+        var violations = ProjectScanner.scanProject(file, file.getParentFile(), rule, null, file.getName());
         assertThat(violations, is(empty()));
     }
 }

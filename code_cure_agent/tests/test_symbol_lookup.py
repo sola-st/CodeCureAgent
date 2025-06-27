@@ -5,7 +5,7 @@ import random
 import os
 import shutil
 
-from tests.agent_mock import AgentMock
+from agent_core.utils.agent_utils.agent_mock import AgentMock
 
 from agent_core.commands.repository_operations import checkout_project, remove_folder_if_exists
 from agent_core.commands.symbol_lookup import find_definition, find_references

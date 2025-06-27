@@ -30,20 +30,14 @@ import sorald.util.MavenUtils;
 
 /** The CLI command for the primary repair application. */
 @Mojo(name = Constants.REPAIR_COMMAND_NAME)
-@CommandLine.Command(
-        name = Constants.REPAIR_COMMAND_NAME,
-        mixinStandardHelpOptions = true,
-        description = "Repair Sonar rule violations in a targeted project.")
+@CommandLine.Command(name = Constants.REPAIR_COMMAND_NAME, mixinStandardHelpOptions = true, description = "Repair Sonar rule violations in a targeted project.")
 class RepairCommand extends BaseCommand {
     String ruleKey;
     List<RuleViolation> specifiedRuleViolations = List.of();
 
     @Parameter(defaultValue = "${project.basedir}", readonly = true)
-    @CommandLine.Option(
-            names = {Constants.ARG_SOURCE},
-            description = "The path to the file or folder to be analyzed and possibly repaired.",
-            required = true,
-            converter = RealFileConverter.class)
+    @CommandLine.Option(names = {
+            Constants.ARG_SOURCE }, description = "The path to the file or folder to be analyzed and possibly repaired.", required = true, converter = RealFileConverter.class)
     File source;
 
     @CommandLine.ArgGroup(multiplicity = "1")
@@ -63,8 +57,7 @@ class RepairCommand extends BaseCommand {
     static class RulesConverterForMojo extends AbstractBasicConverter {
         @Override
         protected Object fromString(String userInput) {
-            Rules parsedRule =
-                    new Rules(); // Dua Lip was probably writing Java while composing the song :P
+            Rules parsedRule = new Rules(); // Dua Lip was probably writing Java while composing the song :P
             parsedRule.ruleKey = userInput;
             return parsedRule;
         }
@@ -76,54 +69,35 @@ class RepairCommand extends BaseCommand {
     }
 
     static class Rules {
-        @CommandLine.Option(
-                names = {Constants.ARG_RULE_KEY},
-                description =
-                        "Choose one of the following rule keys:\n"
-                                + SonarProcessorRepository.RULE_DESCRIPTIONS
-                                + "\n*Note:* _Some rules (e.g. 1444) are marked as \"incomplete\". This means that "
-                                + "Sorald's repair for a violation of said rule is either partial or "
-                                + "situational._",
-                required = true)
+        @CommandLine.Option(names = { Constants.ARG_RULE_KEY }, description = "Choose one of the following rule keys:\n"
+                + SonarProcessorRepository.RULE_DESCRIPTIONS
+                + "\n*Note:* _Some rules (e.g. 1444) are marked as \"incomplete\". This means that "
+                + "Sorald's repair for a violation of said rule is either partial or "
+                + "situational._", required = true)
         String ruleKey = null;
 
-        @CommandLine.Option(
-                names = Constants.ARG_RULE_VIOLATION_SPECIFIERS,
-                description =
-                        "One or more rule violation specifiers. Specifiers can be gathered "
-                                + "with the '"
-                                + Constants.MINE_COMMAND_NAME
-                                + "' command using the "
-                                + Constants.ARG_STATS_OUTPUT_FILE
-                                + " option.",
-                required = true,
-                split = ",")
+        @CommandLine.Option(names = Constants.ARG_RULE_VIOLATION_SPECIFIERS, description = "One or more rule violation specifiers. Specifiers can be gathered "
+                + "with the '"
+                + Constants.MINE_COMMAND_NAME
+                + "' command using the "
+                + Constants.ARG_STATS_OUTPUT_FILE
+                + " option.", required = true, split = ",")
         List<String> ruleViolationSpecifiers = List.of();
     }
 
-    @CommandLine.Option(
-            names = {Constants.ARG_PRETTY_PRINTING_STRATEGY},
-            description =
-                    "Mode for pretty printing the source code: 'NORMAL', which means that all source code will be printed and its formatting might change (such as indentation), and 'SNIPER', which means that only statements changed towards the repair of Sonar rule violations will be printed.")
+    @CommandLine.Option(names = {
+            Constants.ARG_PRETTY_PRINTING_STRATEGY }, description = "Mode for pretty printing the source code: 'NORMAL', which means that all source code will be printed and its formatting might change (such as indentation), and 'SNIPER', which means that only statements changed towards the repair of Sonar rule violations will be printed.")
     PrettyPrintingStrategy prettyPrintingStrategy = PrettyPrintingStrategy.SNIPER;
 
-    @CommandLine.Option(
-            names = Constants.ARG_MAX_FIXES_PER_RULE,
-            description = "Max number of fixes per rule.")
+    @CommandLine.Option(names = Constants.ARG_MAX_FIXES_PER_RULE, description = "Max number of fixes per rule.")
     int maxFixesPerRule = Integer.MAX_VALUE;
 
-    @CommandLine.Option(
-            names = Constants.ARG_REPAIR_STRATEGY,
-            description =
-                    "Type of repair strategy. DEFAULT - load everything without splitting up the folder in segments, "
-                            + "MAVEN - use Maven to locate production source code and the classpath (test source code is ignored), "
-                            + "SEGMENT - splitting the folder into smaller segments and repair one segment at a time (need to specify --maxFilesPerSegment if not default)")
+    @CommandLine.Option(names = Constants.ARG_REPAIR_STRATEGY, description = "Type of repair strategy. DEFAULT - load everything without splitting up the folder in segments, "
+            + "MAVEN - use Maven to locate production source code and the classpath (test source code is ignored), "
+            + "SEGMENT - splitting the folder into smaller segments and repair one segment at a time (need to specify --maxFilesPerSegment if not default)")
     RepairStrategy repairStrategy = RepairStrategy.DEFAULT;
 
-    @CommandLine.Option(
-            names = Constants.ARG_MAX_FILES_PER_SEGMENT,
-            description =
-                    "Max number of files per loaded segment for segmented repair. It should be >= 3000 files per segment.")
+    @CommandLine.Option(names = Constants.ARG_MAX_FILES_PER_SEGMENT, description = "Max number of files per loaded segment for segmented repair. It should be >= 3000 files per segment.")
     int maxFilesPerSegment = 6500;
 
     @Override
@@ -133,8 +107,7 @@ class RepairCommand extends BaseCommand {
         SoraldConfig config = createConfig();
 
         var statsCollector = new RepairStatisticsCollector();
-        List<SoraldEventHandler> eventHandlers =
-                statsOutputFile == null ? List.of() : List.of(statsCollector);
+        List<SoraldEventHandler> eventHandlers = statsOutputFile == null ? List.of() : List.of(statsCollector);
         EventHelper.fireEvent(EventType.EXEC_START, eventHandlers);
 
         List<String> classpath = resolveClasspath();
@@ -143,8 +116,7 @@ class RepairCommand extends BaseCommand {
         if (ruleViolations.isEmpty()) {
             System.out.println("No rule violations found, nothing to do ...");
         } else {
-            SoraldAbstractProcessor<?> proc =
-                    new Repair(config, classpath, eventHandlers).repair(ruleViolations);
+            SoraldAbstractProcessor<?> proc = new Repair(config, classpath, eventHandlers).repair(ruleViolations);
             printEndProcess(proc);
         }
 
@@ -173,13 +145,11 @@ class RepairCommand extends BaseCommand {
 
     private Set<RuleViolation> resolveRuleViolations(
             List<SoraldEventHandler> eventHandlers, List<String> classpath) {
-        Set<RuleViolation> minedViolations =
-                mineViolations(source, ruleKey, eventHandlers, classpath);
+        Set<RuleViolation> minedViolations = mineViolations(source, ruleKey, eventHandlers, classpath);
 
         if (!specifiedRuleViolations.isEmpty()) {
             specifiedRuleViolations.forEach(
-                    specifiedViolation ->
-                            checkSpecifiedViolationExists(specifiedViolation, minedViolations));
+                    specifiedViolation -> checkSpecifiedViolationExists(specifiedViolation, minedViolations));
 
             return minedViolations.stream()
                     .filter(specifiedRuleViolations::contains)
@@ -204,8 +174,8 @@ class RepairCommand extends BaseCommand {
     /**
      * Mine violations from the target directory and the given rule key.
      *
-     * @param target A target directory.
-     * @param ruleKey Key of the rule to mine violations of.
+     * @param target        A target directory.
+     * @param ruleKey       Key of the rule to mine violations of.
      * @param eventHandlers Event handlers to use for events.
      * @param classpath
      * @return All found warnings.
@@ -217,41 +187,40 @@ class RepairCommand extends BaseCommand {
             List<String> classpath) {
         Rule rule = new SonarRule(ruleKey);
         Path projectPath = target.toPath().toAbsolutePath().normalize();
-        Set<RuleViolation> violations =
-                ProjectScanner.scanProject(
-                        target,
-                        FileUtils.getClosestDirectory(target),
-                        List.of(rule),
-                        createConfig());
+        Set<RuleViolation> violations = ProjectScanner.scanProject(
+                target,
+                FileUtils.getClosestDirectory(target),
+                List.of(rule),
+                createConfig(), null, target.getName());
         violations.forEach(
-                warn ->
-                        EventHelper.fireEvent(
-                                new MinedViolationEvent(warn, projectPath), eventHandlers));
+                warn -> EventHelper.fireEvent(
+                        new MinedViolationEvent(warn, projectPath), eventHandlers));
         return violations;
     }
 
     private void writeStatisticsOutput(RepairStatisticsCollector statsCollector, Path projectPath)
             throws IOException {
         List<String> originalArgs;
-        // If the plugin is used, the original arguments are stored in the mojo descriptor
+        // If the plugin is used, the original arguments are stored in the mojo
+        // descriptor
         if (mavenArgs != null) {
             originalArgs = mavenArgs;
         }
-        // If the CLI is used, the original arguments are stored in the command line spec of
+        // If the CLI is used, the original arguments are stored in the command line
+        // spec of
         // PicoCLI
         else {
             originalArgs = spec.commandLine().getParseResult().originalArgs();
         }
-        var executionInfo =
-                new ExecutionInfo(
-                        originalArgs,
-                        SoraldVersionProvider.getVersionFromManifests(
-                                SoraldVersionProvider.DEFAULT_RESOURCE_NAME),
-                        System.getProperty(Constants.JAVA_VERSION_SYSTEM_PROPERTY),
-                        target);
+        var executionInfo = new ExecutionInfo(
+                originalArgs,
+                SoraldVersionProvider.getVersionFromManifests(
+                        SoraldVersionProvider.DEFAULT_RESOURCE_NAME),
+                System.getProperty(Constants.JAVA_VERSION_SYSTEM_PROPERTY),
+                target);
 
-        List<RuleRepairStatistics> repairStats =
-                RuleRepairStatistics.createRepairStatsList(statsCollector, projectPath);
+        List<RuleRepairStatistics> repairStats = RuleRepairStatistics.createRepairStatsList(statsCollector,
+                projectPath);
 
         FileUtils.writeJSON(
                 statsOutputFile,
@@ -295,9 +264,8 @@ class RepairCommand extends BaseCommand {
                                 .map(RuleViolation::getRuleKey)
                                 .findFirst()
                                 .orElseThrow(
-                                        () ->
-                                                new IllegalStateException(
-                                                        "no valid rule key in input, should not happen!")));
+                                        () -> new IllegalStateException(
+                                                "no valid rule key in input, should not happen!")));
     }
 
     // regression: we do not print the command `spec.commandline()` now
@@ -324,8 +292,9 @@ class RepairCommand extends BaseCommand {
     }
 
     private String withSonarPrefix(String key) {
-        // TODO Remove this method when "sufficient" time has passed since introducing the S prefix
-        //      to the CLI
+        // TODO Remove this method when "sufficient" time has passed since introducing
+        // the S prefix
+        // to the CLI
         return key.startsWith("S") ? key : "S" + key;
     }
 

@@ -1,7 +1,7 @@
 import os
 import shutil
 import unittest
-from tests.agent_mock import AgentMock
+from agent_core.utils.agent_utils.agent_mock import AgentMock
 from agent_core.commands import sonar_qube_docu
 
 

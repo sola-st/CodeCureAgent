@@ -26,77 +26,57 @@ import sorald.rule.RuleProvider;
 import sorald.sonar.SonarRule;
 import sorald.sonar.SonarRuleType;
 import sorald.util.MavenUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
+import sorald.miner.GitRepo;
 
 /** CLI Command for Sorald's mining functionality. */
 @Mojo(name = Constants.MINE_COMMAND_NAME)
-@CommandLine.Command(
-        name = Constants.MINE_COMMAND_NAME,
-        mixinStandardHelpOptions = true,
-        description = "Mine a project for Sonar warnings.")
+@CommandLine.Command(name = Constants.MINE_COMMAND_NAME, mixinStandardHelpOptions = true, description = "Mine a project for Sonar warnings.")
 class MineCommand extends BaseCommand {
 
     @Parameter(defaultValue = "${project.basedir}", readonly = true)
-    @CommandLine.Option(
-            names = {Constants.ARG_SOURCE},
-            description = "The path to the file or folder to be analyzed and possibly repaired.")
+    @CommandLine.Option(names = {
+            Constants.ARG_SOURCE }, description = "The path to the file or folder to be analyzed and possibly repaired.")
     File source;
 
-    @CommandLine.Option(
-            names = Constants.ARG_STATS_ON_GIT_REPOS,
-            description = "If the stats should be computed on git repos.")
+    @CommandLine.Option(names = Constants.ARG_STATS_ON_GIT_REPOS, description = "If the stats should be computed on git repos.")
     boolean statsOnGitRepos;
 
-    @CommandLine.Option(
-            names = Constants.ARG_MINER_OUTPUT_FILE,
-            description = "The path to the output file.")
+    @CommandLine.Option(names = Constants.ARG_MINER_OUTPUT_FILE, description = "The path to the output file.")
     File minerOutputFile;
 
-    @CommandLine.Option(
-            names = Constants.ARG_GIT_REPOS_LIST,
-            description = "The path to the repos list.")
+    @CommandLine.Option(names = Constants.ARG_GIT_REPOS_LIST, description = "The path to the repos list.")
     File reposListPath;
 
-    @CommandLine.Option(
-            names = Constants.ARG_TEMP_DIR,
-            description = "The path to the temp directory.")
+    @CommandLine.Option(names = Constants.ARG_TEMP_DIR, description = "The path to the temp directory.")
     File tempDir;
 
-    @CommandLine.Option(
-            names = {Constants.ARG_RULE_TYPES},
-            converter = IRuleTypeConverter.class,
-            completionCandidates = RuleTypeCandidates.class,
-            description =
-                    "One or more types of rules to check for (use ',' to separate multiple types). Choices: ${COMPLETION-CANDIDATES}",
-            split = ",")
+    @CommandLine.Option(names = {
+            Constants.ARG_RULE_TYPES }, converter = IRuleTypeConverter.class, completionCandidates = RuleTypeCandidates.class, description = "One or more types of rules to check for (use ',' to separate multiple types). Choices: ${COMPLETION-CANDIDATES}", split = ",")
     private List<IRuleType> ruleTypes = new ArrayList<>();
 
     @Parameter(property = "handledRules")
-    @CommandLine.Option(
-            names = {Constants.ARG_HANDLED_RULES},
-            description =
-                    "When this argument is used, Sorald only mines violations of the rules that can be fixed by Sorald.")
+    @CommandLine.Option(names = {
+            Constants.ARG_HANDLED_RULES }, description = "When this argument is used, Sorald only mines violations of the rules that can be fixed by Sorald.")
     private boolean handledRules;
 
-    @CommandLine.Option(
-            names = {Constants.ARG_RULE_KEYS},
-            arity = "1..*",
-            description =
-                    "One or more rules to check for (use ',' to separate multiple types). Usage of this argument voids values of other rule filters - handled rules and rule types.",
-            split = ",")
+    @CommandLine.Option(names = {
+            Constants.ARG_RULE_KEYS }, arity = "1..*", description = "One or more rules to check for (use ',' to separate multiple types). Usage of this argument voids values of other rule filters - handled rules and rule types.", split = ",")
     List<String> ruleKeys;
 
-    @CommandLine.Option(
-            names = {Constants.ARG_RULE_PARAMETERS},
-            description = {
-                "Configuration for SonarJava rules.",
-                "Format of JSON file: {%n"
-                        + "    \"<RULE_KEY>\": {%n"
-                        + "        \"<RULE_PROPERTY_NAME>\": \"<VALUE>\"%n"
-                        + "    }%n"
-                        + "}"
-            })
+    @CommandLine.Option(names = { Constants.ARG_RULE_PARAMETERS }, description = {
+            "Configuration for SonarJava rules.",
+            "Format of JSON file: {%n"
+                    + "    \"<RULE_KEY>\": {%n"
+                    + "        \"<RULE_PROPERTY_NAME>\": \"<VALUE>\"%n"
+                    + "    }%n"
+                    + "}"
+    })
     private File ruleParameters;
+    @CommandLine.Option(names = {
+            Constants.ARG_TARGET_JAVA_VERSION }, description = "Set the java version that is to be set for sonar.java.source for analysis. If you mine on git repos by setting "
+                    + Constants.ARG_GIT_REPOS_LIST
+                    + " then provide the java version in the last column of this csv file instead and don't use this parameter.")
+    private String targetJavaVersion;
 
     @Override
     public Integer call() throws Exception {
@@ -111,47 +91,44 @@ class MineCommand extends BaseCommand {
             checks = ruleKeys.stream().map(SonarRule::new).collect(Collectors.toList());
         }
 
-
         Map<String, Object> additionalStatData = null;
 
         if (statsOutputFile != null) {
             List<String> originalArgs;
-            // If the plugin is used, the original arguments are stored in the mojo descriptor
+            // If the plugin is used, the original arguments are stored in the mojo
+            // descriptor
             if (mavenArgs != null) {
                 originalArgs = mavenArgs;
             }
-            // If the CLI is used, the original arguments are stored in the command line spec of
+            // If the CLI is used, the original arguments are stored in the command line
+            // spec of
             // PicoCLI
             else {
                 originalArgs = spec.commandLine().getParseResult().originalArgs();
             }
-            additionalStatData =
-                    Map.of(
-                            StatsMetadataKeys.EXECUTION_INFO,
-                            new ExecutionInfo(
-                                    originalArgs,
-                                    SoraldVersionProvider.getVersionFromManifests(
-                                            SoraldVersionProvider.DEFAULT_RESOURCE_NAME),
-                                    System.getProperty(Constants.JAVA_VERSION_SYSTEM_PROPERTY),
-                                    target));
+            additionalStatData = Map.of(
+                    StatsMetadataKeys.EXECUTION_INFO,
+                    new ExecutionInfo(
+                            originalArgs,
+                            SoraldVersionProvider.getVersionFromManifests(
+                                    SoraldVersionProvider.DEFAULT_RESOURCE_NAME),
+                            System.getProperty(Constants.JAVA_VERSION_SYSTEM_PROPERTY),
+                            target));
         }
-
 
         if (statsOnGitRepos) {
 
             mineGitRepos(checks, minerOutputFile.getAbsolutePath(), tempDir, additionalStatData);
-            
+
         } else {
 
             var statsCollector = new MinerStatisticsCollector();
 
-            var miner =
-                    new MineSonarWarnings(
-                            statsOutputFile == null ? List.of() : List.of(statsCollector),
-                            createConfig());
+            var miner = new MineSonarWarnings(
+                    statsOutputFile == null ? List.of() : List.of(statsCollector),
+                    createConfig());
 
-            miner.mineLocalProject(checks, source.toPath().normalize().toAbsolutePath().toString());
-        
+            miner.mineLocalProject(checks, source.toPath().normalize().toAbsolutePath().toString(), targetJavaVersion);
 
             if (statsOutputFile != null) {
                 FileUtils.writeJSON(statsOutputFile, statsCollector, additionalStatData);
@@ -161,47 +138,46 @@ class MineCommand extends BaseCommand {
         return 0;
     }
 
-
     /**
      * Separately mines each of the git repos specified with repoURL (and commit).
-     * The json report is built from separate Collectors per repository, to have the rules in the report separated by repository.
+     * The json report is built from separate Collectors per repository, to have the
+     * rules in the report separated by repository.
      */
-    private void mineGitRepos(List<Rule> rules, String outputPath, File repoDir, Map<String, Object> additionalStatData) throws IOException {
+    private void mineGitRepos(List<Rule> rules, String outputPath, File repoDir, Map<String, Object> additionalStatData)
+            throws IOException {
 
         // The file at reposListPath specifies one repo per line.
-        // Each line can either only specify the URL of the repository, 
+        // Each line can either only specify the URL of the repository,
         // or it can also specify the commitID to checkout separated by a comma
         List<String> repoListUnsplit = Files.readAllLines(this.reposListPath.toPath());
-        List<ImmutablePair<String,String>> reposList = new ArrayList<>();
+        List<GitRepo> reposList = new ArrayList<>();
 
-        for (String repoUnsplit : repoListUnsplit){
+        for (String repoUnsplit : repoListUnsplit) {
             String[] repoSplit = repoUnsplit.split(",");
-            ImmutablePair<String,String> repoPair = 
-                    new ImmutablePair<>(repoSplit[0].trim(), repoSplit.length > 1 ? repoSplit[1].trim() : "");
-            reposList.add(repoPair);
+
+            reposList.add(new GitRepo(repoSplit[0], repoSplit.length > 1 ? repoSplit[1].trim() : "MASTER",
+                    repoSplit.length > 2 ? repoSplit[2].trim() : ""));
         }
 
         List<RepoMinerStatisticsCollector> statsCollectors = new ArrayList<>();
 
-        for (ImmutablePair<String, String> repo : reposList) {
-            RepoMinerStatisticsCollector statsCollector = new RepoMinerStatisticsCollector(repo.left, repo.right.isEmpty() ? "MASTER" : repo.right);
+        for (GitRepo repo : reposList) {
+            RepoMinerStatisticsCollector statsCollector = new RepoMinerStatisticsCollector(repo.getRepoURL(),
+                    repo.getCommit(), repo.getTargetJavaVersion());
             statsCollectors.add(statsCollector);
 
-            var miner =
-                    new MineSonarWarnings(
-                            statsOutputFile == null ? List.of() : List.of(statsCollector),
-                            createConfig());
+            var miner = new MineSonarWarnings(
+                    statsOutputFile == null ? List.of() : List.of(statsCollector),
+                    createConfig());
 
             miner.mineGitRepo(rules, minerOutputFile.getAbsolutePath(), repo, tempDir);
         }
 
-
         if (statsOutputFile != null) {
-            FileUtils.writeJSON(statsOutputFile, new RepoMinerStatisticsCollectors(statsCollectors), additionalStatData);
+            FileUtils.writeJSON(statsOutputFile, new RepoMinerStatisticsCollectors(statsCollectors),
+                    additionalStatData);
         }
     }
-
-
 
     /** Perform validation on the parsed arguments. */
     private void validateArgs() {

@@ -4,7 +4,7 @@ import os
 import shutil
 import re
 
-from tests.agent_mock import AgentMock
+from agent_core.utils.agent_utils.agent_mock import AgentMock
 
 from agent_core.commands.repository_operations import checkout_project
 from agent_core.commands import write_fix

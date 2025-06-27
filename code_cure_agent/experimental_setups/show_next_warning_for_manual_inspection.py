@@ -10,39 +10,10 @@ import os
 import click
 from agent_core.commands.write_fix import execute_write_range
 from agent_core.commands import repository_operations
+from agent_core.utils.agent_utils.agent_mock import AgentMock
 
 
 import yaml
-
-
-SORALD_JAR_PATH = "/workspaces/master-thesis-pascal-joos/code_cure_agent/sorald/sorald.jar"
-
-
-class Config():
-    def __init__(self, workspace_path):
-        self.workspace_path = workspace_path
-        self.sorald_jar_path = SORALD_JAR_PATH
-
-
-class AIConfig():
-    def __init__(self, warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message):
-        self.warning_repository_URL = warning_repository_URL
-        self.warning_repository_commit = warning_repository_commit
-        self.warning_file_path = warning_file_path
-        self.warning_rule_key = warning_rule_key
-        self.warning_start_line = warning_start_line
-        self.warning_rule_name = warning_rule_name
-        self.warning_specific_message = warning_specific_message
-
-        self.warning_repository_name = warning_repository_name
-
-
-class AgentMock():
-    def __init__(self, workspace_path, warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message):
-        self.config = Config(workspace_path)
-        self.ai_config = AIConfig(warning_repository_URL, warning_repository_commit, warning_file_path,
-                                  warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message)
-        self.exps = ["experiment_test"]
 
 
 @click.command(help="This command collects info on the next uninspected warning in the evaluation results csv for manual inspection. Then the relevant files are opened and displayed for inspection.")
@@ -177,8 +148,8 @@ def checkout_project_unchanged_and_with_changes(relative_path_inspection_folder:
     with open(os.path.join(relative_path_inspection_folder, f"ID{str(warning_id)}_task_info.yaml")) as task_file:
         task_info = yaml.load(task_file, Loader=yaml.FullLoader)
 
-    agent_mock = AgentMock(relative_path_inspection_folder, task_info["warning_repository_URL"], task_info["warning_repository_commit"], task_info["warning_file_path"],
-                           task_info["warning_repository_name"], task_info["warning_rule_key"], task_info["warning_start_line"], task_info["warning_rule_name"], task_info["warning_specific_message"])
+    agent_mock = AgentMock(task_info["warning_repository_URL"], task_info["warning_repository_commit"], task_info["warning_file_path"],
+                           task_info["warning_repository_name"], task_info["warning_rule_key"], task_info["warning_start_line"], task_info["warning_rule_name"], task_info["warning_specific_message"], workspace_path=relative_path_inspection_folder)
     repository_operations.checkout_project(agent_mock, overwrite_target_workspace_path=relative_path_inspection_folder,
                                            overwrite_target_folder_name=f"{agent_mock.ai_config.warning_repository_name}_unfixed")
 

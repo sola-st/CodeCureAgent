@@ -15,10 +15,11 @@ class Config():
 
 
 class AIConfig():
-    def __init__(self, warning_ID, warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message):
+    def __init__(self, warning_ID, warning_repository_URL, warning_repository_commit, warning_repository_target_java_version, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message):
         self.warning_ID = warning_ID
         self.warning_repository_URL = warning_repository_URL
         self.warning_repository_commit = warning_repository_commit
+        self.warning_repository_target_java_version = warning_repository_target_java_version
         self.warning_file_path = warning_file_path
         self.warning_rule_key = warning_rule_key
         self.warning_start_line = warning_start_line
@@ -29,11 +30,11 @@ class AIConfig():
 
 
 class AgentMock():
-    def __init__(self, warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message, current_state="fix_tp", logger_level=logging.INFO):
+    def __init__(self, warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message, workspace_path="/workspaces/master-thesis-pascal-joos/code_cure_agent/cca_workspace/", current_state="fix_tp", logger_level=logging.INFO):
         logger.set_level(logger_level)
-        self.config = Config(
-            "/workspaces/master-thesis-pascal-joos/code_cure_agent/cca_workspace/")
-        self.ai_config = AIConfig(-1, warning_repository_URL, warning_repository_commit, warning_file_path,
+        warning_repository_target_java_version = "8"
+        self.config = Config(workspace_path)
+        self.ai_config = AIConfig(-1, warning_repository_URL, warning_repository_commit, warning_repository_target_java_version, warning_file_path,
                                   warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message)
         self.exps = ["experiment_test"]
 

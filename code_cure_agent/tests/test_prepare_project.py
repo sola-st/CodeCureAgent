@@ -7,7 +7,7 @@ import shutil
 
 from git.exc import GitCommandError
 
-from tests.agent_mock import AgentMock
+from agent_core.utils.agent_utils.agent_mock import AgentMock
 
 
 class CheckoutProjectTestCase(unittest.TestCase):

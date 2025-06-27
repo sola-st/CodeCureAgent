@@ -59,6 +59,7 @@ def run_auto_gpt(
     warning_ID: Optional[int] = -1,
     warning_repository_URL: Optional[str] = None,
     warning_repository_commit: Optional[str] = None,
+    warning_repository_target_java_version: Optional[str] = "",
     warning_file_path: Optional[str] = None,
     warning_rule_key: Optional[str] = None,
     warning_start_line: Optional[int] = None,
@@ -153,6 +154,7 @@ def run_auto_gpt(
         warning_ID=warning_ID,
         warning_repository_URL=warning_repository_URL,
         warning_repository_commit=warning_repository_commit,
+        warning_repository_target_java_version=warning_repository_target_java_version,
         warning_file_path=warning_file_path,
         warning_rule_key=warning_rule_key,
         warning_start_line=warning_start_line,
@@ -199,6 +201,7 @@ def run_auto_gpt(
     with open(os.path.join("experimental_setups", agent.exps[-1], "tasks", f"{str(agent.ai_config.warning_ID)}.yaml"), "w") as taskf:
         taskf.write(yaml.dump({"warning_ID": agent.ai_config.warning_ID, "warning_repository_URL": agent.ai_config.warning_repository_URL,
                                "warning_repository_commit": agent.ai_config.warning_repository_commit,
+                               "warning_repository_target_java_version": agent.ai_config.warning_repository_target_java_version,
                                "warning_repository_name": agent.ai_config.warning_repository_name,
                                "warning_file_path": agent.ai_config.warning_file_path, "warning_file_name": agent.ai_config.warning_file_name,
                                "warning_rule_key": agent.ai_config.warning_rule_key, "warning_start_line": agent.ai_config.warning_start_line,
@@ -402,6 +405,7 @@ def construct_main_ai_config(
     warning_ID: Optional[int] = -1,
     warning_repository_URL: Optional[str] = None,
     warning_repository_commit: Optional[str] = None,
+    warning_repository_target_java_version: Optional[str] = None,
     warning_file_path: Optional[str] = None,
     warning_rule_key: Optional[str] = None,
     warning_start_line: Optional[int] = None,
@@ -427,6 +431,9 @@ def construct_main_ai_config(
         ai_config.warning_repository_URL = warning_repository_URL
     if warning_repository_commit:
         ai_config.warning_repository_commit = warning_repository_commit
+    if warning_repository_target_java_version:
+        ai_config.warning_repository_target_java_version = str(
+            warning_repository_target_java_version)
     if warning_file_path:
         ai_config.warning_file_path = warning_file_path
     if warning_rule_key:
@@ -440,7 +447,7 @@ def construct_main_ai_config(
     if warning_rule_type:
         ai_config.warning_rule_type = warning_rule_type
     if (
-        all([ai_config.ai_name, ai_config.warning_ID, ai_config.warning_repository_URL, ai_config.warning_repository_commit, ai_config.warning_file_path,
+        all([ai_config.ai_name, ai_config.warning_ID, ai_config.warning_repository_URL, ai_config.warning_repository_commit, ai_config.warning_repository_target_java_version, ai_config.warning_file_path,
             ai_config.warning_rule_key, ai_config.warning_start_line, ai_config.warning_rule_name, ai_config.warning_specific_message, ai_config.warning_rule_type])
     ):
         logger.info(title="ai_config found: ", title_color=Fore.GREEN,
@@ -476,6 +483,8 @@ def construct_main_ai_config(
                 title_color=Fore.GREEN, message=ai_config.warning_repository_URL)
     logger.info(title="Warning Repository Commit: ",
                 title_color=Fore.GREEN, message=ai_config.warning_repository_commit)
+    logger.info(title="Warning Repository Target Java Version: ",
+                title_color=Fore.GREEN, message=ai_config.warning_repository_target_java_version)
     logger.info(title="Warning Repository Name",
                 title_color=Fore.GREEN, message=ai_config.warning_repository_name)
     logger.info(title="Warning File Path: ",

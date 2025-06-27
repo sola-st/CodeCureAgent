@@ -80,6 +80,11 @@ import click
     help="The commit of the Git repo to fix the warning on. Can be a commitId or 'MASTER' for the most current commit."
 )
 @click.option(
+    "--warning-repository-target-java-version",
+    type=str,
+    help="The target java version of the Maven Git repo to fix the warning on. Used to correctly configure the SonarQube analyzer. Defaults to 6 if omitted."
+)
+@click.option(
     "--warning-file-path",
     type=str,
     help="The file path to the file with the SonarQube warning. This has to be the relative path from the repository."
@@ -139,6 +144,7 @@ def main(
     warning_id: Optional[int],
     warning_repository_url: Optional[str],
     warning_repository_commit: Optional[str],
+    warning_repository_target_java_version: Optional[str],
     warning_file_path: Optional[str],
     warning_rule_key: Optional[str],
     warning_start_line: Optional[int],
@@ -177,6 +183,7 @@ def main(
             warning_ID=warning_id,
             warning_repository_URL=warning_repository_url,
             warning_repository_commit=warning_repository_commit,
+            warning_repository_target_java_version=warning_repository_target_java_version,
             warning_file_path=warning_file_path,
             warning_rule_key=warning_rule_key,
             warning_start_line=warning_start_line,

@@ -77,7 +77,7 @@ def analyze_file(file_relative_path: str, rules: list[str], repo_name: str, anal
 
     # Create mining command
     cmd = ["java", "-jar", agent.config.sorald_jar_path, "mine", "--source", file_path, "--stats-output-file",
-           analysis_report_path, "--rule-parameters", "sonarqube_quality_profile/quality_profile_rule_parameters.json"]
+           analysis_report_path, "--rule-parameters", "sonarqube_quality_profile/quality_profile_rule_parameters.json", "--target-java-version", agent.ai_config.warning_repository_target_java_version]
 
     if rules is not None and len(rules) > 0:
         cmd.append("--rule-keys")

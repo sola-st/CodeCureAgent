@@ -22,15 +22,14 @@ public class RepairTest {
     @Test
     public void repair_doesNotAllowMultipleRules(@TempDir File workdir) throws IOException {
         // arrange
-        File origFile =
-                TestHelper.PATH_TO_RESOURCES_FOLDER.resolve("MultipleProcessors.java").toFile();
+        File origFile = TestHelper.PATH_TO_RESOURCES_FOLDER.resolve("MultipleProcessors.java").toFile();
         File targetFile = workdir.toPath().resolve(origFile.getName()).toFile();
         org.apache.commons.io.FileUtils.copyFile(origFile, targetFile);
         SoraldConfig config = new SoraldConfig();
 
-        List<Rule> sonarRules =
-                Stream.of("S2111", "S2184").map(SonarRule::new).collect(Collectors.toList());
-        Set<RuleViolation> violations = ProjectScanner.scanProject(targetFile, workdir, sonarRules);
+        List<Rule> sonarRules = Stream.of("S2111", "S2184").map(SonarRule::new).collect(Collectors.toList());
+        Set<RuleViolation> violations = ProjectScanner.scanProject(targetFile, workdir, sonarRules, null,
+                targetFile.getName());
 
         // act
         var repair = new Repair(config, List.of(), List.of());

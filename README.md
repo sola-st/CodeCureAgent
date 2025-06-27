@@ -75,25 +75,33 @@ To execute CodeCureAgent on an input file, run the following from the `code_cure
 The first argument is the csv input file to run on. The second argument specifies hyperparameter settings.  
 You can open the `hyperparams.json` file to review or customize its parameters (explained further in the customization section).  
 
-#### **What Happens When You Start CodeCureAgent?**
+### What Happens When You Start CodeCureAgent?
 
 - CodeCureAgent goes through the input file line by line
 - For each line CodeCureAgent checks out the project with the given URL and commit.
 - It initiates the autonomous repair process, trying to fix the given rule violation in the given file.
 - Logs detailing each step performed will be displayed in your terminal.
 
-#### **Creating your own csv input file, based on repositories you want to run CodeCureAgent on**
+## IV. Experiment Setup and Evaluation
 
-1. Create a .txt file with the URLs to the git repositories to use in each line. If you want to run on specific commits of the repositories you can add the commitID after the URL, separated by a comma.  
-For an example see [sampled_repos_specific_commit.txt](code_cure_agent/experimental_setups/dev_dataset/sampled_repos_specific_commit.txt). 
-Currently, CodeCureAgent only supports Maven projects that can be built by running a simple `mvn clean package` with Maven 3.6.3.  
+All utility scipts must be run from the folder [code_cure_agent](code_cure_agent).
+
+### Creating your own csv input file, based on repositories you want to run CodeCureAgent on
+
+1. Create a .csv file with one line per Git repository with three columns:
+     - URL to the Git repository  
+     - CommitID that you want to run on. If you want to use the most current commit on the master/main branch set the commitID to 'MASTER'.  
+     - targetJavaVersion. The Java version the project is compiled to. Used to configure the SonarQube analyzer with the correct rules. Can be automatically inferred by using the script [infer_target_java_version_of_projects.py](code_cure_agent/experimental_setups/infer_target_java_version_of_projects.py)  
+
+    For an example see [sampled_repos_with_commits_and_java_target_versions.csv](code_cure_agent/experimental_setups/dev_dataset/sampled_repos_with_commits_and_java_target_versions.csv). 
+    Currently, CodeCureAgent only supports Maven projects that can be built by running a simple `mvn clean package` with Maven 3.6.3.  
 
 2. Use the Sorald mining tool to mine SonarQube warnings on the repositories specified in the file.  
-Example usage (run from `code_cure_agent` on the `sampled_repos_specific_commit.txt` file):  
+Example usage (run from `code_cure_agent` on the `sampled_repos_with_commits_and_java_target_versions.csv` file):  
 
    ```bash
    java -jar ./sorald/sorald.jar mine \
-      --git-repos-list ./experimental_setups/dev_dataset/sampled_repos_specific_commit.txt \
+      --git-repos-list ./experimental_setups/dev_dataset/sampled_repos_with_commits_and_java_target_versions.csv \
       --miner-output-file ./experimental_setups/dev_dataset/mining_results/specific_commit_handled_rules_out.txt \
       --stats-output-file ./experimental_setups/dev_dataset/mining_results/specific_commit_handled_rules_mining_result.json \
       --temp-dir ./experimental_setups/dev_dataset/temp \
@@ -117,7 +125,7 @@ Example:
       --target-csv-file-path ./experimental_setups/dev_dataset/mining_results/specific_commit_handled_rules_input_file_single_rule_violations.csv --rule-violations-mode single
   ```
 
-#### **Retrieve Repair Logs and History**
+### **Retrieve Repair Logs and History**
 
 CodeCureAgent saves the output in multiple files.
 
@@ -131,71 +139,10 @@ CodeCureAgent saves the output in multiple files.
   - **implausible_patches**: Any implausible patches generated (rejected by the ChangeApprover steps)
   - further subfolders for debugging purposes
 
-#### **Analyze Logs**
+### Scripts for Evaluation
 
-Within the `experimental_setups` folder, several scripts are available to post-process the logs:
-
-- **Collect Plausible Patches**:
-  Use the script `collect_plausible_patches_files.py` to gather the generated plausible patches across multiple experiments:
-  
-  ```bash
-  python3.10 collect_plausible_patches_files.py 1 10
-  ```
-  
-  `A plausible patch is a patch that passes all test cases and is a candidate to be the correct patch`
-
-- **Get Fully Executed Runs**:
-  Use `get_list_of_fully_executed.py` to retrieve runs that reached at least 38 out of 40 cycles. This allows to identify executions that terminated unexpectedly or called the exit function prematurely.
-
-  ```bash
-  python3.10 get_list_of_fully_executed.py
-  ```
-
-- **Analyze experiments results**:
-  Produces a summary for all executed experiments so far. A text file is generated for each experiment where it shows all the suggested patches per bug and also a table with BugID, number of cycles, number of suggested patches and the number of plausible patches.
-
-  ```bash
-  python3.10 analyze_experiment_results.py
-  ```
-
-  An example of the output file would look like this:
-  ```md
-  Experiment Results: experiment_60
-
-  Number of Bugs: 2
-  Correctly fixed bugs: 1
-  Total Suggested Fixes: 4
-
-  The list of suggested fixes:
-  Cli_8
-
-  ###Fix:
-  Lines:['812', '813', '814', '815', '816', '817', '818', '819', '820'] from file /workspace/Auto-GPT/auto_gpt_workspace/cli_8_buggy/src/java/org/apache/commons/cli/HelpFormatter.java were replaced with the following:
-  {'812': 'pos = findWrapPos(text, width, 0);', '813': 'if (pos == -1) { sb.append(rtrim(text)); return sb; }', '814': 'sb.append(rtrim(text.substring(0, pos))).append(defaultNewLine);', '815': 'final String padding = createPadding(nextLineTabStop);', '816': 'while (true) {', '817': 'text = padding + text.substring(pos).trim();', '818': 'pos = findWrapPos(text, width, nextLineTabStop);', '819': 'if (pos == -1) { sb.append(text); return sb; }', '820': 'sb.append(rtrim(text.substring(0, pos))).append(defaultNewLine);'}
-
-  ###Fix:
-  Lines:['812', '813', '814', '815', '816', '817', '818', '819', '820'] from file /workspace/Auto-GPT/auto_gpt_workspace/cli_8_buggy/src/java/org/apache/commons/cli/HelpFormatter.java were replaced with the following:
-  {'812': 'pos = findWrapPos(text, width, nextLineTabStop);', '813': 'if (pos == -1) { sb.append(rtrim(text)); return sb; }', '814': 'sb.append(rtrim(text.substring(0, pos))).append(defaultNewLine);', '815': 'final String padding = createPadding(nextLineTabStop);', '816': 'while (true) {', '817': 'text = padding + text.substring(pos).trim();', '818': 'pos = findWrapPos(text, width, nextLineTabStop);', '819': 'if (pos == -1) { sb.append(text); return sb; }', '820': 'sb.append(rtrim(text.substring(0, pos))).append(defaultNewLine);'}
-
-  ###Fix:
-  Lines:['812', '813', '814', '815', '816', '817', '818', '819', '820'] from file /workspace/Auto-GPT/auto_gpt_workspace/cli_8_buggy/src/java/org/apache/commons/cli/HelpFormatter.java were replaced with the following:
-  {'812': 'pos = findWrapPos(text, width, nextLineTabStop);', '813': 'if (pos == -1) { sb.append(rtrim(text)); return sb; }', '814': 'sb.append(rtrim(text.substring(0, pos))).append(defaultNewLine);', '815': 'final String padding = createPadding(nextLineTabStop);', '816': 'while (true) {', '817': 'text = padding + text.substring(pos).trim();', '818': 'pos = findWrapPos(text, width, nextLineTabStop);', '819': 'if (pos == -1) { sb.append(text); return sb; }', '820': 'sb.append(rtrim(text.substring(0, pos))).append(defaultNewLine);'}
-
-  Chart_1
-
-  ###Fix:
-  Lines:['1797'] from file org/jfree/chart/renderer/category/AbstractCategoryItemRenderer.java were replaced with the following:
-  {'1797': 'if (dataset == null) {'}
-
-  +----------+-----------------+-----------------+-------------------+
-  | Log File | Correctly Fixed | Suggested Fixes | Number of Queries |
-  +----------+-----------------+-----------------+-------------------+
-  | Cli_8    |        No       |        3        |         32        |
-  | Chart_1  |       Yes       |        1        |         10        |
-  +----------+-----------------+-----------------+-------------------+
-
-  ```
----
+Within the `experimental_setups` folder, several scripts are available to post-process the logs:  
+TODO: explain all the scripts for evaluation
 
 ## ✨ IV. Customize CodeCureAgent
 

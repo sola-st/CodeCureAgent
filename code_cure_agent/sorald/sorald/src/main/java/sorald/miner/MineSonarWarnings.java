@@ -30,22 +30,26 @@ public class MineSonarWarnings {
 
     /**
      * Mines a single git repository. For that it clones the repository,
-     * checks out the specified commit if the commit isn't empty 
+     * checks out the specified commit if the commit isn't empty
      * and then runs the analysis if cloning was successful.
      * 
-     * @param rules list of rules to analyze
+     * @param rules      list of rules to analyze
      * @param outputPath Path where the overview of found warnings is written
-     * @param repo A Pair of repoPath and commitId. The repoPath must be a correct URL to the repository. 
-     * The commitId must be a valid commit in the tree of the repository, 
-     * or it can be an empty string. Then the master branch is used. 
-     * @param repoDir The working directory where the repository can be cloned to temporarily
+     * @param repo       A Pair of repoPath and commitId. The repoPath must be a
+     *                   correct URL to the repository.
+     *                   The commitId must be a valid commit in the tree of the
+     *                   repository,
+     *                   or it can be an empty string. Then the master branch is
+     *                   used.
+     * @param repoDir    The working directory where the repository can be cloned to
+     *                   temporarily
      * @throws IOException
      */
     public void mineGitRepo(
-            List<Rule> rules, String outputPath, ImmutablePair<String,String> repo, File repoDir)
+            List<Rule> rules, String outputPath, GitRepo repo, File repoDir)
             throws IOException {
 
-        String repoPath = repo.left;
+        String repoPath = repo.getRepoURL();
         String repoName = repoPath.substring(repoPath.lastIndexOf('/') + 1, repoPath.lastIndexOf("."));
 
         org.apache.commons.io.FileUtils.cleanDirectory(repoDir);
@@ -54,10 +58,10 @@ public class MineSonarWarnings {
 
         try {
             Git git = Git.cloneRepository().setURI(repoPath).setDirectory(repoDir).call();
-            
+
             // If a commitId was provided checkout the respective commit
-            String commitId = repo.right;
-            if (!commitId.isEmpty()){
+            String commitId = repo.getCommit();
+            if (!commitId.isEmpty() && !commitId.equals("MASTER")) {
                 git.checkout().setName(commitId).call();
             }
 
@@ -67,14 +71,12 @@ public class MineSonarWarnings {
             e.printStackTrace();
         }
 
-        
-
-
         Map<String, Integer> warnings = null;
         // Only analyze the repoDir if the new repo was succesfully cloned
-        if (isCloned){
+        if (isCloned) {
 
-            warnings = extractWarnings(repoDir.getAbsolutePath(), rules);
+            warnings = extractWarnings(repoDir.getAbsolutePath(), rules, repo.getTargetJavaVersion(),
+                    repo.getRepoURL());
         }
 
         PrintWriter pw = new PrintWriter(new FileWriter(outputPath, true));
@@ -91,11 +93,11 @@ public class MineSonarWarnings {
 
         pw.flush();
         pw.close();
-        
+
     }
 
-    public void mineLocalProject(List<Rule> rules, String projectPath) {
-        Map<String, Integer> warnings = extractWarnings(projectPath, rules);
+    public void mineLocalProject(List<Rule> rules, String projectPath, String targetJavaVersion) {
+        Map<String, Integer> warnings = extractWarnings(projectPath, rules, targetJavaVersion, projectPath);
 
         warnings.entrySet().stream()
                 .sorted(Collections.reverseOrder(Map.Entry.comparingByValue()))
@@ -103,11 +105,18 @@ public class MineSonarWarnings {
     }
 
     /**
-     * @param projectPath The root path to a Java project
-     * @param rules Rules to find violations of in the Java files in the project
+     * @param projectPath       The root path to a Java project
+     * @param rules             Rules to find violations of in the Java files in the
+     *                          project
+     * @param targetJavaVersion The java version that the project compiles to and is
+     *                          to be set as sonar.java.source. If null, "" or
+     *                          "None", sonar.java.source defaults to 6.
+     * @param javaProjectInfo   Info on the project (repo url or path of analyized
+     *                          project)
      * @return A mapping (checkClassName<ruleKey> -> numViolations)
      */
-    Map<String, Integer> extractWarnings(String projectPath, List<Rule> rules) {
+    Map<String, Integer> extractWarnings(String projectPath, List<Rule> rules, String targetJavaVersion,
+            String javaProjectInfo) {
         final Map<Rule, Integer> warnings = new HashMap<>();
         final var target = new File(projectPath);
 
@@ -116,9 +125,8 @@ public class MineSonarWarnings {
         Consumer<Rule> incrementWarningCount = (rule) -> warnings.put(rule, warnings.get(rule) + 1);
 
         EventHelper.fireEvent(EventType.MINING_START, eventHandlers);
-        Set<RuleViolation> ruleViolations =
-                ProjectScanner.scanProject(
-                        target, FileUtils.getClosestDirectory(target), rules, cliOptions);
+        Set<RuleViolation> ruleViolations = ProjectScanner.scanProject(
+                target, FileUtils.getClosestDirectory(target), rules, cliOptions, targetJavaVersion, javaProjectInfo);
         EventHelper.fireEvent(EventType.MINING_END, eventHandlers);
 
         ruleViolations.stream()
@@ -127,9 +135,8 @@ public class MineSonarWarnings {
                 .forEach(incrementWarningCount);
 
         ruleViolations.forEach(
-                v ->
-                        EventHelper.fireEvent(
-                                new MinedViolationEvent(v, Paths.get(projectPath)), eventHandlers));
+                v -> EventHelper.fireEvent(
+                        new MinedViolationEvent(v, Paths.get(projectPath)), eventHandlers));
 
         Map<String, Integer> warningsWithUpdateKeys = new HashMap<>();
         warnings.forEach((rule, count) -> warningsWithUpdateKeys.put(rule.getKey(), count));

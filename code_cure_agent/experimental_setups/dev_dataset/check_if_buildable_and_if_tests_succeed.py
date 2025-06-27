@@ -1,8 +1,8 @@
 import sys
-from os import path
-sys.path.append(path.dirname(path.dirname(
-    path.dirname(path.abspath(__file__)))))
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent.parent))
 import subprocess
+from agent_core.utils.agent_utils.agent_mock import AgentMock
 from agent_core.commands import repository_operations
 from git.exc import GitError
 import os
@@ -12,46 +12,17 @@ import csv
 # This script goes through all of the reposiotries in the sorald list of repos and tries to build them
 
 
-SORALD_JAR_PATH = "/workspaces/master-thesis-pascal-joos/code_cure_agent/sorald/sorald.jar"
-
-
-class Config():
-    def __init__(self, workspace_path):
-        self.workspace_path = workspace_path
-        self.sorald_jar_path = SORALD_JAR_PATH
-
-
-class AIConfig():
-    def __init__(self, warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message):
-        self.warning_repository_URL = warning_repository_URL
-        self.warning_repository_commit = warning_repository_commit
-        self.warning_file_path = warning_file_path
-        self.warning_rule_key = warning_rule_key
-        self.warning_start_line = warning_start_line
-        self.warning_rule_name = warning_rule_name
-        self.warning_specific_message = warning_specific_message
-
-        self.warning_repository_name = warning_repository_name
-
-
-class Agent():
-    def __init__(self, warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message):
-        self.config = Config("./../../cca_workspace")
-        self.ai_config = AIConfig(warning_repository_URL, warning_repository_commit, warning_file_path,
-                                  warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message)
-        self.exps = ["experiment_test"]
-
-
 if __name__ == "__main__":
 
-    cca_workspace = "./../../cca_workspace"
+    cca_workspace = os.path.join(
+        str(Path(__file__).parent.parent.parent), "cca_workspace")
     repository_operations.remove_folder_if_exists(cca_workspace)
     os.mkdir(cca_workspace)
 
-    with open("original_sorald_considered_repos_stats.csv", "r") as repos_file:
+    with open("experimental_setups/dev_dataset/original_sorald_considered_repos_stats.csv", "r") as repos_file:
         csv_reader = csv.reader(repos_file)
 
-        with open("check_if_buildable_results.csv", "w") as out_file:
+        with open("experimental_setups/dev_dataset/check_if_buildable_results.csv", "w") as out_file:
             csv_writer = csv.writer(out_file, dialect=csv.unix_dialect)
 
             csv_writer.writerow(
@@ -62,8 +33,8 @@ if __name__ == "__main__":
                     repository_url = row[0]
                     commit = row[1]
 
-                    agent = Agent(repository_url, commit, "irrelevant", repository_url.split(
-                        "/")[-1].removesuffix(".git"), "irrelevant", "irrelevant", "irrelevant", "irrelevant")
+                    agent = AgentMock(repository_url, commit, "irrelevant", repository_url.split(
+                        "/")[-1].removesuffix(".git"), "irrelevant", "irrelevant", "irrelevant", "irrelevant", workspace_path=cca_workspace)
 
                     error = None
 

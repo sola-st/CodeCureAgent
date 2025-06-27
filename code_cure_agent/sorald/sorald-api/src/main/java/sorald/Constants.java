@@ -3,7 +3,8 @@ package sorald;
 import java.io.File;
 
 public class Constants {
-    private Constants() {}
+    private Constants() {
+    }
 
     public static final String REPAIR_COMMAND_NAME = "repair";
     public static final String MINE_COMMAND_NAME = "mine";
@@ -27,6 +28,7 @@ public class Constants {
     public static final String ARG_TARGET = "--target";
     public static final String ARG_RESOLVE_CLASSPATH_FROM = "--resolve-classpath-from";
     public static final String ARG_RULE_PARAMETERS = "--rule-parameters";
+    public static final String ARG_TARGET_JAVA_VERSION = "--target-java-version";
 
     public static final String VIOLATION_SPECIFIER_SEP = File.pathSeparator;
 

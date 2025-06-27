@@ -12,14 +12,13 @@ public class RuleViolationTest {
     @Test
     public void equals_onNonRuleViolationType_returnsFalse() {
         File resources = TestHelper.PATH_TO_RESOURCES_FOLDER.toFile();
-        RuleViolation violation =
-                ProjectScanner.scanProject(
-                                resources,
-                                resources,
-                                new SonarRule(new XxeProcessingProcessor().getRuleKey()))
-                        .stream()
-                        .findFirst()
-                        .get();
+        RuleViolation violation = ProjectScanner.scanProject(
+                resources,
+                resources,
+                new SonarRule(new XxeProcessingProcessor().getRuleKey()), null, resources.getName())
+                .stream()
+                .findFirst()
+                .get();
 
         assertNotEquals(violation, 2);
     }

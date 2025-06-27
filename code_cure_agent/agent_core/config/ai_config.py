@@ -23,6 +23,7 @@ class AIConfig:
         warning_ID (int): A unique ID for the warning (the specific warning instance the agent runs on)
         warning_repository_URL (str): The Git repository with the SonarQube warning to fix
         warning_repository_commit (str): The commit of the Git repo to fix the warning on. Can be a commitId or "MASTER" for the most current commit.
+        warning_repository_target_java_version (str): The target java version of the Maven Git repo to fix the warning on. Used to correctly configure the SonarQube analyzer. Defaults to 6 if omitted.
         warning_file_path (str): The file path to the file with the SonarQube warning
         warning_rule_key (str): The rule identifier of the SonarQube warning to fix
         warning_start_line (int): The line where the rule violation is located
@@ -37,6 +38,7 @@ class AIConfig:
         warning_ID: int = -1,
         warning_repository_URL: str = "",
         warning_repository_commit: str = "",
+        warning_repository_target_java_version: str = "",
         warning_file_path: str = "",
         warning_rule_key: str = "",
         warning_start_line: int = -1,
@@ -52,6 +54,7 @@ class AIConfig:
             warning_ID (int): A unique ID for the warning (the specific warning instance the agent runs on)
             warning_repository_URL (str): The Git repository with the SonarQube warning to fix
             warning_repository_commit (str): The commit of the Git repo to fix the warning on. Can be a commitId or "MASTER" for the most current commit.
+            warning_repository_target_java_version (str): The target java version of the Maven Git repo to fix the warning on. Used to correctly configure the SonarQube analyzer. Defaults to 6 if omitted.
             warning_file_path (str): The file path to the file with the SonarQube warning
             warning_rule_key (str): The rule identifier of the SonarQube warning to fix
             warning_start_line (int): The line where the rule violation is located
@@ -65,6 +68,7 @@ class AIConfig:
         self.warning_ID = int(warning_ID)
         self.warning_repository_URL = warning_repository_URL
         self.warning_repository_commit = warning_repository_commit
+        self.warning_repository_target_java_version = warning_repository_target_java_version
         self.warning_file_path = warning_file_path
         self.warning_rule_key = warning_rule_key
         self.warning_start_line = int(warning_start_line)
@@ -119,6 +123,8 @@ class AIConfig:
             "warning_repository_URL", "")
         warning_repository_commit = config_params.get(
             "warning_repository_commit", "")
+        warning_repository_target_java_version = str(config_params.get(
+            "warning_repository_target_java_version", ""))
         warning_file_path = config_params.get("warning_file_path", "")
         warning_rule_key = config_params.get("warning_rule_key", "")
         warning_start_line = config_params.get("warning_start_line", "")
@@ -128,7 +134,7 @@ class AIConfig:
         warning_rule_type = config_params.get(
             "warning_rule_type", "")
 
-        return AIConfig(ai_name, warning_ID, warning_repository_URL, warning_repository_commit, warning_file_path, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message, warning_rule_type)
+        return AIConfig(ai_name, warning_ID, warning_repository_URL, warning_repository_commit, warning_repository_target_java_version, warning_file_path, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message, warning_rule_type)
 
     def save(self, ai_settings_file: str | Path) -> None:
         """
@@ -145,6 +151,7 @@ class AIConfig:
             "warning_ID": self.warning_ID,
             "warning_repository_URL": self.warning_repository_URL,
             "warning_repository_commit": self.warning_repository_commit,
+            "warning_repository_target_java_version": self.warning_repository_target_java_version,
             "warning_file_path": self.warning_file_path,
             "warning_rule_key": self.warning_rule_key,
             "warning_start_line": self.warning_start_line,

@@ -8,7 +8,10 @@ import sorald.event.models.WarningLocation;
 import sorald.event.models.miner.MinedRule;
 import sorald.event.models.miner.MinedViolationEvent;
 
-/** Event handler for recording the miner mode statistics on a single repository cloned with git. */
+/**
+ * Event handler for recording the miner mode statistics on a single repository
+ * cloned with git.
+ */
 public class RepoMinerStatisticsCollector implements SoraldEventHandler {
     private static final String RULE_ID_SEPARATOR = ":";
 
@@ -24,9 +27,12 @@ public class RepoMinerStatisticsCollector implements SoraldEventHandler {
 
     private String commit;
 
-    public RepoMinerStatisticsCollector(String repositoryURL, String commit){
+    private String targetJavaVersion;
+
+    public RepoMinerStatisticsCollector(String repositoryURL, String commit, String targetJavaVersion) {
         this.repositoryURL = repositoryURL;
         this.commit = commit;
+        this.targetJavaVersion = targetJavaVersion;
     }
 
     @Override
@@ -78,12 +84,11 @@ public class RepoMinerStatisticsCollector implements SoraldEventHandler {
     public List<MinedRule> getMinedRules() {
         return ruleToViolations.entrySet().stream()
                 .map(
-                        e ->
-                                new MinedRule(
-                                        e.getKey().split(RULE_ID_SEPARATOR)[0],
-                                        e.getKey().split(RULE_ID_SEPARATOR)[1],
-                                        e.getKey().split(RULE_ID_SEPARATOR)[2],
-                                        e.getValue()))
+                        e -> new MinedRule(
+                                e.getKey().split(RULE_ID_SEPARATOR)[0],
+                                e.getKey().split(RULE_ID_SEPARATOR)[1],
+                                e.getKey().split(RULE_ID_SEPARATOR)[2],
+                                e.getValue()))
                 .collect(Collectors.toList());
     }
 
@@ -95,7 +100,12 @@ public class RepoMinerStatisticsCollector implements SoraldEventHandler {
         return this.commit;
     }
 
+    public String getTargetJavaVersion() {
+        return this.targetJavaVersion;
+    }
+
     private String violationToRuleId(MinedViolationEvent violation) {
-        return violation.getRuleKey() + RULE_ID_SEPARATOR + violation.getRuleName() + RULE_ID_SEPARATOR + violation.getRuleType();
+        return violation.getRuleKey() + RULE_ID_SEPARATOR + violation.getRuleName() + RULE_ID_SEPARATOR
+                + violation.getRuleType();
     }
 }

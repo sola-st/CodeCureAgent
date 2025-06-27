@@ -319,7 +319,7 @@ def check_sonar_qube_report(all_file_changes: list[FileChanges], agent: BaseAgen
 
         if new_violations_introduced:
             return False, "Rerunning the SonarQube analysis found the following new rule violations that weren't present before, or that have moved:  \n" + introduced_violations_info \
-                + "\nYou must not introduce any new rule violations. They need to be prevented/resolved, even if you think the rule violations were already present in the project before. If you think the rule violations were already present before and are false positives, then you can also suppress them with '// NOSONAR'."
+                + "\nYou must not introduce any new rule violations. They need to be prevented/resolved, even if you think the rule violations were already present in the project before. If you think the listed rule violations were already present before and you are certain that they are false positives, then you can also suppress them with '// NOSONAR'."
         else:
             return True, "Rerunning the SonarQube analysis confirmed that your fix successfully removed the targeted rule violation and didn't introduce any new violations."
     else:

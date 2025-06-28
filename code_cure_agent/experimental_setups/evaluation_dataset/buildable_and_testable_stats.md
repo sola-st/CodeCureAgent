@@ -1,9 +1,9 @@
 # Stats on buildable and testable projects
 
 Buildable projects:  
-140/161 (21 excluded)  
+142/161 (19 excluded)  
 
 Buildable and testable projects:  
-134/161 (6 more excluded)  
+136/161 (6 more excluded)  
 
-=> have 130 left for final evaluation
+=> have 132 left for final evaluation (4 excluded because used in dev-dataset)

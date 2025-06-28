@@ -68,7 +68,7 @@ def prepare_experiment_input_file(json_mining_report_file, target_csv_file_path,
                     # Have a separate line for each rule violation (warningLocation)
                     for rule_violation in mined_rule["warningLocations"]:
                         csv_writer.writerow([instance_ID, repository_URL, commit, target_java_version, mined_rule["ruleKey"], rule_violation["filePath"],
-                                            rule_violation["startLine"], mined_rule["ruleName"], rule_violation["specificMessage"], mined_rule["ruleType"]])
+                                            rule_violation["startLine"], mined_rule["ruleName"].replace('\n', '\\n'), rule_violation["specificMessage"].replace('\n', '\\n'), mined_rule["ruleType"]])
                         instance_ID += 1
 
 

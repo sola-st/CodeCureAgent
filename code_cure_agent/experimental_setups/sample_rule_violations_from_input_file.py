@@ -68,12 +68,15 @@ def sample_rule_violations_from_input_file(csv_input_file: click.File, target_cs
         .reset_index(drop=True)
     )
 
+    df_sampled_rule_instances_shuffled = df_sampled_rule_instances.sample(
+        frac=1, random_state=number_generator)
+
     # Change the istanceID to consecutive numbers
-    df_sampled_rule_instances['instanceID'] = range(
-        1, len(df_sampled_rule_instances) + 1)
+    df_sampled_rule_instances_shuffled['instanceID'] = range(
+        1, len(df_sampled_rule_instances_shuffled) + 1)
 
     # output to csv
-    df_sampled_rule_instances.to_csv(
+    df_sampled_rule_instances_shuffled.to_csv(
         target_csv_file_path, encoding="utf-8", index=False, header=True, quoting=csv.QUOTE_ALL, quotechar='"',
         doublequote=True)
     print(f"Sampled data saved to {target_csv_file_path}")

@@ -178,6 +178,20 @@ def create_chat_completion(
             patf.write(
                 "!! AI Chat Completion end timestamp: " + str(time.time_ns()) + "\n")
 
+        prompt_tokens_cached = response["usage"]["prompt_tokens_details"]["cached_tokens"]
+        prompt_tokens_uncached = response["usage"]["prompt_tokens"] - \
+            response["usage"]["prompt_tokens_details"]["cached_tokens"]
+        completion_tokens = response["usage"]["completion_tokens"]
+
+        # Write the chat completion token usage to the file
+        with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
+            patf.write(
+                "!! AI Chat Completion prompt_tokens_cached: " + str(prompt_tokens_cached) + "\n")
+            patf.write(
+                "!! AI Chat Completion prompt_tokens_uncached: " + str(prompt_tokens_uncached) + "\n")
+            patf.write(
+                "!! AI Chat Completion completion_tokens: " + str(completion_tokens) + "\n")
+
     logger.debug(f"Response: {response}")
 
     if hasattr(response, "error"):

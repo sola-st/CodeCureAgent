@@ -328,6 +328,8 @@ def calc_total_cost(experiment_folders: list[str], classified_tp: int, classifie
     # The cost is a very unprecise upper bound. In reality the cost is much lower.
     # This is because cached input is much cheaper and ca. 5/6 are cached, as the prompt is largely always the same!
 
+    # => TODO: use the info about AI usage in the execution_info file instead
+
     # TODO: Calculate tokens also grouped by plausible /no plausible
 
     tokens_count_classification_input = 0

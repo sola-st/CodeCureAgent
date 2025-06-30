@@ -139,7 +139,7 @@ def run_go_to(go_to_method: str, file_path: str, symbol: str, symbol_line: int, 
     return command_output
 
 
-def find_column_of_symbol(file_path: str, symbol: str, symbol_line_zero_indexed: int, go_to_method: str,  agent: BaseAgent) -> int:
+def find_column_of_symbol(file_path: str, symbol: str, symbol_line_zero_indexed: int, go_to_method: str, agent: BaseAgent) -> int:
     """
     Calculates the column (zero indexed) of the symbol, by reading the symbol's line in the file and searching for the symbol in this line.
     If not found in the line, surrounding lines are tried. If also not present there, then a ValueError is raised.
@@ -355,7 +355,7 @@ def execute_command(command: str, init_req: str, req: str, request_id: int, agen
         process.stdin.write(request)
         process.stdin.flush()
 
-        timeout = 20
+        timeout = 60
         definition_lookup_result = read_message_from_subprocess(
             process, request_id, timeout, False)
 
@@ -508,7 +508,7 @@ def get_start_end_for_node(node_to_find, tree, max_end):
     return start, end
 
 
-def process_go_to_references_lsp_result(lookup_result: dict, symbol: str, lsp_sub_workspace: str,  agent: BaseAgent) -> str:
+def process_go_to_references_lsp_result(lookup_result: dict, symbol: str, lsp_sub_workspace: str, agent: BaseAgent) -> str:
     """
     Takes the response of a goto references request.
     If there are few enough found references then a few lines of code around the reference are extracted and formatted into the command result.

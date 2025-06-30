@@ -1,0 +1,274 @@
+  
+### IMPLAUSIBLE FIX (fix no. 1)
+[
+    {
+        "file_name": "main/src/main/java/net/sourceforge/argparse4j/impl/type/ReflectArgumentType.java",
+        "insertions": [
+            {
+                "line_number": 56,
+                "new_lines": [
+                    "    private final Class<T> type;"
+                ]
+            },
+            {
+                "line_number": 95,
+                "new_lines": [
+                    "        type = type;"
+                ]
+            },
+            {
+                "line_number": 104,
+                "new_lines": [
+                    "        if (type.isEnum()) {"
+                ]
+            },
+            {
+                "line_number": 107,
+                "new_lines": [
+                    "                return (T) Enum.valueOf((Class<Enum>) type, value);"
+                ]
+            },
+            {
+                "line_number": 120,
+                "new_lines": [
+                    "            m = type.getMethod(\"valueOf\", String.class);"
+                ]
+            },
+            {
+                "line_number": 129,
+                "new_lines": [
+                    "                || !type.isAssignableFrom(m.getReturnType())) {"
+                ]
+            },
+            {
+                "line_number": 151,
+                "new_lines": [
+                    "            obj = type.getConstructor(String.class).newInstance(value);"
+                ]
+            },
+            {
+                "line_number": 164,
+                "new_lines": [
+                    "        String localizedTypeName = localizeTypeNameIfPossible(parser, type);"
+                ]
+            },
+            {
+                "line_number": 200,
+                "new_lines": [
+                    "        if (Boolean.class.equals(type)) {"
+                ]
+            },
+            {
+                "line_number": 205,
+                "new_lines": [
+                    "        if (type.isEnum()) {"
+                ]
+            },
+            {
+                "line_number": 206,
+                "new_lines": [
+                    "            T[] enumConstants = type.getEnumConstants();"
+                ]
+            }
+        ],
+        "deletions": [
+            56,
+            95,
+            104,
+            107,
+            120,
+            129,
+            151,
+            164,
+            200,
+            205,
+            206
+        ]
+    }
+]
+
+ ###CHANGE APPROVER FEEDBACK:  
+After applying your changes the relevant lines of code look like this:  
+
+File main/src/main/java/net/sourceforge/argparse4j/impl/type/ReflectArgumentType.java:
+unchanged line: * </p>
+unchanged line: */
+unchanged line:public class ReflectArgumentType<T> implements ArgumentType<T>,
+unchanged line:        MetavarInference {
+unchanged line:
+inserted line:    private final Class<T> type;
+deleted line:    private final Class<T> type_;
+unchanged line:
+unchanged line:    /**
+unchanged line:     * <p>
+unchanged line:     * Creates {@link ReflectArgumentType} object with given {@code type}.
+unchanged line:     * </p>
+unchanged line:     * <p>
+unchanged line:     * This object first tries to convert given String using
+unchanged line:     * {@code valueOf(java.lang.String)} static method of given {@code type}. If
+unchanged line:     * that failed, then use constructor of given {@code type} for conversion.
+unchanged line:     * {@code valueOf()} method and/or constructor must be declared as public.
+unchanged line:     * Otherwise, they cannot be invoked. The constructor of {@code type} must
+unchanged line:     * accept 1 String argument.
+unchanged line:     * </p>
+unchanged line:     * <p>
+unchanged line:     * If error occurred inside the {@code valueOf} static method or
+unchanged line:     * constructor, {@link ArgumentParserException} will be thrown. If error
+unchanged line:     * occurred in other locations, subclass of {@link RuntimeException} will be
+unchanged line:     * thrown.
+unchanged line:     * </p>
+unchanged line:     * <p>
+unchanged line:     * This object works with enums as well. The enums in its nature have
+unchanged line:     * limited number of members. In
+unchanged line:     * {@link #convert(ArgumentParser, Argument, String)}, string value will be
+unchanged line:     * converted to one of them. If it cannot be converted,
+unchanged line:     * {@link #convert(ArgumentParser, Argument, String)} will throw
+unchanged line:     * {@link ArgumentParserException}. This means it already act like a
+unchanged line:     * {@link Argument#choices(Object...)}. Please note that this conversion
+unchanged line:     * does not take into account {@link Enum#toString()} override. If
+unchanged line:     * application passes enums with toString() overridden with the different
+unchanged line:     * value than enum name, it may not work like it expects. To take into
+unchanged line:     * account {@link Enum#toString()} on conversion, use
+unchanged line:     * {@link Arguments#enumStringType(Class)} instead.
+unchanged line:     * </p>
+unchanged line:     * 
+unchanged line:     * @param type
+unchanged line:     *            The type String value should be converted to.
+unchanged line:     */
+unchanged line:    public ReflectArgumentType(Class<T> type) {
+inserted line:        type = type;
+deleted line:        type_ = type;
+unchanged line:    }
+unchanged line:
+unchanged line:    @Override
+unchanged line:    public T convert(ArgumentParser parser, Argument arg, String value)
+unchanged line:            throws ArgumentParserException {
+unchanged line:        // Handle enums separately. Enum.valueOf() is very convenient here.
+unchanged line:        // It somehow can access private enum values, where normally T.valueOf()
+unchanged line:        // cannot without setAccessible(true).
+inserted line:        if (type.isEnum()) {
+deleted line:        if (type_.isEnum()) {
+unchanged line:            try {
+unchanged line:                //noinspection unchecked
+inserted line:                return (T) Enum.valueOf((Class<Enum>) type, value);
+deleted line:                return (T) Enum.valueOf((Class<Enum>) type_, value);
+unchanged line:            } catch (IllegalArgumentException e) {
+unchanged line:                throw new ArgumentParserException(
+unchanged line:                        String.format(TextHelper.LOCALE_ROOT,
+unchanged line:                                MessageLocalization.localize(
+unchanged line:                                        parser.getConfig().getResourceBundle(),
+unchanged line:                                        "couldNotConvertChooseFromError"),
+unchanged line:                                value, inferMetavar()[0]),
+unchanged line:                        parser, arg);
+unchanged line:            }
+unchanged line:        }
+unchanged line:        Method m = null;
+unchanged line:        try {
+inserted line:            m = type.getMethod("valueOf", String.class);
+deleted line:            m = type_.getMethod("valueOf", String.class);
+unchanged line:        } catch (NoSuchMethodException e) {
+unchanged line:            // If no valueOf static method found, try constructor.
+unchanged line:            return convertUsingConstructor(parser, arg, value);
+unchanged line:        } catch (SecurityException e) {
+unchanged line:            handleInstantiationError(e);
+unchanged line:        }
+unchanged line:        // Only interested in static valueOf method.
+unchanged line:        if (!Modifier.isStatic(m.getModifiers())
+inserted line:                || !type.isAssignableFrom(m.getReturnType())) {
+deleted line:                || !type_.isAssignableFrom(m.getReturnType())) {
+unchanged line:            return convertUsingConstructor(parser, arg, value);
+unchanged line:        }
+unchanged line:        Object obj = null;
+unchanged line:        try {
+unchanged line:            obj = m.invoke(null, value);
+unchanged line:        } catch (IllegalAccessException e) {
+unchanged line:            return convertUsingConstructor(parser, arg, value);
+unchanged line:        } catch (IllegalArgumentException e) {
+unchanged line:            handleInstantiationError(e);
+unchanged line:        } catch (InvocationTargetException e) {
+unchanged line:            throwArgumentParserException(parser, arg, value,
+unchanged line:                    e.getCause() == null ? e : e.getCause());
+unchanged line:        }
+unchanged line:        //noinspection unchecked
+unchanged line:        return (T) obj;
+unchanged line:    }
+unchanged line:
+unchanged line:    private T convertUsingConstructor(ArgumentParser parser, Argument arg,
+unchanged line:            String value) throws ArgumentParserException {
+unchanged line:        T obj = null;
+unchanged line:        try {
+inserted line:            obj = type.getConstructor(String.class).newInstance(value);
+deleted line:            obj = type_.getConstructor(String.class).newInstance(value);
+unchanged line:        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException e) {
+unchanged line:            handleInstantiationError(e);
+unchanged line:        } catch (InvocationTargetException e) {
+unchanged line:            throwArgumentParserException(parser, arg, value,
+unchanged line:                    e.getCause() == null ? e : e.getCause());
+unchanged line:        }
+unchanged line:        return obj;
+unchanged line:    }
+unchanged line:
+unchanged line:    private void throwArgumentParserException(ArgumentParser parser,
+unchanged line:            Argument arg, String value, Throwable t)
+unchanged line:            throws ArgumentParserException {
+inserted line:        String localizedTypeName = localizeTypeNameIfPossible(parser, type);
+deleted line:        String localizedTypeName = localizeTypeNameIfPossible(parser, type_);
+unchanged line:        throw new ArgumentParserException(String.format(TextHelper.LOCALE_ROOT,
+unchanged line:                MessageLocalization.localize(
+unchanged line:                        parser.getConfig().getResourceBundle(),
+unchanged line:                        "couldNotConvertToError"),
+unchanged line:                value, localizedTypeName), t, parser, arg);
+unchanged line:    }
+unchanged line:
+unchanged line:    private void handleInstantiationError(Exception e) {
+unchanged line:        throw new IllegalArgumentException("reflect type conversion error", e);
+unchanged line:    }
+unchanged line:
+unchanged line:    /**
+unchanged line:     * <p>
+unchanged line:     * Infers metavar based on given type.
+unchanged line:     * </p>
+unchanged line:     * <p>
+unchanged line:     * If {@link Boolean} class is passed to constructor, this method returns
+unchanged line:     * metavar string "{true,false}" for convenience.
+unchanged line:     * </p>
+unchanged line:     * <p>
+unchanged line:     * If enum type is passed to constructor, this method returns metavar
+unchanged line:     * containing all enum names defined in that type. This uses
+unchanged line:     * {@link Enum#name()} method, instead of {@link Object#toString()} method.
+unchanged line:     * If you are looking for the latter, consider to use
+unchanged line:     * {@link EnumStringArgumentType}.
+unchanged line:     * </p>
+unchanged line:     * <p>
+unchanged line:     * Otherwise, returns null.
+unchanged line:     * </p>
+unchanged line:     * 
+unchanged line:     * @see net.sourceforge.argparse4j.inf.MetavarInference#inferMetavar()
+unchanged line:     * @since 0.7.0
+unchanged line:     */
+unchanged line:    @Override
+unchanged line:    public String[] inferMetavar() {
+inserted line:        if (Boolean.class.equals(type)) {
+deleted line:        if (Boolean.class.equals(type_)) {
+unchanged line:            return new String[] { TextHelper.concat(new String[] { "true",
+unchanged line:                    "false" }, 0, ",", "{", "}") };
+unchanged line:        }
+unchanged line:
+inserted line:        if (type.isEnum()) {
+deleted line:        if (type_.isEnum()) {
+inserted line:            T[] enumConstants = type.getEnumConstants();
+deleted line:            T[] enumConstants = type_.getEnumConstants();
+unchanged line:            String[] names = new String[enumConstants.length];
+unchanged line:            int i = 0;
+unchanged line:            for (T t : enumConstants) {
+unchanged line:                names[i++] = ((Enum<?>) t).name();
+unchanged line:            }
+unchanged line:            return new String[] { TextHelper.concat(names, 0, ",", "{", "}") };
+
+Build failed with the following maven error output:   
+
+[ERROR] COMPILATION ERROR :   
+[INFO] -------------------------------------------------------------  
+[ERROR] main/src/main/java/net/sourceforge/argparse4j/impl/type/ReflectArgumentType.java: In line 96: '}' Problem: variable type might not have been initialized  
+
+The project had no compilation errors before. So they occurred due to your fix attempt! Try a new fix that doesn't introduce the compilation errors.  

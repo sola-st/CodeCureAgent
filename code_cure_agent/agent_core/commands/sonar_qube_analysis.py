@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from agent_core.agents import BaseAgent
 
-from agent_core.utils.path_utils import path_utils
+from agent_core.utils.path_utils.path_utils import preprocess_paths, sanitize_and_shorten_file_path
 
 COMMAND_CATEGORY = "sonarQubeAnalysis"
 COMMAND_CATEGORY_TITLE = "Run SonarQube analysis"
@@ -66,7 +66,7 @@ def analyze_file(file_relative_path: str, rules: list[str], repo_name: str, anal
     workspace = agent.config.workspace_path
 
     # Prepare the paths
-    file_relative_path = path_utils.preprocess_paths(
+    file_relative_path = preprocess_paths(
         workspace, repo_name, file_relative_path)
     file_path = os.path.join(workspace, repo_name, file_relative_path)
 
@@ -89,9 +89,7 @@ def analyze_file(file_relative_path: str, rules: list[str], repo_name: str, anal
                  )
 
     # Write the analysis start to the execution info file
-    sanitized_warning_file_path = agent.ai_config.warning_file_path.replace(
-        "/", ".")
-    with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
+    with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{agent.ai_config.warning_file_name}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
         patf.write(
             f"!! SonarQube analysis startup timestamp: " + str(time.time_ns()) + "\n")
 
@@ -102,7 +100,7 @@ def analyze_file(file_relative_path: str, rules: list[str], repo_name: str, anal
         shell=False
     )
 
-    with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
+    with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{agent.ai_config.warning_file_name}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
         patf.write(
             f"!! SonarQube analysis end timestamp: " + str(time.time_ns()) + "\n")
 

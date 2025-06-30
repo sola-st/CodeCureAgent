@@ -7,6 +7,8 @@ import time
 from typing import TYPE_CHECKING, Any
 
 from colorama import Fore
+import uuid
+
 
 if TYPE_CHECKING:
     from agent_core.config import AIConfig, Config
@@ -15,6 +17,7 @@ if TYPE_CHECKING:
     from agent_core.models.command_registry import CommandRegistry
 
 from agent_core.utils.json_utils.json_utilities import extract_dict_from_response, validate_dict
+from agent_core.utils.path_utils.path_utils import sanitize_and_shorten_file_path
 from agent_core.llm.utils import count_string_tokens
 from agent_core.logs import logger
 from agent_core.logs.log_cycle import LogCycleHandler
@@ -96,9 +99,7 @@ class Agent(BaseAgent):
         else:
             self.history.add("user", result, "action_result")
 
-        sanitized_warning_file_path = self.ai_config.warning_file_path.replace(
-            "/", ".")
-        with open(os.path.join("experimental_setups", self.exps[-1], self.current_state, "responses", f"{str(self.ai_config.warning_ID)}_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(self.ai_config.warning_start_line)}_model_responses"), "a+") as patf:
+        with open(os.path.join("experimental_setups", self.exps[-1], self.current_state, "responses", f"{str(self.ai_config.warning_ID)}_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{self.ai_config.warning_file_name}_line_{str(self.ai_config.warning_start_line)}_model_responses"), "a+") as patf:
             patf.write(
                 "\nCommand execution based on model response:\n" + str(result) + "\n")
 
@@ -251,16 +252,14 @@ def execute_command(
         if command := agent.command_registry.get_command(command_name):
 
             # Write the command_execution start to the execution info file
-            sanitized_warning_file_path = agent.ai_config.warning_file_path.replace(
-                "/", ".")
-            with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
+            with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{agent.ai_config.warning_file_name}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
                 patf.write(
                     f"!! Command {command_name} startup timestamp: " + str(time.time_ns()) + "\n")
 
             execution_result = command(**arguments, agent=agent)
 
             # Write the command_execution end to the execution info file
-            with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
+            with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{agent.ai_config.warning_file_name}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
                 patf.write(
                     f"!! Command {command_name} end timestamp: " + str(time.time_ns()) + "\n")
 
@@ -269,7 +268,7 @@ def execute_command(
         # The command_name was unknown. So add it to the list of unknown commands.
 
         # Write the unknown command
-        with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
+        with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{agent.ai_config.warning_file_name}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
             patf.write(f"!! Unknown command: {command_name}" + "\n")
 
         agent.unknown_commands.append(str(command_name))

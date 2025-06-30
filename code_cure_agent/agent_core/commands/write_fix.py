@@ -3,7 +3,7 @@ from operator import itemgetter
 import os
 from agent_core.commands import change_approver
 from agent_core.commands import repository_operations
-from agent_core.utils.path_utils import path_utils
+from agent_core.utils.path_utils.path_utils import preprocess_paths, sanitize_and_shorten_file_path
 from agent_core.commands import sonar_qube_analysis
 from agent_core.logs.logger import logger
 from agent_core.agents.base import BaseAgent
@@ -62,10 +62,8 @@ def write_fix(changes_dicts: list, agent: BaseAgent) -> str:
         feedback = "REJECTED  \nFailure when trying to apply the fix: " + format_error.msg + \
             "  \n\nIMPORTANT: The repository has been restored to its original state! You need to start applying changes from scratch again."
 
-        sanitized_warning_file_path = agent.ai_config.warning_file_path.replace(
-            "/", ".")
         with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "implausible_patches",
-                               f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_implausible_patches.json"), "a+") as exps:
+                               f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{agent.ai_config.warning_file_name}_line_{str(agent.ai_config.warning_start_line)}_implausible_patches.json"), "a+") as exps:
             exps.write(
                 f"  \n### IMPLAUSIBLE FIX (fix no. {str(agent.write_fix_attempts)})\n{json.dumps(changes_dicts, indent=4)}\n\n ###CHANGE APPROVER FEEDBACK:  \n{feedback}")
 
@@ -132,7 +130,7 @@ def merge_changes_dicts_with_same_file_path(changes_dicts: list[dict], agent: Ba
         file_relative_path = change_dict.get("file_name")
 
         try:
-            file_relative_path = path_utils.preprocess_paths(
+            file_relative_path = preprocess_paths(
                 agent.config.workspace_path, warning_repository_name, file_relative_path)
         except ValueError as ve:
             logger.error("apply_changes failed",
@@ -158,11 +156,10 @@ def add_new_file_to_initial_analysis_report(file_relative_path: str, agent: Base
 
     if file_relative_path not in agent.initial_analysis_reports:
 
-        sanitized_warning_file_path = agent.ai_config.warning_file_path.replace(
-            "/", ".")
-        sanitized_file_relative_path = file_relative_path.replace("/", ".")
+        sanitized_file_relative_path = sanitize_and_shorten_file_path(
+            file_relative_path)
         initial_analysis_report_new_file = sonar_qube_analysis.analyze_file_and_parse_report(file_relative_path, agent.sonar_qube_rules_in_active_profile, agent.ai_config.warning_repository_name,
-                                                                                             f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_initial_analysis_report_file_{sanitized_file_relative_path}.json", agent)
+                                                                                             f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{agent.ai_config.warning_file_name}_line_{str(agent.ai_config.warning_start_line)}_initial_analysis_report_file_{sanitized_file_relative_path}.json", agent)
 
         agent.initial_analysis_reports[file_relative_path] = initial_analysis_report_new_file
 

@@ -1,4 +1,5 @@
 import os
+import uuid
 
 
 def preprocess_paths(workspace, project_name: str, file_path):
@@ -60,3 +61,13 @@ def find_all_folders(workspace: str, project_name: str, folder_sub_path: str):
                 all_folders.append(os.path.join(root, dir))
 
     return all_folders
+
+
+def sanitize_and_shorten_file_path(file_path: str):
+    sanitized_warning_file_path = file_path.replace(
+        "/", ".")
+
+    # Replace the file_path with a unique id if it becomes to long for the output files
+    if len(sanitized_warning_file_path) > 45:
+        sanitized_warning_file_path = str(uuid.uuid4().hex)
+    return sanitized_warning_file_path

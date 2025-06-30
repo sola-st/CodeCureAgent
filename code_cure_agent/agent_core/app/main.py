@@ -30,6 +30,7 @@ from agent_core.plugins import scan_plugins
 from agent_core.speech import say_text
 from agent_core.workspace import Workspace
 from agent_core.commands.classification_tasks import give_final_verdict
+from agent_core.utils.path_utils.path_utils import sanitize_and_shorten_file_path
 from scripts.install_plugin_deps import install_plugin_dependencies
 
 from agent_core.commands import sonar_qube_analysis
@@ -192,9 +193,7 @@ def run_auto_gpt(
     )
 
     # Write the saved startup time to the execution_info file
-    sanitized_warning_file_path = agent.ai_config.warning_file_path.replace(
-        "/", ".")
-    with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
+    with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{agent.ai_config.warning_file_name}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
         patf.write("!! Start up timestamp: " + str(start_up_timestamp) + "\n")
 
     # Save task info
@@ -210,9 +209,7 @@ def run_auto_gpt(
     prepare_target_project(agent)
 
     # Write end time of initialization
-    sanitized_warning_file_path = agent.ai_config.warning_file_path.replace(
-        "/", ".")
-    with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
+    with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{agent.ai_config.warning_file_name}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
         patf.write("!! Initialization complete time: " +
                    str(time.time_ns()) + "\n")
 
@@ -232,10 +229,10 @@ def prepare_target_project(agent: Agent) -> None:
 
         # Create the initial analysis report of the target file.
         # If reports for further files are needed later (if the agent writes to some other file then the target file), then they are added on demand in write_fix.
-        sanitized_warning_file_path = agent.ai_config.warning_file_path.replace(
-            "/", ".")
+        sanitized_warning_file_path = sanitize_and_shorten_file_path(
+            agent.ai_config.warning_file_path)
         initial_analysis_report_target_file = sonar_qube_analysis.analyze_file_and_parse_report(agent.ai_config.warning_file_path, agent.sonar_qube_rules_in_active_profile, agent.ai_config.warning_repository_name,
-                                                                                                f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_initial_analysis_report_file_{sanitized_warning_file_path}.json", agent)
+                                                                                                f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{agent.ai_config.warning_file_name}_line_{str(agent.ai_config.warning_start_line)}_initial_analysis_report_file_{sanitized_warning_file_path}.json", agent)
 
         agent.initial_analysis_reports[agent.ai_config.warning_file_path] = initial_analysis_report_target_file
 
@@ -343,13 +340,11 @@ def run_interaction_loop(
 
 def shutdown(agent: Agent, signal: int):
     # Save history one more time
-    sanitized_warning_file_path = agent.ai_config.warning_file_path.replace(
-        "/", ".")
-    with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "all_messages", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_all_messages"), "w") as patf:
+    with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "all_messages", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{agent.ai_config.warning_file_name}_line_{str(agent.ai_config.warning_start_line)}_all_messages"), "w") as patf:
         patf.write(agent.history.dump())
 
     # Write the time of shutdown to the execution info file
-    with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
+    with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{agent.ai_config.warning_file_name}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
         patf.write("!! Shutdown timestamp: " + str(time.time_ns()) + "\n")
 
     exit(signal)

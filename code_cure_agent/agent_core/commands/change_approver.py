@@ -7,7 +7,7 @@ import subprocess
 from agent_core.logs import logger
 from agent_core.utils.write_fix_utils.change_tracking import FileChanges, BeforeAfterMapping
 from agent_core.app.main import shutdown
-from agent_core.utils.path_utils.path_utils import find_all_folders, preprocess_paths
+from agent_core.utils.path_utils.path_utils import find_all_folders, preprocess_paths, sanitize_and_shorten_file_path
 
 import json
 import re
@@ -281,23 +281,24 @@ def check_sonar_qube_report(all_file_changes: list[FileChanges], agent: BaseAgen
     """
 
     # Run SonarQube analysis for all changed files
-    sanitized_warning_file_path = agent.ai_config.warning_file_path.replace(
-        "/", ".")
 
     sonar_qube_reports_after_changes = {}
     for file_changes in all_file_changes:
 
-        sanitized_checked_file_path = file_changes.file_path.replace("/", ".")
+        sanitized_checked_file_path = sanitize_and_shorten_file_path(
+            file_changes.file_path)
         sonar_qube_report_after_changes = sonar_qube_analysis.analyze_file_and_parse_report(file_changes.file_path, agent.sonar_qube_rules_in_active_profile, agent.ai_config.warning_repository_name,
-                                                                                            f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_analysis_report_attempt_no_{str(agent.write_fix_attempts)}_file_{sanitized_checked_file_path}.json", agent)
+                                                                                            f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{agent.ai_config.warning_file_name}_line_{str(agent.ai_config.warning_start_line)}_analysis_report_attempt_no_{str(agent.write_fix_attempts)}_file_{sanitized_checked_file_path}.json", agent)
         sonar_qube_reports_after_changes[file_changes.file_path] = sonar_qube_report_after_changes
 
     # If there was no modification of the file with the target violation, add the report anyway (maybe there are cases where making changes to other files fixes a violation in the target file?)
     if agent.ai_config.warning_file_path not in sonar_qube_reports_after_changes:
         logger.warn(title="Write_fix made no changes to the target file.",
                     message="This might not be a problem, if changing another file fixes the warning in the target file (unlikely).")
+        sanitized_warning_file_path = sanitize_and_shorten_file_path(
+            agent.ai_config.warning_file_path)
         sonar_qube_report_after_changes_target_file = sonar_qube_analysis.analyze_file_and_parse_report(agent.ai_config.warning_file_path, agent.sonar_qube_rules_in_active_profile, agent.ai_config.warning_repository_name,
-                                                                                                        f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_analysis_report_attempt_no_{str(agent.write_fix_attempts)}_file_{sanitized_warning_file_path}.json", agent)
+                                                                                                        f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{agent.ai_config.warning_file_name}_line_{str(agent.ai_config.warning_start_line)}_analysis_report_attempt_no_{str(agent.write_fix_attempts)}_file_{sanitized_warning_file_path}.json", agent)
         sonar_qube_reports_after_changes[agent.ai_config.warning_file_path] = sonar_qube_report_after_changes_target_file
 
         # Add a unchange FileChanges object to the list
@@ -644,10 +645,8 @@ def approve(messages: list[str], changes_dicts: list[dict], agent: BaseAgent) ->
     """
     Adds a "APPROVED" to the start of the feedback and saves the changes_dicts to the plausible_patches file.
     """
-    sanitized_warning_file_path = agent.ai_config.warning_file_path.replace(
-        "/", ".")
     with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "plausible_patches",
-                           f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_plausible_patches.json"), "a+") as exps:
+                           f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{agent.ai_config.warning_file_name}_line_{str(agent.ai_config.warning_start_line)}_plausible_patches.json"), "a+") as exps:
         exps.write(
             f"  \n### PLAUSIBLE FIX (fix no. {str(agent.write_fix_attempts)})\n{json.dumps(changes_dicts, indent=4)}\n\n ###CHANGE APPROVER FEEDBACK:  \n" + "  \n".join(messages))
 
@@ -660,10 +659,8 @@ def reject(messages: list[str], changes_dicts: list[dict], agent: BaseAgent) -> 
     """
     Adds a "REJECTED" to the start of the feedback and saves the changes_dicts to the implausible_patches file.
     """
-    sanitized_warning_file_path = agent.ai_config.warning_file_path.replace(
-        "/", ".")
     with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "implausible_patches",
-                           f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_implausible_patches.json"), "a+") as exps:
+                           f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{agent.ai_config.warning_file_name}_line_{str(agent.ai_config.warning_start_line)}_implausible_patches.json"), "a+") as exps:
         exps.write(
             f"  \n### IMPLAUSIBLE FIX (fix no. {str(agent.write_fix_attempts)})\n{json.dumps(changes_dicts, indent=4)}\n\n ###CHANGE APPROVER FEEDBACK:  \n" + "  \n".join(messages))
 

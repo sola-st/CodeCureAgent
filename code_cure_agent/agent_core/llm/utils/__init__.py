@@ -8,6 +8,9 @@ from colorama import Fore
 
 from agent_core.config import Config
 from typing import TYPE_CHECKING
+
+from agent_core.utils.path_utils.path_utils import sanitize_and_shorten_file_path
+
 if TYPE_CHECKING:
     from agent_core.agents.base import BaseAgent
 
@@ -162,9 +165,7 @@ def create_chat_completion(
 
     if agent is not None:
         # Write the chat completion start to the execution info file
-        sanitized_warning_file_path = agent.ai_config.warning_file_path.replace(
-            "/", ".")
-        with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
+        with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{agent.ai_config.warning_file_name}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
             patf.write(
                 "!! AI Chat Completion startup timestamp: " + str(time.time_ns()) + "\n")
     response = iopenai.create_chat_completion(
@@ -174,7 +175,7 @@ def create_chat_completion(
 
     if agent is not None:
         # Write the chat completion end to the execution info file
-        with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
+        with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{agent.ai_config.warning_file_name}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
             patf.write(
                 "!! AI Chat Completion end timestamp: " + str(time.time_ns()) + "\n")
 
@@ -184,7 +185,7 @@ def create_chat_completion(
         completion_tokens = response["usage"]["completion_tokens"]
 
         # Write the chat completion token usage to the file
-        with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
+        with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{agent.ai_config.warning_file_name}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
             patf.write(
                 "!! AI Chat Completion prompt_tokens_cached: " + str(prompt_tokens_cached) + "\n")
             patf.write(

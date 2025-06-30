@@ -19,6 +19,7 @@ from agent_core.logs import logger
 from agent_core.memory.message_history import MessageHistory
 from agent_core.utils.json_utils.json_utilities import extract_dict_from_response
 from agent_core.utils.file_operation_utils.read_file import read_file
+from agent_core.utils.path_utils.path_utils import sanitize_and_shorten_file_path
 
 CommandName = str
 CommandArgs = dict[str, str]
@@ -139,14 +140,10 @@ class BaseAgent(metaclass=ABCMeta):
         prompt = self.on_before_think(prompt)
 
         # Save prompts at each step
-        sanitized_warning_file_path = self.ai_config.warning_file_path.replace(
-            "/", ".")
-        with open(os.path.join("experimental_setups", self.exps[-1], self.current_state, "prompt_history", f"{str(self.ai_config.warning_ID)}_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(self.ai_config.warning_start_line)}_prompt_history"), "a+") as patf:
+        with open(os.path.join("experimental_setups", self.exps[-1], self.current_state, "prompt_history", f"{str(self.ai_config.warning_ID)}_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{self.ai_config.warning_file_name}_line_{str(self.ai_config.warning_start_line)}_prompt_history"), "a+") as patf:
             patf.write(prompt.dump())
 
-        sanitized_warning_file_path = self.ai_config.warning_file_path.replace(
-            "/", ".")
-        with open(os.path.join("experimental_setups", self.exps[-1], self.current_state, "all_messages", f"{str(self.ai_config.warning_ID)}_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(self.ai_config.warning_start_line)}_all_messages"), "w") as patf:
+        with open(os.path.join("experimental_setups", self.exps[-1], self.current_state, "all_messages", f"{str(self.ai_config.warning_ID)}_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{self.ai_config.warning_file_name}_line_{str(self.ai_config.warning_start_line)}_all_messages"), "w") as patf:
             patf.write(self.history.dump())
 
         raw_response = create_chat_completion(
@@ -538,9 +535,7 @@ class BaseAgent(metaclass=ABCMeta):
             "assistant", llm_response.content, "ai_response", command=command_name, args=command_args, agent_thoughts=assistant_reply_dict.get("thoughts", "No thoughts given."))
         self.history.append(response_message)
 
-        sanitized_warning_file_path = self.ai_config.warning_file_path.replace(
-            "/", ".")
-        with open(os.path.join("experimental_setups", self.exps[-1], self.current_state, "responses", f"{str(self.ai_config.warning_ID)}_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(self.ai_config.warning_start_line)}_model_responses"), "a+") as patf:
+        with open(os.path.join("experimental_setups", self.exps[-1], self.current_state, "responses", f"{str(self.ai_config.warning_ID)}_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{self.ai_config.warning_file_name}_line_{str(self.ai_config.warning_start_line)}_model_responses"), "a+") as patf:
             patf.write(MessageHistory(
                 self.llm, [response_message]).dump())
 
@@ -619,9 +614,7 @@ class BaseAgent(metaclass=ABCMeta):
 
         # Write the time of end of classification to the execution info file
         current_time = time.time_ns()
-        sanitized_warning_file_path = self.ai_config.warning_file_path.replace(
-            "/", ".")
-        with open(os.path.join("experimental_setups", self.exps[-1], self.current_state, "execution_info", f"{str(self.ai_config.warning_ID)}_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(self.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
+        with open(os.path.join("experimental_setups", self.exps[-1], self.current_state, "execution_info", f"{str(self.ai_config.warning_ID)}_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{self.ai_config.warning_file_name}_line_{str(self.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
             patf.write("!! Shutdown timestamp: " + str(current_time) + "\n")
 
         if final_verdict_is_true_positive:
@@ -632,7 +625,7 @@ class BaseAgent(metaclass=ABCMeta):
             classification = "FP"
 
         # Write the time of start of fixing phase to the execution info file
-        with open(os.path.join("experimental_setups", self.exps[-1], self.current_state, "execution_info", f"{str(self.ai_config.warning_ID)}_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(self.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
+        with open(os.path.join("experimental_setups", self.exps[-1], self.current_state, "execution_info", f"{str(self.ai_config.warning_ID)}_{self.ai_config.warning_repository_name}_{self.ai_config.warning_rule_key}_{self.ai_config.warning_file_name}_line_{str(self.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
             patf.write("!! Start up timestamp: " + str(current_time) + "\n")
 
         # Reset the history

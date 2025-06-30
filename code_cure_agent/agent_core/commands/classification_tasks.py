@@ -3,6 +3,8 @@ from agent_core.command_decorator import command
 from agent_core.logs.logger import logger
 import os
 
+from agent_core.utils.path_utils.path_utils import sanitize_and_shorten_file_path
+
 COMMAND_CATEGORY = "CLASSIFICATION_TASKS"
 COMMAND_CATEGORY_TITLE = "CLASSIFICATION_TASKS"
 ALLOWLIST_CONTROL = "allowlist"
@@ -21,16 +23,14 @@ DENYLIST_CONTROL = "denylist"
     },
     }
 )
-def answer_question(answer: str,  agent: Agent) -> str:
+def answer_question(answer: str, agent: Agent) -> str:
     agent.question_answers.append(answer)
     agent_output = f"Your answer to question {str(agent.current_question)} has been recorded."
 
     with open(f"agent_config_and_prompt_files/classification_prompt_files/questions_prompt_parts/question_{str(agent.current_question)}_text.md") as question_file:
         question = question_file.readline()
     answer_output = f"Question {agent.current_question}: {question}Answer:  \n{answer}  \n\n"
-    sanitized_warning_file_path = agent.ai_config.warning_file_path.replace(
-        "/", ".")
-    with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_classification_result"), "a+") as patf:
+    with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{agent.ai_config.warning_file_name}_line_{str(agent.ai_config.warning_start_line)}_classification_result"), "a+") as patf:
         patf.write(answer_output)
 
     agent.current_question += 1
@@ -76,9 +76,7 @@ def give_final_verdict(verdict: str, reason: str, agent: Agent) -> str:
     classification_output += classification
     classification_output += "\n\nReason:  \n"
     classification_output += agent.final_verdict_reason
-    sanitized_warning_file_path = agent.ai_config.warning_file_path.replace(
-        "/", ".")
-    with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_classification_result"), "a+") as patf:
+    with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{agent.ai_config.warning_file_name}_line_{str(agent.ai_config.warning_start_line)}_classification_result"), "a+") as patf:
         patf.write(classification_output)
 
     return "Final verdict submitted:" + classification

@@ -492,8 +492,7 @@ def try_to_run_tests(agent: BaseAgent) -> tuple[bool, str]:
         test_result = repository_operations.run_tests(agent)
 
     except subprocess.TimeoutExpired as te:
-        logger.error("TimeoutExpired",
-                     f"Test ran into timeout after {te.timeout / 60} minutes. Ignoring the test in the ChangeApprover.")
+        logger.warn("Ignoring the test in the ChangeApprover.")
         # Tests are just counted as accepted and no info is printed to the agent about the tests.
         return True, ""
 

@@ -104,6 +104,13 @@ def build_project(agent: BaseAgent) -> None:
 
     timeout_ten_minutes = 10 * 60
 
+    # Write the build start to the execution info file
+    sanitized_warning_file_path = agent.ai_config.warning_file_path.replace(
+        "/", ".")
+    with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
+        patf.write(
+            f"!! Maven build startup timestamp: " + str(time.time_ns()) + "\n")
+
     try:
         result = subprocess.run(
             ["mvn", "clean", "package", "-DskipTests",
@@ -115,9 +122,19 @@ def build_project(agent: BaseAgent) -> None:
             timeout=timeout_ten_minutes
         )
 
+        # Write the build end to the execution info file
+        with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
+            patf.write(
+                f"!! Maven build end timestamp: " + str(time.time_ns()) + "\n")
+
     except subprocess.TimeoutExpired as te:
         logger.error("TimeoutExpired",
                      f"Build ran into timeout after {te.timeout / 60} minutes.")
+        # Write the build end to the execution info file
+        with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
+            patf.write(
+                f"!! Maven build end timestamp: " + str(time.time_ns()) + "\n")
+
         raise
 
     if result.returncode == 0:
@@ -151,14 +168,36 @@ def run_tests(agent: BaseAgent) -> subprocess.CompletedProcess[str]:
 
     timeout_five_minutes = 5 * 60
 
-    result = subprocess.run(
-        ["mvn", "clean", "test",
-            "--no-transfer-progress", "--batch-mode"],
-        capture_output=True,
-        encoding="utf8",
-        cwd=repo_path,
-        shell=False,
-        timeout=timeout_five_minutes
-    )
+    # Write the test start to the execution info file
+    sanitized_warning_file_path = agent.ai_config.warning_file_path.replace(
+        "/", ".")
+    with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
+        patf.write(
+            f"!! Maven test startup timestamp: " + str(time.time_ns()) + "\n")
+
+    try:
+        result = subprocess.run(
+            ["mvn", "clean", "test",
+                "--no-transfer-progress", "--batch-mode"],
+            capture_output=True,
+            encoding="utf8",
+            cwd=repo_path,
+            shell=False,
+            timeout=timeout_five_minutes
+        )
+
+        # Write the test end to the execution info file
+        with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
+            patf.write(
+                f"!! Maven test end timestamp: " + str(time.time_ns()) + "\n")
+
+    except subprocess.TimeoutExpired as te:
+        logger.error("TimeoutExpired",
+                     f"Test ran into timeout after {te.timeout / 60} minutes.")
+        # Write the test end to the execution info file
+        with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
+            patf.write(
+                f"!! Maven test end timestamp: " + str(time.time_ns()) + "\n")
+        raise
 
     return result

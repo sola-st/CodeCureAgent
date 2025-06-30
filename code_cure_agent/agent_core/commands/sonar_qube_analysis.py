@@ -5,6 +5,7 @@ import subprocess
 import os
 import shutil
 import json
+import time
 from agent_core.logs import logger
 
 
@@ -87,12 +88,24 @@ def analyze_file(file_relative_path: str, rules: list[str], repo_name: str, anal
                  f"The SonarQube analysis on file '{file_path}' is run with the following command: {' '.join(cmd)}"
                  )
 
+    # Write the analysis start to the execution info file
+    sanitized_warning_file_path = agent.ai_config.warning_file_path.replace(
+        "/", ".")
+    with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
+        patf.write(
+            f"!! SonarQube analysis startup timestamp: " + str(time.time_ns()) + "\n")
+
     result = subprocess.run(
         cmd,
         capture_output=True,
         encoding="utf8",
         shell=False
     )
+
+    with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{sanitized_warning_file_path}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
+        patf.write(
+            f"!! SonarQube analysis end timestamp: " + str(time.time_ns()) + "\n")
+
     return result
 
 

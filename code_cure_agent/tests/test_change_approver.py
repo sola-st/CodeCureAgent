@@ -354,7 +354,7 @@ However, you failed to insert a suppression. Neither a `// NOSONAR` nor a `@Supp
 In file main/src/main/java/net/sourceforge/argparse4j/internal/TerminalWidth.java:  
 Rule S1764: 'Identical expressions should not be used on both sides of a binary operator' (Context-specific message: 'Correct one of the identical sub-expressions on both sides of operator "=="') at line 94: 'if (1 == 1) {'  
 
-You must not introduce any new rule violations. They need to be prevented/resolved, even if you think the rule violations were already present in the project before.""")
+You must not introduce any new rule violations. They need to be prevented/resolved, even if you think the rule violations were already present in the project before. If you think the listed rule violations were already present before and you are certain that they are false positives, then you can also suppress them with '// NOSONAR'.""")
 
     def test_check_sonar_qube_report_target_warning_not_removed(self):
         change_dict_list = [{
@@ -649,7 +649,9 @@ java.lang.NullPointerException
         warning_repository_commit = "913a35138235e8f53b31662b11b12992cf4bf702"
         warning_repository_name = "jolokia"
 
-        self.agent = AgentMock(warning_repository_URL, warning_repository_commit, None,
+        warning_file_path = "some/path.java"
+
+        self.agent = AgentMock(warning_repository_URL, warning_repository_commit, warning_file_path,
                                warning_repository_name, None, None, None, None)
 
         checkout_project(self.agent)

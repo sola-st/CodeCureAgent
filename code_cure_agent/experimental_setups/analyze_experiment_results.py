@@ -135,7 +135,7 @@ def calc_classification_stats(experiment_folders: list[str]):
             "experimental_setups", experiment_folder, "classification")
 
         classification_result_files = [f for f in os.listdir(
-            classification_folder) if os.path.isfile(os.path.join(classification_folder, f))]
+            classification_folder) if os.path.isfile(os.path.join(classification_folder, f)) and f != "parsing_errors_responses.txt"]
 
         unclassified += len(classification_prompt_history_files) - \
             len(classification_result_files)

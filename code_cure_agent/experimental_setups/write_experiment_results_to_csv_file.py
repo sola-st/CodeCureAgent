@@ -28,24 +28,28 @@ import yaml
     is_flag=True,
     help="Overwrite the csv results file. Default is appending new Ids to the existing csv."
 )
-def write_experiment_results_to_csv_file(start_exp: int, end_exp: int, overwrite: bool):
+@click.option(
+    "--target-csv-file-path",
+    "-t",
+    default="evaluation_results/evaluation_results.csv",
+    help="Path of the csv file to write or append the experiment results to."
+)
+def write_experiment_results_to_csv_file(start_exp: int, end_exp: int, overwrite: bool, target_csv_file_path: str):
 
     relevant_experiment_numbers = get_relevant_experiment_numbers(
         start_exp, end_exp)
     print("Experiments looked at: " + str(relevant_experiment_numbers))
 
-    results_csv_path = "evaluation_results/evaluation_results.csv"
-
-    create_results_csv_if_needed(results_csv_path, overwrite)
+    create_results_csv_if_needed(target_csv_file_path, overwrite)
 
     for experiment_number in relevant_experiment_numbers:
         experiment_folder = f"experiment_{str(experiment_number)}"
         tasks_to_add = get_tasks_in_experiment_folder_to_add(
-            experiment_folder, results_csv_path)
+            experiment_folder, target_csv_file_path)
         print(
             f"Experiment {str(experiment_number)} warnings to add: {str(tasks_to_add)}")
 
-        with open(results_csv_path, "a+") as results_csv_file:
+        with open(target_csv_file_path, "a+") as results_csv_file:
             csv_writer = csv.writer(results_csv_file, dialect=csv.unix_dialect)
 
             for task_to_add in tasks_to_add:

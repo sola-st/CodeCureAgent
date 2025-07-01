@@ -43,7 +43,8 @@ search_for_patterns_desc = """search_for_patterns:
     This command should only be used if find_definition or find_references is not applicable for your use case (so in cases where you want to search for something that you don't have a known symbol reference or definition for that you could pass as parameters).  
     In all other cases do not use search_for_patterns, as it can return many more irrelevant and distracting results!  
     Required params:
-    - patterns (list[string]): The list of patterns. Must contain at least one pattern string. The patterns must adhere to the extended regular expression syntax of grep."""
+    - patterns (list[string]): The list of patterns. Must contain at least one pattern string. The patterns must adhere to the extended regular expression syntax of grep.
+    - include (string): The files to include. Most of the time '*.java' will be adequate. If you want to search in any file, set include to '*'."""
 
 formulate_plan_desc = """formulate_plan:  
     Formulate or update a plan, with fine-grained steps, about how you want to fix the rule violation (i.e. which lines in which files to change and to what).  

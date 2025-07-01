@@ -47,7 +47,7 @@ class SearchForPatternsTestCase(unittest.TestCase):
 
     def test_search_for_patterns_single_pattern(self):
 
-        result = search_for_patterns(["command_"], self.agent)
+        result = search_for_patterns(["command_"], "*.java", self.agent)
         print(result)
         self.assertEqual(result, """Found 13 search results:
 
@@ -67,12 +67,13 @@ main/src/main/java/net/sourceforge/argparse4j/internal/SubparserImpl.java:271:  
 
     def test_search_for_patterns_single_pattern_no_result_found(self):
 
-        result = search_for_patterns(["command_NotFound"], self.agent)
+        result = search_for_patterns(
+            ["command_NotFound"], "*.java", self.agent)
         print(result)
         self.assertEqual(result, """No search results found.""")
 
     def test_search_for_patterns_multiple_patterns(self):
-        result = search_for_patterns(["command_", "try"], self.agent)
+        result = search_for_patterns(["command_", "try"], "*.java", self.agent)
         print(result)
         self.assertEqual(result, """Found 106 search results. Only showing the first 50 results:
 
@@ -128,13 +129,14 @@ main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentParserImplTest.ja
 main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentParserImplTest.java:988:        try {""")
 
     def test_search_for_patterns_no_patterns(self):
-        result = search_for_patterns([], self.agent)
+        result = search_for_patterns([], "*.java", self.agent)
         print(result)
         self.assertEqual(
             result, "Error in search_for_patterns: The 'patterns' list was empty. Provide at least one pattern to search for.")
 
     def test_search_for_patterns_regular_expression_pattern(self):
-        result = search_for_patterns(["command_+ !*= [a-z]+"], self.agent)
+        result = search_for_patterns(
+            ["command_+ !*= [a-z]+"], "*.java", self.agent)
         print(result)
         self.assertEqual(result, """Found 5 search results:
 
@@ -145,8 +147,45 @@ main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserImpl.java:4
 main/src/main/java/net/sourceforge/argparse4j/internal/SubparserImpl.java:56:        command_ = command;""")
 
     def test_search_for_patterns_single_quote_in_pattern_handled(self):
-        result = search_for_patterns(["'C'"], self.agent)
+        result = search_for_patterns(["'C'"], "*.java", self.agent)
         print(result)
         self.assertEqual(result, """Found 1 search results:
 
 main/src/test/java/net/sourceforge/argparse4j/impl/type/ReflectArgumentTypeTest.java:82:            assertEquals("argument null: could not convert 'C' (choose from {PYTHON,CPP,JAVA})",""")
+
+    def test_search_for_patterns_in_all_files(self):
+        result = search_for_patterns(["command_"], "*", self.agent)
+        print(result)
+        self.assertEqual(result, """Found 13 search results:
+
+main/src/main/java/net/sourceforge/argparse4j/internal/UnrecognizedCommandException.java:35:    private final String command_;
+main/src/main/java/net/sourceforge/argparse4j/internal/UnrecognizedCommandException.java:40:        command_ = command;
+main/src/main/java/net/sourceforge/argparse4j/internal/UnrecognizedCommandException.java:44:        return command_;
+main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserImpl.java:58:    private final String command_;
+main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserImpl.java:78:        this.command_ = command;
+main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserImpl.java:355:        if (command_ != null) {
+main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserImpl.java:356:            opts.add(command_);
+main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserImpl.java:436:        if (parser.command_ != null) {
+main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserImpl.java:437:            opts.add(parser.command_);
+main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserImpl.java:1474:        return command_;
+main/src/main/java/net/sourceforge/argparse4j/internal/SubparserImpl.java:48:    private final String command_;
+main/src/main/java/net/sourceforge/argparse4j/internal/SubparserImpl.java:56:        command_ = command;
+main/src/main/java/net/sourceforge/argparse4j/internal/SubparserImpl.java:271:            String title = "  " + command_;""")
+
+    def test_search_for_patterns_in_all_files_occurences_in_non_java_file(self):
+        result = search_for_patterns(["<phase>"], "*", self.agent)
+        print(result)
+        self.assertEqual(result, """Found 12 search results:
+
+pom.xml:196:                        <phase>verify</phase>
+main/pom.xml:83:                        <phase>site</phase>
+main/pom.xml:149:                        <phase>none</phase>
+main/pom.xml:171:                        <phase>compile</phase>
+main/pom.xml:185:                        <phase>test-compile</phase>
+main/pom.xml:211:                        <phase>verify</phase>
+main/pom.xml:258:                        <phase>verify</phase>
+extensions/hadoop/pom.xml:144:                        <phase>none</phase>
+extensions/hadoop/pom.xml:166:                        <phase>compile</phase>
+extensions/hadoop/pom.xml:180:                        <phase>test-compile</phase>
+extensions/hadoop/pom.xml:206:                        <phase>verify</phase>
+extensions/pom.xml:30:                        <phase>verify</phase>""")

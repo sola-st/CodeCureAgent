@@ -80,7 +80,7 @@ def read_range(file_path: str, start_line: int, end_line: int, agent: BaseAgent)
 
     lines_str = ""
 
-    for i in range(start_line-1, end_line, 1):
+    for i in range(start_line - 1, end_line, 1):
         # if start_line was 0 skip this non existing line
         if i < 0:
             continue
@@ -89,7 +89,7 @@ def read_range(file_path: str, start_line: int, end_line: int, agent: BaseAgent)
         if i >= len(lines):
             lines_str += "EOF"
             break
-        lines_str += "Line {}:".format(i+1) + lines[i]
+        lines_str += "Line {}:".format(i + 1) + lines[i]
     return lines_str.rstrip("\n")
 
 
@@ -101,10 +101,15 @@ def read_range(file_path: str, start_line: int, end_line: int, agent: BaseAgent)
             "type": "list[string]",
             "description": "The pattern or patterns to search for",
             "required": True,
+        },
+        "include": {
+            "type": "string",
+            "description": "The files to include",
+            "required": True
         }
     },
 )
-def search_for_patterns(patterns: list[str], agent: BaseAgent) -> str:
+def search_for_patterns(patterns: list[str], include: str, agent: BaseAgent) -> str:
     if len(patterns) == 0:
         logger.error(
             "search_for_patterns was called with an empty list of patterns")
@@ -113,7 +118,7 @@ def search_for_patterns(patterns: list[str], agent: BaseAgent) -> str:
     repo_path = os.path.join(agent.config.workspace_path,
                              agent.ai_config.warning_repository_name)
 
-    cmd = "grep -rinHsIE --max-count=1000 --include '*.java'"
+    cmd = f"grep -rinHsIE --max-count=1000 --include '{include}'"
     for pattern in patterns:
         # Add the patterns with cleaned single quotes
         pattern_cleaned = str(pattern).replace(

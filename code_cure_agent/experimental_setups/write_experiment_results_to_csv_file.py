@@ -216,8 +216,15 @@ def retrieve_fix_info(experiment_folder: str, task_to_add: int, classification: 
         if change_dict["insertions"]:
             for insertion in change_dict["insertions"]:
                 start_line = insertion["line_number"]
+                comments_found = 0
                 for i, line in enumerate(insertion["new_lines"]):
-                    covered_lines.append(start_line + i)
+                    # Exclude single line comments from the count.
+                    # Multi line comments are more difficult to distinguish, so we do not handle them.
+                    if not line.strip().startswith("//"):
+                        # the line where we would have inserted it if we had no insertion of comments
+                        covered_lines.append(start_line + i - comments_found)
+                    else:
+                        comments_found += 1
 
         if change_dict["deletions"]:
             for deletion in change_dict["deletions"]:

@@ -5,50 +5,50 @@
 
 ### Total rule violations
 
-50
+71
 ### Classification
 
-TP: 35  
-FP: 15  
+TP: 49  
+FP: 22  
 Unclassified: 0
 ### Plausible Fixes
 
-Total plausible fixes: 49/50  
-TP plausible fixes: 34/35  
-FP plausible fixes: 15/15  
+Total plausible fixes: 70/71  
+TP plausible fixes: 48/49  
+FP plausible fixes: 22/22  
 ### Execution time
 
-Total execution time: 176.6 minutes  
+Total execution time: 245.38333333333333 minutes  
 Execution time by sub-agent:  
-Classification: 73.53333333333333 minutes  
-Fix_TP: 83.41666666666667 minutes  
-Fix_FP: 19.633333333333333 minutes  
+Classification: 103.7 minutes  
+Fix_TP: 116.23333333333333 minutes  
+Fix_FP: 25.433333333333334 minutes  
 
-Average execution time: 3.5166666666666666 minutes  
+Average execution time: 3.45 minutes  
 Average execution time by sub-agent:  
-Classification: 1.4666666666666666 minutes  
-Fix_TP: 2.3833333333333333 minutes  
-Fix_FP: 1.3 minutes  
+Classification: 1.45 minutes  
+Fix_TP: 2.3666666666666667 minutes  
+Fix_FP: 1.15 minutes  
 ### Cost
 
 #### Tokens Count
 
-Total tokens count: 6035332  
+Total tokens count: 7897461  
 Tokens by sub-agent:  
-Classification: 2819202  
-Fix_TP: 3098035  
-Fix_FP: 118095  
+Classification: 3905224  
+Fix_TP: 3822475  
+Fix_FP: 169762  
 #### Tokens Cost
 
-Total Cost: 2.6402152 USD  
+Total Cost: 3.4720572000000005 USD  
 Cost by sub-agent:  
-Classification: 1.2498768 USD  
-Fix_TP: 1.3334428 USD  
-Fix_FP: 0.220094 USD  
+Classification: 1.7345152000000001 USD  
+Fix_TP: 1.6556020000000002 USD  
+Fix_FP: 0.316132 USD  
 #### Average Tokens Cost
 
-Average Total Cost: 0.052804304 USD  
+Average Total Cost: 0.04890221408450705 USD  
 Average cost by sub-agent:  
-Classification: 0.024997536 USD  
-Fix_TP: 0.038098365714285716 USD  
-Fix_FP: 0.014672933333333334 USD  
+Classification: 0.02442979154929578 USD  
+Fix_TP: 0.03378779591836735 USD  
+Fix_FP: 0.014369636363636364 USD  

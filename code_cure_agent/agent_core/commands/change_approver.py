@@ -578,12 +578,14 @@ def extract_test_failure_information(test_result: subprocess.CompletedProcess[st
                             failing_test_file_path = ""
                             package_path_failing_test: str = file_name.removesuffix(
                                 ".txt")
+                            package_path_failing_test_converted_to_slash = package_path_failing_test.replace(
+                                ".", "/")
                             try:
                                 failing_test_file_path = preprocess_paths(
-                                    agent.config.workspace_path, agent.ai_config.warning_repository_name, package_path_failing_test + ".java")
+                                    agent.config.workspace_path, agent.ai_config.warning_repository_name, package_path_failing_test_converted_to_slash + ".java")
                             except ValueError as ve:
                                 logger.warn(title="Couldn't resolve package path when formatting test failure output",
-                                            message=f"package_path was {package_path_failing_test}. Error was {str(ve)}")
+                                            message=f"package_path was {package_path_failing_test_converted_to_slash}. Error was {str(ve)}")
 
                             if failing_test_file_path != "":
                                 report_content = report_content.replace(
@@ -621,11 +623,11 @@ def clean_stacktrace_line(line: str, package_path_failing_test: str, agent: Base
             package_path_of_line_unclean = matched_stack_trace_line.group(
                 "package_path")
             # the package of the file might end with a $2 or similar, so remove that
-            package_path_of_line = package_path_of_line_unclean.removesuffix(".").split("$")[
-                0]
+            package_path_of_line_converted_to_slash = package_path_of_line_unclean.removesuffix(".").split("$")[
+                0].replace(".", "/")
             try:
                 file_path_of_line = preprocess_paths(
-                    agent.config.workspace_path, agent.ai_config.warning_repository_name, package_path_of_line + ".java")
+                    agent.config.workspace_path, agent.ai_config.warning_repository_name, package_path_of_line_converted_to_slash + ".java")
 
             except ValueError as ve:
                 logger.debug("Package path in Stacktrace not resolved.",

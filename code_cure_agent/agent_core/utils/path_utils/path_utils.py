@@ -5,13 +5,6 @@ import uuid
 def preprocess_paths(workspace, project_name: str, file_path):
     project_dir = os.path.join(workspace, project_name)
 
-    if file_path.endswith(".java"):
-        file_path = file_path[:-5]
-        file_path = file_path.replace(".", "/")
-        file_path += ".java"
-    else:
-        file_path = file_path.replace(".", "/")
-
     if not os.path.exists(os.path.join(project_dir, file_path)):
 
         file_index_file_name = "cca_files_index_java_only.txt"

@@ -35,6 +35,8 @@ def analyze_file_and_parse_report(file_relative_path: str, rules: list[str], rep
         agent (BaseAgent): The agent with its configuration
     Returns:
         dict: The created and parsed analysis report.
+    Raises:
+        AnalysisError if the analysis failed
     """
 
     result = analyze_file(file_relative_path, rules,
@@ -62,12 +64,21 @@ def analyze_file(file_relative_path: str, rules: list[str], repo_name: str, anal
         agent (BaseAgent): The agent with its configuration
     Returns:
         subprocess.CompletedProcess[str]: Result of running the mining suprocess. If subprocess was succesful then the property "returncode" is 0.
+    Raises:
+        AnalysisError if the file_relative_path couldn't be resolved
     """
     workspace = agent.config.workspace_path
 
     # Prepare the paths
-    file_relative_path = preprocess_paths(
-        workspace, repo_name, file_relative_path)
+    try:
+        file_relative_path = preprocess_paths(
+            workspace, repo_name, file_relative_path)
+    except ValueError as ve:
+        logger.error("Error in running SonarQube analysis",
+                     f"The provided relative file path could not be resolved by running preprocess_paths. The file_relative_path was: {file_relative_path} and the error info of preprocess_paths: {str(ve)}")
+        raise AnalysisError(
+            f"Error: The provided relative file path could not be resolved by running preprocess_paths. The file_relative_path was: {file_relative_path} and the error info of preprocess_paths: {str(ve)}")
+
     file_path = os.path.join(workspace, repo_name, file_relative_path)
 
     analysis_report_path = os.path.join(workspace, analysis_report_file_name)

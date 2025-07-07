@@ -133,7 +133,45 @@ def show_changed_code(all_file_changes: list[FileChanges]) -> str:
                         file_changes.change_tracked_lines[i].strip(
                             "\n") + "\n"
 
+    changed_code_message = reduce_long_sections_of_unchanged_lines_in_changed_code_message(
+        changed_code_message)
+
     return changed_code_message + "\n"
+
+
+def reduce_long_sections_of_unchanged_lines_in_changed_code_message(changed_code_message: str) -> str:
+    '''
+    If there are long sections of unchanged code lines in the changed code that is displayed to the agent, then the long sections are reduced.
+    This prevents very long outputs that might distract the agent or might even be truncated and therefore might not show the relevant information.
+    '''
+    reduction_threshold = 120
+
+    changed_code_message_split = changed_code_message.splitlines(keepends=True)
+
+    # list of two element lists that denote the section of unchanged code in the message.
+    # The second element of the lists is exclusive.
+    sections_with_unchanged_code = []
+    currently_in_section_of_unchanged_code = False
+
+    for i, line in enumerate(changed_code_message_split):
+        if line.startswith("unchanged line:"):
+            if not currently_in_section_of_unchanged_code:
+                currently_in_section_of_unchanged_code = True
+                sections_with_unchanged_code.append([i, i + 1])
+            else:
+                sections_with_unchanged_code[-1][1] = i + 1
+        else:
+            currently_in_section_of_unchanged_code = False
+
+    for section in reversed(sections_with_unchanged_code):
+        section_length = section[1] - section[0]
+        if section_length > reduction_threshold:
+            for j in reversed(range(section[0] + 20, section[1] - 20)):
+                changed_code_message_split.pop(j)
+            changed_code_message_split.insert(
+                section[0] + 20, f"... not showing {str(section_length - 40)} more unchanged lines ...\n")
+
+    return "".join(changed_code_message_split)
 
 
 def extract_build_error_information(build_error: BuildError, agent: BaseAgent) -> str:

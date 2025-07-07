@@ -27,6 +27,8 @@ class AIConfig():
         self.warning_specific_message = warning_specific_message
 
         self.warning_repository_name = warning_repository_name
+        if self.warning_file_path:
+            self.warning_file_name = warning_file_path.split("/")[-1]
 
 
 class AgentMock():

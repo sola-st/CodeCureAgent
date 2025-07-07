@@ -218,6 +218,36 @@ class ChangeApproverTestCase(unittest.TestCase):
             all_file_changes)
         print(changed_code_message)
 
+    def test_show_changed_code_long_section_of_unchanged_code_reduced(self):
+        change_dict_list = [{
+            "file_name": "main/src/main/java/net/sourceforge/argparse4j/ArgumentParsers.java",
+            "insertions": [{
+                "line_number": 3,
+                "new_lines": [" * Added lines\n", " * Added lines\n", " * Added lines\n"]
+            }],
+            "deletions": [11, 12, 13, 14, 15],
+            "modifications": [{
+                "line_number": 352,
+                "modified_line": "        return somethingElse;\n"
+            }]
+        }]
+        file_relative_path = "main/src/main/java/net/sourceforge/argparse4j/ArgumentParsers.java"
+
+        project_dir = os.path.join(
+            self.agent.config.workspace_path, self.agent.ai_config.warning_repository_name)
+
+        file_full_path = os.path.join(project_dir, file_relative_path)
+
+        all_file_changes = [write_fix.apply_changes(
+            change_dict_list, file_relative_path, file_full_path)]
+        changed_code_message = change_approver.show_changed_code(
+            all_file_changes)
+        print(changed_code_message)
+
+        self.assertEqual(len(changed_code_message.splitlines()), 67)
+        self.assertFalse(changed_code_message.find(
+            "... not showing 296 more unchanged lines ...") == -1)
+
     def test_check_if_suppression_literal_inserted_NOSONAR_is_inserted(self):
         self.agent.current_state = "fix_fp"
 

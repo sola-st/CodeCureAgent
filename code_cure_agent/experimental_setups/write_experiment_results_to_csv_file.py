@@ -237,7 +237,7 @@ def retrieve_fix_info(experiment_folder: str, task_to_add: int, classification: 
         return True, "Multi File"
     elif len(covered_lines_unique) > 1:
         return True, "Multi Line"
-    elif len(covered_lines_unique) == 1:
+    elif len(covered_lines_unique) == 1 or len(covered_lines_unique) == 0:
         return True, "Single Line"
     else:
         print(

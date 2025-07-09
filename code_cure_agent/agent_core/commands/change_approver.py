@@ -74,7 +74,7 @@ def try_to_build_changed_project(all_file_changes: list[FileChanges], agent: Bas
         return True, "Project was successfully built with the applied changes."
 
     except BuildError as build_error:
-        return False, "Building the project failed! There were new compilation errors introduced by your fix attempt.  \n" + show_changed_code(all_file_changes) + extract_build_error_information(build_error, agent)
+        return False, "Building the project failed! There were new compilation errors introduced by your fix attempt.  \n" + extract_build_error_information(build_error, agent) + "\n" + show_changed_code(all_file_changes)
 
     except subprocess.TimeoutExpired as timeout_error:
         return False, f"Building the project failed with a timeout after {timeout_error.timeout / 60} minutes."
@@ -85,7 +85,7 @@ def show_changed_code(all_file_changes: list[FileChanges]) -> str:
     Show the changed lines of code of the changed files to give the agent an idea about what it has done and what it maybe has done wrong.
     """
 
-    changed_code_message = "After applying your changes the relevant lines of code look like this:  "
+    changed_code_message = "To help you understand what you did wrong, below you are provided with the relevant lines of code after applying your proposed changes (with made insertions and deletions):  "
 
     for file_changes in all_file_changes:
         changed_code_message += f"\n\nFile {file_changes.file_path}:\n"

@@ -80,100 +80,6 @@ def try_to_build_changed_project(all_file_changes: list[FileChanges], agent: Bas
         return False, f"Building the project failed with a timeout after {timeout_error.timeout / 60} minutes."
 
 
-def show_changed_code(all_file_changes: list[FileChanges]) -> str:
-    """
-    Show the changed lines of code of the changed files to give the agent an idea about what it has done and what it maybe has done wrong.
-    """
-
-    changed_code_message = "To help you understand what you did wrong, below you are provided with the relevant lines of code after applying your proposed changes (with made insertions and deletions):  "
-
-    for file_changes in all_file_changes:
-        changed_code_message += f"\n\nFile {file_changes.file_path}:\n"
-
-        first_changed_line = -1
-        last_changed_line = -1
-
-        for mapping in file_changes.change_tracked_lines.map_line_indices_before_after_change:
-            if mapping.inserted or mapping.deleted or mapping.modified:
-                if first_changed_line == -1 or first_changed_line > mapping.after_line:
-                    first_changed_line = mapping.after_line
-                if last_changed_line < mapping.after_line:
-                    last_changed_line = mapping.after_line
-
-        if first_changed_line == -1 or last_changed_line == -1:
-            logger.error("A FileChanges object had no first and/or last line of changed lines.",
-                         "This should only happen if a changes_dict was empty.")
-            continue
-        first_line_to_read = max(first_changed_line - 5, 1)
-        last_line_to_read = min(last_changed_line + 5,
-                                len(file_changes.change_tracked_lines))
-
-        map_line_indices_before_after_change = file_changes.change_tracked_lines.map_line_indices_before_after_change
-
-        for i in range(first_line_to_read - 1, last_line_to_read):
-
-            line_mappings_of_line = list(filter(
-                lambda line_mapping, index=i: line_mapping.after_line == index + 1, map_line_indices_before_after_change))
-
-            for line_mapping_of_line in line_mappings_of_line:
-                if line_mapping_of_line.inserted:
-                    changed_code_message += "inserted line:" + \
-                        file_changes.change_tracked_lines[i].strip(
-                            "\n") + "\n"
-                elif line_mapping_of_line.modified:
-                    changed_code_message += "modified line: before:'" + \
-                        file_changes.change_tracked_lines.lines_before_change[line_mapping_of_line.before_line - 1].strip(
-                            "\n") + "' after:'" + file_changes.change_tracked_lines[i].strip("\n") + "'\n"
-                elif line_mapping_of_line.deleted:
-                    changed_code_message += "deleted line:" + \
-                        file_changes.change_tracked_lines.lines_before_change[
-                            line_mapping_of_line.before_line - 1].strip("\n") + "\n"
-                else:
-                    changed_code_message += "unchanged line:" + \
-                        file_changes.change_tracked_lines[i].strip(
-                            "\n") + "\n"
-
-    changed_code_message = reduce_long_sections_of_unchanged_lines_in_changed_code_message(
-        changed_code_message)
-
-    return changed_code_message + "\n"
-
-
-def reduce_long_sections_of_unchanged_lines_in_changed_code_message(changed_code_message: str) -> str:
-    '''
-    If there are long sections of unchanged code lines in the changed code that is displayed to the agent, then the long sections are reduced.
-    This prevents very long outputs that might distract the agent or might even be truncated and therefore might not show the relevant information.
-    '''
-    reduction_threshold = 120
-
-    changed_code_message_split = changed_code_message.splitlines(keepends=True)
-
-    # list of two element lists that denote the section of unchanged code in the message.
-    # The second element of the lists is exclusive.
-    sections_with_unchanged_code = []
-    currently_in_section_of_unchanged_code = False
-
-    for i, line in enumerate(changed_code_message_split):
-        if line.startswith("unchanged line:"):
-            if not currently_in_section_of_unchanged_code:
-                currently_in_section_of_unchanged_code = True
-                sections_with_unchanged_code.append([i, i + 1])
-            else:
-                sections_with_unchanged_code[-1][1] = i + 1
-        else:
-            currently_in_section_of_unchanged_code = False
-
-    for section in reversed(sections_with_unchanged_code):
-        section_length = section[1] - section[0]
-        if section_length > reduction_threshold:
-            for j in reversed(range(section[0] + 20, section[1] - 20)):
-                changed_code_message_split.pop(j)
-            changed_code_message_split.insert(
-                section[0] + 20, f"... not showing {str(section_length - 40)} more unchanged lines ...\n")
-
-    return "".join(changed_code_message_split)
-
-
 def extract_build_error_information(build_error: BuildError, agent: BaseAgent) -> str:
     """
     Cleans the potentially long maven build output and only extracts the lines, where the relevant compilation errors are described.
@@ -275,6 +181,100 @@ def clean_absolute_paths_in_output(output_lines: list[str], agent: BaseAgent) ->
         f"{agent.config.workspace_path}/", "").replace(f"{agent.config.workspace_path}", "") for output_line in output_lines]
 
     return cleaned_path_lines
+
+
+def show_changed_code(all_file_changes: list[FileChanges]) -> str:
+    """
+    Show the changed lines of code of the changed files to give the agent an idea about what it has done and what it maybe has done wrong.
+    """
+
+    changed_code_message = "To help you understand what you did wrong, below you are provided with the relevant lines of code after applying your proposed changes (with made insertions and deletions):  "
+
+    for file_changes in all_file_changes:
+        changed_code_message += f"\n\nFile {file_changes.file_path}:\n"
+
+        first_changed_line = -1
+        last_changed_line = -1
+
+        for mapping in file_changes.change_tracked_lines.map_line_indices_before_after_change:
+            if mapping.inserted or mapping.deleted or mapping.modified:
+                if first_changed_line == -1 or first_changed_line > mapping.after_line:
+                    first_changed_line = mapping.after_line
+                if last_changed_line < mapping.after_line:
+                    last_changed_line = mapping.after_line
+
+        if first_changed_line == -1 or last_changed_line == -1:
+            logger.error("A FileChanges object had no first and/or last line of changed lines.",
+                         "This should only happen if a changes_dict was empty.")
+            continue
+        first_line_to_read = max(first_changed_line - 5, 1)
+        last_line_to_read = min(last_changed_line + 5,
+                                len(file_changes.change_tracked_lines))
+
+        map_line_indices_before_after_change = file_changes.change_tracked_lines.map_line_indices_before_after_change
+
+        for i in range(first_line_to_read - 1, last_line_to_read):
+
+            line_mappings_of_line = list(filter(
+                lambda line_mapping, index=i: line_mapping.after_line == index + 1, map_line_indices_before_after_change))
+
+            for line_mapping_of_line in line_mappings_of_line:
+                if line_mapping_of_line.inserted:
+                    changed_code_message += "inserted line:" + \
+                        file_changes.change_tracked_lines[i].strip(
+                            "\n") + "\n"
+                elif line_mapping_of_line.modified:
+                    changed_code_message += "modified line: before:'" + \
+                        file_changes.change_tracked_lines.lines_before_change[line_mapping_of_line.before_line - 1].strip(
+                            "\n") + "' after:'" + file_changes.change_tracked_lines[i].strip("\n") + "'\n"
+                elif line_mapping_of_line.deleted:
+                    changed_code_message += "deleted line:" + \
+                        file_changes.change_tracked_lines.lines_before_change[
+                            line_mapping_of_line.before_line - 1].strip("\n") + "\n"
+                else:
+                    changed_code_message += "unchanged line:" + \
+                        file_changes.change_tracked_lines[i].strip(
+                            "\n") + "\n"
+
+    changed_code_message = reduce_long_sections_of_unchanged_lines_in_changed_code_message(
+        changed_code_message)
+
+    return changed_code_message + "\n"
+
+
+def reduce_long_sections_of_unchanged_lines_in_changed_code_message(changed_code_message: str) -> str:
+    '''
+    If there are long sections of unchanged code lines in the changed code that is displayed to the agent, then the long sections are reduced.
+    This prevents very long outputs that might distract the agent or might even be truncated and therefore might not show the relevant information.
+    '''
+    reduction_threshold = 120
+
+    changed_code_message_split = changed_code_message.splitlines(keepends=True)
+
+    # list of two element lists that denote the section of unchanged code in the message.
+    # The second element of the lists is exclusive.
+    sections_with_unchanged_code = []
+    currently_in_section_of_unchanged_code = False
+
+    for i, line in enumerate(changed_code_message_split):
+        if line.startswith("unchanged line:"):
+            if not currently_in_section_of_unchanged_code:
+                currently_in_section_of_unchanged_code = True
+                sections_with_unchanged_code.append([i, i + 1])
+            else:
+                sections_with_unchanged_code[-1][1] = i + 1
+        else:
+            currently_in_section_of_unchanged_code = False
+
+    for section in reversed(sections_with_unchanged_code):
+        section_length = section[1] - section[0]
+        if section_length > reduction_threshold:
+            for j in reversed(range(section[0] + 20, section[1] - 20)):
+                changed_code_message_split.pop(j)
+            changed_code_message_split.insert(
+                section[0] + 20, f"... not showing {str(section_length - 40)} more unchanged lines ...\n")
+
+    return "".join(changed_code_message_split)
 
 
 def check_if_suppression_literal_inserted(changes_dicts: list[dict], agent: BaseAgent) -> tuple[bool, str]:

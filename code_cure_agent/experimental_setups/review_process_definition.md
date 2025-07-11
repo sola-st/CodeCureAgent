@@ -34,3 +34,19 @@
    3. Add the decision to the csv file created before (in column fixCorrectness either add "Correct" or "Not correct". You can add an explanation in column fixCorrectnessExplanation if the instance is a complicated case that needs explanation).
 
 For more detailed instructions on running the scripts, see [README](../../README.md).
+
+## What makes a classification "Sound"?
+
+The agent for classification has three questions that it has to answer. Based on these questions, it then gives a final verdict.  
+The agent can decide for itself how to weight the different questions in its final decision of TP or FP. Depending on the specific rule violation, some questions might be more important than others (e.g., whether the developer intentionally violated the rule (Q2) might be more important for CodeSmells than for other types of rules).  
+
+This classification is then sound if the following holds:
+
+- A developer might come to the same conclusion (deciding that the problem is to be fixed or not to be fixed, or isn't a problem at all)
+- The agent's reasoning about the classification aligns with the reviewer's interpretation of the code and the rule violation
+- The final verdict (TP or FP) aligns with this interpretation of the reviewer.
+
+Special cases:
+
+- If a CodeSmell is systematically violated in a file/project out of a meaningful style consideration, then classifying it as FP makes sense.
+- If there is a way of fixing the rule violation without breaking relevant functionality or design choices, even if the rule was intentionally violated by the developer, then fixing it is sound. But not fixing it might still be sound too, if the developer violated the rule for a good reason.

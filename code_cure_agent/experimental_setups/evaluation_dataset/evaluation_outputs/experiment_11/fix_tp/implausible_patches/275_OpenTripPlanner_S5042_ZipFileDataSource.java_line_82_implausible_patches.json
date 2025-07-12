@@ -1,0 +1,1142 @@
+  
+### IMPLAUSIBLE FIX (fix no. 1)
+[
+    {
+        "file_name": "src/main/java/org/opentripplanner/datastore/file/ZipFileDataSource.java",
+        "insertions": [
+            {
+                "line_number": 28,
+                "new_lines": [
+                    "    private static final int MAX_ENTRIES = 1000;",
+                    "    private static final long MAX_TOTAL_UNCOMPRESSED_SIZE = 500L * 1024L * 1024L; // 500 MB"
+                ]
+            },
+            {
+                "line_number": 84,
+                "new_lines": [
+                    "            int entryCount = 0;",
+                    "            long totalUncompressedSize = 0L;"
+                ]
+            },
+            {
+                "line_number": 85,
+                "new_lines": [
+                    "                entryCount++;",
+                    "                long entrySize = entry.getSize();",
+                    "                if (entrySize < 0) {",
+                    "                    // Unknown size, treat as 0 to avoid overflow",
+                    "                    entrySize = 0;",
+                    "                }",
+                    "                totalUncompressedSize += entrySize;",
+                    "                if (entryCount > MAX_ENTRIES) {",
+                    "                    throw new IOException(\"Zip file \" + path() + \" has too many entries: \" + entryCount + \". Limit is \" + MAX_ENTRIES);",
+                    "                }",
+                    "                if (totalUncompressedSize > MAX_TOTAL_UNCOMPRESSED_SIZE) {",
+                    "                    throw new IOException(\"Zip file \" + path() + \" total uncompressed size too large: \" + totalUncompressedSize + \" bytes. Limit is \" + MAX_TOTAL_UNCOMPRESSED_SIZE + \" bytes.\");",
+                    "                }"
+                ]
+            }
+        ],
+        "deletions": []
+    }
+]
+
+ ###CHANGE APPROVER FEEDBACK:  
+Building the project failed! There were new compilation errors introduced by your fix attempt.  
+Build failed with the following maven error output:   
+
+[ERROR] COMPILATION ERROR :   
+[INFO] -------------------------------------------------------------  
+[ERROR] src/main/java/org/opentripplanner/datastore/file/ZipFileDataSource.java: In line 90: 'long entrySize = entry.getSize();' Problem: cannot find symbol  
+  symbol:   variable entry  
+  location: class org.opentripplanner.datastore.file.ZipFileDataSource  
+[INFO] 1 error  
+[INFO] -------------------------------------------------------------  
+[INFO] ------------------------------------------------------------------------  
+[INFO] BUILD FAILURE  
+[INFO] ------------------------------------------------------------------------  
+[INFO] Total time:  15.257 s  
+[INFO] Finished at: 2025-07-12T01:48:03Z  
+
+The project had no compilation errors before. So they occurred due to your fix attempt! Try a new fix that doesn't introduce the compilation errors.  
+
+To help you understand what you did wrong, below you are provided with the relevant lines of code after applying your proposed changes (with made insertions and deletions):  
+
+File src/main/java/org/opentripplanner/datastore/file/ZipFileDataSource.java:
+unchanged line:    private static final Logger LOG = LoggerFactory.getLogger(ZipFileDataSource.class);
+unchanged line:
+unchanged line:    private boolean contentLoaded = false;
+unchanged line:    private ZipFile zipFile;
+unchanged line:    private final Collection<DataSource> content = new ArrayList<>();
+inserted line:    private static final int MAX_ENTRIES = 1000;
+inserted line:    private static final long MAX_TOTAL_UNCOMPRESSED_SIZE = 500L * 1024L * 1024L; // 500 MB
+unchanged line:
+unchanged line:    public ZipFileDataSource(File file, FileType type) {
+unchanged line:        super(file, type);
+unchanged line:    }
+unchanged line:
+unchanged line:    @Override
+unchanged line:    public void close() {
+unchanged line:        try {
+unchanged line:            if(zipFile != null) {
+unchanged line:                zipFile.close();
+unchanged line:                zipFile = null;
+unchanged line:            }
+unchanged line:        }
+unchanged line:        catch (IOException e) {
+unchanged line:            LOG.error(path() + " close failed. Details: " + e.getLocalizedMessage(), e);
+unchanged line:        }
+unchanged line:    }
+unchanged line:
+unchanged line:    @Override
+unchanged line:    public boolean isWritable() {
+unchanged line:        return false;
+unchanged line:    }
+unchanged line:
+unchanged line:    @Override
+unchanged line:    public Collection<DataSource> content() {
+unchanged line:        loadContent();
+unchanged line:        return content;
+unchanged line:    }
+unchanged line:
+unchanged line:    @Override
+unchanged line:    public DataSource entry(String name) {
+unchanged line:        loadContent();
+unchanged line:        return content.stream()
+unchanged line:                .filter(it -> it.name().equals(name))
+unchanged line:                .findFirst()
+unchanged line:                .orElse(null);
+unchanged line:    }
+unchanged line:
+unchanged line:    /**
+unchanged line:     * @return the internal zip file if still open. {@code null} is return if the file is closed.
+unchanged line:     */
+unchanged line:    ZipFile zipFile() {
+unchanged line:        return zipFile;
+unchanged line:    }
+unchanged line:
+unchanged line:    private void loadContent() {
+unchanged line:        // Load content once
+unchanged line:        if(contentLoaded) { return; }
+unchanged line:        contentLoaded = true;
+unchanged line:
+unchanged line:        try {
+unchanged line:            // The get name on ZipFile returns the full path, we want just the name.
+unchanged line:            this.zipFile = new ZipFile(file, ZipFile.OPEN_READ);
+unchanged line:
+unchanged line:            Enumeration<? extends ZipEntry> entries = zipFile.entries();
+unchanged line:
+inserted line:            int entryCount = 0;
+inserted line:            long totalUncompressedSize = 0L;
+unchanged line:            while (entries.hasMoreElements()) {
+inserted line:                entryCount++;
+inserted line:                long entrySize = entry.getSize();
+inserted line:                if (entrySize < 0) {
+inserted line:                    // Unknown size, treat as 0 to avoid overflow
+inserted line:                    entrySize = 0;
+inserted line:                }
+inserted line:                totalUncompressedSize += entrySize;
+inserted line:                if (entryCount > MAX_ENTRIES) {
+inserted line:                    throw new IOException("Zip file " + path() + " has too many entries: " + entryCount + ". Limit is " + MAX_ENTRIES);
+inserted line:                }
+inserted line:                if (totalUncompressedSize > MAX_TOTAL_UNCOMPRESSED_SIZE) {
+inserted line:                    throw new IOException("Zip file " + path() + " total uncompressed size too large: " + totalUncompressedSize + " bytes. Limit is " + MAX_TOTAL_UNCOMPRESSED_SIZE + " bytes.");
+inserted line:                }
+unchanged line:                ZipEntry entry = entries.nextElement();
+unchanged line:                content.add(new ZipFileEntryDataSource(this, entry));
+unchanged line:            }
+unchanged line:        }
+unchanged line:        catch (IOException e) {
+
+  
+### IMPLAUSIBLE FIX (fix no. 2)
+[
+    {
+        "file_name": "src/main/java/org/opentripplanner/datastore/file/ZipFileDataSource.java",
+        "insertions": [
+            {
+                "line_number": 28,
+                "new_lines": [
+                    "    private static final int MAX_ENTRIES = 1000;",
+                    "    private static final long MAX_TOTAL_UNCOMPRESSED_SIZE = 500L * 1024L * 1024L; // 500 MB"
+                ]
+            },
+            {
+                "line_number": 84,
+                "new_lines": [
+                    "            int entryCount = 0;",
+                    "            long totalUncompressedSize = 0L;"
+                ]
+            },
+            {
+                "line_number": 85,
+                "new_lines": [
+                    "                ZipEntry entry = entries.nextElement();",
+                    "                entryCount++;",
+                    "                long entrySize = entry.getSize();",
+                    "                if (entrySize < 0) {",
+                    "                    // Unknown size, treat as 0 to avoid overflow",
+                    "                    entrySize = 0;",
+                    "                }",
+                    "                totalUncompressedSize += entrySize;",
+                    "                if (entryCount > MAX_ENTRIES) {",
+                    "                    throw new IOException(\"Zip file \" + path() + \" has too many entries: \" + entryCount + \". Limit is \" + MAX_ENTRIES);",
+                    "                }",
+                    "                if (totalUncompressedSize > MAX_TOTAL_UNCOMPRESSED_SIZE) {",
+                    "                    throw new IOException(\"Zip file \" + path() + \" total uncompressed size too large: \" + totalUncompressedSize + \" bytes. Limit is \" + MAX_TOTAL_UNCOMPRESSED_SIZE + \" bytes.\");",
+                    "                }",
+                    "                content.add(new ZipFileEntryDataSource(this, entry));"
+                ]
+            }
+        ],
+        "deletions": []
+    }
+]
+
+ ###CHANGE APPROVER FEEDBACK:  
+Building the project failed! There were new compilation errors introduced by your fix attempt.  
+Build failed with the following maven error output:   
+
+[ERROR] COMPILATION ERROR :   
+[INFO] -------------------------------------------------------------  
+[ERROR] src/main/java/org/opentripplanner/datastore/file/ZipFileDataSource.java: In line 104: 'ZipEntry entry = entries.nextElement();' Problem: variable entry is already defined in method loadContent()  
+[INFO] 1 error  
+[INFO] -------------------------------------------------------------  
+[INFO] ------------------------------------------------------------------------  
+[INFO] BUILD FAILURE  
+[INFO] ------------------------------------------------------------------------  
+[INFO] Total time:  15.287 s  
+[INFO] Finished at: 2025-07-12T01:48:41Z  
+
+The project had no compilation errors before. So they occurred due to your fix attempt! Try a new fix that doesn't introduce the compilation errors.  
+
+To help you understand what you did wrong, below you are provided with the relevant lines of code after applying your proposed changes (with made insertions and deletions):  
+
+File src/main/java/org/opentripplanner/datastore/file/ZipFileDataSource.java:
+unchanged line:    private static final Logger LOG = LoggerFactory.getLogger(ZipFileDataSource.class);
+unchanged line:
+unchanged line:    private boolean contentLoaded = false;
+unchanged line:    private ZipFile zipFile;
+unchanged line:    private final Collection<DataSource> content = new ArrayList<>();
+inserted line:    private static final int MAX_ENTRIES = 1000;
+inserted line:    private static final long MAX_TOTAL_UNCOMPRESSED_SIZE = 500L * 1024L * 1024L; // 500 MB
+unchanged line:
+unchanged line:    public ZipFileDataSource(File file, FileType type) {
+unchanged line:        super(file, type);
+unchanged line:    }
+unchanged line:
+unchanged line:    @Override
+unchanged line:    public void close() {
+unchanged line:        try {
+unchanged line:            if(zipFile != null) {
+unchanged line:                zipFile.close();
+unchanged line:                zipFile = null;
+unchanged line:            }
+unchanged line:        }
+unchanged line:        catch (IOException e) {
+unchanged line:            LOG.error(path() + " close failed. Details: " + e.getLocalizedMessage(), e);
+unchanged line:        }
+unchanged line:    }
+unchanged line:
+unchanged line:    @Override
+unchanged line:    public boolean isWritable() {
+unchanged line:        return false;
+unchanged line:    }
+unchanged line:
+unchanged line:    @Override
+unchanged line:    public Collection<DataSource> content() {
+unchanged line:        loadContent();
+unchanged line:        return content;
+unchanged line:    }
+unchanged line:
+unchanged line:    @Override
+unchanged line:    public DataSource entry(String name) {
+unchanged line:        loadContent();
+unchanged line:        return content.stream()
+unchanged line:                .filter(it -> it.name().equals(name))
+unchanged line:                .findFirst()
+unchanged line:                .orElse(null);
+unchanged line:    }
+unchanged line:
+unchanged line:    /**
+unchanged line:     * @return the internal zip file if still open. {@code null} is return if the file is closed.
+unchanged line:     */
+unchanged line:    ZipFile zipFile() {
+unchanged line:        return zipFile;
+unchanged line:    }
+unchanged line:
+unchanged line:    private void loadContent() {
+unchanged line:        // Load content once
+unchanged line:        if(contentLoaded) { return; }
+unchanged line:        contentLoaded = true;
+unchanged line:
+unchanged line:        try {
+unchanged line:            // The get name on ZipFile returns the full path, we want just the name.
+unchanged line:            this.zipFile = new ZipFile(file, ZipFile.OPEN_READ);
+unchanged line:
+unchanged line:            Enumeration<? extends ZipEntry> entries = zipFile.entries();
+unchanged line:
+inserted line:            int entryCount = 0;
+inserted line:            long totalUncompressedSize = 0L;
+unchanged line:            while (entries.hasMoreElements()) {
+inserted line:                ZipEntry entry = entries.nextElement();
+inserted line:                entryCount++;
+inserted line:                long entrySize = entry.getSize();
+inserted line:                if (entrySize < 0) {
+inserted line:                    // Unknown size, treat as 0 to avoid overflow
+inserted line:                    entrySize = 0;
+inserted line:                }
+inserted line:                totalUncompressedSize += entrySize;
+inserted line:                if (entryCount > MAX_ENTRIES) {
+inserted line:                    throw new IOException("Zip file " + path() + " has too many entries: " + entryCount + ". Limit is " + MAX_ENTRIES);
+inserted line:                }
+inserted line:                if (totalUncompressedSize > MAX_TOTAL_UNCOMPRESSED_SIZE) {
+inserted line:                    throw new IOException("Zip file " + path() + " total uncompressed size too large: " + totalUncompressedSize + " bytes. Limit is " + MAX_TOTAL_UNCOMPRESSED_SIZE + " bytes.");
+inserted line:                }
+inserted line:                content.add(new ZipFileEntryDataSource(this, entry));
+unchanged line:                ZipEntry entry = entries.nextElement();
+unchanged line:                content.add(new ZipFileEntryDataSource(this, entry));
+unchanged line:            }
+unchanged line:        }
+unchanged line:        catch (IOException e) {
+
+  
+### IMPLAUSIBLE FIX (fix no. 3)
+[
+    {
+        "file_name": "src/main/java/org/opentripplanner/datastore/file/ZipFileDataSource.java",
+        "insertions": [
+            {
+                "line_number": 28,
+                "new_lines": [
+                    "    private static final int MAX_ENTRIES = 1000;",
+                    "    private static final long MAX_TOTAL_UNCOMPRESSED_SIZE = 500L * 1024L * 1024L; // 500 MB"
+                ]
+            },
+            {
+                "line_number": 85,
+                "new_lines": [
+                    "                ZipEntry entry = entries.nextElement();",
+                    "                entryCount++;",
+                    "                long entrySize = entry.getSize();",
+                    "                if (entrySize < 0) {",
+                    "                    // Unknown size, treat as 0 to avoid overflow",
+                    "                    entrySize = 0;",
+                    "                }",
+                    "                totalUncompressedSize += entrySize;",
+                    "                if (entryCount > MAX_ENTRIES) {",
+                    "                    throw new IOException(\"Zip file \" + path() + \" has too many entries: \" + entryCount + \". Limit is \" + MAX_ENTRIES);",
+                    "                }",
+                    "                if (totalUncompressedSize > MAX_TOTAL_UNCOMPRESSED_SIZE) {",
+                    "                    throw new IOException(\"Zip file \" + path() + \" total uncompressed size too large: \" + totalUncompressedSize + \" bytes. Limit is \" + MAX_TOTAL_UNCOMPRESSED_SIZE + \" bytes.\");",
+                    "                }",
+                    "                content.add(new ZipFileEntryDataSource(this, entry));"
+                ]
+            }
+        ],
+        "deletions": [
+            85
+        ]
+    }
+]
+
+ ###CHANGE APPROVER FEEDBACK:  
+Building the project failed! There were new compilation errors introduced by your fix attempt.  
+Build failed with the following maven error output:   
+
+[ERROR] COMPILATION ERROR :   
+[INFO] -------------------------------------------------------------  
+[ERROR] src/main/java/org/opentripplanner/datastore/file/ZipFileDataSource.java: In line 88: 'entryCount++;' Problem: cannot find symbol  
+  symbol:   variable entryCount  
+  location: class org.opentripplanner.datastore.file.ZipFileDataSource  
+[ERROR] src/main/java/org/opentripplanner/datastore/file/ZipFileDataSource.java: In line 94: 'totalUncompressedSize += entrySize;' Problem: cannot find symbol  
+  symbol:   variable totalUncompressedSize  
+  location: class org.opentripplanner.datastore.file.ZipFileDataSource  
+[ERROR] src/main/java/org/opentripplanner/datastore/file/ZipFileDataSource.java: In line 95: 'if (entryCount > MAX_ENTRIES) {' Problem: cannot find symbol  
+  symbol:   variable entryCount  
+
+The project had no compilation errors before. So they occurred due to your fix attempt! Try a new fix that doesn't introduce the compilation errors.  
+
+To help you understand what you did wrong, below you are provided with the relevant lines of code after applying your proposed changes (with made insertions and deletions):  
+
+File src/main/java/org/opentripplanner/datastore/file/ZipFileDataSource.java:
+unchanged line:    private static final Logger LOG = LoggerFactory.getLogger(ZipFileDataSource.class);
+unchanged line:
+unchanged line:    private boolean contentLoaded = false;
+unchanged line:    private ZipFile zipFile;
+unchanged line:    private final Collection<DataSource> content = new ArrayList<>();
+inserted line:    private static final int MAX_ENTRIES = 1000;
+inserted line:    private static final long MAX_TOTAL_UNCOMPRESSED_SIZE = 500L * 1024L * 1024L; // 500 MB
+unchanged line:
+unchanged line:    public ZipFileDataSource(File file, FileType type) {
+unchanged line:        super(file, type);
+unchanged line:    }
+unchanged line:
+unchanged line:    @Override
+unchanged line:    public void close() {
+unchanged line:        try {
+unchanged line:            if(zipFile != null) {
+unchanged line:                zipFile.close();
+unchanged line:                zipFile = null;
+unchanged line:            }
+unchanged line:        }
+unchanged line:        catch (IOException e) {
+unchanged line:            LOG.error(path() + " close failed. Details: " + e.getLocalizedMessage(), e);
+unchanged line:        }
+unchanged line:    }
+unchanged line:
+unchanged line:    @Override
+unchanged line:    public boolean isWritable() {
+unchanged line:        return false;
+unchanged line:    }
+unchanged line:
+unchanged line:    @Override
+unchanged line:    public Collection<DataSource> content() {
+unchanged line:        loadContent();
+unchanged line:        return content;
+unchanged line:    }
+unchanged line:
+unchanged line:    @Override
+unchanged line:    public DataSource entry(String name) {
+unchanged line:        loadContent();
+unchanged line:        return content.stream()
+unchanged line:                .filter(it -> it.name().equals(name))
+unchanged line:                .findFirst()
+unchanged line:                .orElse(null);
+unchanged line:    }
+unchanged line:
+unchanged line:    /**
+unchanged line:     * @return the internal zip file if still open. {@code null} is return if the file is closed.
+unchanged line:     */
+unchanged line:    ZipFile zipFile() {
+unchanged line:        return zipFile;
+unchanged line:    }
+unchanged line:
+unchanged line:    private void loadContent() {
+unchanged line:        // Load content once
+unchanged line:        if(contentLoaded) { return; }
+unchanged line:        contentLoaded = true;
+unchanged line:
+unchanged line:        try {
+unchanged line:            // The get name on ZipFile returns the full path, we want just the name.
+unchanged line:            this.zipFile = new ZipFile(file, ZipFile.OPEN_READ);
+unchanged line:
+unchanged line:            Enumeration<? extends ZipEntry> entries = zipFile.entries();
+unchanged line:
+unchanged line:            while (entries.hasMoreElements()) {
+inserted line:                ZipEntry entry = entries.nextElement();
+inserted line:                entryCount++;
+inserted line:                long entrySize = entry.getSize();
+inserted line:                if (entrySize < 0) {
+inserted line:                    // Unknown size, treat as 0 to avoid overflow
+inserted line:                    entrySize = 0;
+inserted line:                }
+inserted line:                totalUncompressedSize += entrySize;
+inserted line:                if (entryCount > MAX_ENTRIES) {
+inserted line:                    throw new IOException("Zip file " + path() + " has too many entries: " + entryCount + ". Limit is " + MAX_ENTRIES);
+inserted line:                }
+inserted line:                if (totalUncompressedSize > MAX_TOTAL_UNCOMPRESSED_SIZE) {
+inserted line:                    throw new IOException("Zip file " + path() + " total uncompressed size too large: " + totalUncompressedSize + " bytes. Limit is " + MAX_TOTAL_UNCOMPRESSED_SIZE + " bytes.");
+inserted line:                }
+inserted line:                content.add(new ZipFileEntryDataSource(this, entry));
+deleted line:                ZipEntry entry = entries.nextElement();
+unchanged line:                content.add(new ZipFileEntryDataSource(this, entry));
+unchanged line:            }
+unchanged line:        }
+unchanged line:        catch (IOException e) {
+unchanged line:            throw new RuntimeException(
+unchanged line:                    "Failed to load " + path() + ": " + e.getLocalizedMessage(),
+
+  
+### IMPLAUSIBLE FIX (fix no. 4)
+[
+    {
+        "file_name": "src/main/java/org/opentripplanner/datastore/file/ZipFileDataSource.java",
+        "insertions": [
+            {
+                "line_number": 28,
+                "new_lines": [
+                    "    private static final int MAX_ENTRIES = 1000;",
+                    "    private static final long MAX_TOTAL_UNCOMPRESSED_SIZE = 500L * 1024L * 1024L; // 500 MB"
+                ]
+            },
+            {
+                "line_number": 84,
+                "new_lines": [
+                    "            int entryCount = 0;",
+                    "            long totalUncompressedSize = 0L;"
+                ]
+            },
+            {
+                "line_number": 85,
+                "new_lines": [
+                    "                ZipEntry entry = entries.nextElement();",
+                    "                entryCount++;",
+                    "                long entrySize = entry.getSize();",
+                    "                if (entrySize < 0) {",
+                    "                    // Unknown size, treat as 0 to avoid overflow",
+                    "                    entrySize = 0;",
+                    "                }",
+                    "                totalUncompressedSize += entrySize;",
+                    "                if (entryCount > MAX_ENTRIES) {",
+                    "                    throw new IOException(\"Zip file \" + path() + \" has too many entries: \" + entryCount + \". Limit is \" + MAX_ENTRIES);",
+                    "                }",
+                    "                if (totalUncompressedSize > MAX_TOTAL_UNCOMPRESSED_SIZE) {",
+                    "                    throw new IOException(\"Zip file \" + path() + \" total uncompressed size too large: \" + totalUncompressedSize + \" bytes. Limit is \" + MAX_TOTAL_UNCOMPRESSED_SIZE + \" bytes.\");",
+                    "                }",
+                    "                content.add(new ZipFileEntryDataSource(this, entry));"
+                ]
+            }
+        ],
+        "deletions": [
+            85
+        ]
+    }
+]
+
+ ###CHANGE APPROVER FEEDBACK:  
+Project was successfully built with the applied changes.  
+Rerunning the SonarQube analysis found that the targeted rule violation has not yet been removed by your fix. It was still present in the SonarQube report.  
+### IMPLAUSIBLE FIX (fix no. 5)
+[
+    {
+        "file_name": "src/main/java/org/opentripplanner/datastore/file/ZipFileDataSource.java",
+        "insertions": [
+            {
+                "line_number": 28,
+                "new_lines": [
+                    "    private static final int MAX_ENTRIES = 1000;",
+                    "    private static final long MAX_TOTAL_UNCOMPRESSED_SIZE = 500L * 1024L * 1024L; // 500 MB"
+                ]
+            },
+            {
+                "line_number": 84,
+                "new_lines": [
+                    "            int entryCount = 0;",
+                    "            long totalUncompressedSize = 0L;"
+                ]
+            },
+            {
+                "line_number": 85,
+                "new_lines": [
+                    "                ZipEntry entry = entries.nextElement();",
+                    "                entryCount++;",
+                    "                long entrySize = entry.getSize();",
+                    "                if (entrySize < 0) {",
+                    "                    // Unknown size, treat as 0 to avoid overflow",
+                    "                    entrySize = 0;",
+                    "                }",
+                    "                totalUncompressedSize += entrySize;",
+                    "                if (entryCount > MAX_ENTRIES) {",
+                    "                    throw new IllegalStateException(\"Zip file \" + path() + \" has too many entries: \" + entryCount + \". Limit is \" + MAX_ENTRIES);",
+                    "                }",
+                    "                if (totalUncompressedSize > MAX_TOTAL_UNCOMPRESSED_SIZE) {",
+                    "                    throw new IllegalStateException(\"Zip file \" + path() + \" total uncompressed size too large: \" + totalUncompressedSize + \" bytes. Limit is \" + MAX_TOTAL_UNCOMPRESSED_SIZE + \" bytes.\");",
+                    "                }",
+                    "                content.add(new ZipFileEntryDataSource(this, entry));"
+                ]
+            }
+        ],
+        "deletions": [
+            85
+        ]
+    }
+]
+
+ ###CHANGE APPROVER FEEDBACK:  
+Project was successfully built with the applied changes.  
+Rerunning the SonarQube analysis found that the targeted rule violation has not yet been removed by your fix. It was still present in the SonarQube report.  
+### IMPLAUSIBLE FIX (fix no. 6)
+[
+    {
+        "file_name": "src/main/java/org/opentripplanner/datastore/file/ZipFileDataSource.java",
+        "insertions": [
+            {
+                "line_number": 16,
+                "new_lines": [
+                    "import java.io.BufferedInputStream;",
+                    "import java.io.InputStream;"
+                ]
+            }
+        ],
+        "deletions": []
+    }
+]
+
+ ###CHANGE APPROVER FEEDBACK:  
+Project was successfully built with the applied changes.  
+Rerunning the SonarQube analysis found that the targeted rule violation has not yet been removed by your fix. It was still present in the SonarQube report.  
+### IMPLAUSIBLE FIX (fix no. 7)
+[
+    {
+        "file_name": "src/main/java/org/opentripplanner/datastore/file/ZipFileDataSource.java",
+        "insertions": [
+            {
+                "line_number": 16,
+                "new_lines": [
+                    "import java.io.BufferedInputStream;",
+                    "import java.io.InputStream;"
+                ]
+            },
+            {
+                "line_number": 28,
+                "new_lines": [
+                    "    private static final int MAX_ENTRIES = 1000;",
+                    "    private static final long MAX_TOTAL_UNCOMPRESSED_SIZE = 500L * 1024L * 1024L; // 500 MB",
+                    "    private static final double MAX_COMPRESSION_RATIO = 10.0;"
+                ]
+            },
+            {
+                "line_number": 84,
+                "new_lines": [
+                    "            int entryCount = 0;",
+                    "            long totalUncompressedSize = 0L;",
+                    "            byte[] buffer = new byte[2048];"
+                ]
+            },
+            {
+                "line_number": 85,
+                "new_lines": [
+                    "                ZipEntry entry = entries.nextElement();",
+                    "                entryCount++;",
+                    "                long compressedSize = entry.getCompressedSize();",
+                    "                if (compressedSize <= 0) {",
+                    "                    compressedSize = 1; // avoid division by zero or negative compressed size",
+                    "                }",
+                    "                long totalSizeEntry = 0L;",
+                    "                try (InputStream in = new BufferedInputStream(zipFile.getInputStream(entry))) {",
+                    "                    int nBytes;",
+                    "                    while ((nBytes = in.read(buffer)) > 0) {",
+                    "                        totalSizeEntry += nBytes;",
+                    "                        totalUncompressedSize += nBytes;",
+                    "                        if (totalUncompressedSize > MAX_TOTAL_UNCOMPRESSED_SIZE) {",
+                    "                            throw new IllegalStateException(\"Zip file \" + path() + \" total uncompressed size too large: \" + totalUncompressedSize + \" bytes. Limit is \" + MAX_TOTAL_UNCOMPRESSED_SIZE + \" bytes.\");",
+                    "                        }",
+                    "                        double compressionRatio = (double) totalSizeEntry / compressedSize;",
+                    "                        if (compressionRatio > MAX_COMPRESSION_RATIO) {",
+                    "                            throw new IllegalStateException(\"Zip file \" + path() + \" entry \" + entry.getName() + \" has suspicious compression ratio: \" + compressionRatio + \". Limit is \" + MAX_COMPRESSION_RATIO);",
+                    "                        }",
+                    "                    }",
+                    "                }",
+                    "                if (entryCount > MAX_ENTRIES) {",
+                    "                    throw new IllegalStateException(\"Zip file \" + path() + \" has too many entries: \" + entryCount + \". Limit is \" + MAX_ENTRIES);",
+                    "                }",
+                    "                content.add(new ZipFileEntryDataSource(this, entry));"
+                ]
+            }
+        ],
+        "deletions": [
+            85,
+            86
+        ]
+    }
+]
+
+ ###CHANGE APPROVER FEEDBACK:  
+Project was successfully built with the applied changes.  
+Rerunning the SonarQube analysis found the following new rule violations that weren't present before, or that have moved:  
+In file src/main/java/org/opentripplanner/datastore/file/ZipFileDataSource.java:  
+Rule S1192: 'String literals should not be duplicated' (Context-specific message: 'Define a constant instead of duplicating this literal "Zip file " 3 times.') at line 106: 'throw new IllegalStateException("Zip file " + path() + " total uncompressed size too large: " + totalUncompressedSize + " bytes. Limit is " + MAX_TOTAL_UNCOMPRESSED_SIZE + " bytes.");'  
+
+You must not introduce any new rule violations. They need to be prevented/resolved, even if you think the rule violations were already present in the project before. If you think the listed rule violations were already present before and you are certain that they are false positives, then you can also suppress them with '// NOSONAR'.  
+### IMPLAUSIBLE FIX (fix no. 8)
+[
+    {
+        "file_name": "src/main/java/org/opentripplanner/datastore/file/ZipFileDataSource.java",
+        "insertions": [
+            {
+                "line_number": 28,
+                "new_lines": [
+                    "    private static final String ZIP_FILE_PREFIX = \"Zip file \";",
+                    "    private static final int MAX_ENTRIES = 1000;",
+                    "    private static final long MAX_TOTAL_UNCOMPRESSED_SIZE = 500L * 1024L * 1024L; // 500 MB",
+                    "    private static final double MAX_COMPRESSION_RATIO = 10.0;"
+                ]
+            },
+            {
+                "line_number": 16,
+                "new_lines": [
+                    "import java.io.BufferedInputStream;",
+                    "import java.io.InputStream;"
+                ]
+            },
+            {
+                "line_number": 84,
+                "new_lines": [
+                    "            int entryCount = 0;",
+                    "            long totalUncompressedSize = 0L;",
+                    "            byte[] buffer = new byte[2048];"
+                ]
+            },
+            {
+                "line_number": 85,
+                "new_lines": [
+                    "                ZipEntry entry = entries.nextElement();",
+                    "                entryCount++;",
+                    "                long compressedSize = entry.getCompressedSize();",
+                    "                if (compressedSize <= 0) {",
+                    "                    compressedSize = 1; // avoid division by zero or negative compressed size",
+                    "                }",
+                    "                long totalSizeEntry = 0L;",
+                    "                try (InputStream in = new BufferedInputStream(zipFile.getInputStream(entry))) {",
+                    "                    int nBytes;",
+                    "                    while ((nBytes = in.read(buffer)) > 0) {",
+                    "                        totalSizeEntry += nBytes;",
+                    "                        totalUncompressedSize += nBytes;",
+                    "                        if (totalUncompressedSize > MAX_TOTAL_UNCOMPRESSED_SIZE) {",
+                    "                            throw new IllegalStateException(ZIP_FILE_PREFIX + path() + \" total uncompressed size too large: \" + totalUncompressedSize + \" bytes. Limit is \" + MAX_TOTAL_UNCOMPRESSED_SIZE + \" bytes.\");",
+                    "                        }",
+                    "                        double compressionRatio = (double) totalSizeEntry / compressedSize;",
+                    "                        if (compressionRatio > MAX_COMPRESSION_RATIO) {",
+                    "                            throw new IllegalStateException(ZIP_FILE_PREFIX + path() + \" entry \" + entry.getName() + \" has suspicious compression ratio: \" + compressionRatio + \". Limit is \" + MAX_COMPRESSION_RATIO);",
+                    "                        }",
+                    "                    }",
+                    "                }",
+                    "                if (entryCount > MAX_ENTRIES) {",
+                    "                    throw new IllegalStateException(ZIP_FILE_PREFIX + path() + \" has too many entries: \" + entryCount + \". Limit is \" + MAX_ENTRIES);",
+                    "                }",
+                    "                content.add(new ZipFileEntryDataSource(this, entry));"
+                ]
+            }
+        ],
+        "deletions": [
+            85,
+            86
+        ]
+    }
+]
+
+ ###CHANGE APPROVER FEEDBACK:  
+Project was successfully built with the applied changes.  
+Rerunning the SonarQube analysis confirmed that your fix successfully removed the targeted rule violation and didn't introduce any new violations.  
+However, running the tests in the project failed with the following failing tests:  
+-------------------------------------------------------------------------------
+Test file with failure: src/test/java/org/opentripplanner/datastore/file/ZipFileDataSourceTest.java
+-------------------------------------------------------------------------------
+Tests run: 4, Failures: 0, Errors: 2, Skipped: 0, Time elapsed: 0.009 sec <<< FAILURE! - in org.opentripplanner.datastore.file.ZipFileDataSourceTest
+Failing test method: testEntryProperties  Time elapsed: 0.007 sec  <<< ERROR!
+java.lang.IllegalStateException: Zip file src/test/resources/caltrain_gtfs.zip entry trips.txt has suspicious compression ratio: 10.95187165775401. Limit is 10.0
+	at src/test/java/org/opentripplanner/datastore/file/ZipFileDataSourceTest.java Method: testEntryProperties (line 88)
+
+Failing test method: testIO  Time elapsed: 0 sec  <<< ERROR!
+java.lang.IllegalStateException: Zip file src/test/resources/caltrain_gtfs.zip entry trips.txt has suspicious compression ratio: 10.95187165775401. Limit is 10.0
+	at src/test/java/org/opentripplanner/datastore/file/ZipFileDataSourceTest.java Method: testIO (line 64)
+
+  
+  
+### IMPLAUSIBLE FIX (fix no. 9)
+[
+    {
+        "file_name": "src/main/java/org/opentripplanner/datastore/file/ZipFileDataSource.java",
+        "insertions": [
+            {
+                "line_number": 29,
+                "new_lines": [
+                    "    private static final String ZIP_FILE_PREFIX = \"Zip file \";",
+                    "    private static final int MAX_ENTRIES = 1000;",
+                    "    private static final long MAX_TOTAL_UNCOMPRESSED_SIZE = 500L * 1024L * 1024L; // 500 MB",
+                    "    private static final double MAX_COMPRESSION_RATIO = 15.0;"
+                ]
+            },
+            {
+                "line_number": 17,
+                "new_lines": [
+                    "import java.io.BufferedInputStream;",
+                    "import java.io.InputStream;"
+                ]
+            },
+            {
+                "line_number": 85,
+                "new_lines": [
+                    "            int entryCount = 0;",
+                    "            long totalUncompressedSize = 0L;",
+                    "            byte[] buffer = new byte[2048];",
+                    "            Enumeration<? extends ZipEntry> entries = zipFile.entries();",
+                    "            while (entries.hasMoreElements()) {",
+                    "                ZipEntry entry = entries.nextElement();",
+                    "                entryCount++;",
+                    "                long compressedSize = entry.getCompressedSize();",
+                    "                if (compressedSize <= 0) {",
+                    "                    compressedSize = 1; // avoid division by zero or negative compressed size",
+                    "                }",
+                    "                long totalSizeEntry = 0L;",
+                    "                try (InputStream in = new BufferedInputStream(zipFile.getInputStream(entry))) {",
+                    "                    int nBytes;",
+                    "                    while ((nBytes = in.read(buffer)) > 0) {",
+                    "                        totalSizeEntry += nBytes;",
+                    "                        totalUncompressedSize += nBytes;",
+                    "                        if (totalUncompressedSize > MAX_TOTAL_UNCOMPRESSED_SIZE) {",
+                    "                            throw new IllegalStateException(ZIP_FILE_PREFIX + path() + \" total uncompressed size too large: \" + totalUncompressedSize + \" bytes. Limit is \" + MAX_TOTAL_UNCOMPRESSED_SIZE + \" bytes.\");",
+                    "                        }",
+                    "                        double compressionRatio = (double) totalSizeEntry / compressedSize;",
+                    "                        if (compressionRatio > MAX_COMPRESSION_RATIO) {",
+                    "                            throw new IllegalStateException(ZIP_FILE_PREFIX + path() + \" entry \" + entry.getName() + \" has suspicious compression ratio: \" + compressionRatio + \". Limit is \" + MAX_COMPRESSION_RATIO);",
+                    "                        }",
+                    "                    }",
+                    "                }",
+                    "                if (entryCount > MAX_ENTRIES) {",
+                    "                    throw new IllegalStateException(ZIP_FILE_PREFIX + path() + \" has too many entries: \" + entryCount + \". Limit is \" + MAX_ENTRIES);",
+                    "                }",
+                    "                content.add(new ZipFileEntryDataSource(this, entry));",
+                    "            }"
+                ]
+            }
+        ],
+        "deletions": [
+            82,
+            83,
+            84,
+            85,
+            86
+        ]
+    }
+]
+
+ ###CHANGE APPROVER FEEDBACK:  
+Building the project failed! There were new compilation errors introduced by your fix attempt.  
+Build failed with the following maven error output:   
+
+[ERROR] COMPILATION ERROR :   
+[INFO] -------------------------------------------------------------  
+[ERROR] src/main/java/org/opentripplanner/datastore/file/ZipFileDataSource.java: In line 84: 'try {' Problem: 'try' without 'catch', 'finally' or resource declarations  
+[ERROR] src/main/java/org/opentripplanner/datastore/file/ZipFileDataSource.java: In line 121: 'catch (IOException e) {' Problem: illegal start of type  
+[ERROR] src/main/java/org/opentripplanner/datastore/file/ZipFileDataSource.java: In line 121: 'catch (IOException e) {' Problem: ';' expected  
+[ERROR] src/main/java/org/opentripplanner/datastore/file/ZipFileDataSource.java: In line 128: '}' Problem: class, interface, or enum expected  
+[INFO] 4 errors   
+[INFO] -------------------------------------------------------------  
+[INFO] ------------------------------------------------------------------------  
+[INFO] BUILD FAILURE  
+
+The project had no compilation errors before. So they occurred due to your fix attempt! Try a new fix that doesn't introduce the compilation errors.  
+
+To help you understand what you did wrong, below you are provided with the relevant lines of code after applying your proposed changes (with made insertions and deletions):  
+
+File src/main/java/org/opentripplanner/datastore/file/ZipFileDataSource.java:
+unchanged line:import java.util.Collection;
+unchanged line:import java.util.Enumeration;
+unchanged line:import java.util.zip.ZipEntry;
+unchanged line:import java.util.zip.ZipFile;
+unchanged line:
+inserted line:import java.io.BufferedInputStream;
+inserted line:import java.io.InputStream;
+unchanged line:
+unchanged line:/**
+unchanged line: * This is a wrapper around a ZipFile, it can be used to read the content, but
+unchanged line: * not write to it. The {@link #asOutputStream()} is throwing an exception.
+unchanged line: */
+unchanged line:public class ZipFileDataSource extends AbstractFileDataSource implements CompositeDataSource {
+unchanged line:    private static final Logger LOG = LoggerFactory.getLogger(ZipFileDataSource.class);
+unchanged line:
+unchanged line:    private boolean contentLoaded = false;
+unchanged line:    private ZipFile zipFile;
+unchanged line:    private final Collection<DataSource> content = new ArrayList<>();
+unchanged line:
+inserted line:    private static final String ZIP_FILE_PREFIX = "Zip file ";
+inserted line:    private static final int MAX_ENTRIES = 1000;
+inserted line:    private static final long MAX_TOTAL_UNCOMPRESSED_SIZE = 500L * 1024L * 1024L; // 500 MB
+inserted line:    private static final double MAX_COMPRESSION_RATIO = 15.0;
+unchanged line:    public ZipFileDataSource(File file, FileType type) {
+unchanged line:        super(file, type);
+unchanged line:    }
+unchanged line:
+unchanged line:    @Override
+unchanged line:    public void close() {
+unchanged line:        try {
+unchanged line:            if(zipFile != null) {
+unchanged line:                zipFile.close();
+unchanged line:                zipFile = null;
+unchanged line:            }
+unchanged line:        }
+unchanged line:        catch (IOException e) {
+unchanged line:            LOG.error(path() + " close failed. Details: " + e.getLocalizedMessage(), e);
+unchanged line:        }
+unchanged line:    }
+unchanged line:
+unchanged line:    @Override
+unchanged line:    public boolean isWritable() {
+unchanged line:        return false;
+unchanged line:    }
+unchanged line:
+unchanged line:    @Override
+unchanged line:    public Collection<DataSource> content() {
+unchanged line:        loadContent();
+unchanged line:        return content;
+unchanged line:    }
+unchanged line:
+unchanged line:    @Override
+unchanged line:    public DataSource entry(String name) {
+unchanged line:        loadContent();
+unchanged line:        return content.stream()
+unchanged line:                .filter(it -> it.name().equals(name))
+unchanged line:                .findFirst()
+unchanged line:                .orElse(null);
+unchanged line:    }
+unchanged line:
+unchanged line:    /**
+unchanged line:     * @return the internal zip file if still open. {@code null} is return if the file is closed.
+unchanged line:     */
+unchanged line:    ZipFile zipFile() {
+unchanged line:        return zipFile;
+unchanged line:    }
+unchanged line:
+unchanged line:    private void loadContent() {
+unchanged line:        // Load content once
+unchanged line:        if(contentLoaded) { return; }
+unchanged line:        contentLoaded = true;
+unchanged line:
+unchanged line:        try {
+unchanged line:            // The get name on ZipFile returns the full path, we want just the name.
+unchanged line:            this.zipFile = new ZipFile(file, ZipFile.OPEN_READ);
+unchanged line:
+deleted line:            Enumeration<? extends ZipEntry> entries = zipFile.entries();
+deleted line:
+deleted line:            while (entries.hasMoreElements()) {
+inserted line:            int entryCount = 0;
+inserted line:            long totalUncompressedSize = 0L;
+inserted line:            byte[] buffer = new byte[2048];
+inserted line:            Enumeration<? extends ZipEntry> entries = zipFile.entries();
+inserted line:            while (entries.hasMoreElements()) {
+inserted line:                ZipEntry entry = entries.nextElement();
+inserted line:                entryCount++;
+inserted line:                long compressedSize = entry.getCompressedSize();
+inserted line:                if (compressedSize <= 0) {
+inserted line:                    compressedSize = 1; // avoid division by zero or negative compressed size
+inserted line:                }
+inserted line:                long totalSizeEntry = 0L;
+inserted line:                try (InputStream in = new BufferedInputStream(zipFile.getInputStream(entry))) {
+inserted line:                    int nBytes;
+inserted line:                    while ((nBytes = in.read(buffer)) > 0) {
+inserted line:                        totalSizeEntry += nBytes;
+inserted line:                        totalUncompressedSize += nBytes;
+inserted line:                        if (totalUncompressedSize > MAX_TOTAL_UNCOMPRESSED_SIZE) {
+inserted line:                            throw new IllegalStateException(ZIP_FILE_PREFIX + path() + " total uncompressed size too large: " + totalUncompressedSize + " bytes. Limit is " + MAX_TOTAL_UNCOMPRESSED_SIZE + " bytes.");
+inserted line:                        }
+inserted line:                        double compressionRatio = (double) totalSizeEntry / compressedSize;
+inserted line:                        if (compressionRatio > MAX_COMPRESSION_RATIO) {
+inserted line:                            throw new IllegalStateException(ZIP_FILE_PREFIX + path() + " entry " + entry.getName() + " has suspicious compression ratio: " + compressionRatio + ". Limit is " + MAX_COMPRESSION_RATIO);
+inserted line:                        }
+inserted line:                    }
+inserted line:                }
+inserted line:                if (entryCount > MAX_ENTRIES) {
+inserted line:                    throw new IllegalStateException(ZIP_FILE_PREFIX + path() + " has too many entries: " + entryCount + ". Limit is " + MAX_ENTRIES);
+inserted line:                }
+inserted line:                content.add(new ZipFileEntryDataSource(this, entry));
+inserted line:            }
+deleted line:                ZipEntry entry = entries.nextElement();
+deleted line:                content.add(new ZipFileEntryDataSource(this, entry));
+unchanged line:            }
+unchanged line:        }
+unchanged line:        catch (IOException e) {
+unchanged line:            throw new RuntimeException(
+unchanged line:                    "Failed to load " + path() + ": " + e.getLocalizedMessage(),
+unchanged line:                    e
+
+  
+### IMPLAUSIBLE FIX (fix no. 10)
+[
+    {
+        "file_name": "src/main/java/org/opentripplanner/datastore/file/ZipFileDataSource.java",
+        "insertions": [
+            {
+                "line_number": 16,
+                "new_lines": [
+                    "import java.io.BufferedInputStream;",
+                    "import java.io.InputStream;"
+                ]
+            },
+            {
+                "line_number": 28,
+                "new_lines": [
+                    "    private static final String ZIP_FILE_PREFIX = \"Zip file \";",
+                    "    private static final int MAX_ENTRIES = 1000;",
+                    "    private static final long MAX_TOTAL_UNCOMPRESSED_SIZE = 500L * 1024L * 1024L; // 500 MB",
+                    "    private static final double MAX_COMPRESSION_RATIO = 15.0;"
+                ]
+            },
+            {
+                "line_number": 82,
+                "new_lines": [
+                    "            int entryCount = 0;",
+                    "            long totalUncompressedSize = 0L;",
+                    "            byte[] buffer = new byte[2048];",
+                    "            Enumeration<? extends ZipEntry> entries = zipFile.entries();",
+                    "            while (entries.hasMoreElements()) {",
+                    "                ZipEntry entry = entries.nextElement();",
+                    "                entryCount++;",
+                    "                long compressedSize = entry.getCompressedSize();",
+                    "                if (compressedSize <= 0) {",
+                    "                    compressedSize = 1; // avoid division by zero or negative compressed size",
+                    "                }",
+                    "                long totalSizeEntry = 0L;",
+                    "                try (InputStream in = new BufferedInputStream(zipFile.getInputStream(entry))) {",
+                    "                    int nBytes;",
+                    "                    while ((nBytes = in.read(buffer)) > 0) {",
+                    "                        totalSizeEntry += nBytes;",
+                    "                        totalUncompressedSize += nBytes;",
+                    "                        if (totalUncompressedSize > MAX_TOTAL_UNCOMPRESSED_SIZE) {",
+                    "                            throw new IllegalStateException(ZIP_FILE_PREFIX + path() + \" total uncompressed size too large: \" + totalUncompressedSize + \" bytes. Limit is \" + MAX_TOTAL_UNCOMPRESSED_SIZE + \" bytes.\");",
+                    "                        }",
+                    "                        double compressionRatio = (double) totalSizeEntry / compressedSize;",
+                    "                        if (compressionRatio > MAX_COMPRESSION_RATIO) {",
+                    "                            throw new IllegalStateException(ZIP_FILE_PREFIX + path() + \" entry \" + entry.getName() + \" has suspicious compression ratio: \" + compressionRatio + \". Limit is \" + MAX_COMPRESSION_RATIO);",
+                    "                        }",
+                    "                    }",
+                    "                }",
+                    "                if (entryCount > MAX_ENTRIES) {",
+                    "                    throw new IllegalStateException(ZIP_FILE_PREFIX + path() + \" has too many entries: \" + entryCount + \". Limit is \" + MAX_ENTRIES);",
+                    "                }",
+                    "                content.add(new ZipFileEntryDataSource(this, entry));",
+                    "            }"
+                ]
+            }
+        ],
+        "deletions": [
+            82,
+            83,
+            84,
+            85,
+            86
+        ]
+    }
+]
+
+ ###CHANGE APPROVER FEEDBACK:  
+Building the project failed! There were new compilation errors introduced by your fix attempt.  
+Build failed with the following maven error output:   
+
+[ERROR] COMPILATION ERROR :   
+[INFO] -------------------------------------------------------------  
+[ERROR] src/main/java/org/opentripplanner/datastore/file/ZipFileDataSource.java: In line 84: 'try {' Problem: 'try' without 'catch', 'finally' or resource declarations  
+[ERROR] src/main/java/org/opentripplanner/datastore/file/ZipFileDataSource.java: In line 121: 'catch (IOException e) {' Problem: illegal start of type  
+[ERROR] src/main/java/org/opentripplanner/datastore/file/ZipFileDataSource.java: In line 121: 'catch (IOException e) {' Problem: ';' expected  
+[ERROR] src/main/java/org/opentripplanner/datastore/file/ZipFileDataSource.java: In line 128: '}' Problem: class, interface, or enum expected  
+[INFO] 4 errors   
+[INFO] -------------------------------------------------------------  
+[INFO] ------------------------------------------------------------------------  
+[INFO] BUILD FAILURE  
+
+The project had no compilation errors before. So they occurred due to your fix attempt! Try a new fix that doesn't introduce the compilation errors.  
+
+To help you understand what you did wrong, below you are provided with the relevant lines of code after applying your proposed changes (with made insertions and deletions):  
+
+File src/main/java/org/opentripplanner/datastore/file/ZipFileDataSource.java:
+unchanged line:import java.util.ArrayList;
+unchanged line:import java.util.Collection;
+unchanged line:import java.util.Enumeration;
+unchanged line:import java.util.zip.ZipEntry;
+unchanged line:import java.util.zip.ZipFile;
+inserted line:import java.io.BufferedInputStream;
+inserted line:import java.io.InputStream;
+unchanged line:
+unchanged line:
+unchanged line:/**
+unchanged line: * This is a wrapper around a ZipFile, it can be used to read the content, but
+unchanged line: * not write to it. The {@link #asOutputStream()} is throwing an exception.
+unchanged line: */
+unchanged line:public class ZipFileDataSource extends AbstractFileDataSource implements CompositeDataSource {
+unchanged line:    private static final Logger LOG = LoggerFactory.getLogger(ZipFileDataSource.class);
+unchanged line:
+unchanged line:    private boolean contentLoaded = false;
+unchanged line:    private ZipFile zipFile;
+unchanged line:    private final Collection<DataSource> content = new ArrayList<>();
+inserted line:    private static final String ZIP_FILE_PREFIX = "Zip file ";
+inserted line:    private static final int MAX_ENTRIES = 1000;
+inserted line:    private static final long MAX_TOTAL_UNCOMPRESSED_SIZE = 500L * 1024L * 1024L; // 500 MB
+inserted line:    private static final double MAX_COMPRESSION_RATIO = 15.0;
+unchanged line:
+unchanged line:    public ZipFileDataSource(File file, FileType type) {
+unchanged line:        super(file, type);
+unchanged line:    }
+unchanged line:
+unchanged line:    @Override
+unchanged line:    public void close() {
+unchanged line:        try {
+unchanged line:            if(zipFile != null) {
+unchanged line:                zipFile.close();
+unchanged line:                zipFile = null;
+unchanged line:            }
+unchanged line:        }
+unchanged line:        catch (IOException e) {
+unchanged line:            LOG.error(path() + " close failed. Details: " + e.getLocalizedMessage(), e);
+unchanged line:        }
+unchanged line:    }
+unchanged line:
+unchanged line:    @Override
+unchanged line:    public boolean isWritable() {
+unchanged line:        return false;
+unchanged line:    }
+unchanged line:
+unchanged line:    @Override
+unchanged line:    public Collection<DataSource> content() {
+unchanged line:        loadContent();
+unchanged line:        return content;
+unchanged line:    }
+unchanged line:
+unchanged line:    @Override
+unchanged line:    public DataSource entry(String name) {
+unchanged line:        loadContent();
+unchanged line:        return content.stream()
+unchanged line:                .filter(it -> it.name().equals(name))
+unchanged line:                .findFirst()
+unchanged line:                .orElse(null);
+unchanged line:    }
+unchanged line:
+unchanged line:    /**
+unchanged line:     * @return the internal zip file if still open. {@code null} is return if the file is closed.
+unchanged line:     */
+unchanged line:    ZipFile zipFile() {
+unchanged line:        return zipFile;
+unchanged line:    }
+unchanged line:
+unchanged line:    private void loadContent() {
+unchanged line:        // Load content once
+unchanged line:        if(contentLoaded) { return; }
+unchanged line:        contentLoaded = true;
+unchanged line:
+unchanged line:        try {
+unchanged line:            // The get name on ZipFile returns the full path, we want just the name.
+unchanged line:            this.zipFile = new ZipFile(file, ZipFile.OPEN_READ);
+unchanged line:
+inserted line:            int entryCount = 0;
+inserted line:            long totalUncompressedSize = 0L;
+inserted line:            byte[] buffer = new byte[2048];
+inserted line:            Enumeration<? extends ZipEntry> entries = zipFile.entries();
+inserted line:            while (entries.hasMoreElements()) {
+inserted line:                ZipEntry entry = entries.nextElement();
+inserted line:                entryCount++;
+inserted line:                long compressedSize = entry.getCompressedSize();
+inserted line:                if (compressedSize <= 0) {
+inserted line:                    compressedSize = 1; // avoid division by zero or negative compressed size
+inserted line:                }
+inserted line:                long totalSizeEntry = 0L;
+inserted line:                try (InputStream in = new BufferedInputStream(zipFile.getInputStream(entry))) {
+inserted line:                    int nBytes;
+inserted line:                    while ((nBytes = in.read(buffer)) > 0) {
+inserted line:                        totalSizeEntry += nBytes;
+inserted line:                        totalUncompressedSize += nBytes;
+inserted line:                        if (totalUncompressedSize > MAX_TOTAL_UNCOMPRESSED_SIZE) {
+inserted line:                            throw new IllegalStateException(ZIP_FILE_PREFIX + path() + " total uncompressed size too large: " + totalUncompressedSize + " bytes. Limit is " + MAX_TOTAL_UNCOMPRESSED_SIZE + " bytes.");
+inserted line:                        }
+inserted line:                        double compressionRatio = (double) totalSizeEntry / compressedSize;
+inserted line:                        if (compressionRatio > MAX_COMPRESSION_RATIO) {
+inserted line:                            throw new IllegalStateException(ZIP_FILE_PREFIX + path() + " entry " + entry.getName() + " has suspicious compression ratio: " + compressionRatio + ". Limit is " + MAX_COMPRESSION_RATIO);
+inserted line:                        }
+inserted line:                    }
+inserted line:                }
+inserted line:                if (entryCount > MAX_ENTRIES) {
+inserted line:                    throw new IllegalStateException(ZIP_FILE_PREFIX + path() + " has too many entries: " + entryCount + ". Limit is " + MAX_ENTRIES);
+inserted line:                }
+inserted line:                content.add(new ZipFileEntryDataSource(this, entry));
+inserted line:            }
+deleted line:            Enumeration<? extends ZipEntry> entries = zipFile.entries();
+deleted line:
+deleted line:            while (entries.hasMoreElements()) {
+deleted line:                ZipEntry entry = entries.nextElement();
+deleted line:                content.add(new ZipFileEntryDataSource(this, entry));
+unchanged line:            }
+unchanged line:        }
+unchanged line:        catch (IOException e) {
+unchanged line:            throw new RuntimeException(
+unchanged line:                    "Failed to load " + path() + ": " + e.getLocalizedMessage(),
+unchanged line:                    e
+

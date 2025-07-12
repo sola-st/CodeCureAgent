@@ -1,0 +1,74 @@
+  
+### PLAUSIBLE FIX (fix no. 11)
+[
+    {
+        "file_name": "src/main/java/org/opentripplanner/datastore/file/ZipFileDataSource.java",
+        "insertions": [
+            {
+                "line_number": 16,
+                "new_lines": [
+                    "import java.io.BufferedInputStream;",
+                    "import java.io.InputStream;"
+                ]
+            },
+            {
+                "line_number": 28,
+                "new_lines": [
+                    "    private static final String ZIP_FILE_PREFIX = \"Zip file \";",
+                    "    private static final int MAX_ENTRIES = 1000;",
+                    "    private static final long MAX_TOTAL_UNCOMPRESSED_SIZE = 500L * 1024L * 1024L; // 500 MB",
+                    "    private static final double MAX_COMPRESSION_RATIO = 15.0;"
+                ]
+            },
+            {
+                "line_number": 82,
+                "new_lines": [
+                    "            int entryCount = 0;",
+                    "            long totalUncompressedSize = 0L;",
+                    "            byte[] buffer = new byte[2048];",
+                    "            Enumeration<? extends ZipEntry> entries = zipFile.entries();",
+                    "            while (entries.hasMoreElements()) {",
+                    "                ZipEntry entry = entries.nextElement();",
+                    "                entryCount++;",
+                    "                long compressedSize = entry.getCompressedSize();",
+                    "                if (compressedSize <= 0) {",
+                    "                    compressedSize = 1; // avoid division by zero or negative compressed size",
+                    "                }",
+                    "                long totalSizeEntry = 0L;",
+                    "                try (InputStream in = new BufferedInputStream(zipFile.getInputStream(entry))) {",
+                    "                    int nBytes;",
+                    "                    while ((nBytes = in.read(buffer)) > 0) {",
+                    "                        totalSizeEntry += nBytes;",
+                    "                        totalUncompressedSize += nBytes;",
+                    "                        if (totalUncompressedSize > MAX_TOTAL_UNCOMPRESSED_SIZE) {",
+                    "                            throw new IllegalStateException(ZIP_FILE_PREFIX + path() + \" total uncompressed size too large: \" + totalUncompressedSize + \" bytes. Limit is \" + MAX_TOTAL_UNCOMPRESSED_SIZE + \" bytes.\");",
+                    "                        }",
+                    "                        double compressionRatio = (double) totalSizeEntry / compressedSize;",
+                    "                        if (compressionRatio > MAX_COMPRESSION_RATIO) {",
+                    "                            throw new IllegalStateException(ZIP_FILE_PREFIX + path() + \" entry \" + entry.getName() + \" has suspicious compression ratio: \" + compressionRatio + \". Limit is \" + MAX_COMPRESSION_RATIO);",
+                    "                        }",
+                    "                    }",
+                    "                }",
+                    "                if (entryCount > MAX_ENTRIES) {",
+                    "                    throw new IllegalStateException(ZIP_FILE_PREFIX + path() + \" has too many entries: \" + entryCount + \". Limit is \" + MAX_ENTRIES);",
+                    "                }",
+                    "                content.add(new ZipFileEntryDataSource(this, entry));",
+                    "            }"
+                ]
+            }
+        ],
+        "deletions": [
+            82,
+            83,
+            84,
+            85,
+            86,
+            87
+        ]
+    }
+]
+
+ ###CHANGE APPROVER FEEDBACK:  
+Project was successfully built with the applied changes.  
+Rerunning the SonarQube analysis confirmed that your fix successfully removed the targeted rule violation and didn't introduce any new violations.  
+All tests in the project have been run and passed successfully.

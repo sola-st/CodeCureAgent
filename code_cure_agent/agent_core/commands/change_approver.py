@@ -407,7 +407,11 @@ def is_target_violation_removed(all_file_changes: list[FileChanges], sonar_qube_
         target_violation_expected_changed_start_line = found_item_with_matching_before_line.after_line
 
     # Check if the Warning is in the new report
-    return not sonar_qube_analysis.rule_violation_present_in_analysis_report(sonar_qube_report_of_target_file, agent.ai_config.warning_rule_key, target_violation_expected_changed_start_line)
+    if sonar_qube_analysis.rule_violation_present_in_analysis_report(sonar_qube_report_of_target_file, agent.ai_config.warning_rule_key, target_violation_expected_changed_start_line):
+        # If a matching warning was found on the expected line, check if the number of matching warnings in the same line is reduced (might be the case if there are multiple of the same warning on the same line initially)
+        return sonar_qube_analysis.number_of_same_rule_violation_in_line_reduced(agent.initial_analysis_reports[agent.ai_config.warning_file_path], sonar_qube_report_of_target_file, agent.ai_config.warning_rule_key, agent.ai_config.warning_start_line, target_violation_expected_changed_start_line)
+    else:
+        return True
 
 
 def any_new_violations_introduced(all_file_changes: list[FileChanges], sonar_qube_reports_after_changes: dict[str, dict], agent: BaseAgent) -> tuple[bool, str]:

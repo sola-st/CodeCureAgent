@@ -9,6 +9,8 @@ from agent_core.utils.agent_utils.agent_mock import AgentMock
 from agent_core.commands.repository_operations import checkout_project
 from agent_core.commands import write_fix
 from agent_core.commands import change_approver
+from agent_core.commands import sonar_qube_analysis
+from agent_core.utils.path_utils.path_utils import sanitize_and_shorten_file_path
 
 
 class ChangeApproverTestCase(unittest.TestCase):
@@ -422,6 +424,13 @@ You must not introduce any new rule violations. They need to be prevented/resolv
                               "here\n"]
             }]
         }]
+
+        sanitized_warning_file_path = sanitize_and_shorten_file_path(
+            self.agent.ai_config.warning_file_path)
+        initial_analysis_report_target_file = sonar_qube_analysis.analyze_file_and_parse_report(self.agent.ai_config.warning_file_path, self.agent.sonar_qube_rules_in_active_profile, self.agent.ai_config.warning_repository_name,
+                                                                                                f"{str(self.agent.ai_config.warning_ID)}_{self.agent.ai_config.warning_repository_name}_{self.agent.ai_config.warning_rule_key}_{self.agent.ai_config.warning_file_name}_line_{str(self.agent.ai_config.warning_start_line)}_initial_analysis_report_file_{sanitized_warning_file_path}.json", self.agent)
+
+        self.agent.initial_analysis_reports[self.agent.ai_config.warning_file_path] = initial_analysis_report_target_file
 
         all_file_changes = write_fix.execute_write_range(
             change_dict_list, self.agent)

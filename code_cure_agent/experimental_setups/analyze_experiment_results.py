@@ -2,6 +2,8 @@
 # Workaround to have access to the autogpt package
 import sys
 from pathlib import Path
+
+import click
 sys.path.append(str(Path(__file__).parent.parent))
 from agent_core.llm.providers.openai import OPEN_AI_CHAT_MODELS
 import mdutils
@@ -9,9 +11,25 @@ import re
 import os
 
 
-def analyze_general_stats():
-    with open('experimental_setups/experiments_list.txt', 'r') as experiments_list_file:
-        experiment_folders = experiments_list_file.read().splitlines()
+@click.command(help="This command calculates some general stats")
+@click.option(
+    "--start-exp",
+    type=int,
+    default=1,
+    help="The start experiment number."
+)
+@click.option(
+    "--end-exp",
+    type=int,
+    default=sys.maxsize,
+    help="The end experiment number."
+)
+def analyze_general_stats(start_exp: int, end_exp: int):
+    experiment_numbers = get_relevant_experiment_numbers(
+        start_exp, end_exp)
+    experiment_folders = ["experiment_" +
+                          str(exp_number) for exp_number in experiment_numbers]
+    print("Experiments looked at: " + str(experiment_folders))
 
     total_rule_violations, classified_tp, classified_fp, unclassified = calc_classification_stats(
         experiment_folders)
@@ -37,6 +55,23 @@ def analyze_general_stats():
 
     write_to_markdown(total_rule_violations, classified_tp, classified_fp,
                       unclassified, tp_plausible_fix, fp_plausible_fix, total_plausible_fix, total_execution_time, execution_time_classification, execution_time_fix_tp, execution_time_fix_fp, avg_execution_time, avg_execution_time_classification, avg_execution_time_fix_tp, avg_execution_time_fix_fp, total_tokens_count, tokens_count_classification, tokens_count_fix_tp, tokens_count_fix_fp, total_tokens_cost, tokens_cost_classification, tokens_cost_fix_tp, tokens_cost_fix_fp, avg_cost, avg_cost_classification, avg_cost_fix_tp, avg_cost_fix_fp)
+
+
+def get_relevant_experiment_numbers(start_exp: int, end_exp: int) -> list[int]:
+    # The experiments_list.txt dictates what experiment_x folders are included
+    with open('experimental_setups/experiments_list.txt', 'r') as experiments_list_file:
+        all_experiment_folders = experiments_list_file.read().splitlines()
+
+    relevant_experiment_numbers = []
+    experiment_pattern = re.compile(r"experiment_(\d+)")
+    for experiment_folder in all_experiment_folders:
+        match = re.match(experiment_pattern, experiment_folder)
+        if match is not None:
+            experiment_number = int(match.groups()[0])
+            if experiment_number >= start_exp and experiment_number <= end_exp:
+                relevant_experiment_numbers.append(experiment_number)
+
+    return relevant_experiment_numbers
 
 
 def write_to_markdown(total_rule_violations, classified_tp, classified_fp, unclassified, tp_plausible_fix, fp_plausible_fix, total_plausible_fix, total_execution_time, execution_time_classification, execution_time_fix_tp, execution_time_fix_fp, avg_execution_time, avg_execution_time_classification, avg_execution_time_fix_tp, avg_execution_time_fix_fp, total_tokens_count, tokens_count_classification, tokens_count_fix_tp, tokens_count_fix_fp, total_tokens_cost, tokens_cost_classification, tokens_cost_fix_tp, tokens_cost_fix_fp, avg_cost, avg_cost_classification, avg_cost_fix_tp, avg_cost_fix_fp):

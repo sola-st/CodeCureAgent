@@ -30,7 +30,8 @@ python_parser.set_language(
 )
 
 java_parser = Parser()
-java_parser.set_language(Language(str(__FILE_DIR / "build/my-languages.so"), "java"))
+java_parser.set_language(
+    Language(str(__FILE_DIR / "build/my-languages.so"), "java"))
 
 
 TOKENIZER_MODEL_ALIAS_MAP = {
@@ -42,7 +43,10 @@ TOKENIZER_MODEL_ALIAS_MAP = {
 def count_tokens(input_str: str, model_name: str) -> tuple[int, tiktoken.Encoding]:
     if model_name in TOKENIZER_MODEL_ALIAS_MAP:
         model_name = TOKENIZER_MODEL_ALIAS_MAP[model_name]
-    encoding = tiktoken.encoding_for_model(model_name)
+    if model_name.startswith("gpt-4.1"):
+        encoding = tiktoken.get_encoding("o200k_base")
+    else:
+        encoding = tiktoken.encoding_for_model(model_name)
     num_tokens = len(encoding.encode(input_str))
     return num_tokens, encoding
 
@@ -179,7 +183,8 @@ def split_python_file(content, line_of_interest, token_counter, chunk_lim, buffe
 
     # implicitly handles `erroneous_code==True` case and where method block is too large
     oneside_window_length = (
-        max_tokens_available // 2 - token_counter(file_lines[line_of_interest]) // 2
+        max_tokens_available // 2 -
+        token_counter(file_lines[line_of_interest]) // 2
     )
     code_block_index_top = line_of_interest
     code_block_index_bottom = line_of_interest
@@ -346,7 +351,8 @@ def split_java_file(content, line_of_interest, token_counter, chunk_lim, buffer)
 
     # implicitly handles `erroneous_code==True` case and where method block is too large
     oneside_window_length = (
-        max_tokens_available // 2 - token_counter(file_lines[line_of_interest]) // 2
+        max_tokens_available // 2 -
+        token_counter(file_lines[line_of_interest]) // 2
     )
     code_block_index_top = line_of_interest
     code_block_index_bottom = line_of_interest
@@ -608,7 +614,8 @@ def extract_block(file_content, line_of_interest, encoding, parser, max_tokens):
         max(line_of_interest - oneside_window_length, 0),
         min(line_of_interest + oneside_window_length, len(file_lines)),
     )
-    adjusted_line_of_interest = max(line_of_interest - oneside_window_length, 0)
+    adjusted_line_of_interest = max(
+        line_of_interest - oneside_window_length, 0)
     code_block = ("\n").join(
         [
             line
@@ -632,7 +639,7 @@ def sanitize_llm_response(response):
         response_str = response_str.removesuffix('```')
 
     return OpenAIResponse(response_str, response.finish_reason, response.success)
-    
+
 
 def post_process_adjust_indentation(indentation_level, response):
     OpenAIResponse = namedtuple("OpenAIResponse", "text finish_reason success")

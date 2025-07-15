@@ -29,6 +29,7 @@ OPEN_AI_CHAT_MODELS = {
         ChatModelInfo(
             name="gpt-3.5-turbo-16k-0301",
             prompt_token_cost=0.003,
+            prompt_token_cost_cached=None,
             completion_token_cost=0.004,
             max_tokens=16384,
             supports_functions=True,
@@ -36,6 +37,7 @@ OPEN_AI_CHAT_MODELS = {
         ChatModelInfo(
             name="gpt-4-turbo-2024-04-09",
             prompt_token_cost=0.01,
+            prompt_token_cost_cached=None,
             completion_token_cost=0.03,
             max_tokens=128000,
             supports_functions=True,
@@ -43,6 +45,7 @@ OPEN_AI_CHAT_MODELS = {
         ChatModelInfo(
             name="gpt-3.5-turbo-0125",
             prompt_token_cost=0.0005,
+            prompt_token_cost_cached=None,
             completion_token_cost=0.0015,
             max_tokens=16385,
             supports_functions=True,
@@ -50,6 +53,7 @@ OPEN_AI_CHAT_MODELS = {
         ChatModelInfo(
             name="gpt-4o-mini-2024-07-18",
             prompt_token_cost=0.00015,
+            prompt_token_cost_cached=0.000075,
             completion_token_cost=0.0006,
             max_tokens=128000,
             supports_functions=True,
@@ -57,6 +61,7 @@ OPEN_AI_CHAT_MODELS = {
         ChatModelInfo(
             name="gpt-4o-2024-08-06",
             prompt_token_cost=0.0025,
+            prompt_token_cost_cached=0.00125,
             completion_token_cost=0.01,
             max_tokens=128000,
             supports_functions=True,
@@ -64,6 +69,7 @@ OPEN_AI_CHAT_MODELS = {
         ChatModelInfo(
             name="gpt-4.1-nano-2025-04-14",
             prompt_token_cost=0.0001,
+            prompt_token_cost_cached=0.000025,
             completion_token_cost=0.0004,
             max_tokens=1047576,
             supports_functions=True,
@@ -71,6 +77,7 @@ OPEN_AI_CHAT_MODELS = {
         ChatModelInfo(
             name="gpt-4.1-mini-2025-04-14",
             prompt_token_cost=0.0004,
+            prompt_token_cost_cached=0.0001,
             completion_token_cost=0.0016,
             max_tokens=1047576,
             supports_functions=True,
@@ -78,6 +85,7 @@ OPEN_AI_CHAT_MODELS = {
         ChatModelInfo(
             name="gpt-4.1-2025-04-14",
             prompt_token_cost=0.002,
+            prompt_token_cost_cached=0.0005,
             completion_token_cost=0.008,
             max_tokens=1047576,
             supports_functions=True,
@@ -107,6 +115,7 @@ OPEN_AI_TEXT_MODELS = {
         TextModelInfo(
             name="text-davinci-003",
             prompt_token_cost=0.02,
+            prompt_token_cost_cached=None,
             completion_token_cost=0.02,
             max_tokens=4097,
         ),
@@ -119,6 +128,7 @@ OPEN_AI_EMBEDDING_MODELS = {
         EmbeddingModelInfo(
             name="text-embedding-ada-002",
             prompt_token_cost=0.0001,
+            prompt_token_cost_cached=None,
             max_tokens=8191,
             embedding_dimensions=1536,
         ),

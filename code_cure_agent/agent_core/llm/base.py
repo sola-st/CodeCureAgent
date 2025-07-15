@@ -60,6 +60,7 @@ class ModelInfo:
     name: str
     max_tokens: int
     prompt_token_cost: float
+    prompt_token_cost_cached: float | None
 
 
 @dataclass

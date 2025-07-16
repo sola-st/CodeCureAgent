@@ -36,6 +36,8 @@ def extend_evaluation_results_with_more_stats(evaluation_results_file: click.Fil
 
     add_info_on_cost(evaluation_results_file_df)
 
+    add_info_on_execution_time(evaluation_results_file_df)
+
     add_info_change_approver_ablation(evaluation_results_file_df)
 
     # Move the new columns to the end of the DataFrame
@@ -120,7 +122,7 @@ def add_info_on_fixes_count(evaluation_results_file_df: pd.DataFrame):
 
 def add_info_on_used_tokens(evaluation_results_file_df: pd.DataFrame):
     evaluation_results_file_df[["tokensInputUncachedClassification", "tokensInputCachedClassification", "tokensOutputClassification"]] = evaluation_results_file_df.apply(
-        lambda row: get_input_tokens_classification(
+        lambda row: get_tokens(
             row["instanceID"],
             row["experimentNumber"],
             row["classification"],
@@ -129,7 +131,7 @@ def add_info_on_used_tokens(evaluation_results_file_df: pd.DataFrame):
         axis=1
     )
     evaluation_results_file_df[["tokensInputUncachedFixTP", "tokensInputCachedFixTP", "tokensOutputFixTP"]] = evaluation_results_file_df.apply(
-        lambda row: get_input_tokens_classification(
+        lambda row: get_tokens(
             row["instanceID"],
             row["experimentNumber"],
             row["classification"],
@@ -138,7 +140,7 @@ def add_info_on_used_tokens(evaluation_results_file_df: pd.DataFrame):
         axis=1
     )
     evaluation_results_file_df[["tokensInputUncachedFixFP", "tokensInputCachedFixFP", "tokensOutputFixFP"]] = evaluation_results_file_df.apply(
-        lambda row: get_input_tokens_classification(
+        lambda row: get_tokens(
             row["instanceID"],
             row["experimentNumber"],
             row["classification"],
@@ -177,6 +179,33 @@ def add_info_on_cost(evaluation_results_file_df: pd.DataFrame):
     # print(evaluation_results_file_df["costClassification"].sum())
     # print(evaluation_results_file_df["costFixTP"].sum())
     # print(evaluation_results_file_df["costFixFP"].sum())
+
+
+def add_info_on_execution_time(evaluation_results_file_df: pd.DataFrame):
+    evaluation_results_file_df["executionTimeClassification"] = evaluation_results_file_df.apply(
+        lambda row: get_execution_time(
+            row["instanceID"],
+            row["experimentNumber"],
+            "classification"
+        ),
+        axis=1
+    )
+    evaluation_results_file_df["executionTimeFixTP"] = evaluation_results_file_df.apply(
+        lambda row: get_execution_time(
+            row["instanceID"],
+            row["experimentNumber"],
+            "fixTP"
+        ),
+        axis=1
+    )
+    evaluation_results_file_df["executionTimeFixFP"] = evaluation_results_file_df.apply(
+        lambda row: get_execution_time(
+            row["instanceID"],
+            row["experimentNumber"],
+            "fixFP"
+        ),
+        axis=1
+    )
 
 
 def add_info_change_approver_ablation(evaluation_results_file_df: pd.DataFrame):
@@ -286,6 +315,40 @@ def get_ablation_build_step_and_sonar_qube_check_is_still_plausible(instance_id:
     return True
 
 
+def get_execution_time(instance_id: int, experiment_number: int, target_phase: str):
+    if target_phase == "classification":
+        target_folder = "classification"
+    elif target_phase == "fixTP":
+        target_folder = "fix_tp"
+    elif target_phase == "fixFP":
+        target_folder = "fix_fp"
+
+    try:
+        execution_info_file_name = next(f for f in os.listdir(os.path.join("experimental_setups", "experiment_" + str(experiment_number), target_folder, "execution_info"))
+                                        if os.path.isfile(os.path.join("experimental_setups", "experiment_" + str(experiment_number), target_folder, "execution_info", f)) and f.startswith(str(instance_id) + "_"))
+    except StopIteration:
+        assert target_folder != "classification"
+        return 0
+
+    execution_info_file_path = os.path.join("experimental_setups", "experiment_" + str(
+        experiment_number), target_folder, "execution_info", execution_info_file_name)
+
+    with open(execution_info_file_path, "r") as f:
+        execution_info_file_content = f.read()
+
+    pattern = r"!! Start up timestamp: (\d+)"
+    start_time_match = re.search(
+        pattern, execution_info_file_content)
+    start_time = int(start_time_match.group(1).strip())
+
+    pattern = r"!! Shutdown timestamp: (\d+)"
+    end_time_match = re.search(
+        pattern, execution_info_file_content)
+    end_time = int(end_time_match.group(1).strip())
+
+    return end_time - start_time
+
+
 def get_cost(tokens_input_uncached: int, tokens_input_cached: int, tokens_output: int, model="gpt-4.1-mini-2025-04-14"):
     prompt_token_cost_uncached = OPEN_AI_CHAT_MODELS[model].prompt_token_cost
     prompt_token_cost_cached = OPEN_AI_CHAT_MODELS[model].prompt_token_cost_cached
@@ -297,7 +360,7 @@ def get_cost(tokens_input_uncached: int, tokens_input_cached: int, tokens_output
     return total_tokens_cost
 
 
-def get_input_tokens_classification(instance_id: int, experiment_number: int, classification: str, target_phase: str) -> pd.Series:
+def get_tokens(instance_id: int, experiment_number: int, classification: str, target_phase: str) -> pd.Series:
     col_names = ["tokensInputUncached" + target_phase.capitalize(), "tokensInputCached" +
                  target_phase.capitalize(), "tokensOutput" + target_phase.capitalize()]
     if target_phase == "classification":

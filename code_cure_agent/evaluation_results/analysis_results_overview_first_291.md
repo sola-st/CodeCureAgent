@@ -93,21 +93,21 @@ Median number of plausible fixes (TP): 1.00
 Median number of plausible fixes (FP): 1.00  
 ### Ablation of the ChangeApprover
 
-#### No ChangeApprover
+#### No ChangeApprover (accepts more fixes than with ChangeApprover (all the fixed ones + the unfixed ones) => how many of these are still plausible (would pass the full ChangeApprover) => all the other ones would falsely be labeled as plausible)
 
-Still plausible fixes / plausible fixes: 216 / 282  
-Still plausible fixes / plausible fixes (TP): 128 / 182  
-Still plausible fixes / plausible fixes (FP): 88 / 100  
+Still plausible fixes / accepted fixes: 216 / 291  
+Still plausible fixes / accepted fixes (TP): 128 / 191  
+Still plausible fixes / accepted fixes (FP): 88 / 100  
 #### Only build step (no SonarQube check and test steps)
 
-Still plausible fixes / plausible fixes: 251 / 282  
-Still plausible fixes / plausible fixes (TP): 156 / 182  
-Still plausible fixes / plausible fixes (FP): 95 / 100  
+Still plausible fixes / accepted fixes: 251 / 288  
+Still plausible fixes / accepted fixes (TP): 156 / 188  
+Still plausible fixes / accepted fixes (FP): 95 / 100  
 #### Only build and SonarQube check steps (no test step)
 
-Still plausible fixes / plausible fixes: 278 / 282  
-Still plausible fixes / plausible fixes (TP): 178 / 182  
-Still plausible fixes / plausible fixes (FP): 100 / 100  
+Still plausible fixes / accepted fixes: 278 / 284  
+Still plausible fixes / accepted fixes (TP): 178 / 184  
+Still plausible fixes / accepted fixes (FP): 100 / 100  
 ### Execution time
 
 Total execution time: 1013.92 minutes  

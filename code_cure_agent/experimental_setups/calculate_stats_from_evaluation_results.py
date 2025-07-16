@@ -377,32 +377,32 @@ def calculate_stats_from_evaluation_results(evaluation_results_extended_file: cl
 
     mdFile.new_header(
         level=3, title="Ablation of the ChangeApprover", add_table_of_contents="n")
-    mdFile.new_header(level=4, title="No ChangeApprover",
+    mdFile.new_header(level=4, title="No ChangeApprover (accepts more fixes than with ChangeApprover (all the fixed ones + the unfixed ones) => how many of these are still plausible (would pass the full ChangeApprover) => all the other ones would falsely be labeled as plausible)",
                       add_table_of_contents="n")
     mdFile.new_line(
-        f"Still plausible fixes / plausible fixes: {ablation_no_change_approver_plausible_fixes} / {total_plausible_fix}  ")
+        f"Still plausible fixes / accepted fixes: {ablation_no_change_approver_plausible_fixes} / {total_rule_violations}  ")
     mdFile.new_line(
-        f"Still plausible fixes / plausible fixes (TP): {ablationNoChangeApproverPlausibleFix_TP} / {tp_plausible_fix}  ")
+        f"Still plausible fixes / accepted fixes (TP): {ablationNoChangeApproverPlausibleFix_TP} / {classified_tp}  ")
     mdFile.new_line(
-        f"Still plausible fixes / plausible fixes (FP): {ablationNoChangeApproverPlausibleFix_FP} / {fp_plausible_fix}  ")
+        f"Still plausible fixes / accepted fixes (FP): {ablationNoChangeApproverPlausibleFix_FP} / {classified_fp}  ")
 
     mdFile.new_header(level=4, title="Only build step (no SonarQube check and test steps)",
                       add_table_of_contents="n")
     mdFile.new_line(
-        f"Still plausible fixes / plausible fixes: {ablation_only_build_plausible_fixes} / {total_plausible_fix}  ")
+        f"Still plausible fixes / accepted fixes: {ablation_only_build_plausible_fixes} / {total_compilation_passed}  ")
     mdFile.new_line(
-        f"Still plausible fixes / plausible fixes (TP): {ablation_only_build_plausible_fixes_TP} / {tp_plausible_fix}  ")
+        f"Still plausible fixes / accepted fixes (TP): {ablation_only_build_plausible_fixes_TP} / {fix_tp_compilation_passed}  ")
     mdFile.new_line(
-        f"Still plausible fixes / plausible fixes (FP): {ablation_only_build_plausible_fixes_FP} / {fp_plausible_fix}  ")
+        f"Still plausible fixes / accepted fixes (FP): {ablation_only_build_plausible_fixes_FP} / {fix_fp_compilation_passed}  ")
 
     mdFile.new_header(
         level=4, title="Only build and SonarQube check steps (no test step)", add_table_of_contents="n")
     mdFile.new_line(
-        f"Still plausible fixes / plausible fixes: {ablation_build_and_sonar_Qube_check_plausible_fixes} / {total_plausible_fix}  ")
+        f"Still plausible fixes / accepted fixes: {ablation_build_and_sonar_Qube_check_plausible_fixes} / {total_sonar_qube_check_passed}  ")
     mdFile.new_line(
-        f"Still plausible fixes / plausible fixes (TP): {ablation_build_and_sonar_Qube_check_plausible_fixes_TP} / {tp_plausible_fix}  ")
+        f"Still plausible fixes / accepted fixes (TP): {ablation_build_and_sonar_Qube_check_plausible_fixes_TP} / {fix_tp_sonar_qube_check_passed}  ")
     mdFile.new_line(
-        f"Still plausible fixes / plausible fixes (FP): {ablation_build_and_sonar_Qube_check_plausible_fixes_FP} / {fp_plausible_fix}  ")
+        f"Still plausible fixes / accepted fixes (FP): {ablation_build_and_sonar_Qube_check_plausible_fixes_FP} / {fix_fp_sonar_qube_check_passed}  ")
 
     # Execution time section
 

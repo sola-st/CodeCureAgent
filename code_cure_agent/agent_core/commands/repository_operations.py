@@ -174,15 +174,18 @@ def run_tests(agent: BaseAgent) -> subprocess.CompletedProcess[str]:
             f"!! Maven test startup timestamp: " + str(time.time_ns()) + "\n")
 
     try:
-        result = subprocess.run(
-            ["mvn", "clean", "test",
-                "--no-transfer-progress", "--batch-mode"],
-            capture_output=True,
-            encoding="utf8",
-            cwd=repo_path,
-            shell=False,
-            timeout=timeout_five_minutes
-        )
+        # Added a workaround to address a failing test in the project singer (testTextLogEnvInjection() in file TestLogConfigUtils).
+        # The test assumes that the first two environment variables returned by System.getenv() do not have spaces.
+        # However, the order of environment variables returned changed for some reason and now the second variable is LESSCLOSE, which contains spaces.
+        # So, to address this we set the environment variable of LESSCLOSE to something without spaces.
+        # The cleaner fix would be to fix the issue in the test method of singer.
+        result = subprocess.run("export LESSCLOSE='/usr/bin/lesspipe'; mvn clean test --no-transfer-progress --batch-mode",
+                                capture_output=True,
+                                encoding="utf8",
+                                cwd=repo_path,
+                                shell=True,
+                                timeout=timeout_five_minutes
+                                )
 
         # Write the test end to the execution info file
         with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{agent.ai_config.warning_file_name}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:

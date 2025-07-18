@@ -118,7 +118,14 @@ def search_for_patterns(patterns: list[str], include: str, agent: BaseAgent) -> 
     repo_path = os.path.join(agent.config.workspace_path,
                              agent.ai_config.warning_repository_name)
 
-    cmd = f"grep -rinHsIE --max-count=1000 --include '{include}'"
+    cmd = "grep -rinHsIE --max-count=1000"
+
+    if include != "":
+        if os.path.isfile(os.path.join(repo_path, include)):
+            cmd += f" '{include}'"
+        else:
+            cmd += f" --include '{include}'"
+
     for pattern in patterns:
         # Add the patterns with cleaned single quotes
         pattern_cleaned = str(pattern).replace(

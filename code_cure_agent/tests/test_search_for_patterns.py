@@ -45,6 +45,24 @@ class SearchForPatternsTestCase(unittest.TestCase):
         if os.path.exists("experimental_setups/experiment_test"):
             shutil.rmtree("experimental_setups/experiment_test")
 
+    def test_search_for_patterns_in_one_file(self):
+
+        checkout_project(self.agent)
+
+        result = search_for_patterns(
+            ['Terminal'], "main/src/main/java/net/sourceforge/argparse4j/internal/TerminalWidth.java", self.agent)
+        print(result)
+        self.assertEqual(result, """Found 8 search results:
+
+main/src/main/java/net/sourceforge/argparse4j/internal/TerminalWidth.java:27: * Returns the column width of the command line terminal from which this program
+main/src/main/java/net/sourceforge/argparse4j/internal/TerminalWidth.java:34:public class TerminalWidth {
+main/src/main/java/net/sourceforge/argparse4j/internal/TerminalWidth.java:39:        System.out.println("terminalWidth: "
+main/src/main/java/net/sourceforge/argparse4j/internal/TerminalWidth.java:40:                + new TerminalWidth().getTerminalWidth());
+main/src/main/java/net/sourceforge/argparse4j/internal/TerminalWidth.java:43:    public int getTerminalWidth() {
+main/src/main/java/net/sourceforge/argparse4j/internal/TerminalWidth.java:54:            return getTerminalWidth2();
+main/src/main/java/net/sourceforge/argparse4j/internal/TerminalWidth.java:61:    // http://grokbase.com/t/gg/clojure/127qwgscvc/how-do-you-determine-terminal-console-width-in-%60lein-repl%60
+main/src/main/java/net/sourceforge/argparse4j/internal/TerminalWidth.java:62:    private int getTerminalWidth2() throws IOException {""")
+
     def test_search_for_patterns_single_pattern(self):
 
         result = search_for_patterns(["command_"], "*.java", self.agent)

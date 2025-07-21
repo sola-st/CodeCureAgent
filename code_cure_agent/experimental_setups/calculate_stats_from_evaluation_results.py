@@ -51,8 +51,15 @@ def calculate_stats_from_evaluation_results(evaluation_results_extended_file: cl
         evaluation_results_file_df["classification"] == "Unclassified").sum()
     assert unclassified == total_rule_violations - classified_tp - classified_fp
 
+    percent_tp = 100 * classified_tp / \
+        total_rule_violations if total_rule_violations else 0
+    percent_fp = 100 * classified_fp / \
+        total_rule_violations if total_rule_violations else 0
+    percent_unclassified = 100 * unclassified / \
+        total_rule_violations if total_rule_violations else 0
+
     mdFile.new_line(
-        f"TP: {classified_tp}  \nFP: {classified_fp}  \nUnclassified: {unclassified}")
+        f"TP: {classified_tp} ({percent_tp:.2f}%)  \nFP: {classified_fp} ({percent_fp:.2f}%)  \nUnclassified: {unclassified} ({percent_unclassified:.2f}%)")
 
     # Plausible fixes section
 
@@ -65,12 +72,19 @@ def calculate_stats_from_evaluation_results(evaluation_results_extended_file: cl
     fp_plausible_fix = ((evaluation_results_file_df["plausibleFix"]) & (
         evaluation_results_file_df["classification"] == "FP")).sum()
 
+    percent_total_plausible = 100 * total_plausible_fix / \
+        total_rule_violations if total_rule_violations else 0
+    percent_tp_plausible = 100 * tp_plausible_fix / \
+        classified_tp if classified_tp else 0
+    percent_fp_plausible = 100 * fp_plausible_fix / \
+        classified_fp if classified_fp else 0
+
     mdFile.new_line(
-        f"Total plausible fixes: {total_plausible_fix}/{total_rule_violations}  ")
+        f"Total plausible fixes: {total_plausible_fix}/{total_rule_violations} ({percent_total_plausible:.2f}%)  ")
     mdFile.new_line(
-        f"TP plausible fixes: {tp_plausible_fix}/{classified_tp}  ")
+        f"TP plausible fixes: {tp_plausible_fix}/{classified_tp} ({percent_tp_plausible:.2f}%)  ")
     mdFile.new_line(
-        f"FP plausible fixes: {fp_plausible_fix}/{classified_fp}  ")
+        f"FP plausible fixes: {fp_plausible_fix}/{classified_fp} ({percent_fp_plausible:.2f}%)  ")
 
     total_compilation_passed = (
         evaluation_results_file_df["compilationPassed"]).sum()
@@ -87,23 +101,37 @@ def calculate_stats_from_evaluation_results(evaluation_results_extended_file: cl
     fix_fp_sonar_qube_check_passed = ((evaluation_results_file_df["sonarQubeCheckPassed"]) & (
         evaluation_results_file_df["classification"] == "FP")).sum()
 
+    percent_total_compilation = 100 * total_compilation_passed / \
+        total_rule_violations if total_rule_violations else 0
+    percent_tp_compilation = 100 * fix_tp_compilation_passed / \
+        classified_tp if classified_tp else 0
+    percent_fp_compilation = 100 * fix_fp_compilation_passed / \
+        classified_fp if classified_fp else 0
+
+    percent_total_sonar = 100 * total_sonar_qube_check_passed / \
+        total_rule_violations if total_rule_violations else 0
+    percent_tp_sonar = 100 * fix_tp_sonar_qube_check_passed / \
+        classified_tp if classified_tp else 0
+    percent_fp_sonar = 100 * fix_fp_sonar_qube_check_passed / \
+        classified_fp if classified_fp else 0
+
     # Passed previous agent steps successfully
 
     mdFile.new_header(level=4, title="Passed previous steps",
                       add_table_of_contents="n")
     mdFile.new_line(
-        f"Total compilation step passed: {total_compilation_passed}/{total_rule_violations}  ")
+        f"Total compilation step passed: {total_compilation_passed}/{total_rule_violations} ({percent_total_compilation:.2f}%)  ")
     mdFile.new_line(
-        f"TP compilation step passed: {fix_tp_compilation_passed}/{classified_tp}  ")
+        f"TP compilation step passed: {fix_tp_compilation_passed}/{classified_tp} ({percent_tp_compilation:.2f}%)  ")
     mdFile.new_line(
-        f"FP compilation step passed: {fix_fp_compilation_passed}/{classified_fp}  ")
+        f"FP compilation step passed: {fix_fp_compilation_passed}/{classified_fp} ({percent_fp_compilation:.2f}%)  ")
 
     mdFile.new_line(
-        f"Total SonarQube check step passed: {total_sonar_qube_check_passed}/{total_rule_violations}  ")
+        f"Total SonarQube check step passed: {total_sonar_qube_check_passed}/{total_rule_violations} ({percent_total_sonar:.2f}%)  ")
     mdFile.new_line(
-        f"TP SonarQube check step passed: {fix_tp_sonar_qube_check_passed}/{classified_tp}  ")
+        f"TP SonarQube check step passed: {fix_tp_sonar_qube_check_passed}/{classified_tp} ({percent_tp_sonar:.2f}%)  ")
     mdFile.new_line(
-        f"FP SonarQube check step passed: {fix_fp_sonar_qube_check_passed}/{classified_fp}  ")
+        f"FP SonarQube check step passed: {fix_fp_sonar_qube_check_passed}/{classified_fp} ({percent_fp_sonar:.2f}%)  ")
 
     # Sound classifications section
 
@@ -123,18 +151,29 @@ def calculate_stats_from_evaluation_results(evaluation_results_extended_file: cl
     fp_not_sound_classification = ((evaluation_results_file_df["classification"] == "FP") & (
         evaluation_results_file_df["classificationSoundness"] == "Not sound")).sum()
 
+    percent_total_sound = 100 * total_sound_classification / \
+        (total_sound_classification + total_not_sound_classification) if (
+            total_sound_classification + total_not_sound_classification) else 0
+    percent_tp_sound = 100 * tp_sound_classification / \
+        (tp_sound_classification + tp_not_sound_classification) if (
+            tp_sound_classification + tp_not_sound_classification) else 0
+    percent_fp_sound = 100 * fp_sound_classification / \
+        (fp_sound_classification + fp_not_sound_classification) if (
+            fp_sound_classification + fp_not_sound_classification) else 0
+
     mdFile.new_header(
         level=3, title="Soundness of classification", add_table_of_contents="n")
 
     mdFile.new_line(
-        f"Total sound classifications: {total_sound_classification}/{total_sound_classification + total_not_sound_classification}  ")
+        f"Total sound classifications: {total_sound_classification}/{total_sound_classification + total_not_sound_classification} ({percent_total_sound:.2f}%)  ")
     mdFile.new_line(
-        f"Sound TP classifications: {tp_sound_classification}/{tp_sound_classification + tp_not_sound_classification}  ")
+        f"Sound TP classifications: {tp_sound_classification}/{tp_sound_classification + tp_not_sound_classification} ({percent_tp_sound:.2f}%)  ")
     mdFile.new_line(
-        f"Sound FP classifications: {fp_sound_classification}/{fp_sound_classification + fp_not_sound_classification}  ")
+        f"Sound FP classifications: {fp_sound_classification}/{fp_sound_classification + fp_not_sound_classification} ({percent_fp_sound:.2f}%)  ")
 
     # Correct classification section
 
+    # Doesn't include unfixed instances
     total_correct_and_sound = ((
         evaluation_results_file_df["classificationSoundness"] == "Sound") & (
         evaluation_results_file_df["fixCorrectness"] == "Correct")).sum()
@@ -157,15 +196,44 @@ def calculate_stats_from_evaluation_results(evaluation_results_extended_file: cl
         evaluation_results_file_df["classificationSoundness"] == "Sound") & (
         evaluation_results_file_df["fixCorrectness"] == "Not correct")).sum()
 
+    percent_total_correct_and_sound = 100 * total_correct_and_sound / \
+        (total_correct_and_sound + total_not_correct_and_sound) if (
+            total_correct_and_sound + total_not_correct_and_sound) else 0
+    percent_tp_correct_and_sound = 100 * tp_correct_and_sound / \
+        (tp_correct_and_sound + tp_not_correct_and_sound) if (tp_correct_and_sound +
+                                                              tp_not_correct_and_sound) else 0
+    percent_fp_correct_and_sound = 100 * fp_correct_and_sound / \
+        (fp_correct_and_sound + fp_not_correct_and_sound) if (fp_correct_and_sound +
+                                                              fp_not_correct_and_sound) else 0
+
     mdFile.new_header(
         level=3, title="Correctness of fix", add_table_of_contents="n")
 
     mdFile.new_line(
-        f"Total correct fixes (sound and correct / sound and fixed): {total_correct_and_sound}/{total_correct_and_sound + total_not_correct_and_sound}  ")
+        f"Total correct fixes (sound and correct / sound and fixed): {total_correct_and_sound}/{total_correct_and_sound + total_not_correct_and_sound} ({percent_total_correct_and_sound:.2f}%)  ")
     mdFile.new_line(
-        f"Correct TP fixes  (sound and correct / sound and fixed): {tp_correct_and_sound}/{tp_correct_and_sound + tp_not_correct_and_sound}  ")
+        f"Correct TP fixes  (sound and correct / sound and fixed): {tp_correct_and_sound}/{tp_correct_and_sound + tp_not_correct_and_sound} ({percent_tp_correct_and_sound:.2f}%)  ")
     mdFile.new_line(
-        f"Correct FP fixes  (sound and correct / sound and fixed): {fp_correct_and_sound}/{fp_correct_and_sound + fp_not_correct_and_sound}  ")
+        f"Correct FP fixes  (sound and correct / sound and fixed): {fp_correct_and_sound}/{fp_correct_and_sound + fp_not_correct_and_sound} ({percent_fp_correct_and_sound:.2f}%)  ")
+
+    mdFile.new_header(
+        level=3, title="End-to-end performance (fixed, sound and correct)", add_table_of_contents="n")
+
+    percent_end_to_end_all = 100 * total_correct_and_sound / \
+        (total_sound_classification + total_not_sound_classification) if (
+            total_sound_classification + total_not_sound_classification) else 0
+    percent_end_to_end_tp = 100 * tp_correct_and_sound / \
+        (tp_sound_classification + tp_not_sound_classification) if (
+            tp_sound_classification + tp_not_sound_classification) else 0
+    percent_end_to_end_fp = 100 * fp_correct_and_sound / \
+        (fp_sound_classification + fp_not_sound_classification) if (
+            fp_sound_classification + fp_not_sound_classification) else 0
+    mdFile.new_line(
+        f"End-to-end total: {total_correct_and_sound}/{total_sound_classification + total_not_sound_classification} ({percent_end_to_end_all:.2f}%)  ")
+    mdFile.new_line(
+        f"End-to-end TP: {tp_correct_and_sound}/{tp_sound_classification + tp_not_sound_classification} ({percent_end_to_end_tp:.2f}%)  ")
+    mdFile.new_line(
+        f"End-to-end FP: {fp_correct_and_sound}/{fp_sound_classification + fp_not_sound_classification} ({percent_end_to_end_fp:.2f}%)  ")
 
     # Fix complexity
 
@@ -176,11 +244,21 @@ def calculate_stats_from_evaluation_results(evaluation_results_extended_file: cl
     multi_line_count = fix_complexity_counts.get("Multi Line", 0)
     multi_file_count = fix_complexity_counts.get("Multi File", 0)
 
+    percent_single_line = 100 * single_line_count / \
+        total_rule_violations if total_rule_violations else 0
+    percent_multi_line = 100 * multi_line_count / \
+        total_rule_violations if total_rule_violations else 0
+    percent_multi_file = 100 * multi_file_count / \
+        total_rule_violations if total_rule_violations else 0
+
     mdFile.new_header(level=3, title="Fix Complexity",
                       add_table_of_contents="n")
-    mdFile.new_line(f"Single Line problems: {single_line_count}  ")
-    mdFile.new_line(f"Multi Line problems: {multi_line_count}  ")
-    mdFile.new_line(f"Multi File problems: {multi_file_count}  ")
+    mdFile.new_line(
+        f"Single Line problems: {single_line_count} ({percent_single_line:.2f}%)  ")
+    mdFile.new_line(
+        f"Multi Line problems: {multi_line_count} ({percent_multi_line:.2f}%)  ")
+    mdFile.new_line(
+        f"Multi File problems: {multi_file_count} ({percent_multi_file:.2f}%)  ")
 
     # Split by type of fix (TP/FP)
     tp_fix_complexity = evaluation_results_file_df[evaluation_results_file_df["classification"]
@@ -190,17 +268,17 @@ def calculate_stats_from_evaluation_results(evaluation_results_extended_file: cl
     mdFile.new_line()
     mdFile.new_line("Fix complexity split by type of fix:  ")
     mdFile.new_line(
-        f"TP - Single Line: {tp_fix_complexity.get('Single Line', 0)}  ")
+        f"TP - Single Line: {tp_fix_complexity.get('Single Line', 0)} ({100 * tp_fix_complexity.get('Single Line', 0) / classified_tp:.2f}%)  " if classified_tp else f"TP - Single Line: 0 (0.00%)  ")
     mdFile.new_line(
-        f"TP - Multi Line: {tp_fix_complexity.get('Multi Line', 0)}  ")
+        f"TP - Multi Line: {tp_fix_complexity.get('Multi Line', 0)} ({100 * tp_fix_complexity.get('Multi Line', 0) / classified_tp:.2f}%)  " if classified_tp else f"TP - Multi Line: 0 (0.00%)  ")
     mdFile.new_line(
-        f"TP - Multi File: {tp_fix_complexity.get('Multi File', 0)}  ")
+        f"TP - Multi File: {tp_fix_complexity.get('Multi File', 0)} ({100 * tp_fix_complexity.get('Multi File', 0) / classified_tp:.2f}%)  " if classified_tp else f"TP - Multi File: 0 (0.00%)  ")
     mdFile.new_line(
-        f"FP - Single Line: {fp_fix_complexity.get('Single Line', 0)}  ")
+        f"FP - Single Line: {fp_fix_complexity.get('Single Line', 0)} ({100 * fp_fix_complexity.get('Single Line', 0) / classified_fp:.2f}%)  " if classified_fp else f"FP - Single Line: 0 (0.00%)  ")
     mdFile.new_line(
-        f"FP - Multi Line: {fp_fix_complexity.get('Multi Line', 0)}  ")
+        f"FP - Multi Line: {fp_fix_complexity.get('Multi Line', 0)} ({100 * fp_fix_complexity.get('Multi Line', 0) / classified_fp:.2f}%)  " if classified_fp else f"FP - Multi Line: 0 (0.00%)  ")
     mdFile.new_line(
-        f"FP - Multi File: {fp_fix_complexity.get('Multi File', 0)}  ")
+        f"FP - Multi File: {fp_fix_complexity.get('Multi File', 0)} ({100 * fp_fix_complexity.get('Multi File', 0) / classified_fp:.2f}%)  " if classified_fp else f"FP - Multi File: 0 (0.00%)  ")
 
     # Number of fixes created per fixComplexity
     plausible_fixes_created_per_complexity = evaluation_results_file_df[evaluation_results_file_df["plausibleFix"]]["fixComplexity"].value_counts(
@@ -208,11 +286,11 @@ def calculate_stats_from_evaluation_results(evaluation_results_extended_file: cl
     mdFile.new_line()
     mdFile.new_line("Number of plausible fixes created per fixComplexity:  ")
     mdFile.new_line(
-        f"Single Line: {plausible_fixes_created_per_complexity.get('Single Line', 0)} / {single_line_count}  ")
+        f"Single Line: {plausible_fixes_created_per_complexity.get('Single Line', 0)} / {single_line_count} ({100 * plausible_fixes_created_per_complexity.get('Single Line', 0) / single_line_count:.2f}%)  " if single_line_count else "Single Line: 0 / 0 (0.00%)  ")
     mdFile.new_line(
-        f"Multi Line: {plausible_fixes_created_per_complexity.get('Multi Line', 0)} / {multi_line_count}  ")
+        f"Multi Line: {plausible_fixes_created_per_complexity.get('Multi Line', 0)} / {multi_line_count} ({100 * plausible_fixes_created_per_complexity.get('Multi Line', 0) / multi_line_count:.2f}%)  " if multi_line_count else "Multi Line: 0 / 0 (0.00%)  ")
     mdFile.new_line(
-        f"Multi File: {plausible_fixes_created_per_complexity.get('Multi File', 0)} / {multi_file_count}  ")
+        f"Multi File: {plausible_fixes_created_per_complexity.get('Multi File', 0)} / {multi_file_count} ({100 * plausible_fixes_created_per_complexity.get('Multi File', 0) / multi_file_count:.2f}%)  " if multi_file_count else "Multi File: 0 / 0 (0.00%)  ")
 
     # Number of correct fixes created per fixComplexity
     correct_fixes = evaluation_results_file_df[((evaluation_results_file_df["classificationSoundness"]
@@ -224,11 +302,11 @@ def calculate_stats_from_evaluation_results(evaluation_results_extended_file: cl
     mdFile.new_line(
         f"Number of correct fixes created per fixComplexity (of the {total_correct_and_sound} sound and correct fixes (only for inspected samples)):  ")
     mdFile.new_line(
-        f"Single Line: {correct_fixes_per_complexity.get('Single Line', 0)}  ")
+        f"Single Line: {correct_fixes_per_complexity.get('Single Line', 0)} ({100 * correct_fixes_per_complexity.get('Single Line', 0) / total_correct_and_sound:.2f}%)  " if total_correct_and_sound else "Single Line: 0 (0.00%)  ")
     mdFile.new_line(
-        f"Multi Line: {correct_fixes_per_complexity.get('Multi Line', 0)}  ")
+        f"Multi Line: {correct_fixes_per_complexity.get('Multi Line', 0)} ({100 * correct_fixes_per_complexity.get('Multi Line', 0) / total_correct_and_sound:.2f}%)  " if total_correct_and_sound else "Multi Line: 0 (0.00%)  ")
     mdFile.new_line(
-        f"Multi File: {correct_fixes_per_complexity.get('Multi File', 0)}  ")
+        f"Multi File: {correct_fixes_per_complexity.get('Multi File', 0)} ({100 * correct_fixes_per_complexity.get('Multi File', 0) / total_correct_and_sound:.2f}%)  " if total_correct_and_sound else "Multi File: 0 / 0 (0.00%)  ")
 
     # Iterations
     iterations_classification = evaluation_results_file_df["iterationsClassification"].sum(
@@ -359,6 +437,14 @@ def calculate_stats_from_evaluation_results(evaluation_results_extended_file: cl
     ablationNoChangeApproverPlausibleFix_FP = evaluation_results_file_df.loc[
         evaluation_results_file_df["classification"] == "FP", "ablationNoChangeApproverPlausibleFix"].sum()
 
+    percent_ablation_no_change_approver_plausible_fixes = 100 * \
+        ablation_no_change_approver_plausible_fixes / \
+        total_rule_violations if total_rule_violations else 0
+    percent_ablation_no_change_approver_plausible_fixes_tp = 100 * \
+        ablationNoChangeApproverPlausibleFix_TP / classified_tp if classified_tp else 0
+    percent_ablation_no_change_approver_plausible_fixes_fp = 100 * \
+        ablationNoChangeApproverPlausibleFix_FP / classified_fp if classified_fp else 0
+
     ablation_only_build_plausible_fixes = evaluation_results_file_df["ablationOnlyBuildPlausibleFix"].sum(
     )
 
@@ -366,6 +452,13 @@ def calculate_stats_from_evaluation_results(evaluation_results_extended_file: cl
         evaluation_results_file_df["classification"] == "TP", "ablationOnlyBuildPlausibleFix"].sum()
     ablation_only_build_plausible_fixes_FP = evaluation_results_file_df.loc[
         evaluation_results_file_df["classification"] == "FP", "ablationOnlyBuildPlausibleFix"].sum()
+
+    percent_ablation_only_build_plausible_fixes = 100 * ablation_only_build_plausible_fixes / \
+        total_compilation_passed if total_compilation_passed else 0
+    percent_ablation_only_build_plausible_fixes_TP = 100 * ablation_only_build_plausible_fixes_TP / \
+        fix_tp_compilation_passed if fix_tp_compilation_passed else 0
+    percent_ablation_only_build_plausible_fixes_FP = 100 * ablation_only_build_plausible_fixes_FP / \
+        fix_fp_compilation_passed if fix_fp_compilation_passed else 0
 
     ablation_build_and_sonar_Qube_check_plausible_fixes = evaluation_results_file_df[
         "ablationBuildAndSonarQubeCheckPlausibleFix"].sum()
@@ -375,34 +468,41 @@ def calculate_stats_from_evaluation_results(evaluation_results_extended_file: cl
     ablation_build_and_sonar_Qube_check_plausible_fixes_FP = evaluation_results_file_df.loc[
         evaluation_results_file_df["classification"] == "FP", "ablationBuildAndSonarQubeCheckPlausibleFix"].sum()
 
+    percent_ablation_build_and_sonar_Qube_check_plausible_fixes = 100 * ablation_build_and_sonar_Qube_check_plausible_fixes / \
+        total_sonar_qube_check_passed if total_sonar_qube_check_passed else 0
+    percent_ablation_build_and_sonar_Qube_check_plausible_fixes_TP = 100 * ablation_only_build_plausible_fixes_TP / \
+        fix_tp_sonar_qube_check_passed if fix_tp_sonar_qube_check_passed else 0
+    percent_ablation_build_and_sonar_Qube_check_plausible_fixes_FP = 100 * ablation_only_build_plausible_fixes_FP / \
+        fix_fp_sonar_qube_check_passed if fix_fp_sonar_qube_check_passed else 0
+
     mdFile.new_header(
         level=3, title="Ablation of the ChangeApprover", add_table_of_contents="n")
     mdFile.new_header(level=4, title="No ChangeApprover (accepts more fixes than with ChangeApprover (all the fixed ones + the unfixed ones) => how many of these are still plausible (would pass the full ChangeApprover) => all the other ones would falsely be labeled as plausible)",
                       add_table_of_contents="n")
     mdFile.new_line(
-        f"Still plausible fixes / accepted fixes: {ablation_no_change_approver_plausible_fixes} / {total_rule_violations}  ")
+        f"Still plausible fixes / accepted fixes: {ablation_no_change_approver_plausible_fixes} / {total_rule_violations} ({percent_ablation_no_change_approver_plausible_fixes:.2f}%)  ")
     mdFile.new_line(
-        f"Still plausible fixes / accepted fixes (TP): {ablationNoChangeApproverPlausibleFix_TP} / {classified_tp}  ")
+        f"Still plausible fixes / accepted fixes (TP): {ablationNoChangeApproverPlausibleFix_TP} / {classified_tp} ({percent_ablation_no_change_approver_plausible_fixes_tp:.2f}%)  ")
     mdFile.new_line(
-        f"Still plausible fixes / accepted fixes (FP): {ablationNoChangeApproverPlausibleFix_FP} / {classified_fp}  ")
+        f"Still plausible fixes / accepted fixes (FP): {ablationNoChangeApproverPlausibleFix_FP} / {classified_fp} ({percent_ablation_no_change_approver_plausible_fixes_fp:.2f}%)  ")
 
     mdFile.new_header(level=4, title="Only build step (no SonarQube check and test steps)",
                       add_table_of_contents="n")
     mdFile.new_line(
-        f"Still plausible fixes / accepted fixes: {ablation_only_build_plausible_fixes} / {total_compilation_passed}  ")
+        f"Still plausible fixes / accepted fixes: {ablation_only_build_plausible_fixes} / {total_compilation_passed} ({percent_ablation_only_build_plausible_fixes:.2f}%)  ")
     mdFile.new_line(
-        f"Still plausible fixes / accepted fixes (TP): {ablation_only_build_plausible_fixes_TP} / {fix_tp_compilation_passed}  ")
+        f"Still plausible fixes / accepted fixes (TP): {ablation_only_build_plausible_fixes_TP} / {fix_tp_compilation_passed} ({percent_ablation_only_build_plausible_fixes_TP:.2f}%)  ")
     mdFile.new_line(
-        f"Still plausible fixes / accepted fixes (FP): {ablation_only_build_plausible_fixes_FP} / {fix_fp_compilation_passed}  ")
+        f"Still plausible fixes / accepted fixes (FP): {ablation_only_build_plausible_fixes_FP} / {fix_fp_compilation_passed} ({percent_ablation_only_build_plausible_fixes_FP:.2f}%)  ")
 
     mdFile.new_header(
         level=4, title="Only build and SonarQube check steps (no test step)", add_table_of_contents="n")
     mdFile.new_line(
-        f"Still plausible fixes / accepted fixes: {ablation_build_and_sonar_Qube_check_plausible_fixes} / {total_sonar_qube_check_passed}  ")
+        f"Still plausible fixes / accepted fixes: {ablation_build_and_sonar_Qube_check_plausible_fixes} / {total_sonar_qube_check_passed} ({percent_ablation_build_and_sonar_Qube_check_plausible_fixes:.2f}%)  ")
     mdFile.new_line(
-        f"Still plausible fixes / accepted fixes (TP): {ablation_build_and_sonar_Qube_check_plausible_fixes_TP} / {fix_tp_sonar_qube_check_passed}  ")
+        f"Still plausible fixes / accepted fixes (TP): {ablation_build_and_sonar_Qube_check_plausible_fixes_TP} / {fix_tp_sonar_qube_check_passed} ({percent_ablation_build_and_sonar_Qube_check_plausible_fixes_TP:.2f}%)  ")
     mdFile.new_line(
-        f"Still plausible fixes / accepted fixes (FP): {ablation_build_and_sonar_Qube_check_plausible_fixes_FP} / {fix_fp_sonar_qube_check_passed}  ")
+        f"Still plausible fixes / accepted fixes (FP): {ablation_build_and_sonar_Qube_check_plausible_fixes_FP} / {fix_fp_sonar_qube_check_passed} ({percent_ablation_build_and_sonar_Qube_check_plausible_fixes_FP:.2f}%)  ")
 
     # Execution time section
 

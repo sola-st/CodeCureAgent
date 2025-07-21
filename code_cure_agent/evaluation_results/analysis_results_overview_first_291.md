@@ -8,55 +8,60 @@
 291
 ### Classification
 
-TP: 191  
-FP: 100  
-Unclassified: 0
+TP: 191 (65.64%)  
+FP: 100 (34.36%)  
+Unclassified: 0 (0.00%)
 ### Plausible Fixes
 
-Total plausible fixes: 282/291  
-TP plausible fixes: 182/191  
-FP plausible fixes: 100/100  
+Total plausible fixes: 282/291 (96.91%)  
+TP plausible fixes: 182/191 (95.29%)  
+FP plausible fixes: 100/100 (100.00%)  
 #### Passed previous steps
 
-Total compilation step passed: 288/291  
-TP compilation step passed: 188/191  
-FP compilation step passed: 100/100  
-Total SonarQube check step passed: 284/291  
-TP SonarQube check step passed: 184/191  
-FP SonarQube check step passed: 100/100  
+Total compilation step passed: 288/291 (98.97%)  
+TP compilation step passed: 188/191 (98.43%)  
+FP compilation step passed: 100/100 (100.00%)  
+Total SonarQube check step passed: 284/291 (97.59%)  
+TP SonarQube check step passed: 184/191 (96.34%)  
+FP SonarQube check step passed: 100/100 (100.00%)  
 ### Soundness of classification
 
-Total sound classifications: 204/220  
-Sound TP classifications: 145/149  
-Sound FP classifications: 59/71  
+Total sound classifications: 268/291 (92.10%)  
+Sound TP classifications: 186/191 (97.38%)  
+Sound FP classifications: 82/100 (82.00%)  
 ### Correctness of fix
 
-Total correct fixes (sound and correct / sound and fixed): 190/198  
-Correct TP fixes  (sound and correct / sound and fixed): 131/139  
-Correct FP fixes  (sound and correct / sound and fixed): 59/59  
+Total correct fixes (sound and correct / sound and fixed): 252/260 (96.92%)  
+Correct TP fixes  (sound and correct / sound and fixed): 170/178 (95.51%)  
+Correct FP fixes  (sound and correct / sound and fixed): 82/82 (100.00%)  
+### End-to-end performance (fixed, sound and correct)
+
+End-to-end total: 252/291 (86.60%)  
+End-to-end TP: 170/191 (89.01%)  
+End-to-end FP: 82/100 (82.00%)  
 ### Fix Complexity
 
-Single Line problems: 181  
-Multi Line problems: 99  
-Multi File problems: 9  
+Single Line problems: 181 (62.20%)  
+Multi Line problems: 101 (34.71%)  
+Multi File problems: 9 (3.09%)  
 
 Fix complexity split by type of fix:  
-TP - Single Line: 86  
-TP - Multi Line: 94  
-TP - Multi File: 9  
-FP - Single Line: 95  
-FP - Multi Line: 5  
-FP - Multi File: 0  
+TP - Single Line: 86 (45.03%)  
+TP - Multi Line: 96 (50.26%)  
+TP - Multi File: 9 (4.71%)  
+FP - Single Line: 95 (95.00%)  
+FP - Multi Line: 5 (5.00%)  
+FP - Multi File: 0 (0.00%)  
 
 Number of plausible fixes created per fixComplexity:  
-Single Line: 179 / 181  
-Multi Line: 98 / 99  
-Multi File: 5 / 9  
+Single Line: 179 / 181 (98.90%)  
+Multi Line: 98 / 101 (97.03%)  
+Multi File: 5 / 9 (55.56%)  
 
-Number of correct fixes created per fixComplexity (of the 190 sound and correct fixes (only for inspected samples)):  
-Single Line: 117  
-Multi Line: 70  
-Multi File: 3  
+Number of correct fixes created per fixComplexity (of the 252 sound and correct fixes (only for inspected samples)):  
+Single Line: 155 (61.51%)  
+Multi Line: 94 (37.30%)  
+Multi File: 3 (1.19%)  
 ### Iterations
 
 Total iterations: 5129  
@@ -95,19 +100,19 @@ Median number of plausible fixes (FP): 1.00
 
 #### No ChangeApprover (accepts more fixes than with ChangeApprover (all the fixed ones + the unfixed ones) => how many of these are still plausible (would pass the full ChangeApprover) => all the other ones would falsely be labeled as plausible)
 
-Still plausible fixes / accepted fixes: 216 / 291  
-Still plausible fixes / accepted fixes (TP): 128 / 191  
-Still plausible fixes / accepted fixes (FP): 88 / 100  
+Still plausible fixes / accepted fixes: 216 / 291 (74.23%)  
+Still plausible fixes / accepted fixes (TP): 128 / 191 (67.02%)  
+Still plausible fixes / accepted fixes (FP): 88 / 100 (88.00%)  
 #### Only build step (no SonarQube check and test steps)
 
-Still plausible fixes / accepted fixes: 251 / 288  
-Still plausible fixes / accepted fixes (TP): 156 / 188  
-Still plausible fixes / accepted fixes (FP): 95 / 100  
+Still plausible fixes / accepted fixes: 251 / 288 (87.15%)  
+Still plausible fixes / accepted fixes (TP): 156 / 188 (82.98%)  
+Still plausible fixes / accepted fixes (FP): 95 / 100 (95.00%)  
 #### Only build and SonarQube check steps (no test step)
 
-Still plausible fixes / accepted fixes: 278 / 284  
-Still plausible fixes / accepted fixes (TP): 178 / 184  
-Still plausible fixes / accepted fixes (FP): 100 / 100  
+Still plausible fixes / accepted fixes: 278 / 284 (97.89%)  
+Still plausible fixes / accepted fixes (TP): 178 / 184 (84.78%)  
+Still plausible fixes / accepted fixes (FP): 100 / 100 (95.00%)  
 ### Execution time
 
 Total execution time: 1013.92 minutes  

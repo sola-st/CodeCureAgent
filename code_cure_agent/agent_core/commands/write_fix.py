@@ -69,10 +69,19 @@ def write_fix(changes_dicts: list, agent: BaseAgent) -> str:
 
         return feedback
 
-    change_approver_feedback = change_approver.approve_changes(
-        changes_dicts, all_files_with_changes, agent)
+    try:
+        change_approver_feedback = change_approver.approve_changes(
+            changes_dicts, all_files_with_changes, agent)
 
-    feedback += change_approver_feedback
+        feedback += change_approver_feedback
+
+    # If an unexpected exception occures during the ChangeApprover (if there is some bug in the code),
+    # then this except makes sure that the project is properly rolled back.
+    except Exception as e:
+        rollback_changes(agent)
+        logger.error(
+            f"Unexpected exception occured in the ChangeApprover and was catched by the outer savety net. The exception was: {str(e)}")
+        return f"REJECTED  \nAn exception occured while checking the correctness of your fix attempt. The exception was: {str(e)}. \nPlease try a different fix."
 
     rollback_changes(agent)
 

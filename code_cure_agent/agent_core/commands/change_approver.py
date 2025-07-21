@@ -157,11 +157,15 @@ def add_problem_context_information(output_lines: list[str], agent: BaseAgent) -
                 if os.path.isfile(file_full_path):
                     with open(file_full_path, 'r') as file:
                         lines = file.readlines()
-                    line_content = lines[int(error_line_number) - 1]
-                    line_content = line_content.strip()
-                    output_line = output_line.replace(
-                        # TODO: Maybe don't show the line number at all here, to prevent confusions if the line number changed due to insertions/deletions
-                        line_id_string, f" In line {error_line_number}: '{line_content}' Problem:")
+                    line_number_to_lookup = int(error_line_number) - 1
+                    if line_number_to_lookup >= 0 and line_number_to_lookup < len(lines):
+                        line_content = lines[int(error_line_number) - 1]
+                        line_content = line_content.strip()
+                        output_line = output_line.replace(
+                            line_id_string, f" In line {error_line_number}: '{line_content}' Problem:")
+                    else:
+                        output_line = output_line.replace(
+                            line_id_string, f" In line {error_line_number}. Problem:")
 
         augmented_output_lines.append(output_line)
 

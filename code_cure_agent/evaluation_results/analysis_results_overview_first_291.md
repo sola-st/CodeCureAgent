@@ -111,8 +111,8 @@ Still plausible fixes / accepted fixes (FP): 95 / 100 (95.00%)
 #### Only build and SonarQube check steps (no test step)
 
 Still plausible fixes / accepted fixes: 278 / 284 (97.89%)  
-Still plausible fixes / accepted fixes (TP): 178 / 184 (84.78%)  
-Still plausible fixes / accepted fixes (FP): 100 / 100 (95.00%)  
+Still plausible fixes / accepted fixes (TP): 178 / 184 (96.74%)  
+Still plausible fixes / accepted fixes (FP): 100 / 100 (100.00%)  
 ### Execution time
 
 Total execution time: 1013.92 minutes  

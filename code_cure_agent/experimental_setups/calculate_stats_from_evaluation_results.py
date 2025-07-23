@@ -470,9 +470,9 @@ def calculate_stats_from_evaluation_results(evaluation_results_extended_file: cl
 
     percent_ablation_build_and_sonar_Qube_check_plausible_fixes = 100 * ablation_build_and_sonar_Qube_check_plausible_fixes / \
         total_sonar_qube_check_passed if total_sonar_qube_check_passed else 0
-    percent_ablation_build_and_sonar_Qube_check_plausible_fixes_TP = 100 * ablation_only_build_plausible_fixes_TP / \
+    percent_ablation_build_and_sonar_Qube_check_plausible_fixes_TP = 100 * ablation_build_and_sonar_Qube_check_plausible_fixes_TP / \
         fix_tp_sonar_qube_check_passed if fix_tp_sonar_qube_check_passed else 0
-    percent_ablation_build_and_sonar_Qube_check_plausible_fixes_FP = 100 * ablation_only_build_plausible_fixes_FP / \
+    percent_ablation_build_and_sonar_Qube_check_plausible_fixes_FP = 100 * ablation_build_and_sonar_Qube_check_plausible_fixes_FP / \
         fix_fp_sonar_qube_check_passed if fix_fp_sonar_qube_check_passed else 0
 
     mdFile.new_header(

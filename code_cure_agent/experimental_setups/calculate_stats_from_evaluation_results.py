@@ -171,6 +171,34 @@ def calculate_stats_from_evaluation_results(evaluation_results_extended_file: cl
     mdFile.new_line(
         f"Sound FP classifications: {fp_sound_classification}/{fp_sound_classification + fp_not_sound_classification} ({percent_fp_sound:.2f}%)  ")
 
+    # Sound classification Precision and Recall
+
+    # True TP warning => TP
+    # True FP warning => TN
+    # False TP warning (classified TP but not sound) => FP
+    # False FP warning (classified FP but not sound) => FN
+
+    # Precision: TP / (TP + FP) => True TP / (True TP + False TP)
+    precision = tp_sound_classification / \
+        (tp_sound_classification + tp_not_sound_classification) if (
+            tp_sound_classification + tp_not_sound_classification) else 0
+
+    # Recall: TP / (TP + FN) => True TP / (True TP + False FP)
+    recall = tp_sound_classification / \
+        (tp_sound_classification + fp_not_sound_classification) if (
+            tp_sound_classification + fp_not_sound_classification) else 0
+
+    mdFile.new_line(
+        f"Precision: {precision:.2f}  ")
+    mdFile.new_line(
+        f"Recall: {recall:.2f}  ")
+
+    f1_score = (2 * precision * recall) / (precision +
+                                           recall) if (precision + recall) else 0
+
+    mdFile.new_line(
+        f"F1 Score: {f1_score:.2f}  ")
+
     # Correct classification section
 
     # Doesn't include unfixed instances

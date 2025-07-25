@@ -29,6 +29,9 @@ FP SonarQube check step passed: 203/204 (99.51%)
 Total sound classifications: 0/0 (0.00%)  
 Sound TP classifications: 0/0 (0.00%)  
 Sound FP classifications: 0/0 (0.00%)  
+Precision: 0.00  
+Recall: 0.00  
+F1 Score: 0.00  
 ### Correctness of fix
 
 Total correct fixes (sound and correct / sound and fixed): 0/0 (0.00%)  

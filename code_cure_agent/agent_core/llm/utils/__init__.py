@@ -9,7 +9,6 @@ from colorama import Fore
 from agent_core.config import Config
 from typing import TYPE_CHECKING
 
-from agent_core.utils.path_utils.path_utils import sanitize_and_shorten_file_path
 
 if TYPE_CHECKING:
     from agent_core.agents.base import BaseAgent

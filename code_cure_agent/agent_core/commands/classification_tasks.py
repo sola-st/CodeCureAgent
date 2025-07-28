@@ -3,7 +3,6 @@ from agent_core.command_decorator import command
 from agent_core.logs.logger import logger
 import os
 
-from agent_core.utils.path_utils.path_utils import sanitize_and_shorten_file_path
 
 COMMAND_CATEGORY = "CLASSIFICATION_TASKS"
 COMMAND_CATEGORY_TITLE = "CLASSIFICATION_TASKS"

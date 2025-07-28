@@ -19,7 +19,6 @@ from agent_core.logs import logger
 from agent_core.memory.message_history import MessageHistory
 from agent_core.utils.json_utils.json_utilities import extract_dict_from_response
 from agent_core.utils.file_operation_utils.read_file import read_file
-from agent_core.utils.path_utils.path_utils import sanitize_and_shorten_file_path
 
 CommandName = str
 CommandArgs = dict[str, str]

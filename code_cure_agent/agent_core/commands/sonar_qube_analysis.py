@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from agent_core.agents import BaseAgent
 
-from agent_core.utils.path_utils.path_utils import preprocess_paths, sanitize_and_shorten_file_path
+from agent_core.utils.path_utils.path_utils import preprocess_paths
 
 COMMAND_CATEGORY = "sonarQubeAnalysis"
 COMMAND_CATEGORY_TITLE = "Run SonarQube analysis"

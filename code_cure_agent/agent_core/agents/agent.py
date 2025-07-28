@@ -7,7 +7,6 @@ import time
 from typing import TYPE_CHECKING, Any
 
 from colorama import Fore
-import uuid
 
 
 if TYPE_CHECKING:
@@ -17,12 +16,9 @@ if TYPE_CHECKING:
     from agent_core.models.command_registry import CommandRegistry
 
 from agent_core.utils.json_utils.json_utilities import extract_dict_from_response, validate_dict
-from agent_core.utils.path_utils.path_utils import sanitize_and_shorten_file_path
 from agent_core.llm.utils import count_string_tokens
 from agent_core.logs import logger
 from agent_core.logs.log_cycle import LogCycleHandler
-from agent_core.memory.message_history import MessageHistory
-from agent_core.llm.base import Message
 
 from agent_core.workspace import Workspace
 

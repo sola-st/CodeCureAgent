@@ -8,8 +8,6 @@ import time
 from agent_core.logs.logger import logger
 import subprocess
 
-from agent_core.utils.path_utils.path_utils import sanitize_and_shorten_file_path
-
 
 def checkout_project(agent: BaseAgent, overwrite_target_workspace_path: str = None, overwrite_target_folder_name: str = None) -> None:
     """

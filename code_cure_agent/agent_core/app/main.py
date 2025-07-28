@@ -1,4 +1,6 @@
 """The application entry point.  Can be invoked by a CLI or any other front end application."""
+from __future__ import annotations
+
 import logging
 import signal
 import sys
@@ -29,14 +31,16 @@ from agent_core.models.command_registry import CommandRegistry
 from agent_core.plugins import scan_plugins
 from agent_core.speech import say_text
 from agent_core.workspace import Workspace
-from agent_core.commands.classification_tasks import give_final_verdict
 from agent_core.utils.path_utils.path_utils import sanitize_and_shorten_file_path
 from scripts.install_plugin_deps import install_plugin_dependencies
 
-from agent_core.commands import sonar_qube_analysis
-from agent_core.commands import repository_operations
+from agent_core.commands import sonar_qube_analysis, repository_operations, classification_tasks
 from git.exc import GitError
 import subprocess
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from agent_core.commands import system
 
 DEFAULT_SORALD_JAR_PATH = "sorald/sorald.jar"
 
@@ -331,9 +335,15 @@ def run_interaction_loop(
         if agent.cycle_count == agent.config.commands_limit and agent.current_state == "classification":
             agent.final_verdict_reason = "No reason given."
             # Call the command normally called by the agent directly, for logging of the verdict
-            give_final_verdict("TP", agent.final_verdict_reason, agent)
+            classification_tasks.give_final_verdict(
+                "TP", agent.final_verdict_reason, agent)
             agent.update_prompt_state(final_verdict_is_true_positive=True)
 
+    # This section is only reached if no plausible fixes were created or no goals_accomplished was called after all cycles
+
+    # Reapply fix if there was a plausible fix but goals_accomplished wasn't called before cycle exhaustion
+    if agent.plausible_fixes > 0:
+        system.reapply_last_plausible_fix(agent)
     # Clean shutdown when all cycles are exhausted in the second agent phase
     shutdown(agent, 0)
 

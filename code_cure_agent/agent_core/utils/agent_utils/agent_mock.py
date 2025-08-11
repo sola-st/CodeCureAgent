@@ -32,11 +32,11 @@ class AIConfig():
 
 
 class AgentMock():
-    def __init__(self, warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message, workspace_path="/workspaces/master-thesis-pascal-joos/code_cure_agent/cca_workspace/", current_state="fix_tp", logger_level=logging.INFO):
+    def __init__(self, warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message, workspace_path="/workspaces/master-thesis-pascal-joos/code_cure_agent/cca_workspace/", current_state="fix_tp", logger_level=logging.INFO, warning_ID=-1):
         logger.set_level(logger_level)
         warning_repository_target_java_version = "8"
         self.config = Config(workspace_path)
-        self.ai_config = AIConfig(-1, warning_repository_URL, warning_repository_commit, warning_repository_target_java_version, warning_file_path,
+        self.ai_config = AIConfig(warning_ID, warning_repository_URL, warning_repository_commit, warning_repository_target_java_version, warning_file_path,
                                   warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message)
         self.exps = ["experiment_test"]
 

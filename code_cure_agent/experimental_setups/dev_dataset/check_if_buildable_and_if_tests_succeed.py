@@ -45,7 +45,8 @@ if __name__ == "__main__":
                     try:
                         repository_operations.checkout_project(agent)
 
-                        repository_operations.build_project(agent)
+                        repository_operations.build_project(
+                            agent, time_monitoring=False)
 
                         build_successful = True
 

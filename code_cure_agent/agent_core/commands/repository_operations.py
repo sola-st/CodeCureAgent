@@ -88,7 +88,7 @@ def remove_folder_if_exists(folder: str) -> None:
                          (e.filename, e.strerror))
 
 
-def build_project(agent: BaseAgent) -> None:
+def build_project(agent: BaseAgent, time_monitoring=True) -> None:
     """
     Try to build the target project. 
     Expects that the project is already checked out.
@@ -104,10 +104,11 @@ def build_project(agent: BaseAgent) -> None:
 
     timeout_ten_minutes = 10 * 60
 
-    # Write the build start to the execution info file
-    with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{agent.ai_config.warning_file_name}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
-        patf.write(
-            f"!! Maven build startup timestamp: " + str(time.time_ns()) + "\n")
+    if time_monitoring:
+        # Write the build start to the execution info file
+        with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{agent.ai_config.warning_file_name}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
+            patf.write(
+                f"!! Maven build startup timestamp: " + str(time.time_ns()) + "\n")
 
     try:
         result = subprocess.run(
@@ -120,10 +121,11 @@ def build_project(agent: BaseAgent) -> None:
             timeout=timeout_ten_minutes
         )
 
-        # Write the build end to the execution info file
-        with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{agent.ai_config.warning_file_name}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
-            patf.write(
-                f"!! Maven build end timestamp: " + str(time.time_ns()) + "\n")
+        if time_monitoring:
+            # Write the build end to the execution info file
+            with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{agent.ai_config.warning_file_name}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
+                patf.write(
+                    f"!! Maven build end timestamp: " + str(time.time_ns()) + "\n")
 
     except subprocess.TimeoutExpired as te:
         logger.error("TimeoutExpired",
@@ -151,7 +153,7 @@ class BuildError(Exception):
         super().__init__(stdout)
 
 
-def run_tests(agent: BaseAgent) -> subprocess.CompletedProcess[str]:
+def run_tests(agent: BaseAgent, time_monitoring=True) -> subprocess.CompletedProcess[str]:
     """
     Run the test-suite of the project.
     Expects that the project is already checked out and can be built.
@@ -166,10 +168,11 @@ def run_tests(agent: BaseAgent) -> subprocess.CompletedProcess[str]:
 
     timeout_five_minutes = 5 * 60
 
-    # Write the test start to the execution info file
-    with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{agent.ai_config.warning_file_name}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
-        patf.write(
-            f"!! Maven test startup timestamp: " + str(time.time_ns()) + "\n")
+    if time_monitoring:
+        # Write the test start to the execution info file
+        with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{agent.ai_config.warning_file_name}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
+            patf.write(
+                f"!! Maven test startup timestamp: " + str(time.time_ns()) + "\n")
 
     try:
         # Added a workaround to address a failing test in the project singer (testTextLogEnvInjection() in file TestLogConfigUtils).
@@ -185,10 +188,11 @@ def run_tests(agent: BaseAgent) -> subprocess.CompletedProcess[str]:
                                 timeout=timeout_five_minutes
                                 )
 
-        # Write the test end to the execution info file
-        with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{agent.ai_config.warning_file_name}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
-            patf.write(
-                f"!! Maven test end timestamp: " + str(time.time_ns()) + "\n")
+        if time_monitoring:
+            # Write the test end to the execution info file
+            with open(os.path.join("experimental_setups", agent.exps[-1], agent.current_state, "execution_info", f"{str(agent.ai_config.warning_ID)}_{agent.ai_config.warning_repository_name}_{agent.ai_config.warning_rule_key}_{agent.ai_config.warning_file_name}_line_{str(agent.ai_config.warning_start_line)}_execution_info"), "a+") as patf:
+                patf.write(
+                    f"!! Maven test end timestamp: " + str(time.time_ns()) + "\n")
 
     except subprocess.TimeoutExpired as te:
         logger.error("TimeoutExpired",

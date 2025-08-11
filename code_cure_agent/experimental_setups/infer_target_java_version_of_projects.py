@@ -52,7 +52,8 @@ def infer_target_java_version_of_projects(repos_list_with_commits_file: click.Fi
             try:
                 repository_operations.checkout_project(agent)
 
-                repository_operations.build_project(agent)
+                repository_operations.build_project(
+                    agent, time_monitoring=False)
 
                 build_successful = True
 

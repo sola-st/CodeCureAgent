@@ -100,6 +100,10 @@ class RepairCommand extends BaseCommand {
     @CommandLine.Option(names = Constants.ARG_MAX_FILES_PER_SEGMENT, description = "Max number of files per loaded segment for segmented repair. It should be >= 3000 files per segment.")
     int maxFilesPerSegment = 6500;
 
+    @CommandLine.Option(names = {
+            Constants.ARG_TARGET_JAVA_VERSION }, description = "Set the java version that is to be set for sonar.java.source (used to mine warnings that are then repaired)")
+    private String targetJavaVersion;
+
     @Override
     public Integer call() throws IOException {
         postprocessArgs();
@@ -112,7 +116,7 @@ class RepairCommand extends BaseCommand {
 
         List<String> classpath = resolveClasspath();
 
-        Set<RuleViolation> ruleViolations = resolveRuleViolations(eventHandlers, classpath);
+        Set<RuleViolation> ruleViolations = resolveRuleViolations(eventHandlers, classpath, targetJavaVersion);
         if (ruleViolations.isEmpty()) {
             System.out.println("No rule violations found, nothing to do ...");
         } else {
@@ -124,7 +128,7 @@ class RepairCommand extends BaseCommand {
 
         if (statsOutputFile != null) {
             // mine violations to trigger stats collection
-            mineViolations(source, ruleKey, eventHandlers, classpath);
+            mineViolations(source, ruleKey, eventHandlers, classpath, targetJavaVersion);
             writeStatisticsOutput(
                     statsCollector,
                     FileUtils.getClosestDirectory(source).toPath().toAbsolutePath().normalize());
@@ -144,8 +148,9 @@ class RepairCommand extends BaseCommand {
     }
 
     private Set<RuleViolation> resolveRuleViolations(
-            List<SoraldEventHandler> eventHandlers, List<String> classpath) {
-        Set<RuleViolation> minedViolations = mineViolations(source, ruleKey, eventHandlers, classpath);
+            List<SoraldEventHandler> eventHandlers, List<String> classpath, String targetJavaVersion) {
+        Set<RuleViolation> minedViolations = mineViolations(source, ruleKey, eventHandlers, classpath,
+                targetJavaVersion);
 
         if (!specifiedRuleViolations.isEmpty()) {
             specifiedRuleViolations.forEach(
@@ -184,14 +189,14 @@ class RepairCommand extends BaseCommand {
             File target,
             String ruleKey,
             List<SoraldEventHandler> eventHandlers,
-            List<String> classpath) {
+            List<String> classpath, String targetJavaVersion) {
         Rule rule = new SonarRule(ruleKey);
         Path projectPath = target.toPath().toAbsolutePath().normalize();
         Set<RuleViolation> violations = ProjectScanner.scanProject(
                 target,
                 FileUtils.getClosestDirectory(target),
                 List.of(rule),
-                createConfig(), null, target.getName());
+                createConfig(), targetJavaVersion, target.getName());
         violations.forEach(
                 warn -> EventHelper.fireEvent(
                         new MinedViolationEvent(warn, projectPath), eventHandlers));

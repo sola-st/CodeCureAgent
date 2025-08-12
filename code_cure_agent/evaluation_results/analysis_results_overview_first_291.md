@@ -26,22 +26,22 @@ TP SonarQube check step passed: 184/191 (96.34%)
 FP SonarQube check step passed: 100/100 (100.00%)  
 ### Soundness of classification
 
-Total sound classifications: 268/291 (92.10%)  
+Total sound classifications: 267/291 (91.75%)  
 Sound TP classifications: 186/191 (97.38%)  
-Sound FP classifications: 82/100 (82.00%)  
+Sound FP classifications: 81/100 (81.00%)  
 Precision: 0.97  
 Recall: 0.91  
 F1 Score: 0.94  
 ### Correctness of fix
 
-Total correct fixes (sound and correct / sound and fixed): 252/260 (96.92%)  
+Total correct fixes (sound and correct / sound and fixed): 251/259 (96.91%)  
 Correct TP fixes  (sound and correct / sound and fixed): 170/178 (95.51%)  
-Correct FP fixes  (sound and correct / sound and fixed): 82/82 (100.00%)  
+Correct FP fixes  (sound and correct / sound and fixed): 81/81 (100.00%)  
 ### End-to-end performance (fixed, sound and correct)
 
-End-to-end total: 252/291 (86.60%)  
+End-to-end total: 251/291 (86.25%)  
 End-to-end TP: 170/191 (89.01%)  
-End-to-end FP: 82/100 (82.00%)  
+End-to-end FP: 81/100 (81.00%)  
 ### Fix Complexity
 
 Single Line problems: 181 (62.20%)  
@@ -61,10 +61,10 @@ Single Line: 179 / 181 (98.90%)
 Multi Line: 98 / 101 (97.03%)  
 Multi File: 5 / 9 (55.56%)  
 
-Number of correct fixes created per fixComplexity (of the 252 sound and correct fixes (only for inspected samples)):  
-Single Line: 155 (61.51%)  
-Multi Line: 94 (37.30%)  
-Multi File: 3 (1.19%)  
+Number of correct fixes created per fixComplexity (of the 251 sound and correct fixes (only for inspected samples)):  
+Single Line: 154 (61.35%)  
+Multi Line: 94 (37.45%)  
+Multi File: 3 (1.20%)  
 ### Iterations
 
 Total iterations: 5129  

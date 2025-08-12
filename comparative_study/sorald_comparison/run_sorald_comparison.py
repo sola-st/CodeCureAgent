@@ -14,32 +14,33 @@ import subprocess
 from agent_core.utils.agent_utils.agent_mock import AgentMock
 from agent_core.commands import repository_operations
 
+WARNINGS_TO_RUN_ON_FILE_PATH = "../comparative_study/sorald_comparison/dataset_sorald_supported_instances_1000_instances_dataset_with_violation_specifier.csv"
+CCA_RELEVANT_RESULTS_FILE_PATH = "../comparative_study/sorald_comparison/cca_relevant_evaluation_results.csv"
+
+TARGET_CSV_FILE_PATH = "../comparative_study/sorald_comparison/sorald_comparison_results.csv"
+
+CCA_WORKSPACE = "cca_workspace"
+
+REPAIR_OUTPUT_FOLDER = "../comparative_study/sorald_comparison/sorald_run_outputs/repair_output"
+MINING_OUTPUT_FOLDER = "../comparative_study/sorald_comparison/sorald_run_outputs/mining_output"
+
+PROJECTS_BEFORE_AFTER_FOLDER = "../comparative_study/sorald_comparison/sorald_run_outputs/projects_before_after"
+
 
 def run_sorald_comparison():
-    warnings_to_run_on_file_name = "../comparative_study/sorald_comparison/dataset_sorald_supported_instances_1000_instances_dataset_with_violation_specifier.csv"
-    cca_relevant_results_file_path = "../comparative_study/sorald_comparison/cca_relevant_evaluation_results.csv"
 
-    target_csv_file_path = "../comparative_study/sorald_comparison/sorald_comparison_results.csv"
+    warnings_to_run_on_df = pd.read_csv(WARNINGS_TO_RUN_ON_FILE_PATH)
 
-    cca_workspace = "cca_workspace"
+    cca_relevant_results_df = pd.read_csv(CCA_RELEVANT_RESULTS_FILE_PATH)
 
-    repair_output_folder = "../comparative_study/sorald_comparison/sorald_run_outputs/repair_output"
-    mining_output_folder = "../comparative_study/sorald_comparison/sorald_run_outputs/mining_output"
-
-    projects_before_after_folder = "../comparative_study/sorald_comparison/sorald_run_outputs/projects_before_after"
-
-    warnings_to_run_on_df = pd.read_csv(warnings_to_run_on_file_name)
-
-    cca_relevant_results_df = pd.read_csv(cca_relevant_results_file_path)
-
-    if not os.path.exists(target_csv_file_path):
-        with open(target_csv_file_path, "w") as results_csv_file:
+    if not os.path.exists(TARGET_CSV_FILE_PATH):
+        with open(TARGET_CSV_FILE_PATH, "w") as results_csv_file:
             csv_writer = csv.writer(
                 results_csv_file, dialect=csv.unix_dialect)
             csv_writer.writerow(["instanceID", "projectName", "ruleKey", "ruleName", "ruleType", "experimentNumber", "classification", "plausibleFix",
                                 "fixComplexity", "classificationSoundness", "fixCorrectness", "classificationSoundnessExplanation", "fixCorrectnessExplanation", "soraldFixCreated", "soraldFixingTimeInMs", "soraldBuildSuccessful", "soraldNumberOfTargetWarningsRemoved", "soraldNoNewWarningIntroduced", "soraldKeysOfNewlyIntroducedWarnings", "soraldTestSuccessful"])
 
-    with open(target_csv_file_path, "a+") as results_csv_file:
+    with open(TARGET_CSV_FILE_PATH, "a+") as results_csv_file:
         csv_writer = csv.writer(
             results_csv_file, dialect=csv.unix_dialect)
 
@@ -49,15 +50,15 @@ def run_sorald_comparison():
 
             repository_name = warning_item["repositoryURL"].split(
                 "/")[-1].removesuffix(".git")
-            repository_path = os.path.join(cca_workspace, repository_name)
+            repository_path = os.path.join(CCA_WORKSPACE, repository_name)
             agent = AgentMock(warning_item["repositoryURL"], warning_item["commit"], warning_item["filePath"], repository_name, warning_item["ruleKey"],
-                              warning_item["startLine"], warning_item["ruleName"], warning_item["specificMessage"], workspace_path=cca_workspace, warning_ID=warning_item["instanceID"])
+                              warning_item["startLine"], warning_item["ruleName"], warning_item["specificMessage"], workspace_path=CCA_WORKSPACE, warning_ID=warning_item["instanceID"])
 
             repository_operations.checkout_project(agent)
 
             # mine warnings before (only for the file with the warning to fix, else it takes too long)
-            cmd = ["java", "-jar", agent.config.sorald_jar_path, "mine", "--source", os.path.join(cca_workspace, agent.ai_config.warning_repository_name, agent.ai_config.warning_file_path), "--stats-output-file",
-                   os.path.join(mining_output_folder, str(agent.ai_config.warning_ID) + "_mining_out_before.json"), "--rule-parameters", "sonarqube_quality_profile/quality_profile_rule_parameters.json", "--target-java-version", agent.ai_config.warning_repository_target_java_version]
+            cmd = ["java", "-jar", agent.config.sorald_jar_path, "mine", "--source", os.path.join(CCA_WORKSPACE, agent.ai_config.warning_repository_name, agent.ai_config.warning_file_path), "--stats-output-file",
+                   os.path.join(MINING_OUTPUT_FOLDER, str(agent.ai_config.warning_ID) + "_mining_out_before.json"), "--rule-parameters", "sonarqube_quality_profile/quality_profile_rule_parameters.json", "--target-java-version", agent.ai_config.warning_repository_target_java_version]
 
             cmd.append("--rule-keys")
             cmd.append(",".join(agent.sonar_qube_rules_in_active_profile))
@@ -74,7 +75,7 @@ def run_sorald_comparison():
             target_java_version = warning_item["targetJavaVersion"]
 
             stats_file_path = os.path.join(
-                repair_output_folder, str(agent.ai_config.warning_ID) + "_repair_out.json")
+                REPAIR_OUTPUT_FOLDER, str(agent.ai_config.warning_ID) + "_repair_out.json")
 
             result = subprocess.run(
                 f"java -jar {agent.config.sorald_jar_path} repair --source {repository_path} --stats-output-file {stats_file_path} --violation-specs {violation_specifier} --target-java-version {target_java_version}",
@@ -87,8 +88,8 @@ def run_sorald_comparison():
             print(result.stderr)
 
             # mine warnings after
-            cmd = ["java", "-jar", agent.config.sorald_jar_path, "mine", "--source", os.path.join(cca_workspace, agent.ai_config.warning_repository_name, agent.ai_config.warning_file_path), "--stats-output-file",
-                   os.path.join(mining_output_folder, str(agent.ai_config.warning_ID) + "_mining_out_after.json"), "--rule-parameters", "sonarqube_quality_profile/quality_profile_rule_parameters.json", "--target-java-version", agent.ai_config.warning_repository_target_java_version]
+            cmd = ["java", "-jar", agent.config.sorald_jar_path, "mine", "--source", os.path.join(CCA_WORKSPACE, agent.ai_config.warning_repository_name, agent.ai_config.warning_file_path), "--stats-output-file",
+                   os.path.join(MINING_OUTPUT_FOLDER, str(agent.ai_config.warning_ID) + "_mining_out_after.json"), "--rule-parameters", "sonarqube_quality_profile/quality_profile_rule_parameters.json", "--target-java-version", agent.ai_config.warning_repository_target_java_version]
 
             cmd.append("--rule-keys")
             cmd.append(",".join(agent.sonar_qube_rules_in_active_profile))
@@ -113,7 +114,7 @@ def run_sorald_comparison():
             # save changed files (and diff) for inspection
 
             single_before_after_file_path = os.path.join(
-                projects_before_after_folder, f"{agent.ai_config.warning_ID}_before_after")
+                PROJECTS_BEFORE_AFTER_FOLDER, f"{agent.ai_config.warning_ID}_before_after")
 
             if os.path.exists(single_before_after_file_path):
                 shutil.rmtree(single_before_after_file_path)
@@ -123,7 +124,7 @@ def run_sorald_comparison():
             repository_operations.checkout_project(agent, overwrite_target_workspace_path=single_before_after_file_path,
                                                    overwrite_target_folder_name=agent.ai_config.warning_repository_name + "_before")
             # Add changed version of project
-            shutil.copytree(os.path.join(cca_workspace, agent.ai_config.warning_repository_name), os.path.join(
+            shutil.copytree(os.path.join(CCA_WORKSPACE, agent.ai_config.warning_repository_name), os.path.join(
                 single_before_after_file_path, agent.ai_config.warning_repository_name + "_after"))
 
             # Save diff over all files
@@ -207,10 +208,10 @@ def run_sorald_comparison():
             # check no other warnings introduced
             no_new_warning_introduced = True
             rule_keys_of_newly_introduced_warnings = []
-            with open(os.path.join(mining_output_folder, str(agent.ai_config.warning_ID) + "_mining_out_before.json")) as out_before_file:
+            with open(os.path.join(MINING_OUTPUT_FOLDER, str(agent.ai_config.warning_ID) + "_mining_out_before.json")) as out_before_file:
                 mining_out_before = json.load(out_before_file)
 
-            with open(os.path.join(mining_output_folder, str(agent.ai_config.warning_ID) + "_mining_out_after.json")) as out_after_file:
+            with open(os.path.join(MINING_OUTPUT_FOLDER, str(agent.ai_config.warning_ID) + "_mining_out_after.json")) as out_after_file:
                 mining_out_after = json.load(out_after_file)
             mined_rules_before = mining_out_before["minedRules"]
             mined_rules_after = mining_out_after["minedRules"]

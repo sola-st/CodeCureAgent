@@ -3,12 +3,13 @@ import csv
 import json
 import pandas as pd
 
+WARNINGS_TO_RUN_ON_FILE_NAME = "dataset_sorald_supported_instances_1000_instances_dataset.csv"
+TARGET_CSV_FILE_PATH = "dataset_sorald_supported_instances_1000_instances_dataset_with_violation_specifier.csv"
+
 
 def add_violation_specifier_to_sorald_input_file():
-    warnings_to_run_on_file_name = "dataset_sorald_supported_instances_1000_instances_dataset.csv"
-    target_csv_file_path = "dataset_sorald_supported_instances_1000_instances_dataset_with_violation_specifier.csv"
 
-    warnings_to_run_on_df = pd.read_csv(warnings_to_run_on_file_name)
+    warnings_to_run_on_df = pd.read_csv(WARNINGS_TO_RUN_ON_FILE_NAME)
 
     for index, warning_item in warnings_to_run_on_df.iterrows():
 
@@ -18,7 +19,7 @@ def add_violation_specifier_to_sorald_input_file():
                                  "violationSpecifier"] = violation_specifier
         print(violation_specifier)
     warnings_to_run_on_df.to_csv(
-        target_csv_file_path, encoding="utf-8", index=False, header=True, quoting=csv.QUOTE_ALL, quotechar='"',
+        TARGET_CSV_FILE_PATH, encoding="utf-8", index=False, header=True, quoting=csv.QUOTE_ALL, quotechar='"',
         doublequote=True)
 
 

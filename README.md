@@ -171,8 +171,8 @@ TODO: explain all the scripts for evaluation
 - **Command Limits**: Control the maximum allowed cycles (budget) in the different phases of the agent.
   Default for our experiment:  
   ```json
-  "classification_commands_limit": 10,
-  "fix_commands_limit": 40 
+  "classification_cycles_limit": 20,
+  "fix_cycles_limit": 40 
   ```
 
 ### 2. Switching the used GPT model

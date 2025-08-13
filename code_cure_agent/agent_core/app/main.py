@@ -293,13 +293,13 @@ def run_interaction_loop(
     # Application Main Loop #
     #########################
 
-    while agent.cycle_count < agent.config.commands_limit:
+    while agent.cycle_count < agent.config.cycle_limit:
         logger.debug(
-            f"Cycle budget: {agent.cycle_count}; remaining: {str(agent.config.commands_limit - agent.cycle_count)}")
+            f"Cycle budget: {agent.cycle_count}; remaining: {str(agent.config.cycle_limit - agent.cycle_count)}")
 
         # Print authorized commands left value
         logger.info(
-            title="AUTHORISED COMMANDS LEFT: ", title_color=Fore.CYAN, message=f"{str(agent.config.commands_limit - agent.cycle_count)}"
+            title="AUTHORISED COMMANDS LEFT: ", title_color=Fore.CYAN, message=f"{str(agent.config.cycle_limit - agent.cycle_count)}"
         )
 
         ########
@@ -332,7 +332,7 @@ def run_interaction_loop(
         # If the cycle budget is exhausted and we are still in the state "classification",
         # then the agent failed to call "give_final_verdict" before exhausting the commands, eventhough it was urged to do so in the last cycle.
         # In this case we default to counting the violation as TP.
-        if agent.cycle_count == agent.config.commands_limit and agent.current_state == "classification":
+        if agent.cycle_count == agent.config.cycle_limit and agent.current_state == "classification":
             agent.final_verdict_reason = "No reason given."
             # Call the command normally called by the agent directly, for logging of the verdict
             classification_tasks.give_final_verdict(

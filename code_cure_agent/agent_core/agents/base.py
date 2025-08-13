@@ -64,10 +64,10 @@ class BaseAgent(metaclass=ABCMeta):
         with open(experiment_file) as hper:
             self.hyperparams = json.load(hper)
 
-        # Set the commands_limit to the classification_commands_limit specified in hyperparams.json
-        self.config.commands_limit = self.hyperparams["classification_commands_limit"]
+        # Set the commands_limit to the classification_cycles_limit specified in hyperparams.json
+        self.config.cycle_limit = self.hyperparams["classification_cycles_limit"]
         logger.info(
-            title="Commands Limit Classification: ", title_color=Fore.GREEN, message=f"{self.config.commands_limit}"
+            title="Commands Limit Classification: ", title_color=Fore.GREEN, message=f"{self.config.cycle_limit}"
         )
 
         with open("agent_config_and_prompt_files/commands_by_state.json") as cbs:
@@ -328,9 +328,9 @@ class BaseAgent(metaclass=ABCMeta):
         return answered_question_text + current_question_text
 
     def construct_cycle_instruction_fix_or_suppress(self) -> str:
+        cycles_left = self.config.cycle_limit - self.cycle_count
         if self.current_state == "fix_tp":
             # If we have only 5 commands left use a different cycle instruction that forces towards using the write_fix command more often.
-            cycles_left = self.config.commands_limit - self.cycle_count
             if cycles_left <= 5:
                 cycle_instruction = read_file(
                     "agent_config_and_prompt_files/fix_violation_prompt_parts/fix_cycle_instruction_text_force_write_fix.md").format(cycles_left=str(cycles_left))
@@ -345,7 +345,7 @@ class BaseAgent(metaclass=ABCMeta):
             pass
         elif self.hyperparams["budget_control"]["name"] == "FULL-TRACK" and self.hyperparams["budget_control"]["params"] == {}:
             cycle_instruction += "\nYou have, so far, executed {} commands, you have only {} commands left.\n".format(
-                self.cycle_count, self.hyperparams["fix_commands_limit"] - self.cycle_count)
+                self.cycle_count, cycles_left)
         elif self.hyperparams["budget_control"]["name"] == "FULL-TRACK" and self.hyperparams["budget_control"]["params"] != {}:
             minimum_number_fixes = self.hyperparams["budget_control"]["params"]["#fixes"]
             number_of_fixes_to_still_propose = max(
@@ -353,12 +353,14 @@ class BaseAgent(metaclass=ABCMeta):
             if self.plausible_fixes > 0:
                 number_of_fixes_to_still_propose = 0
             cycle_instruction += "\nYou have, so far, executed, {} commands and suggested {} fixes. You have {} commands left. However, you need to suggest at least {} fixes before consuming all the left commands.\n".format(
-                self.cycle_count, self.write_fix_attempts, self.hyperparams["fix_commands_limit"] - self.cycle_count, number_of_fixes_to_still_propose)
+                self.cycle_count, self.write_fix_attempts, cycles_left, number_of_fixes_to_still_propose)
         return cycle_instruction
 
     def construct_cycle_instruction_classification(self) -> str:
+        cycles_left = self.config.cycle_limit - self.cycle_count
+
         # If we have only one command left use a different cycle instruction that forces towards calling the give_final_verdict command.
-        if self.cycle_count == self.config.commands_limit - 1:
+        if cycles_left == 1:
             cycle_instruction = read_file(
                 "agent_config_and_prompt_files/classification_prompt_files/classification_cycle_instruction_text_force_final_verdict.md")
         # If we are in the first cycle, instruct to call the read_sonarqube_docu command, to collect some initial info about the rule (to reduce hallucination from the LLMs potentially wrong knowledge about the rule)
@@ -373,7 +375,7 @@ class BaseAgent(metaclass=ABCMeta):
             pass
         elif self.hyperparams["budget_control"]["name"] == "FULL-TRACK":
             cycle_instruction += "\nYou have so far executed {} commands. You have {} commands left and must give a final verdict before exhausting the commands.\n".format(
-                self.cycle_count, self.hyperparams["classification_commands_limit"] - self.cycle_count)
+                self.cycle_count, cycles_left)
 
         return cycle_instruction
 
@@ -632,7 +634,7 @@ class BaseAgent(metaclass=ABCMeta):
 
         # Reset the cycle count, limit and remaining cycles
         self.cycle_count = 0
-        self.config.commands_limit = self.hyperparams["fix_commands_limit"]
+        self.config.cycle_limit = self.hyperparams["fix_cycles_limit"]
 
         # Inform about state transition
         logger.info(title="Classification subtask is completed.",
@@ -642,7 +644,7 @@ class BaseAgent(metaclass=ABCMeta):
         logger.info(title=f"Transitioned to state {self.current_state}", title_color=Fore.GREEN,
                     message="All history is discarded. Agent will now tackle task of fixing (or suppressing) the violation.")
         logger.info(
-            title="Commands Limit set for fixing violation to: ", title_color=Fore.GREEN, message=f"{self.config.commands_limit}"
+            title="Commands Limit set for fixing violation to: ", title_color=Fore.GREEN, message=f"{self.config.cycle_limit}"
         )
         logger.info(
             title="CodeCureAgent is now running its main fixing loop.", title_color=Fore.GREEN, message="")

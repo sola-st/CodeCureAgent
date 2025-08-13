@@ -57,7 +57,7 @@ class Config(SystemSettings, arbitrary_types_allowed=True):
     embedding_model: str = "text-embedding-ada-002"
     browse_spacy_language_model: str = "en_core_web_sm"
     # Run loop configuration
-    commands_limit: int = 0
+    cycle_limit: int = 0
 
     ##########
     # Memory #

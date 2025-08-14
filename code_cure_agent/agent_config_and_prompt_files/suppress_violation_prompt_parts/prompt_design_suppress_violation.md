@@ -40,32 +40,47 @@ For your task, you must fulfill the following goals:
 
 You have access to the following commands (EXCLUSIVELY):
 
-1. read_range: Reads a range of lines in a given file.  
-    Required params: (project_name:string, bug_index:string, file_path:string, start_line: int, end_line:int)
-2. write_fix: Use this command to implement the fix you came up with.  
+1. read_range:  
+    Reads a range of lines in a given file.  
+    Required params:  
+    - file_path (string)
+    - start_line (int)
+    - end_line (int)
+2. write_fix:  
+    Use this command to implement the fix you came up with.  
     Only use this command if you think that you have collected all necessary information by using other commands.  
-    The project will automatically be rebuilt and reanalyzed by SonarQube. Changes are reverted automatically if the build fails or if the rule violation remains.  
-    Required params: (project_name: string, bug_index: integer, changes_dicts:list[dict])  
-    The list should contain at least one non-empty dictionary of changes. Each dict must conform to the format defined in the section `## The format of the fix`.
+    The project will automatically be rebuilt and reanalyzed by SonarQube, to check if your fix solves the rule violation. Afterwards the project is restored to its original state.  
+    Required params:  
+    - changes_dicts (list[dict]): The list should contain at least one non-empty dictionary of changes. Each dict must conform to the format defined in the section `## The format of the fix`.  
     [RESPECT LINE NUMBERS AS GIVEN IN THE CODE SNIPPETS]
+3. goals_accomplished:  
+    Call this command if you are sure you fixed the rule violation and your write_fix attempt has been approved.  
+    You must not call this command yet if all your write_fix attempts up to now have been rejected. You need to first propose a fix that is successfully approved.  
+    Give a reason why you think the rule violation was fixed successfully.  
+    Required Params:  
+    - reason (string)
 
 ## The format of the fix
 
-Your fixes must follow this structure when calling write_fix:  
-This format is a list of dictionaries, each describing edits to a specific file.  
-Each dictionary must include:
+When calling write_fix, you must provide a JSON array (`changes_dicts`) of file-level change objects. Each object must only have the following top-level keys:
 
-* "file_name": A string indicating the path or name of the file to be modified.  
-* "insertions": A list of dictionaries representing insertions in the file. Each insertion dictionary includes:  
-  * "line_number": An integer indicating the line number before which we insert lines. The previous content of the line and all following lines are moved down accordingly.  
-  * "new_lines": A list of strings representing the new lines to be inserted.  
-* "deletions": A list of integers representing line numbers to be deleted from the file.  
+* "file_name": (string) — the path or name of the file to modify.
+* "insertions": (array of insertion objects) — each object defines where and what to insert.
+* "deletions": (array of integers) — each integer is a line number to delete.
 
-Here is an example usage of the format with a violation to suppress at a line 175 (not related to your specific task):  
+### Important Structural Rules
+
+* The top-level array contains one or more objects per modified file.
+* Each file-level object must contain only these three keys: "file_name", "insertions", and "deletions".
+* Do NOT nest "deletions" inside "insertions". The "deletions" array belongs at the same level as "insertions" — both are top-level keys in the file’s object.
+* Inside the "insertions" array each object must include:
+  * "line_number": (integer) — the line number before which to insert.
+  * "new_lines": (array of strings) — the new content to insert.
+
+### Example usage of the format with a violation to suppress at a line 175 (not related to your specific task)
 
 ```json
 [
-    // changes in file 1
     {
         "file_name": "org/jfree/data/time/Week.java",
         "insertions": [
@@ -77,34 +92,47 @@ Here is an example usage of the format with a violation to suppress at a line 17
             }
         ],
         "deletions": [175]
-    },
-    // changes in file 2
-    {
-        "file_name": "org/jfree/data/time/Day.java",
-        "insertions": [{
-                "line_number": 203,
-                "new_lines": [
-                    "    days = 0\n"
-                ]
-            }],
-        "deletions": []
     }
 ]
 ```
 
+### Common Mistake to Avoid
+
+```json
+...
+  "insertions": [
+      {
+          "line_number": 42,
+          "new_lines": ["foo"],
+          "deletions": [43]  // ❌ This is invalid. "deletions" must not be inside an insertion.
+      }
+  ]
+...
+```
+
+### Always double-check that
+
+* "deletions" is not inside any "insertions" object.
+* The structure exactly matches the example.
+* Take great care that you specify the correct line numbers and that you include all the lines in "deletions" that need to be deleted!  
+
+### Further notes
+
 In order to overwrite an existing line, both delete the line and insert a new line at the same line_number.  
-Take great care that you specify the correct line numbers and that you include all the lines in "deletions" that need to be deleted!  
 
 You must always apply all relevant changes in a single write_fix all at once.  
 After each write_fix attempt, the project is restored to its original state and all your made changes are lost.  
-However, you can then try again and attempt modfied fixes, if your previous attempts failed.  
+However, you can then try again and attempt modfied fixes, if your previous attempts were rejected.  
 
-Limitations:  
-- You are not allowed to create, rename, move, or delete files.
-- You are not allowed to add new external dependencies to the project. You may only import:  
-    - Classes from the Java Standard Library,
-    - Libraries already included in the project’s dependencies,
-    - Project-local classes from other source files.
+### Limitations
+
+* You are not allowed to create, rename, move, or delete files.
+* You are not allowed to add new external dependencies to the project. You may only import:  
+  * Types (classes, interfaces, etc.) and static members from the Java Standard Library,
+  * Types and static members from libraries already included in the project’s dependencies,
+  * Project-local types and static members from other source files.
+
+
 
 ## General Guidelines
 
@@ -140,47 +168,20 @@ Below is a log of all previous steps that you have taken. For each step, you are
 * the thoughts you formulated,
 * the command you issued,
 * and the result that was returned.
-Use this history to inform your next decision.
+Use this history to inform your next decision.  
 
 ### Step 1
 
-Your answer:
+Your thoughts:  
+To suppress the false positive SonarQube violation at line 61, I need to see the exact code at that line to add a // NOSONAR comment with an explanation. I will read lines 60 to 62 to get the context and the exact line of the violation.
 
-```json
-{
-    "thoughts": "Do this and that.",
-    "command": {
-      "name": "read_range",
-      "args": {
-        "file_path": "org/apache/commons/codec/binary/Base64.java",
-        "start_line": 220,
-        "end_line": 230
-      }
-    }
-}
-```
+Called command:  
+`read_range` with arguments `file_path`: `src/main/java/co/nstant/in/cbor/encoder/AbstractEncoder.java`; `start_line`: `60`; `end_line`: `62`; 
 
-Result:
-
-read_range of Lines 70 to 90 from file: org/apache/commons/codec/binary/Base64.java returned:  
-
-```
-Line 220:     * <p>
-Line 221:     * When decoding all variants are supported.
-Line 222:     * </p>
-Line 223:     */
-Line 224:    public Base64() {
-Line 225:        this(false);
-Line 226:    }
-Line 227:
-Line 228:    /**
-Line 229:     * Creates a Base64 codec used for decoding (all modes) and encoding in the given URL-safe mode.
-Line 230:     * <p>
-```
-
-### Step 2
-
-(exclude if none present yet)
+Command `read_range` returned:  
+Line 60:        int symbol = majorType.getValue() << 5;
+Line 61:        if (length.compareTo(BigInteger.valueOf(24)) == -1) {
+Line 62:            write(symbol | length.intValue());
 
 ## Forbidden Commands
 
@@ -220,6 +221,5 @@ Example:
 ```
 
 **IMPORTANT NOTE TO THE AGENT:** DO NOT include any English text or explanations outside the JSON object in your response.
+You have, so far, executed, 1 commands and suggested 0 fixes. You have 39 commands left. However, you need to suggest at least 4 fixes before consuming all the left commands.
 
-You have executed 22 commands and suggested 0 fixes so far.  
-You have 18 commands left and must propose 4 fixes before exhausting them.

@@ -42,101 +42,150 @@ For your task, you must fulfill the following goals:
 
 You have access to the following commands (EXCLUSIVELY):
 
-1. search_code_base: Scans all Java files in a project for a list of keywords.  
-    Returns a dictionary structured as: { file_name: { class_name: { method_name: [matched keywords] } } }.  
-    This helps identify reusable methods or locate similar code to inform your fix strategy.  
-    Note: This function does not return source code. Use extract_method_code for that. (only do it for the ones that are relevant)  
-    Required params: (project_name: string, bug_index: integer, key_words: list)
-2. get_classes_and_methods: Returns all class names and their methods in a file.  
-    It returns a dictionary where keys are class names and values are lists of method names within each class.  
-    Required params: (project_name: string, bug_index: integer, file_path: string)
-3. extract_similar_functions_calls: Given a buggy code snippet and its file path, extracts similar function calls to help identify appropriate parameter usage.
-    Required params: (project_name: string, bug_index: string, file_path: string, code_snippet: string)
-4. extract_method_code: Retrieves possible implementations of a method by name in a file.
-    Required params: (project_name: string, bug_index: integer, file_path: string, method_name: string)
-5. read_range: Reads a range of lines in a given file.  
-    Required params: (project_name:string, bug_index:string, file_path:string, start_line: int, end_line:int)
-6. AI_generates_method_code:  Uses an AI model to generate a method implementation.  
-    This helps see another implementation of that method given the context before it, which would help in 'probably' inferring a fix but no guarantee.  
-    Required params: (project_name: str, bug_index: str, file_path: str, method_name: str)
-7. write_fix: Use this command to implement the fix you came up with.  
+1. read_sonarqube_docu:  
+    Returns the documentation for the given SonarQube rule.  
+    The documentation can contain relevant details about the rule, when it applies, and how it can be fixed.  
+    This command can only look up docu for SonarQube rules. It supports no other kind of documentation.  
+    Required params:  
+    - rule_key (string)
+2. read_range:  
+    Reads a range of lines in a given file.  
+    Required params:  
+    - file_path (string)
+    - start_line (int)
+    - end_line (int)
+3. find_definition:  
+    Retrieve the definition of a project-local symbol (method, class, field, or variable) referenced in a file.  
+    Use it to understand what a referenced symbol does by locating its implementation or declaration.  
+    Only works for symbols defined in the project. Not for external libraries or standard Java classes. The symbol must not be a keyword.  
+    For using this command you need to correctly provide file_path, symbol and symbol_line of an occurence (reference) of the symbol, whose definition you want to find.  
+    Required params:  
+    - file_path (string): Path to the file where the symbol is referenced.
+    - symbol (string): Exact name of the symbol (e.g., getUser, MAX_COUNT) without parantheses or qualifiers (e.g., write getUser, not getUser()).
+    - symbol_line (int): Exact line number of a reference to the symbol in the file. Without correctly providing this symbol_line the command doesn't work.
+4. find_references:  
+    Find all project-local references (e.g., call sites or usages) of a symbol such as a method, class, field, or variable.  
+    Use this to understand where and how a symbol is used across the project.  
+    Use this before changing a method’s return value, return type or parameters to identify all call sites that may need updating. But there are also other situations where this can be helpful.  
+    Only works for symbols defined in the project. Not for external libraries or standard Java classes. The symbol must not be a keyword.  
+    For using this command you need to provide file_path, symbol and symbol_line of an occurence (reference or definition) of the symbol, whose references you want to find.  
+    Required params:
+    - file_path (string): Path to the file where the symbol occurs.
+    - symbol (string): Exact name of the symbol (e.g., getUser, MAX_COUNT) without parantheses or qualifiers (e.g., write getUser, not getUser()).
+    - symbol_line (int): Exact line number where the symbol occurs in the file. Without correctly providing this symbol_line the command doesn't work.
+5. search_for_patterns:  
+    Searches for the provided patterns in all Java files in the project and returns at most the first 50 results.  
+    Internally this uses `grep` with the `-E` flag. So use the extended regular expression syntax for your patterns.  
+    This command should only be used if find_definition or find_references is not applicable for your use case (so in cases where you want to search for something that you don't have a known symbol reference or definition for that you could pass as parameters).  
+    In all other cases do not use search_for_patterns, as it can return many more irrelevant and distracting results!  
+    Required params:
+    - patterns (list[string]): The list of patterns. Must contain at least one pattern string. The patterns must adhere to the extended regular expression syntax of grep.
+    - include (string): The files to include. Most of the time '*.java' will be adequate. If you want to search in any file, set include to '*'.
+6. formulate_plan:  
+    Formulate or update a plan, with fine-grained steps, about how you want to fix the rule violation (i.e. which lines in which files to change and to what).  
+    Call this command before calling write_fix for the first time. You can call it again at any time, if you received new information that requires a change of plan.  
+    Required params:  
+    - plan (string)
+7. write_fix:  
+    Use this command to implement the fix you came up with.  
     Only use this command if you think that you have collected all necessary information by using other commands.  
-    The project will automatically be rebuilt and reanalyzed by SonarQube. Changes are reverted automatically if the build fails or if the rule violation remains.  
-    Required params: (project_name: string, bug_index: integer, changes_dicts:list[dict])  
-    The list should contain at least one non-empty dictionary of changes. Each dict must conform to the format defined in the section `## The format of the fix`.
+    The project will automatically be rebuilt and reanalyzed by SonarQube, to check if your fix solves the rule violation. Afterwards the project is restored to its original state.  
+    Required params:  
+    - changes_dicts (list[dict]): The list should contain at least one non-empty dictionary of changes. Each dict must conform to the format defined in the section `## The format of the fix`.  
     [RESPECT LINE NUMBERS AS GIVEN IN THE CODE SNIPPETS]
+8. goals_accomplished:  
+    Call this command if you are sure you fixed the rule violation and your write_fix attempt has been approved.  
+    You must not call this command yet if all your write_fix attempts up to now have been rejected. You need to first propose a fix that is successfully approved.  
+    Give a reason why you think the rule violation was fixed successfully.  
+    Required Params:  
+    - reason (string)
 
 ## The format of the fix
 
-Your fixes must follow this structure when calling write_fix:  
-This format is a list of dictionaries, each describing edits to a specific file.  
-Each dictionary must include:
+When calling write_fix, you must provide a JSON array (`changes_dicts`) of file-level change objects. Each object must only have the following top-level keys:
 
-* "file_name": A string indicating the path or name of the file to be modified.  
-* "insertions": A list of dictionaries representing insertions in the file. Each insertion dictionary includes:  
-  * "line_number": An integer indicating the line number before which we insert lines. The previous content of the line and all following lines are moved down accordingly.  
-  * "new_lines": A list of strings representing the new lines to be inserted.  
-* "deletions": A list of integers representing line numbers to be deleted from the file.  
+* "file_name": (string) — the path or name of the file to modify.
+* "insertions": (array of insertion objects) — each object defines where and what to insert.
+* "deletions": (array of integers) — each integer is a line number to delete.
 
-Here is an example:  
+### Important Structural Rules
+
+* The top-level array contains one or more objects per modified file.
+* Each file-level object must contain only these three keys: "file_name", "insertions", and "deletions".
+* Do NOT nest "deletions" inside "insertions". The "deletions" array belongs at the same level as "insertions" — both are top-level keys in the file’s object.
+* Inside the "insertions" array each object must include:
+  * "line_number": (integer) — the line number before which to insert.
+  * "new_lines": (array of strings) — the new content to insert.
+
+### Example usage of the format (not related to your specific task)
 
 ```json
 [
-    // changes in file 1
     {
-        "file_name": "org/jfree/data/time/Week.java",
+        "file_name": "src/main/File1.java",
         "insertions": [
             {
-                "line_number": 175,
+                "line_number": 10,
                 "new_lines": [
-                    "    // ... new lines to insert ...\n",
-                    "    // ... more new lines ...\n"
-                ]
-            },
-            {
-                "line_number": 180,
-                "new_lines": [
-                    "    // ... additional new lines ...\n"
+                    "    int x = 5;",
+                    "    System.out.println(x);"
                 ]
             }
         ],
-        "deletions": [179, 183]
+        "deletions": [12, 13]
     },
-    // changes in file 2
     {
-        "file_name": "org/jfree/data/time/Day.java",
-        "insertions": [{
-                "line_number": 203,
-                "new_lines": [
-                    "    days = 0\n"
-                ]
-            }],
-        "deletions": []
+        "file_name": "src/main/File2.java",
+        "insertions": [],
+        "deletions": [20]
     }
 ]
 ```
 
+### Common Mistake to Avoid
+
+```json
+...
+  "insertions": [
+      {
+          "line_number": 42,
+          "new_lines": ["foo"],
+          "deletions": [43]  // ❌ This is invalid. "deletions" must not be inside an insertion.
+      }
+  ]
+...
+```
+
+### Always double-check that
+
+* "deletions" is not inside any "insertions" object.
+* The structure exactly matches the example.
+* Take great care that you specify the correct line numbers and that you include all the lines in "deletions" that need to be deleted!  
+
+### Further notes
+
 In order to overwrite an existing line, both delete the line and insert a new line at the same line_number.  
-Take great care that you specify the correct line numbers and that you include all the lines in "deletions" that need to be deleted!  
 
 You must always apply all relevant changes in a single write_fix all at once.  
 After each write_fix attempt, the project is restored to its original state and all your made changes are lost.  
-However, you can then try again and attempt modfied fixes, if your previous attempts failed.  
+However, you can then try again and attempt modfied fixes, if your previous attempts were rejected.  
 
-Limitations:  
-- You are not allowed to create, rename, move, or delete files.
-- You are not allowed to add new external dependencies to the project. You may only import:  
-    - Classes from the Java Standard Library,
-    - Libraries already included in the project’s dependencies,
-    - Project-local classes from other source files.
+### Limitations
+
+* You are not allowed to create, rename, move, or delete files.
+* You are not allowed to add new external dependencies to the project. You may only import:  
+  * Types (classes, interfaces, etc.) and static members from the Java Standard Library,
+  * Types and static members from libraries already included in the project’s dependencies,
+  * Project-local types and static members from other source files.
 
 ## General Guidelines
 
 Try to adhere to the following guidelines to the best of your ability:
 
 1. Concrete next steps: End your reasoning with a clear next step that maps directly to a command.
-2. Understanding violations of the rule: Note that violations can involve single or multiple lines — sometimes across files.
-3. Operational constraints: Use only the commands listed above.
+2. Code modification comments: When modifying code, insert a comment above the change explaining what was changed and why.
+3. Understanding violations of the rule: Note that violations can involve single or multiple lines — sometimes across files.
+4. Operational constraints: Use only the commands listed above.
 
 ## Your Task
 
@@ -154,10 +203,9 @@ The violation has the following context-specific warning text:
 
 Only address the specified rule violation; ignore all others.
 
-## Your plan for approaching the task
+## Your current plan for approaching the task
 
-1.) Some plan  
-2.) ...
+Some plan  
 
 ## Agent History
 
@@ -166,43 +214,29 @@ Below is a log of all previous steps that you have taken. For each step, you are
 * the thoughts you formulated,
 * the command you issued,
 * and the result that was returned.
-Use this history to inform your next decision.
+Use this history to inform your next decision.  
 
 ### Step 1
 
-Your answer:
+Your thoughts:  
+The violation is about defining constants in an interface, which is discouraged by SonarQube rule S1214. The violation is at line 27 in the file src/main/java/com/esri/core/geometry/WkbByteOrder.java. To understand the context and the constants defined, I will read lines around line 27 to see the interface and its constants. This will help me plan how to move the constants to another class or enum.
 
-```json
-{
-    "thoughts": "Do this and that.",
-    "command": {
-      "name": "read_range",
-      "args": {
-        "file_path": "org/apache/commons/codec/binary/Base64.java",
-        "start_line": 220,
-        "end_line": 230
-      }
-    }
-}
-```
+Called command:  
+`read_range` with arguments `file_path`: `src/main/java/com/esri/core/geometry/WkbByteOrder.java`; `start_line`: `20`; `end_line`: `40`; 
 
-Result:
-
-read_range of Lines 70 to 90 from file: org/apache/commons/codec/binary/Base64.java returned:  
-
-```
-Line 220:     * <p>
-Line 221:     * When decoding all variants are supported.
-Line 222:     * </p>
-Line 223:     */
-Line 224:    public Base64() {
-Line 225:        this(false);
-Line 226:    }
-Line 227:
-Line 228:    /**
-Line 229:     * Creates a Base64 codec used for decoding (all modes) and encoding in the given URL-safe mode.
-Line 230:     * <p>
-```
+Command `read_range` returned:  
+Line 20: Redlands, California, USA 92373
+Line 21:
+Line 22: email: contracts@esri.com
+Line 23: */
+Line 24:
+Line 25:package com.esri.core.geometry;
+Line 26:
+Line 27:interface WkbByteOrder {
+Line 28:	public static final int wkbXDR = 0; // Big Endian
+Line 29:	public static final int wkbNDR = 1; // Little Endian
+Line 30:}
+EOF
 
 ### Step 2
 
@@ -247,5 +281,4 @@ Example:
 
 **IMPORTANT NOTE TO THE AGENT:** DO NOT include any English text or explanations outside the JSON object in your response.
 
-You have executed 22 commands and suggested 0 fixes so far.  
-You have 18 commands left and must propose 4 fixes before exhausting them.
+You have, so far, executed, 22 commands and suggested 0 fixes. You have 18 commands left. However, you need to suggest at least 4 fixes before consuming all the left commands.

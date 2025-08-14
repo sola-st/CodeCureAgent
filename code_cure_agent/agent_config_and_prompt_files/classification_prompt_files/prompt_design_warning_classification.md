@@ -17,7 +17,7 @@ So it is your job to find that out, by collecting information about the rule vio
 
 Fixing some of the rule violations can require complicated changes, maybe even over multiple files. However, even such complicated rule violations can be True Positives.
 
-# Objective
+## Objective
 
 You have the following objectives:
 
@@ -36,11 +36,58 @@ Constraints:
 
 You have access to the following commands (EXCLUSIVELY):
 
-1. read_range: Reads a range of lines in a given file.  
-    Required params: (project_name:string, bug_index:string, file_path:string, start_line: int, end_line:int)
-2. ...
-3. answer_question:
-4. give_final_verdict: 
+1. read_sonarqube_docu:  
+    Returns the documentation for the given SonarQube rule.  
+    The documentation can contain relevant details about the rule, when it applies, and how it can be fixed.  
+    This command can only look up docu for SonarQube rules. It supports no other kind of documentation.  
+    Required params:  
+    - rule_key (string)
+2. read_range:  
+    Reads a range of lines in a given file.  
+    Required params:  
+    - file_path (string)
+    - start_line (int)
+    - end_line (int)
+3. find_definition:  
+    Retrieve the definition of a project-local symbol (method, class, field, or variable) referenced in a file.  
+    Use it to understand what a referenced symbol does by locating its implementation or declaration.  
+    Only works for symbols defined in the project. Not for external libraries or standard Java classes. The symbol must not be a keyword.  
+    For using this command you need to correctly provide file_path, symbol and symbol_line of an occurence (reference) of the symbol, whose definition you want to find.  
+    Required params:  
+    - file_path (string): Path to the file where the symbol is referenced.
+    - symbol (string): Exact name of the symbol (e.g., getUser, MAX_COUNT) without parantheses or qualifiers (e.g., write getUser, not getUser()).
+    - symbol_line (int): Exact line number of a reference to the symbol in the file. Without correctly providing this symbol_line the command doesn't work.
+4. find_references:  
+    Find all project-local references (e.g., call sites or usages) of a symbol such as a method, class, field, or variable.  
+    Use this to understand where and how a symbol is used across the project.  
+    Use this before changing a method’s return value, return type or parameters to identify all call sites that may need updating. But there are also other situations where this can be helpful.  
+    Only works for symbols defined in the project. Not for external libraries or standard Java classes. The symbol must not be a keyword.  
+    For using this command you need to provide file_path, symbol and symbol_line of an occurence (reference or definition) of the symbol, whose references you want to find.  
+    Required params:
+    - file_path (string): Path to the file where the symbol occurs.
+    - symbol (string): Exact name of the symbol (e.g., getUser, MAX_COUNT) without parantheses or qualifiers (e.g., write getUser, not getUser()).
+    - symbol_line (int): Exact line number where the symbol occurs in the file. Without correctly providing this symbol_line the command doesn't work.
+5. search_for_patterns:  
+    Searches for the provided patterns in all Java files in the project and returns at most the first 50 results.  
+    Internally this uses `grep` with the `-E` flag. So use the extended regular expression syntax for your patterns.  
+    This command should only be used if find_definition or find_references is not applicable for your use case (so in cases where you want to search for something that you don't have a known symbol reference or definition for that you could pass as parameters).  
+    In all other cases do not use search_for_patterns, as it can return many more irrelevant and distracting results!  
+    Required params:
+    - patterns (list[string]): The list of patterns. Must contain at least one pattern string. The patterns must adhere to the extended regular expression syntax of grep.
+    - include (string): The files to include. Most of the time '*.java' will be adequate. If you want to search in any file, set include to '*'.
+6. answer_question:
+    Use this command to answer the currently posed question in the 'Current Question to answer' section.  
+    Only call this command when you have collected enough information to answer the question.  
+    Give the answer to the question and also state how certain you are about your answer.
+    Required Params:  
+    - answer (string): Your answer to the question.
+7. give_final_verdict:
+    Use this command to formulate a final verdict about whether the potential rule violation is a True Positive (should fix) or a False Positive (should not fix).  
+    Give an explanation why you decided for one or the other.  
+    Only use this command after answering all three questions, or if you only have one command left.  
+    Required Params:  
+    - verdict (string): Either 'TP' or 'FP'.
+    - reason (string): Explanation of what led you to your decision.
 
 ## General Guidelines
 
@@ -71,47 +118,42 @@ Below is a log of all previous steps that you have taken. For each step, you are
 * the thoughts you formulated,
 * the command you issued,
 * and the result that was returned.
-Use this history to inform your next decision.
+Use this history to inform your next decision.  
 
 ### Step 1
 
-Your answer:
+Your thoughts:  
+To understand if the rule violation S2200 is correctly raised, I need to understand the rule in detail. This rule states that the result of compareTo should not be checked for specific values but only for the sign of the result. I will read the SonarQube documentation for rule S2200 to get the exact explanation, examples, and guidance on when this rule applies and how to fix violations.
 
-```json
-{
-    "thoughts": "Do this and that.",
-    "command": {
-      "name": "read_range",
-      "args": {
-        "file_path": "org/apache/commons/codec/binary/Base64.java",
-        "start_line": 220,
-        "end_line": 230
-      }
+Called command:  
+`read_sonarqube_docu` with arguments `rule_key`: `S2200`; 
+
+Command `read_sonarqube_docu` returned:  
+**"compareTo" results should not be checked for specific values**  
+
+While most `compareTo` methods return -1, 0, or 1, some do not, and testing the result of a `compareTo` against a specific value other than 0 could result in false negatives.
+
+Noncompliant Code Example
+    
+    
+    if (myClass.compareTo(arg) == -1) {  // Noncompliant
+      // ...
     }
-}
-```
+    
 
-Result:
+Compliant Solution
+    
+    
+    if (myClass.compareTo(arg) < 0) {
+      // ...
+    }
+    
 
-read_range of Lines 70 to 90 from file: org/apache/commons/codec/binary/Base64.java returned:  
-
-```
-Line 220:     * <p>
-Line 221:     * When decoding all variants are supported.
-Line 222:     * </p>
-Line 223:     */
-Line 224:    public Base64() {
-Line 225:        this(false);
-Line 226:    }
-Line 227:
-Line 228:    /**
-Line 229:     * Creates a Base64 codec used for decoding (all modes) and encoding in the given URL-safe mode.
-Line 230:     * <p>
-```
 
 ### Step 2
 
 (exclude if none present yet)
+
 ## Forbidden Commands
 
 DO NOT ATTEMPT TO CALL ANY OF THE FOLLOWING COMMANDS UNDER ANY CIRCUMSTANCES:
@@ -171,5 +213,4 @@ Example:
 
 **IMPORTANT NOTE TO THE AGENT:** DO NOT include any English text or explanations outside the JSON object in your response.
 
-You have so far executed 5 commands.  
-You have 5 commands left and must give a final verdict before exhausting the commands.
+You have so far executed 10 commands. You have 5 commands left and must give a final verdict before exhausting the commands.

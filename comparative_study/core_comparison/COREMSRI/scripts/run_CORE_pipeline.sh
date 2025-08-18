@@ -1,6 +1,6 @@
 #!/bin/bash
-DEBUGDIR=debug/SQJava_results
-DATASET=dataset/SQJava
+DEBUGDIR=debug/cca_dataset_results
+DATASET=dataset/cca_dataset
 QUERY="S2111"
 
 # Stage 2 and 3

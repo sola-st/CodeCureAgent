@@ -27,6 +27,9 @@ def create_core_comparison_dataset():
         exit(1)
     os.mkdir(CORE_COMPARISON_DATASET_FILE_PATH)
 
+    with open(os.path.join(CORE_COMPARISON_DATASET_FILE_PATH, "covered_rules.txt"), "w"):
+        pass
+
     warnings_to_run_on_df = pd.read_csv(WARNINGS_TO_RUN_ON_FILE_NAME)
 
     for index, warning_item in warnings_to_run_on_df.iterrows():
@@ -49,8 +52,10 @@ def create_core_comparison_dataset():
             warning_item["endColumn"]
         ]])
 
-        # Write without headers
         if not os.path.exists(target_rule_folder):
+            with open(os.path.join(CORE_COMPARISON_DATASET_FILE_PATH, "covered_rules.txt"), "a+") as covered_rules_file:
+                covered_rules_file.write(" " + str(warning_item["ruleKey"]))
+
             os.mkdir(target_rule_folder)
             warning_to_add_df.to_csv(
                 instance_overview_csv_file_path, index=False, header=False)

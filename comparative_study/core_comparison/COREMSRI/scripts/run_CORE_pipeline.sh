@@ -1,11 +1,18 @@
 #!/bin/bash
 DEBUGDIR=debug/cca_dataset_results
 DATASET=dataset/cca_dataset
-QUERY="S2111"
+QUERIES=$(<dataset/cca_dataset/covered_rules.txt)
+
+starttime=$(date +%s)
+echo Timestamp before start: $starttime
 
 # Stage 2 and 3
-python src/run_llm_proposer.py -e $DATASET -t $DEBUGDIR/proposer_results -r $DATASET -s $DEBUGDIR/files.pkl --Queries "$QUERY" --queries_meta_file "metadata/java/metadata_full_sonar_way_profile.json" --language "java" --model "gpt-4.1-mini-2025-04-14"
+python src/run_llm_proposer.py -e $DATASET -t $DEBUGDIR/proposer_results -r $DATASET -s $DEBUGDIR/files.pkl --Queries $QUERIES --queries_meta_file "metadata/java/metadata_full_sonar_way_profile.json" --language "java" --model "gpt-4.1-mini-2025-04-14"
 
+endtime=$(date +%s)
+echo Timestamp finished: $endtime
+
+echo Time used: $((endtime - starttime)) seconds
 # Stage 4
 #python src/run_codeql_verifier.py -i $DEBUGDIR/proposer_results -c codeql-home/codeql-repo/python/ql/src/ -d $DEBUGDIR/verifier_results/db/ -o $DEBUGDIR/verifier_results/res/ --Queries "$QUERY"
 

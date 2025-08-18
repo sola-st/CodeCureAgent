@@ -4,7 +4,7 @@ DATASET=dataset/SQJava
 QUERY="S2111"
 
 # Stage 2 and 3
-python src/run_llm_proposer.py -e $DATASET -t $DEBUGDIR/proposer_results -r $DATASET -s $DEBUGDIR/files.pkl --Queries "$QUERY" --queries_meta_file "metadata/java/metadata.json" --language "java" --model "gpt-4.1-mini-2025-04-14"
+python src/run_llm_proposer.py -e $DATASET -t $DEBUGDIR/proposer_results -r $DATASET -s $DEBUGDIR/files.pkl --Queries "$QUERY" --queries_meta_file "metadata/java/metadata_full_sonar_way_profile.json" --language "java" --model "gpt-4.1-mini-2025-04-14"
 
 # Stage 4
 #python src/run_codeql_verifier.py -i $DEBUGDIR/proposer_results -c codeql-home/codeql-repo/python/ql/src/ -d $DEBUGDIR/verifier_results/db/ -o $DEBUGDIR/verifier_results/res/ --Queries "$QUERY"

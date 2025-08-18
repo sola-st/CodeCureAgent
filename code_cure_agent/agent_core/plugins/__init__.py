@@ -67,7 +67,6 @@ def fetch_openai_plugins_manifest_and_spec(config: Config) -> dict:
     Returns:
         dict: per url dictionary of manifest and spec.
     """
-    # TODO add directory scan
     manifests = {}
     for url in config.plugins_openai:
         openai_plugin_client_dir = f"{config.plugins_dir}/openai/{urlparse(url).netloc}"

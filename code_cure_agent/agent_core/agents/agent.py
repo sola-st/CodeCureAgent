@@ -44,7 +44,7 @@ class Agent(BaseAgent):
         )
 
         self.memory = memory
-        """VectorMemoryProvider used to manage the agent's context (TODO)"""
+        """VectorMemoryProvider used to manage the agent's context"""
 
         self.workspace = Workspace(
             config.workspace_path, config.restrict_to_workspace)

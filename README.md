@@ -175,6 +175,12 @@ TODO: explain all the scripts for evaluation
   "fix_cycles_limit": 40 
   ```
 
+- **Threshold of cycles left after which write_fix is prioratized**: Set the threshold of cycles left before the cycle budget is exhausted, where, when reached, the prompt is modified to force the agent to use write_fix.
+  Default for our experiment:  
+  ```json
+  "prioritize_write_fix_cycle_threshold": 5
+  ```
+
 ### 2. Switching the used GPT model
 
 In the `run_on_dataset.sh` file, locate the line:

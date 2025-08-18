@@ -84,7 +84,6 @@ def run_auto_gpt(
     # or import it directly.
     logger.config = config
 
-    # TODO: fill in llm values here
     check_openai_api_key(config)
 
     create_config(
@@ -131,9 +130,6 @@ def run_auto_gpt(
     if install_plugin_deps:
         install_plugin_dependencies()
 
-    # TODO: have this directory live outside the repository (e.g. in a user's
-    #   home directory) and have it come in as a command line argument or part of
-    #   the env file.
     config.workspace_path = Workspace.init_workspace_directory(
         config, workspace_directory
     )

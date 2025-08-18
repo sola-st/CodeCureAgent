@@ -85,8 +85,6 @@ class MemoryItem:
         )
         logger.debug("Total summary: " + summary)
 
-        # TODO: investigate search performance of weighted average vs summary
-        # e_average = np.average(e_chunks, axis=0, weights=[len(c) for c in chunks])
         e_summary = get_embedding(summary, config)
 
         metadata["source_type"] = source_type
@@ -107,7 +105,6 @@ class MemoryItem:
 
     @staticmethod
     def from_code_file(content: str, path: str):
-        # TODO: implement tailored code memories
         return MemoryItem.from_text(content, "code_file", {"location": path})
 
     @staticmethod

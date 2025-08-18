@@ -337,7 +337,7 @@ class OpenAIFunctionSpec:
     @dataclass
     class ParameterSpec:
         name: str
-        type: str  # TODO: add enum support
+        type: str
         description: Optional[str]
         required: bool = False
 
@@ -379,7 +379,6 @@ class OpenAIFunctionSpec:
         """
 
         def param_signature(p_spec: OpenAIFunctionSpec.ParameterSpec) -> str:
-            # TODO: enum type support
             return (
                 f"// {p_spec.description}\n" if p_spec.description else ""
             ) + f"{p_spec.name}{'' if p_spec.required else '?'}: {p_spec.type},"

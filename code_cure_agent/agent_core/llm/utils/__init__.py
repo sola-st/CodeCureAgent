@@ -205,7 +205,6 @@ def create_chat_completion(
     for plugin in config.plugins:
         if not plugin.can_handle_on_response():
             continue
-        # TODO: function call support in plugin.on_response()
         content = plugin.on_response(content)
 
     return ChatModelResponse(

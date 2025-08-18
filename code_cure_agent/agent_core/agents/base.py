@@ -247,8 +247,6 @@ class BaseAgent(metaclass=ABCMeta):
         Creates all the parts of the fix task prompt
         """
 
-        # TODO: add classification info and reason to the fix_tp prompt
-
         problem_introduction = read_file(
             "agent_config_and_prompt_files/fix_violation_prompt_parts/fix_problem_introduction.md")
 
@@ -330,8 +328,8 @@ class BaseAgent(metaclass=ABCMeta):
     def construct_cycle_instruction_fix_or_suppress(self) -> str:
         cycles_left = self.config.cycle_limit - self.cycle_count
         if self.current_state == "fix_tp":
-            # If we have only 5 commands left use a different cycle instruction that forces towards using the write_fix command more often.
-            if cycles_left <= 5:
+            # If we have only prioritize_write_fix_cycle_threshold commands left use a different cycle instruction that forces towards using the write_fix command more often.
+            if cycles_left <= self.hyperparams["prioritize_write_fix_cycle_threshold"]:
                 cycle_instruction = read_file(
                     "agent_config_and_prompt_files/fix_violation_prompt_parts/fix_cycle_instruction_text_force_write_fix.md").format(cycles_left=str(cycles_left))
             else:
@@ -444,7 +442,6 @@ class BaseAgent(metaclass=ABCMeta):
 
         return command_call_subsection
 
-    # TODO: potentially create dedicated formatings for each command
     def format_command_information(self, message: Message) -> str:
         command_information = f"`{message.command}` with arguments "
         if message.args is None:

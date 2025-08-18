@@ -50,7 +50,6 @@ class Workspace:
             The path to the workspace directory.
 
         """
-        # TODO: have this make the env file and ai settings file in the directory.
         workspace_directory = cls._sanitize_path(workspace_directory)
         workspace_directory.mkdir(exist_ok=True, parents=True)
         return workspace_directory
@@ -162,6 +161,4 @@ class Workspace:
         else:
             workspace_path = override_workspace_path
 
-        # TODO: pass in the ai_settings file and the env file and have them cloned into
-        #   the workspace directory so we can bind them to the agent.
         return Workspace.make_workspace(workspace_path)

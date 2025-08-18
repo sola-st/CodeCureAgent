@@ -194,8 +194,6 @@ Latest Development:
         batch: list[Message] = []
         batch_tlength = 0
 
-        # TODO: Put a cap on length of total new events and drop some previous events to
-        # save API cost. Need to think thru more how to do it without losing the context.
         for event in new_events:
             event_tlength = count_message_tokens(event, summ_model.name)
 

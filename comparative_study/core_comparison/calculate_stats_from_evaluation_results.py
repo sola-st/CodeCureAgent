@@ -5,7 +5,7 @@ import pandas as pd
 
 @click.command()
 @click.argument(
-    "sorald-evaluation-results-file",
+    "core-evaluation-results-file",
     type=click.File()
 )
 @click.option(
@@ -14,13 +14,14 @@ import pandas as pd
     default="./analysis_results_overview.md",
     help="Path where the stats file should be written."
 )
-def sorald_comparison_calculate_stats_from_evaluation_results(sorald_evaluation_results_file: click.File, target_md_file_path: str):
+def calculate_stats_from_evaluation_results(core_evaluation_results_file: click.File, target_md_file_path: str):
 
-    evaluation_results_file_df = pd.read_csv(sorald_evaluation_results_file)
+    evaluation_results_file_df = pd.read_csv(core_evaluation_results_file)
 
     mdFile = mdutils.MdUtils(
-        file_name=target_md_file_path, title='Sorald Comparison Analysis Results', title_header_style="atx")
-    mdFile.new_header(level=2, title="Total warnings covered by Sorald",
+        file_name=target_md_file_path, title='CORE Comparison Analysis Results', title_header_style="atx")
+
+    mdFile.new_header(level=2, title="Total warnings in comparison",
                       add_table_of_contents="n")
 
     total_rule_violations = evaluation_results_file_df["instanceID"].count()
@@ -28,9 +29,9 @@ def sorald_comparison_calculate_stats_from_evaluation_results(sorald_evaluation_
     mdFile.new_line(
         str(total_rule_violations))
 
-    # ---- CodeCureAgent stats on the samples that Sorald supports
+    # ---- CodeCureAgent stats on the samples that are compared
 
-    mdFile.new_header(level=2, title="CodeCureAgent stats on the Sorald-covered warnings",
+    mdFile.new_header(level=2, title="CodeCureAgent stats on the compared warnings",
                       add_table_of_contents="n")
 
     # CCA Classification section
@@ -283,221 +284,248 @@ def sorald_comparison_calculate_stats_from_evaluation_results(sorald_evaluation_
     mdFile.new_line(
         f"Multi File: {correct_fixes_per_complexity.get('Multi File', 0)} ({100 * correct_fixes_per_complexity.get('Multi File', 0) / total_correct_and_sound:.2f}%)  " if total_correct_and_sound else "Multi File: 0 / 0 (0.00%)  ")
 
-    # ---- Sorald stats on the samples that Sorald supports
+    # ---- CORE stats
 
-    mdFile.new_header(level=2, title="Sorald stats on the Sorald-covered warnings",
+    mdFile.new_header(level=2, title="CORE stats",
                       add_table_of_contents="n")
 
     mdFile.new_header(level=3, title="Separate Performance Stats",
                       add_table_of_contents="n")
 
-    # Sorald fix created
-    sorald_fix_created = (
-        evaluation_results_file_df["soraldFixCreated"] == True).sum()
-    percent_sorald_fix_created = 100 * sorald_fix_created / \
+    # CORE fix created
+    core_fix_created = (
+        evaluation_results_file_df["coreFixCreated"] == True).sum()
+    percent_sorald_fix_created = 100 * core_fix_created / \
         total_rule_violations if total_rule_violations else 0
     mdFile.new_line(
-        f"Sorald fix created: {sorald_fix_created}/{total_rule_violations} ({percent_sorald_fix_created:.2f}%)  ")
+        f"CORE fix created: {core_fix_created}/{total_rule_violations} ({percent_sorald_fix_created:.2f}%)  ")
 
     mdFile.new_line()
 
-    # Sorald build successful (only when fix created)
-    build_successful_and_fix_created = ((evaluation_results_file_df["soraldFixCreated"] == True) &
-                                        (evaluation_results_file_df["soraldBuildSuccessful"] == True)).sum()
+    # CORE build successful (only when fix created)
+    build_successful_and_fix_created = (
+        evaluation_results_file_df["coreNumberBuildSuccessful"] > 0).sum()
     percent_build_successful = 100 * build_successful_and_fix_created / \
-        sorald_fix_created if sorald_fix_created else 0
+        core_fix_created if core_fix_created else 0
     mdFile.new_line(
-        f"Sorald build successful (of instances where fix was created): {build_successful_and_fix_created}/{sorald_fix_created} ({percent_build_successful:.2f}%)  ")
+        f"CORE build successful (in at least one fix): {build_successful_and_fix_created}/{core_fix_created} ({percent_build_successful:.2f}%)  ")
 
     percent_build_successful_of_all_warnings = 100 * build_successful_and_fix_created / \
         total_rule_violations if total_rule_violations else 0
     mdFile.new_line(
-        f"Sorald build successful (after creating a fix) (of all instances): {build_successful_and_fix_created}/{total_rule_violations} ({percent_build_successful_of_all_warnings:.2f}%)  ")
+        f"CORE build successful (in at least one fix) (of all instances): {build_successful_and_fix_created}/{total_rule_violations} ({percent_build_successful_of_all_warnings:.2f}%)  ")
 
     mdFile.new_line()
 
-    # Sorald correct removal (soraldNumberOfTargetWarningsRemoved >= 1)
-    correct_removal = ((evaluation_results_file_df["soraldNumberOfTargetWarningsRemoved"].fillna(0).astype(int) >= 1) &
-                       (evaluation_results_file_df["soraldFixCreated"] == True)).sum()
+    # CORE correct removal
+    correct_removal = (
+        evaluation_results_file_df["coreNumberSonarCheckRemovedWarning"] > 0).sum()
     percent_correct_removal = 100 * correct_removal / \
-        sorald_fix_created if sorald_fix_created else 0
+        core_fix_created if core_fix_created else 0
     mdFile.new_line(
-        f"Sorald removal of target warning (removed >=1 warnings) (of instances where fix was created): {correct_removal}/{sorald_fix_created} ({percent_correct_removal:.2f}%)  ")
+        f"CORE removal of target warning (removed >=1 warnings in at least one fix): {correct_removal}/{core_fix_created} ({percent_correct_removal:.2f}%)  ")
 
     percent_correct_removal_of_all_warnings = 100 * correct_removal / \
         total_rule_violations if total_rule_violations else 0
     mdFile.new_line(
-        f"Sorald removal of target warning (removed >=1 warnings) (after creating a fix) (of all instances): {correct_removal}/{total_rule_violations} ({percent_correct_removal_of_all_warnings:.2f}%)  ")
+        f"CORE removal of target warning (removed >=1 warnings in at least one fix) (of all instances): {correct_removal}/{total_rule_violations} ({percent_correct_removal_of_all_warnings:.2f}%)  ")
 
     mdFile.new_line()
 
-    # Sorald no new warning introduced
-    no_new_warning = ((evaluation_results_file_df["soraldNoNewWarningIntroduced"] == True) &
-                      (evaluation_results_file_df["soraldFixCreated"] == True)).sum()
+    # CORE no new warning introduced
+    no_new_warning = (
+        evaluation_results_file_df["coreNumberSonarCheckNoNewWarning"] > 0).sum()
     percent_no_new_warning = 100 * no_new_warning / \
-        sorald_fix_created if sorald_fix_created else 0
+        core_fix_created if core_fix_created else 0
     mdFile.new_line(
-        f"Sorald no new warning introduced (of instances where fix was created): {no_new_warning}/{sorald_fix_created} ({percent_no_new_warning:.2f}%)  ")
+        f"CORE no new warning introduced (in at least one fix): {no_new_warning}/{core_fix_created} ({percent_no_new_warning:.2f}%)  ")
 
     percent_no_new_warning_of_all_warnings = 100 * no_new_warning / \
         total_rule_violations if total_rule_violations else 0
     mdFile.new_line(
-        f"Sorald no new warning introduced (after creating a fix) (of all instances): {no_new_warning}/{total_rule_violations} ({percent_no_new_warning_of_all_warnings:.2f}%)  ")
+        f"CORE no new warning introduced (in at least one fix) (of all instances): {no_new_warning}/{total_rule_violations} ({percent_no_new_warning_of_all_warnings:.2f}%)  ")
 
     mdFile.new_line()
 
-    # Sorald test successful (only when fix created and build successful)
-    test_successful = ((evaluation_results_file_df["soraldFixCreated"] == True) &
-                       (evaluation_results_file_df["soraldBuildSuccessful"] == True) &
-                       (evaluation_results_file_df["soraldTestSuccessful"] == True)).sum()
-    eligible_for_test = ((evaluation_results_file_df["soraldFixCreated"] == True) &
-                         (evaluation_results_file_df["soraldBuildSuccessful"] == True)).sum()
+    # CORE test successful
+    test_successful = (
+        evaluation_results_file_df["coreNumberTestSuccessful"] > 0).sum()
+    eligible_for_test = ((evaluation_results_file_df["coreFixCreated"] == True) &
+                         (evaluation_results_file_df["coreNumberBuildSuccessful"] > 0)).sum()
     percent_test_successful = 100 * test_successful / \
         eligible_for_test if eligible_for_test else 0
     mdFile.new_line(
-        f"Sorald test successful (of instances where fix created and build successful): {test_successful}/{eligible_for_test} ({percent_test_successful:.2f}%)  ")
+        f"CORE test successful (in at least one fix) (of instances where fix created and build successful): {test_successful}/{eligible_for_test} ({percent_test_successful:.2f}%)  ")
 
     percent_test_successful_of_all_warnings = 100 * test_successful / \
         total_rule_violations if total_rule_violations else 0
     mdFile.new_line(
-        f"Sorald test successful (after creating a fix and passing build) (of all instances): {test_successful}/{total_rule_violations} ({percent_test_successful_of_all_warnings:.2f}%)  ")
+        f"CORE test successful (in at least one fix) (of all instances): {test_successful}/{total_rule_violations} ({percent_test_successful_of_all_warnings:.2f}%)  ")
 
     mdFile.new_line()
 
-    # Sorald TP assumption soundness
+    # CORE TP assumption soundness
 
     tp_assumption_not_sound = (
-        evaluation_results_file_df["soraldTPAssumptionSoundness"] == "Not sound").sum()
+        evaluation_results_file_df["coreTPAssumptionSoundness"] == "Not sound").sum()
     tp_assumption_sound = total_rule_violations - tp_assumption_not_sound
     percent_tp_assumption_sound = 100 * tp_assumption_sound / \
         total_rule_violations if total_rule_violations else 0
     mdFile.new_line(
-        f"Sorald TP assumption sound (not in conjunction with if a fix was created): {tp_assumption_sound}/{total_rule_violations} ({percent_tp_assumption_sound:.2f}%)  ")
+        f"CORE TP assumption sound (not in conjunction with if a fix was created): {tp_assumption_sound}/{total_rule_violations} ({percent_tp_assumption_sound:.2f}%)  ")
     mdFile.new_line(
-        f"Sorald instances where TP assumption was not sound: {tp_assumption_not_sound} ({100.0 - percent_tp_assumption_sound:.2f}%)  ")
+        f"CORE instances where TP assumption was not sound: {tp_assumption_not_sound} ({100.0 - percent_tp_assumption_sound:.2f}%)  ")
 
     mdFile.new_line()
 
-    # Sorald fix correctness
-    fix_correct = ((evaluation_results_file_df["soraldFixCorrectness"] == "Correct") &
-                   (evaluation_results_file_df["soraldFixCreated"] == True)).sum()
-    fix_not_correct = ((evaluation_results_file_df["soraldFixCorrectness"] == "Not correct") &
-                       (evaluation_results_file_df["soraldFixCreated"] == True)).sum()
+    # CORE fix correctness
+    fix_correct = ((evaluation_results_file_df["coreNumberCorrectFixes"] > 0) &
+                   (evaluation_results_file_df["coreFixCreated"] == True)).sum()
+    fix_not_correct = ((evaluation_results_file_df["coreNumberCorrectFixes"] > 0) &
+                       (evaluation_results_file_df["coreFixCreated"] == True)).sum()
     total_fix_correctness = fix_correct + fix_not_correct
     percent_fix_correct = 100 * fix_correct / \
         total_fix_correctness if total_fix_correctness else 0
     mdFile.new_line(
-        f"Sorald fix correct (and fix created) (of instances where fix was created (and manually inspected)): {fix_correct}/{total_fix_correctness} ({percent_fix_correct:.2f}%)  ")
+        f"CORE fix correct (and fix created) (of instances where fix was created (and manually inspected)): {fix_correct}/{total_fix_correctness} ({percent_fix_correct:.2f}%)  ")
 
     fix_correct_all_warnings = (
-        evaluation_results_file_df["soraldFixCorrectness"] == "Correct").sum()
+        evaluation_results_file_df["coreNumberCorrectFixes"] > 0).sum()
     fix_not_correct_all_warnings = (
-        evaluation_results_file_df["soraldFixCorrectness"] == "Not correct").sum()
+        evaluation_results_file_df["coreNumberCorrectFixes"] > 0).sum()
     total_fix_correctness_all_warnings = fix_correct_all_warnings + \
         fix_not_correct_all_warnings
 
     percent_fix_correct = 100 * fix_correct / \
         total_fix_correctness_all_warnings if total_fix_correctness_all_warnings else 0
     mdFile.new_line(
-        f"Sorald fix correct (and fix created) (of all manually inspected warnings): {fix_correct}/{total_fix_correctness_all_warnings} ({percent_fix_correct:.2f}%)  ")
+        f"CORE fix correct (and fix created) (of all manually inspected warnings): {fix_correct}/{total_fix_correctness_all_warnings} ({percent_fix_correct:.2f}%)  ")
 
     percent_fix_correct_all_warnings = 100 * fix_correct / \
         total_fix_correctness_all_warnings if total_fix_correctness_all_warnings else 0
     mdFile.new_line(
-        f"Sorald fix correct (not only for instances where fix was created (no fix => incorrect fix) (of all manually inspected warnings)): {fix_correct_all_warnings}/{total_fix_correctness_all_warnings} ({percent_fix_correct_all_warnings:.2f}%)  ")
+        f"CORE fix correct (not only for instances where fix was created (no fix => incorrect fix) (of all manually inspected warnings)): {fix_correct_all_warnings}/{total_fix_correctness_all_warnings} ({percent_fix_correct_all_warnings:.2f}%)  ")
 
     mdFile.new_line()
 
-    # Sorald code smell outside of SonarQube introduced
+    # CORE code smell outside of SonarQube introduced
     code_smell_outside = evaluation_results_file_df["codeSmellOutsideOfSonarQubeIntroduced"].astype(
         str).str.startswith("True").sum()
     percent_code_smell_outside = 100 * code_smell_outside / \
         total_fix_correctness_all_warnings if total_fix_correctness_all_warnings else 0
     mdFile.new_line(
-        f"Sorald further code smell introduced not reported by SonarQube (of all manually inspected warnings): {code_smell_outside}/{total_fix_correctness_all_warnings} ({percent_code_smell_outside:.2f}%)  ")
+        f"CORE further code smell introduced not reported by SonarQube (of all manually inspected warnings): {code_smell_outside}/{total_fix_correctness_all_warnings} ({percent_code_smell_outside:.2f}%)  ")
 
-    code_smell_outside_and_correct_fix = ((evaluation_results_file_df["codeSmellOutsideOfSonarQubeIntroduced"].astype(str).str.startswith("True")) & (evaluation_results_file_df["soraldFixCorrectness"] == "Correct") &
-                                          (evaluation_results_file_df["soraldFixCreated"] == True)).sum()
+    code_smell_outside_and_correct_fix = ((evaluation_results_file_df["codeSmellOutsideOfSonarQubeIntroduced"].astype(str).str.startswith("True")) & (evaluation_results_file_df["coreNumberCorrectFixes"] > 0) &
+                                          (evaluation_results_file_df["coreFixCreated"] == True)).sum()
     percent_code_smell_outside = 100 * code_smell_outside_and_correct_fix / \
         fix_correct if fix_correct else 0
     mdFile.new_line(
-        f"Sorald further code smell introduced not reported by SonarQube (of all warnings where all other stats pass): {code_smell_outside_and_correct_fix}/{fix_correct} ({percent_code_smell_outside:.2f}%)  ")
+        f"CORE further code smell introduced not reported by SonarQube (of all warnings where all other stats pass): {code_smell_outside_and_correct_fix}/{fix_correct} ({percent_code_smell_outside:.2f}%)  ")
 
     mdFile.new_line()
-    mdFile.new_header(level=3, title="Combined Performance Stats (Different checks are added together to form a final total performance of Sorald)",
+
+    mdFile.new_header(level=3, title="Averages of number of fixes",
                       add_table_of_contents="n")
 
-    # Sorald fix successful
-    mdFile.new_line(
-        f"Sorald fix created: {sorald_fix_created}/{total_rule_violations} ({percent_sorald_fix_created:.2f}%)  ")
+    # CORE averages of fixes created
 
-    # Sorald fix successful + build successful
+    avg_number_fixes_created = evaluation_results_file_df["coreNumberOfFixesCreated"].mean(
+    )
     mdFile.new_line(
-        f"Sorald fix created + build successful: {build_successful_and_fix_created}/{total_rule_violations} ({percent_build_successful_of_all_warnings:.2f}%)  ")
+        f"CORE average number of fixes created: {avg_number_fixes_created}  ")
+
+    avg_number_all_oracle_passed = evaluation_results_file_df["coreNumberBuildAndRemovedWarningAndNoNewWarningAndTest"].mean(
+    )
+    mdFile.new_line(
+        f"CORE average number of oracle passing fixes created: {avg_number_all_oracle_passed}  ")
+
+    avg_number_oracle_not_passed = (evaluation_results_file_df["coreNumberOfFixesCreated"] -
+                                    evaluation_results_file_df["coreNumberBuildAndRemovedWarningAndNoNewWarningAndTest"]).mean()
+    mdFile.new_line(
+        f"CORE average number of fixes not passing oracle: {avg_number_oracle_not_passed}  ")
+
+    percentage_oracle_passed = 100 * avg_number_all_oracle_passed / \
+        avg_number_fixes_created if avg_number_fixes_created else 0
+    mdFile.new_line(
+        f"CORE percentage of fixes passing oracle: {percentage_oracle_passed:.2f}%  ")
+
+    avg_number_of_fixes_to_look_at_until_passing_fix = 1 / \
+        (percentage_oracle_passed / 100) if percentage_oracle_passed else None
+    mdFile.new_line(
+        f"CORE average number of fixes to look at until fix passing oracle found: {avg_number_of_fixes_to_look_at_until_passing_fix}")
+
+    mdFile.new_line()
+
+    avg_number_correct_fixes = evaluation_results_file_df["coreNumberCorrectFixes"].mean(
+    )
+    mdFile.new_line(
+        f"CORE average number of correct fixes created: {avg_number_correct_fixes}  ")
+
+    percentage_correct_fixes = 100 * avg_number_correct_fixes / \
+        avg_number_fixes_created if avg_number_fixes_created else 0
+    mdFile.new_line(
+        f"(Valid only if run only on manually inspected instances):  \nCORE percentage of correct fixes: {percentage_correct_fixes:.2f}%  ")
+
+    avg_number_of_fixes_to_look_at_until_correct_fix = 1 / \
+        (percentage_correct_fixes / 100) if percentage_correct_fixes else None
+    mdFile.new_line(
+        f"CORE average number of fixes to look at until correct fix found: {avg_number_of_fixes_to_look_at_until_correct_fix}  ")
+
+    mdFile.new_line()
+    mdFile.new_header(level=3, title="Combined Performance Stats (Different checks are added together to form a final total performance of CORE)",
+                      add_table_of_contents="n")
+
+    # CORE fix successful
+    mdFile.new_line(
+        f"CORE fix created: {core_fix_created}/{total_rule_violations} ({percent_sorald_fix_created:.2f}%)  ")
+
+    # CORE fix successful + build successful
+    mdFile.new_line(
+        f"CORE fix created + build successful: {build_successful_and_fix_created}/{total_rule_violations} ({percent_build_successful_of_all_warnings:.2f}%)  ")
 
     # Sorald fix successful + build successful + target warning removed
 
-    test_successful_build_successful_and_fix_created = ((evaluation_results_file_df["soraldFixCreated"] == True) &
-                                                        (evaluation_results_file_df["soraldBuildSuccessful"] == True) &
-                                                        (evaluation_results_file_df["soraldNumberOfTargetWarningsRemoved"].fillna(0).astype(int) >= 1)).sum()
+    test_successful_build_successful_and_fix_created = (
+        evaluation_results_file_df["coreNumberBuildAndRemovedWarning"] > 0).sum()
 
     percent_test_successful_build_successful_and_fix_created_of_all_warnings = 100 * test_successful_build_successful_and_fix_created / \
         total_rule_violations if total_rule_violations else 0
 
     mdFile.new_line(
-        f"Sorald fix created + build successful + target warning removed: {test_successful_build_successful_and_fix_created}/{total_rule_violations} ({percent_test_successful_build_successful_and_fix_created_of_all_warnings:.2f}%)  ")
+        f"CORE fix created + build successful + target warning removed: {test_successful_build_successful_and_fix_created}/{total_rule_violations} ({percent_test_successful_build_successful_and_fix_created_of_all_warnings:.2f}%)  ")
 
-    # Sorald fix successful + build successful + target warning removed + no other warning introduced
-    fix_created_build_test_target_removed = ((evaluation_results_file_df["soraldFixCreated"] == True) &
-                                             (evaluation_results_file_df["soraldBuildSuccessful"] == True) &
-                                             (evaluation_results_file_df["soraldNumberOfTargetWarningsRemoved"].fillna(0).astype(int) >= 1) &
-                                             (evaluation_results_file_df["soraldNoNewWarningIntroduced"] == True)).sum()
+    # CORE fix successful + build successful + target warning removed + no other warning introduced
+    fix_created_build_test_target_removed = (
+        evaluation_results_file_df["coreNumberBuildAndRemovedWarningAndNoNewWarning"] > 0).sum()
 
     percent_fix_created_build_test_target_removed = 100 * fix_created_build_test_target_removed / \
         total_rule_violations if total_rule_violations else 0
 
     mdFile.new_line(
-        f"Sorald fix created + build successful + target warning removed + no other warning introduced: {fix_created_build_test_target_removed}/{total_rule_violations} ({percent_fix_created_build_test_target_removed:.2f}%)  ")
+        f"CORE fix created + build successful + target warning removed + no other warning introduced: {fix_created_build_test_target_removed}/{total_rule_violations} ({percent_fix_created_build_test_target_removed:.2f}%)  ")
 
-    # Sorald fix successful + build successful + target warning removed + no other warning introduced + test successful
+    # CORE fix successful + build successful + target warning removed + no other warning introduced + test successful
     fix_created_build_test_target_removed_no_other_introduced = (
-        (evaluation_results_file_df["soraldFixCreated"] == True) &
-        (evaluation_results_file_df["soraldBuildSuccessful"] == True) &
-        (evaluation_results_file_df["soraldNumberOfTargetWarningsRemoved"].fillna(0).astype(int) >= 1) &
-        (evaluation_results_file_df["soraldNoNewWarningIntroduced"] == True) &
-        (evaluation_results_file_df["soraldTestSuccessful"] == True) 
-    ).sum()
+        evaluation_results_file_df["coreNumberBuildAndRemovedWarningAndNoNewWarningAndTest"] > 0).sum()
 
     percent_fix_created_build_test_target_removed_no_other_removed = 100 * fix_created_build_test_target_removed_no_other_introduced / \
         total_rule_violations if total_rule_violations else 0
 
     mdFile.new_line(
-        f"Sorald fix created + build successful + target warning removed + no other warning introduced + test successful: {fix_created_build_test_target_removed_no_other_introduced}/{total_rule_violations} ({percent_fix_created_build_test_target_removed_no_other_removed:.2f}%)  ")
+        f"CORE fix created + build successful + target warning removed + no other warning introduced + test successful: {fix_created_build_test_target_removed_no_other_introduced}/{total_rule_violations} ({percent_fix_created_build_test_target_removed_no_other_removed:.2f}%)  ")
 
     # Sorald fix successful + build successful + target warning removed + no other warning introduced + test successful + fix correct
-    fix_created_build_test_target_removed_no_other_introduced_fix_correct = (
-        (evaluation_results_file_df["soraldFixCreated"] == True) &
-        (evaluation_results_file_df["soraldBuildSuccessful"] == True) &
-        (evaluation_results_file_df["soraldNumberOfTargetWarningsRemoved"].fillna(0).astype(int) >= 1) &
-        (evaluation_results_file_df["soraldNoNewWarningIntroduced"] == True) &
-        (evaluation_results_file_df["soraldTestSuccessful"] == True) &
-        (evaluation_results_file_df["soraldFixCorrectness"] == "Correct")
-    ).sum()
 
-    percent_fix_created_build_test_target_removed_no_other_introduced_fix_correct = 100 * fix_created_build_test_target_removed_no_other_introduced_fix_correct / \
+    percent_fix_created_build_test_target_removed_no_other_introduced_fix_correct = 100 * fix_correct / \
         total_fix_correctness_all_warnings if total_fix_correctness_all_warnings else 0
 
     mdFile.new_line(
-        f"Sorald fix created + build successful + target warning removed + no other warning introduced + test successful + fix correct: {fix_created_build_test_target_removed_no_other_introduced_fix_correct}/{total_fix_correctness_all_warnings} ({percent_fix_created_build_test_target_removed_no_other_introduced_fix_correct:.2f}%)  ")
+        f"CORE fix created + build successful + target warning removed + no other warning introduced + test successful + fix correct: {fix_correct}/{total_fix_correctness_all_warnings} ({percent_fix_created_build_test_target_removed_no_other_introduced_fix_correct:.2f}%)  ")
 
-    # Sorald fix successful + build successful + target warning removed + no other warning introduced + test successful + fix correct + no code smell outside introduced
+    # CORE fix successful + build successful + target warning removed + no other warning introduced + test successful + fix correct + no code smell outside introduced
     fix_created_build_test_target_removed_no_other_introduced_fix_correct_no_code_smell_outside = (
-        (evaluation_results_file_df["soraldFixCreated"] == True) &
-        (evaluation_results_file_df["soraldBuildSuccessful"] == True) &
-        (evaluation_results_file_df["soraldNumberOfTargetWarningsRemoved"].fillna(0).astype(int) >= 1) &
-        (evaluation_results_file_df["soraldNoNewWarningIntroduced"] == True) &
-        (evaluation_results_file_df["soraldTestSuccessful"] == True) &
-        (evaluation_results_file_df["soraldFixCorrectness"] == "Correct") &
+        (evaluation_results_file_df["coreNumberCorrectFixes"] > 0) &
         (~evaluation_results_file_df["codeSmellOutsideOfSonarQubeIntroduced"].astype(
             str).str.startswith("True"))
     ).sum()
@@ -506,25 +534,42 @@ def sorald_comparison_calculate_stats_from_evaluation_results(sorald_evaluation_
         total_fix_correctness_all_warnings if total_fix_correctness_all_warnings else 0
 
     mdFile.new_line(
-        f"Sorald fix created + build successful + target warning removed + no other warning introduced + test successful + fix correct + no code smell outside introduced: {fix_created_build_test_target_removed_no_other_introduced_fix_correct_no_code_smell_outside}/{total_fix_correctness_all_warnings} ({percent_fix_created_build_test_target_removed_no_other_introduced_fix_correct_no_code_smell_outside:.2f}%)  ")
+        f"CORE fix created + build successful + target warning removed + no other warning introduced + test successful + fix correct + no code smell outside introduced: {fix_created_build_test_target_removed_no_other_introduced_fix_correct_no_code_smell_outside}/{total_fix_correctness_all_warnings} ({percent_fix_created_build_test_target_removed_no_other_introduced_fix_correct_no_code_smell_outside:.2f}%)  ")
 
     mdFile.new_header(level=3, title="Time Efficiency",
                       add_table_of_contents="n")
 
-    # Sorald fixing time (mean/median)
-    fixing_times = evaluation_results_file_df["soraldFixingTimeInMs"
-                                              ].dropna().astype(float)
-    mean_fixing_time = fixing_times.mean() if not fixing_times.empty else 0
-    median_fixing_time = fixing_times.median() if not fixing_times.empty else 0
+    # CORE fixing time (mean/median)
+    prompting_times = evaluation_results_file_df["corePromptingTime"]
+    mean_prompting_time = prompting_times.mean() if not prompting_times.empty else 0
+    median_prompting_time = prompting_times.median() if not prompting_times.empty else 0
     mdFile.new_line(
-        f"Sorald fixing time: mean={milli_to_second(mean_fixing_time):.2f}s, median={milli_to_second(median_fixing_time):.2f}s")
+        f"CORE prompting time: mean={nano_to_second(mean_prompting_time):.2f}s, median={nano_to_second(median_prompting_time):.2f}s  ")
+
+    stage4_times = evaluation_results_file_df["coreStage4Time"]
+    mean_stage4_time = stage4_times.mean() if not stage4_times.empty else 0
+    median_stage4_time = stage4_times.median() if not stage4_times.empty else 0
+    mdFile.new_line(
+        f"CORE stage 4 time: mean={nano_to_second(mean_stage4_time):.2f}s, median={nano_to_second(median_stage4_time):.2f}s  ")
+
+    ranking_times = evaluation_results_file_df["coreRankingTime"]
+    mean_ranking_time = ranking_times.mean() if not ranking_times.empty else 0
+    median_ranking_time = ranking_times.median() if not ranking_times.empty else 0
+    mdFile.new_line(
+        f"CORE ranking time: mean={nano_to_second(mean_ranking_time):.2f}s, median={nano_to_second(median_ranking_time):.2f}s  ")
+
+    total_times = evaluation_results_file_df["coreTotalTime"]
+    mean_total_time = total_times.mean() if not total_times.empty else 0
+    median_total_time = total_times.median() if not total_times.empty else 0
+    mdFile.new_line(
+        f"CORE total time: mean={nano_to_second(mean_total_time):.2f}s, median={nano_to_second(median_total_time):.2f}s  ")
 
     mdFile.create_md_file()
 
 
-def milli_to_second(time_in_milli: float):
-    return round(time_in_milli / 1_000, 4)
+def nano_to_second(time_in_nano: float):
+    return round(time_in_nano / 1_000_000_000, 4)
 
 
 if __name__ == "__main__":
-    sorald_comparison_calculate_stats_from_evaluation_results()
+    calculate_stats_from_evaluation_results()

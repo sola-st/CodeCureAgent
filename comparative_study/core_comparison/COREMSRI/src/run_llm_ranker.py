@@ -81,6 +81,7 @@ def verify_files(
             query_id, len(prompt_diffs)))
 
         current_warning_id = -1
+        log_current_warning = False
 
         for diff_file in tqdm(prompt_diffs):
 
@@ -90,16 +91,19 @@ def verify_files(
             if current_warning_id != warning_id:
                 # If previous ID is now changed (and was not initial -1 value) => record end timestamp of previous warningID
                 if current_warning_id != -1:
-                    with open(os.path.join(output_log_dir, query_folderName, str(current_warning_id) + "_execution_log.log"), "a+") as execution_log_file:
-                        execution_log_file.write(
-                            f"!! Warning {str(current_warning_id)} ranker end timestamp: " + str(time.time_ns()) + "\n")
+                    if log_current_warning:
+                        with open(os.path.join(output_log_dir, query_folderName, str(current_warning_id) + "_execution_log.log"), "a+") as execution_log_file:
+                            execution_log_file.write(
+                                f"!! Warning {str(current_warning_id)} ranker end timestamp: " + str(time.time_ns()) + "\n")
 
                 current_warning_id = warning_id
 
-                # Record start timestamp
-                with open(os.path.join(output_log_dir, query_folderName, str(current_warning_id) + "_execution_log.log"), "w") as execution_log_file:
-                    execution_log_file.write(
-                        f"!! Warning {str(current_warning_id)} ranker startup timestamp: " + str(time.time_ns()) + "\n")
+                if (overwrite is True) or not os.path.exists(os.path.join(output_log_dir, query_folderName, str(current_warning_id) + "_execution_log.log")):
+                    log_current_warning = True
+                    # Record start timestamp
+                    with open(os.path.join(output_log_dir, query_folderName, str(current_warning_id) + "_execution_log.log"), "w") as execution_log_file:
+                        execution_log_file.write(
+                            f"!! Warning {str(current_warning_id)} ranker startup timestamp: " + str(time.time_ns()) + "\n")
 
             query_output_dir = f"{output_log_dir}/{query_folderName}"
 
@@ -175,11 +179,12 @@ def verify_files(
                     f"Error while trying to save results (Bad Response from LLM) : {e}")
                 continue
 
-        # Record endtime of last finished warningID
-        if current_warning_id != -1:
-            with open(os.path.join(output_log_dir, query_folderName, str(current_warning_id) + "_execution_log.log"), "a+") as execution_log_file:
-                execution_log_file.write(
-                    f"!! Warning {str(current_warning_id)} ranker end timestamp: " + str(time.time_ns()) + "\n")
+        if log_current_warning:
+            # Record endtime of last finished warningID
+            if current_warning_id != -1:
+                with open(os.path.join(output_log_dir, query_folderName, str(current_warning_id) + "_execution_log.log"), "a+") as execution_log_file:
+                    execution_log_file.write(
+                        f"!! Warning {str(current_warning_id)} ranker end timestamp: " + str(time.time_ns()) + "\n")
 
     return None
 

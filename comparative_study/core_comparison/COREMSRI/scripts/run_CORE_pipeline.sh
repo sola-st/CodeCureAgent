@@ -21,7 +21,7 @@ python src/run_sonarqube_stage4.py -e $DATASET -i $DEBUGDIR -s $DEBUGDIR/diff_fo
 # Stage 5
 python src/run_llm_ranker.py -d $DEBUGDIR/diff_folder -o $DEBUGDIR/ranker_results/ --Queries $QUERIES --metadata_file "metadata/java/metadata_full_sonar_way_profile.json" --model "gpt-4.1-mini-2025-04-14"
 
-python src/get_results.py -r $DEBUGDIR/ranker_results/ -p $DATASET -g $DEBUGDIR/proposer_results/ -d $DEBUGDIR/diff_folder/ -o $DEBUGDIR/results/ -j $DEBUGDIR/results.json --Queries $QUERIES --metadata_file "metadata/java/metadata_full_sonar_way_profile.json" --language "java"
+python src/get_results.py -r $DEBUGDIR/ranker_results/ -p $DATASET -g $DEBUGDIR/all_check_passing_fixes/ -d $DEBUGDIR/diff_folder/ -o $DEBUGDIR/results/ -j $DEBUGDIR/results.json --Queries $QUERIES --metadata_file "metadata/java/metadata_full_sonar_way_profile.json" --language "java"
 
 
 endtime=$(date +%s)

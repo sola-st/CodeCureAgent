@@ -89,11 +89,11 @@ Sorald further code smell introduced not reported by SonarQube (of all warnings 
 
 Sorald fix created: 19/21 (90.48%)  
 Sorald fix created + build successful: 18/21 (85.71%)  
-Sorald fix created + build successful + test successful: 18/21 (85.71%)  
-Sorald fix created + build successful + test successful + target warning removed: 18/21 (85.71%)  
-Sorald fix created + build successful + test successful + target warning removed + no other warning introduced: 17/21 (80.95%)  
-Sorald fix created + build successful + test successful + target warning removed + no other warning introduced + fix correct: 16/21 (76.19%)  
-Sorald fix created + build successful + test successful + target warning removed + no other warning introduced + fix correct + no code smell outside introduced: 15/21 (71.43%)  
+Sorald fix created + build successful + target warning removed: 18/21 (85.71%)  
+Sorald fix created + build successful + target warning removed + no other warning introduced: 17/21 (80.95%)  
+Sorald fix created + build successful + target warning removed + no other warning introduced + test successful: 17/21 (80.95%)  
+Sorald fix created + build successful + target warning removed + no other warning introduced + test successful + fix correct: 16/21 (76.19%)  
+Sorald fix created + build successful + target warning removed + no other warning introduced + test successful + fix correct + no code smell outside introduced: 15/21 (71.43%)  
 ### Time Efficiency
 
 Sorald fixing time: mean=16.89s, median=15.53s

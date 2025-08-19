@@ -157,9 +157,12 @@ def fix(
         for file_name in tqdm(file_names):
             file_name: str = file_name
             warning_id = file_name.rstrip(".java")
-            with open(os.path.join(query_output_log_dir, str(warning_id) + "_execution_log.log"), "w") as execution_log_file:
-                execution_log_file.write(
-                    f"!! Warning {str(warning_id)} fixing startup timestamp: " + str(time.time_ns()) + "\n")
+            log_time = False
+            if (overwrite is True) or not os.path.exists(os.path.join(query_output_log_dir, str(warning_id) + "_execution_log.log")):
+                log_time = True
+                with open(os.path.join(query_output_log_dir, str(warning_id) + "_execution_log.log"), "w") as execution_log_file:
+                    execution_log_file.write(
+                        f"!! Warning {str(warning_id)} fixing startup timestamp: " + str(time.time_ns()) + "\n")
 
             print(f"{'='*50}\nProcessing file: {file_name}\n{'='*50}")
             answer_span = copy.deepcopy(
@@ -335,10 +338,10 @@ def fix(
                         f.write("\n".join(lines_updated))
 
                 total_generations += n_idx
-
-            with open(os.path.join(query_output_log_dir, str(warning_id) + "_execution_log.log"), "a+") as execution_log_file:
-                execution_log_file.write(
-                    f"!! Warning {str(warning_id)} fixing end timestamp: " + str(time.time_ns()) + "\n")
+            if (log_time):
+                with open(os.path.join(query_output_log_dir, str(warning_id) + "_execution_log.log"), "a+") as execution_log_file:
+                    execution_log_file.write(
+                        f"!! Warning {str(warning_id)} fixing end timestamp: " + str(time.time_ns()) + "\n")
 
         split_type_data[query_id] = split_type_buckets
     pickle.dump(split_type_data, open(f"{files_subset_pickle_name}", "wb"))

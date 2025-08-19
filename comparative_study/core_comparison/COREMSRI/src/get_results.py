@@ -68,7 +68,7 @@ def get_results(
         os.makedirs(os.path.join(output_folder , query_data['folder_name']))
 
         for parent_file, diff_files in parent_diff_results_map.items():
-            sized_diff_files = [(diff, os.path.getsize(diffs_folder / query_data['folder_name'] / diff)) for diff in diff_files]
+            sized_diff_files = [(diff, os.path.getsize(Path(diffs_folder) / query_data['folder_name'] / diff)) for diff in diff_files]
             sorted_diffs = sorted(sized_diff_files , key=lambda x: x[1])
             if output_type == "smallest":
                 sorted_diffs = [sorted_diffs[0]]

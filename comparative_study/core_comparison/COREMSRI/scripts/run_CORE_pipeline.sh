@@ -21,6 +21,6 @@ echo Time used: $((endtime - starttime)) seconds
 #python src/get_diffs.py -p $DATASET -g $DEBUGDIR/proposer_results -a $DEBUGDIR/analysis_results/demo_filefix_types_Top10.pickle -s $DEBUGDIR/diff_folder --metadata_file "metadata/java/metadata.json"
 
 # Stage 5
-#python src/run_llm_ranker.py -d $DEBUGDIR/diff_folder -o $DEBUGDIR/ranker_results/ --Queries "$QUERY"
+#python src/run_llm_ranker.py -d $DEBUGDIR/diff_folder -o $DEBUGDIR/ranker_results/ --Queries "$QUERY" --language "java" --model "gpt-4.1-mini-2025-04-14"
 
-#python src/get_results.py -r $DEBUGDIR/ranker_results/ -p $DATASET -g $DEBUGDIR/proposer_results/ -d $DEBUGDIR/diff_folder/ -o $DEBUGDIR/results/ -j $DEBUGDIR/results.json
+#python src/get_results.py -r $DEBUGDIR/ranker_results/ -p $DATASET -g $DEBUGDIR/proposer_results/ -d $DEBUGDIR/diff_folder/ -o $DEBUGDIR/results/ -j $DEBUGDIR/results.json --Queries $QUERIES

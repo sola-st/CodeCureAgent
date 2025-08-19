@@ -1,4 +1,5 @@
 import os
+import time
 import pandas as pd
 import json
 from pathlib import Path
@@ -154,6 +155,12 @@ def fix(
         print("len of file_names", len(file_names))
         split_type_buckets = [[], [], [], [], []]
         for file_name in tqdm(file_names):
+            file_name: str = file_name
+            warning_id = file_name.rstrip(".java")
+            with open(os.path.join(query_output_log_dir, str(warning_id) + "_execution_log.log"), "w") as execution_log_file:
+                execution_log_file.write(
+                    f"!! Warning {str(warning_id)} fixing startup timestamp: " + str(time.time_ns()) + "\n")
+
             print(f"{'='*50}\nProcessing file: {file_name}\n{'='*50}")
             answer_span = copy.deepcopy(
                 query_result_file[query_result_file["File"] == f"/{file_name}"][
@@ -328,6 +335,10 @@ def fix(
                         f.write("\n".join(lines_updated))
 
                 total_generations += n_idx
+
+            with open(os.path.join(query_output_log_dir, str(warning_id) + "_execution_log.log"), "a+") as execution_log_file:
+                execution_log_file.write(
+                    f"!! Warning {str(warning_id)} fixing end timestamp: " + str(time.time_ns()) + "\n")
 
         split_type_data[query_id] = split_type_buckets
     pickle.dump(split_type_data, open(f"{files_subset_pickle_name}", "wb"))

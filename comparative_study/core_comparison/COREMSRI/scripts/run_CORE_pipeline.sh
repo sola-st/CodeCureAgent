@@ -1,7 +1,7 @@
 #!/bin/bash
 DEBUGDIR=debug/cca_dataset_results
 DATASET=dataset/cca_dataset
-QUERIES=$(<dataset/cca_dataset/covered_rules.txt)
+QUERIES=$(<$DATASET/covered_rules.txt)
 
 starttime=$(date +%s)
 echo Timestamp before start: $starttime

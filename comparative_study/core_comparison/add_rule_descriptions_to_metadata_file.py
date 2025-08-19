@@ -39,10 +39,9 @@ def add_rule_descriptions_to_metadata_file():
         os.mkdir("experimental_setups/experiment_test/fix_tp/docu_tool_outputs")
 
     rule_meta_json = {}
-
     for rule_key in rule_keys:
         rule_description_with_title = read_sonarqube_docu(rule_key, agent)
-        description_match = re.match("\*\*(?P<rule_name>.+)\*\*(?P<rule_description>.*)",
+        description_match = re.match(r"\*\*(?P<rule_name>.+?)\*\*(?P<rule_description>.*)",
                                      rule_description_with_title, re.DOTALL)
         rule_name = description_match.group("rule_name")
         rule_description = description_match.group("rule_description").strip()

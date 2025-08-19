@@ -16,7 +16,7 @@ import subprocess
 from agent_core.utils.agent_utils.agent_mock import AgentMock
 from agent_core.commands import repository_operations
 
-WARNINGS_TO_RUN_ON_FILE_PATH = "../comparative_study/core_comparison/evaluation_dataset_filled_up_to_1000_input_file_extended_with_column_numbers.csv"
+WARNINGS_TO_RUN_ON_FILE_PATH = "../comparative_study/core_comparison/evaluation_dataset_first_291_input_file_extended_with_column_numbers.csv"
 CCA_RESULTS_FILE_PATH = "evaluation_results/evaluation_results.csv"
 
 TARGET_CSV_FILE_PATH = "../comparative_study/core_comparison/core_comparison_results.csv"

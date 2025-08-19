@@ -9,7 +9,7 @@ import time
 import pandas as pd
 
 
-WARNINGS_TO_RUN_ON_FILE_NAME = "../evaluation_dataset_filled_up_to_1000_input_file_extended_with_column_numbers.csv"
+WARNINGS_TO_RUN_ON_FILE_NAME = "../evaluation_dataset_first_291_input_file_extended_with_column_numbers.csv"
 
 SORALD_JAR_PATH = "/workspaces/master-thesis-pascal-joos/code_cure_agent/sorald/sorald.jar"
 
@@ -192,7 +192,6 @@ def run_sonarqube_stage4(dataset, debug_folder, diff_folder):
         with open(os.path.join(debug_folder, "stage4_execution", str(warning_item["ruleKey"]), str(warning_id) + "_execution_log.log"), "a+") as execution_log_file:
             execution_log_file.write(
                 f"!! Warning {str(warning_id)} stage 4 end timestamp: " + str(time.time_ns()) + "\n")
-
 
 
 def create_diff(warning_item, fix_file_name: str, original_file_path, fix_file_path, diff_folder):

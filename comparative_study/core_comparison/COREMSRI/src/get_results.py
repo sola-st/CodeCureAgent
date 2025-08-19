@@ -21,6 +21,7 @@ def get_results(
         output_type,
         output_format,
         output_report_path,
+        language
 ):
     assert(os.path.exists(ranker_results))
     ranker_results = Path(ranker_results)
@@ -79,7 +80,7 @@ def get_results(
                     new_diff_path = Path(output_folder) / query_data['folder_name'] / diff
                     shutil.copy(diff_path, new_diff_path)
                 if output_format == "both" or output_format == "mfiles":
-                    mfiles_path = Path(generations_folder) / query_data['folder_name'] / (diff.split(".diff")[0] + ".py")
+                    mfiles_path = Path(generations_folder) / query_data['folder_name'] / (diff.split(".diff")[0] + "." + language)
                     assert mfiles_path.exists()
                     new_mfiles_path = Path(output_folder) / mfiles_path.parts[-2] / mfiles_path.parts[-1]
                     shutil.copy(mfiles_path, new_mfiles_path)
@@ -121,4 +122,5 @@ if __name__ == "__main__":
         output_type=args.output_type,
         output_format=args.output_format,
         output_report_path = args.output_report_path,
+        language = args.language
     )

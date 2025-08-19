@@ -1,6 +1,8 @@
 import os
 import logging
 import argparse
+import re
+import time
 from jinja2 import Environment
 from pathlib import Path
 import json
@@ -64,7 +66,8 @@ def verify_files(
         query_data = query_metadata[query_id]
 
         query_folderName = query_data["folder_name"]
-        assert os.path.exists(os.path.join(args.diffs_folder, query_folderName))
+        assert os.path.exists(os.path.join(
+            args.diffs_folder, query_folderName))
 
         prompt_diffs = []
         for file in os.listdir(f"{diffs_folder}/{query_folderName}"):
@@ -74,20 +77,42 @@ def verify_files(
         os.makedirs(f"{output_log_dir}/{query_folderName}", exist_ok=True)
         prompt_diffs.sort()
         print("Query: {}    prompts: {}".format(query_id, len(prompt_diffs)))
-        logging.info("Query: {}    prompts: {}".format(query_id, len(prompt_diffs)))
+        logging.info("Query: {}    prompts: {}".format(
+            query_id, len(prompt_diffs)))
+
+        current_warning_id = -1
+
         for diff_file in tqdm(prompt_diffs):
+
+            warning_id = re.match(r"(?P<warning_id>\d+)_.*",
+                                  diff_file).group("warning_id")
+
+            if current_warning_id != warning_id:
+                # If previous ID is now changed (and was not initial -1 value) => record end timestamp of previous warningID
+                if current_warning_id != -1:
+                    with open(os.path.join(output_log_dir, query_folderName, str(current_warning_id) + "_execution_log.log"), "a+") as execution_log_file:
+                        execution_log_file.write(
+                            f"!! Warning {str(current_warning_id)} ranker end timestamp: " + str(time.time_ns()) + "\n")
+
+                current_warning_id = warning_id
+
+                # Record start timestamp
+                with open(os.path.join(output_log_dir, query_folderName, str(current_warning_id) + "_execution_log.log"), "w") as execution_log_file:
+                    execution_log_file.write(
+                        f"!! Warning {str(current_warning_id)} ranker startup timestamp: " + str(time.time_ns()) + "\n")
 
             query_output_dir = f"{output_log_dir}/{query_folderName}"
 
             Logger = Log(query_output_dir, diff_file.split(".")[0] + "_logs")
 
             with open(
-                os.path.join(args.diffs_folder, query_folderName, diff_file), "r"
+                os.path.join(args.diffs_folder,
+                             query_folderName, diff_file), "r"
             ) as f:
                 diff = f.read()
 
             prompt_args = {
-                "query_name": query_id,
+                "query_name": query_data["name"],
                 "Ruleset": query_data["ruleset"],
                 "description": query_data["desc"],
                 "fixed_code_diff": diff,
@@ -127,7 +152,8 @@ def verify_files(
                 ):
                     print(
                         "Skipping: {} Prompt-len: {}".format(
-                            diff_file, count_tokens(prompt, model_name=model)[0]
+                            diff_file, count_tokens(
+                                prompt, model_name=model)[0]
                         )
                     )
                     continue
@@ -145,9 +171,15 @@ def verify_files(
                 logging.warning(
                     f"Error while trying to save results (Bad Response from LLM) : {e}"
                 )
-                print(f"Error while trying to save results (Bad Response from LLM) : {e}")
+                print(
+                    f"Error while trying to save results (Bad Response from LLM) : {e}")
                 continue
 
+        # Record endtime of last finished warningID
+        if current_warning_id != -1:
+            with open(os.path.join(output_log_dir, query_folderName, str(current_warning_id) + "_execution_log.log"), "a+") as execution_log_file:
+                execution_log_file.write(
+                    f"!! Warning {str(current_warning_id)} ranker end timestamp: " + str(time.time_ns()) + "\n")
 
     return None
 
@@ -158,14 +190,16 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--diffs_folder", type=str, required=True)
     parser.add_argument("--Queries", nargs="+", help="CodeQL Queries to run")
-    parser.add_argument("-m", "--metadata_file", type=str, help="Queries Metadata json file", default="metadata/python/metadata.json")
+    parser.add_argument("-m", "--metadata_file", type=str,
+                        help="Queries Metadata json file", default="metadata/python/metadata.json")
     parser.add_argument(
         "--prompt_template_file",
         type=str,
         help="Prompt template jinja file",
         default="templates/ranker_template.j2"
     )
-    parser.add_argument("--model", type=str, help="Model to use", default="gpt-4-0613")
+    parser.add_argument("--model", type=str,
+                        help="Model to use", default="gpt-4-0613")
     parser.add_argument(
         "--system_message",
         type=str,
@@ -180,11 +214,13 @@ if __name__ == "__main__":
     )
     parser.add_argument("--stop", type=str, help="Stop to use", default=None)
     parser.add_argument("--n", type=int, help="N to use", default=1)
-    parser.add_argument("--timeout", type=int, help="Timeout to use", default=8)
+    parser.add_argument("--timeout", type=int,
+                        help="Timeout to use", default=8)
     parser.add_argument(
         "--max_attempts", type=int, help="Max attempts to use", default=5
     )
-    parser.add_argument("--timeout_mf", type=int, help="Timeout to use", default=2)
+    parser.add_argument("--timeout_mf", type=int,
+                        help="Timeout to use", default=2)
     parser.add_argument(
         "-o", "--output_log_dir", type=str, help="Output log directory", required=True
     )

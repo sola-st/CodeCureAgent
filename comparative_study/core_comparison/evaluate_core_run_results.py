@@ -23,11 +23,11 @@ TARGET_CSV_FILE_PATH = "../comparative_study/core_comparison/core_comparison_res
 
 CCA_WORKSPACE = "cca_workspace"
 
-CORE_DEBUG_FOLDER = "../comparative_study/core_comparison/COREMSRI/debug/cca_dataset_results"
+CORE_DEBUG_FOLDER = "../comparative_study/core_comparison/COREMSRI/comparison_output/cca_dataset_results"
 
 CORE_DATASET_FOLDER = "../comparative_study/core_comparison/COREMSRI/dataset/cca_dataset"
 
-MINING_OUTPUT_FOLDER = "../comparative_study/core_comparison/COREMSRI/debug/cca_dataset_results/full_mining_output"
+MINING_OUTPUT_FOLDER = "../comparative_study/core_comparison/COREMSRI/comparison_output/cca_dataset_results/full_mining_output"
 
 
 def evaluate_core_run_results():

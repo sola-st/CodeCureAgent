@@ -1,5 +1,5 @@
 #!/bin/bash
-DEBUGDIR=debug/cca_dataset_results
+DEBUGDIR=comparison_output/cca_dataset_results
 DATASET=dataset/cca_dataset
 QUERIES=$(<$DATASET/covered_rules.txt)
 

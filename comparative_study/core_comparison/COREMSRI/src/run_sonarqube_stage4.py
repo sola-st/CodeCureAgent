@@ -45,6 +45,9 @@ def run_sonarqube_stage4(dataset, debug_folder, diff_folder):
     if not os.path.exists(os.path.join(debug_folder, "stage4_execution")):
         os.mkdir(os.path.join(debug_folder, "stage4_execution"))
 
+    if not os.path.exists(diff_folder):
+        os.mkdir(diff_folder)
+
     warnings_to_run_on_df = pd.read_csv(WARNINGS_TO_RUN_ON_FILE_NAME)
 
     for index, warning_item in warnings_to_run_on_df.iterrows():
@@ -100,6 +103,9 @@ def run_sonarqube_stage4(dataset, debug_folder, diff_folder):
         if not os.path.exists(os.path.join(debug_folder, "all_check_passing_fixes", str(warning_item["ruleKey"]))):
             os.mkdir(os.path.join(debug_folder, "all_check_passing_fixes",
                      str(warning_item["ruleKey"])))
+
+        if not os.path.exists(os.path.join(diff_folder, str(warning_item["ruleKey"]))):
+            os.mkdir(os.path.join(diff_folder, str(warning_item["ruleKey"])))
 
         unique_contents = {}
         for fix_file_name in warning_created_fixes_file_names:
@@ -195,11 +201,6 @@ def run_sonarqube_stage4(dataset, debug_folder, diff_folder):
 
 
 def create_diff(warning_item, fix_file_name: str, original_file_path, fix_file_path, diff_folder):
-
-    if not os.path.exists(diff_folder):
-        os.mkdir(diff_folder)
-    if not os.path.exists(os.path.join(diff_folder, str(warning_item["ruleKey"]))):
-        os.mkdir(os.path.join(diff_folder, str(warning_item["ruleKey"])))
 
     return_diff = subprocess.run(
         ["diff", original_file_path, fix_file_path, "-u", "--ignore-all-space"],

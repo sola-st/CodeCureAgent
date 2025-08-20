@@ -1,0 +1,105 @@
+@@ -32,7 +32,7 @@
+  * @author Juri Ganitkevitch
+  * 
+  */
+-public abstract class GrammarReader<R extends Rule> implements Iterable<R>, Iterator<R> {
++public abstract class GrammarReader<R extends Rule> implements Iterable<R> {
+ 
+   private static final Logger LOG = LoggerFactory.getLogger(GrammarReader.class);
+ 
+@@ -58,12 +58,72 @@
+     advanceReader();
+   }
+ 
+-  // the reader is the iterator itself
++  @Override
+   public Iterator<R> iterator() {
+-    return this;
++    return new Iterator<R>() {
++      private String nextLine = lookAhead;
++      private boolean hasMore = (nextLine != null);
++      private int rulesRead = numRulesRead;
++
++      // Copy of the reader to allow independent traversal
++      private LineReader iterReader;
++      {
++        try {
++          // open a new LineReader on the same file to allow multiple iterations
++          if (fileName != null) {
++            iterReader = new LineReader(fileName);
++          }
++        } catch (IOException e) {
++          LOG.error("Error opening grammar file stream: {}", fileName, e);
++          iterReader = null;
++          hasMore = false;
++        }
++      }
++
++      private void advance() {
++        if (iterReader == null) {
++          hasMore = false;
++          return;
++        }
++        try {
++          nextLine = iterReader.readLine();
++          rulesRead++;
++          if (nextLine == null) {
++            iterReader.close();
++            hasMore = false;
++          }
++        } catch (IOException e) {
++          LOG.error("Error reading grammar from file: {}", fileName, e);
++          hasMore = false;
++          try {
++            if (iterReader != null) iterReader.close();
++          } catch (IOException ex) {
++            LOG.warn("Error closing grammar file stream: {}", fileName, ex);
++          }
++        }
++      }
++
++      @Override
++      public boolean hasNext() {
++        return hasMore;
++      }
++
++      @Override
++      public R next() {
++        String line = nextLine;
++        advance();
++        return parseLine(line);
++      }
++
++      @Override
++      public void remove() {
++        throw new UnsupportedOperationException();
++      }
++    };
+   }
+ 
+   /** Unsupported Iterator method. */
++  @Deprecated
+   public void remove() throws UnsupportedOperationException {
+     throw new UnsupportedOperationException();
+   }
+@@ -98,7 +158,9 @@
+   }
+ 
+   @Override
++  @Deprecated
+   public boolean hasNext() {
++    // Deprecated because GrammarReader is no longer Iterator
+     return lookAhead != null;
+   }
+ 
+@@ -118,8 +180,10 @@
+   /**
+    * Read the next line, and print reader progress.
+    */
++  @Deprecated
+   @Override
+   public R next() {
++    // Deprecated because GrammarReader is no longer Iterator
+     String line = lookAhead;
+ 
+     int oldProgress = reader.progress();

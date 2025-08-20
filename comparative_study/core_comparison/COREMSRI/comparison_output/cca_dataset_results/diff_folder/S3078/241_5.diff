@@ -1,0 +1,40 @@
+@@ -23,6 +23,7 @@
+ import java.util.concurrent.CompletableFuture;
+ import java.util.concurrent.Future;
+ import java.util.concurrent.TimeUnit;
++import java.util.concurrent.atomic.AtomicInteger;
+ import java.util.function.Supplier;
+ 
+ import static net.jodah.failsafe.internal.util.RandomDelay.randomDelay;
+@@ -35,7 +36,7 @@
+  */
+ class RetryPolicyExecutor extends PolicyExecutor<RetryPolicy> {
+   // Mutable state
+-  private volatile int failedAttempts;
++  private final AtomicInteger failedAttempts = new AtomicInteger();
+   private volatile boolean retriesExceeded;
+   /** The fixed, backoff, random or computed delay time in nanoseconds. */
+   private volatile long delayNanos = -1;
+@@ -151,7 +152,7 @@
+     if (failedAttemptListener != null)
+       failedAttemptListener.handle(result, execution);
+ 
+-    failedAttempts++;
++    failedAttempts.incrementAndGet();
+     long waitNanos = delayNanos;
+ 
+     // Determine the computed delay
+@@ -170,7 +171,7 @@
+     waitNanos = adjustForMaxDuration(waitNanos, elapsedNanos);
+ 
+     // Calculate result
+-    boolean maxRetriesExceeded = policy.getMaxRetries() != -1 && failedAttempts > policy.getMaxRetries();
++    boolean maxRetriesExceeded = policy.getMaxRetries() != -1 && failedAttempts.get() > policy.getMaxRetries();
+     boolean maxDurationExceeded = policy.getMaxDuration() != null && elapsedNanos > policy.getMaxDuration().toNanos();
+     retriesExceeded = maxRetriesExceeded || maxDurationExceeded;
+     boolean isAbortable = policy.isAbortable(result.getResult(), result.getFailure());
+@@ -232,3 +233,4 @@
+     return waitNanos;
+   }
+ }
++

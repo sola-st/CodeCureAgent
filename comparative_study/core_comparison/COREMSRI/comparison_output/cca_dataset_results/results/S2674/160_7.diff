@@ -1,0 +1,56 @@
+@@ -127,7 +127,17 @@
+               entry.valueLen = second;
+               remaining = entry.valueLen;
+             }
+-            stream.read(keyBuf, 0, entry.keyLen);
++            // Check the return value of read for compliance
++            int totalRead = 0;
++            while (totalRead < entry.keyLen) {
++              int read = stream.read(keyBuf, totalRead, entry.keyLen - totalRead);
++              if (read == -1) {
++                // Unexpected EOF
++                closeStream();
++                throw new EOFException("Unexpected EOF while reading keyBuf");
++              }
++              totalRead += read;
++            }
+             entry.stream.setRemaining(remaining);
+             ready = true;
+             return true;
+@@ -232,7 +242,15 @@
+ 
+     private byte[] readChunk(int size) throws IOException {
+       byte[] res = new byte[size];
+-      stream.read(res);
++      // Check bytes read for compliance
++      int totalRead = 0;
++      while (totalRead < size) {
++        int read = stream.read(res, totalRead, size - totalRead);
++        if (read == -1) {
++          throw new EOFException("Unexpected EOF while reading value bytes");
++        }
++        totalRead += read;
++      }
+       return res;
+     }
+ 
+@@ -284,8 +302,18 @@
+         throw new IllegalArgumentException();
+       }
+       if (remaining >= len) {
++        int read = stream.read(b, off, len);
++        if (read != len) {
++          // This is an additional validation, though the calling code must retry reads
++          // but we respect underlying InputStream contract
++          if (read == -1) {
++            throw new EOFException();
++          }
++          remaining -= read;
++          return read;
++        }
+         remaining -= len;
+-        return stream.read(b, off, len);
++        return len;
+       }
+       throw new EOFException();
+     }

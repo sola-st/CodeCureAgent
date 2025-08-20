@@ -1,0 +1,121 @@
+@@ -32,6 +32,7 @@
+ import javax.xml.transform.Source;
+ import javax.xml.transform.Transformer;
+ import javax.xml.transform.TransformerFactory;
++```java
+ import javax.xml.transform.TransformerFactoryConfigurationError;
+ import javax.xml.transform.dom.DOMResult;
+ import javax.xml.transform.sax.SAXSource;
+@@ -47,6 +48,18 @@
+ import org.xml.sax.XMLReader;
+ import org.xml.sax.helpers.XMLReaderFactory;
+ 
++import javax.xml.XMLConstants;
++import javax.xml.parsers.DocumentBuilderFactory;
++import javax.xml.parsers.ParserConfigurationException;
++import javax.xml.parsers.SAXParser;
++import javax.xml.parsers.SAXParserFactory;
++import javax.xml.transform.Transformer;
++import javax.xml.transform.TransformerFactory;
++import javax.xml.transform.Source;
++import java.io.InputStream;
++import java.io.Reader;
++import java.util.logging.Level;
++
+ 
+ /**
+  * @author Patrick Wright
+@@ -138,7 +151,18 @@
+         if (xmlReader == null) {
+             try {
+                 XRLog.log(Level.WARNING, LogMessageId.LogMessageId0Param.LOAD_FALLING_BACK_ON_THE_DEFAULT_PARSER);
+-                SAXParser parser = SAXParserFactory.newInstance().newSAXParser();
++                SAXParserFactory spf = SAXParserFactory.newInstance();
++                // Disable DOCTYPE declarations to prevent XXE
++                spf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
++                spf.setFeature("http://xml.org/sax/features/external-general-entities", false);
++                spf.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
++                spf.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
++                spf.setNamespaceAware(true);
++                spf.setXIncludeAware(false);
++                SAXParser parser = spf.newSAXParser();
++                // Also set ACCESS_EXTERNAL_DTD and ACCESS_EXTERNAL_SCHEMA properties to empty string
++                parser.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, "");
++                parser.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+                 xmlReader = parser.getXMLReader();
+                 xmlReaderClass = "SAXParserFactory default";
+             } catch (Exception ex) {
+@@ -160,10 +184,10 @@
+             try {
+            	 // VERY IMPORTANT: Without these lines, users can pull in arbitary files from the system using XXE.
+            	 // DO NOT REMOVE!
+-          	 xmlReader.setFeature("http://apache.org/xml/features/disallow-doctype-decl", false);
++          	 xmlReader.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            	 xmlReader.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            	 xmlReader.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+-           	 xmlReader.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", true);
++           	 xmlReader.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+            	 xmlReader.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            } catch (SAXNotSupportedException | SAXNotRecognizedException e) {
+                 XRLog.log(Level.SEVERE, LogMessageId.LogMessageId0Param.LOAD_UNABLE_TO_DISABLE_XML_EXTERNAL_ENTITIES, e);
+@@ -174,13 +198,17 @@
+     		try {
+        	      // VERY IMPORTANT: Without these lines, users can pull in arbitary files from the system using XXE.
+        	      // DO NOT REMOVE!
+-              dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", false);
++              dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+               dbf.setFeature("http://xml.org/sax/features/external-general-entities", false);
+               dbf.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+               dbf.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+               dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
++              dbf.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
++              dbf.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+     		} catch (ParserConfigurationException e) {
+                 XRLog.log(Level.SEVERE, LogMessageId.LogMessageId0Param.LOAD_UNABLE_TO_DISABLE_XML_EXTERNAL_ENTITIES, e);
++    		} catch (IllegalArgumentException e) {
++                XRLog.log(Level.SEVERE, LogMessageId.LogMessageId0Param.LOAD_UNABLE_TO_DISABLE_XML_EXTERNAL_ENTITIES, e);
+     		}
+     	}
+     	
+@@ -353,11 +381,13 @@
+                 
+            	    // VERY IMPORTANT: Without these lines, users can pull in arbitary files from the system using XXE.
+            	    // DO NOT REMOVE!
+-                dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", false);
++                dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+                 dbf.setFeature("http://xml.org/sax/features/external-general-entities", false);
+                 dbf.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+                 dbf.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+                 dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
++                dbf.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
++                dbf.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+                 
+                 dbf.setNamespaceAware(true);
+                 dbf.setValidating(false);//validation is the root of all evil in xml - tobe
+@@ -427,25 +457,7 @@
+  * Revision 1.12  2005/06/15 10:56:14  tobega
+  * cleaned up a bit of URL mess, centralizing URI-resolution and loading to UserAgentCallback
+  *
+- * Revision 1.11  2005/06/13 06:50:16  tobega
+- * Fixed a bug in table content resolution.
+- * Various "tweaks" in other stuff.
+- *
+- * Revision 1.10  2005/06/01 21:36:41  tobega
+- * Got image scaling working, and did some refactoring along the way
+- *
+- * Revision 1.9  2005/04/20 19:13:18  tobega
+- * Fixed vertical align. Middle works and all look pretty much like in firefox
+- *
+- * Revision 1.8  2005/04/03 21:51:31  joshy
+- * fixed code that gets the XMLReader on the mac
+- * added isMacOSX() to GeneralUtil
+- * added app name and single menu bar to browser
+- *
+- * Issue number:
+- * Obtained from:
+- * Submitted by:
+- * Reviewed by:
++ * Revision 1.11  2005/06/13 06:50:16
+  *
+  * Revision 1.7  2005/03/28 18:33:03  pdoubleya
+  * Don't show stack trace if XML can't be loaded.

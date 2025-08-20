@@ -1,0 +1,90 @@
+@@ -127,7 +127,16 @@
+               entry.valueLen = second;
+               remaining = entry.valueLen;
+             }
+-            stream.read(keyBuf, 0, entry.keyLen);
++            int toRead = entry.keyLen;
++            int offset = 0;
++            while (toRead > 0) {
++              int read = stream.read(keyBuf, offset, toRead);
++              if (read == -1) {
++                throw new EOFException("Unexpected end of stream while reading key");
++              }
++              offset += read;
++              toRead -= read;
++            }
+             entry.stream.setRemaining(remaining);
+             ready = true;
+             return true;
+@@ -232,7 +241,16 @@
+ 
+     private byte[] readChunk(int size) throws IOException {
+       byte[] res = new byte[size];
+-      stream.read(res);
++      int toRead = size;
++      int offset = 0;
++      while (toRead > 0) {
++        int read = stream.read(res, offset, toRead);
++        if (read == -1) {
++          throw new EOFException("Unexpected end of stream while reading value");
++        }
++        offset += read;
++        toRead -= read;
++      }
+       return res;
+     }
+ 
+@@ -267,8 +285,12 @@
+     @Override
+     public int read() throws IOException {
+       if (remaining >= 0) {
++        int b = stream.read();
++        if (b == -1) {
++          throw new EOFException();
++        }
+         remaining--;
+-        return stream.read();
++        return b;
+       }
+       throw new EOFException();
+     }
+@@ -284,8 +306,12 @@
+         throw new IllegalArgumentException();
+       }
+       if (remaining >= len) {
+-        remaining -= len;
+-        return stream.read(b, off, len);
++        int read = stream.read(b, off, len);
++        if (read == -1) {
++          throw new EOFException();
++        }
++        remaining -= read;
++        return read;
+       }
+       throw new EOFException();
+     }
+@@ -296,15 +322,20 @@
+         throw new IllegalArgumentException();
+       }
+       if (remaining >= n) {
+-        while (n > 0) {
+-          long skipped = stream.skip(n);
++        long totalSkipped = 0;
++        while (totalSkipped < n) {
++          long skipped = stream.skip(n - totalSkipped);
+           if (skipped == 0) {
++            if (read() == -1) {
+             throw new EOFException();
++            } else {
++              skipped = 1;
++            }
+           }
+           remaining -= skipped;
+-          n -= skipped;
++          totalSkipped += skipped;
+         }
+-        return n;
++        return totalSkipped;
+       }
+       throw new EOFException();
+     }

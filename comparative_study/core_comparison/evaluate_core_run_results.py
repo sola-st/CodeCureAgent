@@ -143,20 +143,24 @@ def evaluate_core_run_results():
             ranker_log_file_path = os.path.join(CORE_DEBUG_FOLDER, "ranker_results", warning_item["ruleKey"], str(
                 warning_item["instanceID"]) + "_execution_log.log")
 
-            with open(ranker_log_file_path, "r") as ranker_log_file:
-                ranker_time_content = ranker_log_file.read()
+            if os.path.exists(ranker_log_file_path):
+                with open(ranker_log_file_path, "r") as ranker_log_file:
+                    ranker_time_content = ranker_log_file.read()
 
-            pattern = r"!! Warning \d+ ranker startup timestamp: (\d+)"
-            start_time_match = re.search(
-                pattern, ranker_time_content)
-            ranker_start_time = int(start_time_match.group(1).strip())
+                pattern = r"!! Warning \d+ ranker startup timestamp: (\d+)"
+                start_time_match = re.search(
+                    pattern, ranker_time_content)
+                ranker_start_time = int(start_time_match.group(1).strip())
 
-            pattern = r"!! Warning \d+ ranker end timestamp: (\d+)"
-            end_time_match = re.search(
-                pattern, ranker_time_content)
-            ranker_end_time = int(end_time_match.group(1).strip())
+                pattern = r"!! Warning \d+ ranker end timestamp: (\d+)"
+                end_time_match = re.search(
+                    pattern, ranker_time_content)
+                ranker_end_time = int(end_time_match.group(1).strip())
 
-            core_ranking_time = ranker_end_time - ranker_start_time
+                core_ranking_time = ranker_end_time - ranker_start_time
+            else:
+                # No log file is created, if there is no fix that passes stage 4
+                core_ranking_time = 0
 
             core_total_time = core_prompting_time + core_stage4_time + core_ranking_time
 

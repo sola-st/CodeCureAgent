@@ -66,7 +66,7 @@ def evaluate_core_run_results():
 
             # mine warnings before (only for the file with the warning to fix, else it takes too long)
             cmd = ["java", "-jar", agent.config.sorald_jar_path, "mine", "--source", os.path.join(CCA_WORKSPACE, agent.ai_config.warning_repository_name, agent.ai_config.warning_file_path), "--stats-output-file",
-                   os.path.join(MINING_OUTPUT_FOLDER, str(agent.ai_config.warning_ID) + "_mining_out_before.json"), "--rule-parameters", "sonarqube_quality_profile/quality_profile_rule_parameters.json", "--target-java-version", agent.ai_config.warning_repository_target_java_version]
+                   os.path.join(MINING_OUTPUT_FOLDER, str(agent.ai_config.warning_ID) + "_mining_out_before.json"), "--rule-parameters", "sonarqube_quality_profile/quality_profile_rule_parameters.json", "--target-java-version", str(warning_item["targetJavaVersion"])]
 
             cmd.append("--rule-keys")
             cmd.append(",".join(agent.sonar_qube_rules_in_active_profile))
@@ -189,7 +189,7 @@ def evaluate_core_run_results():
 
                     # mine warnings after
                     cmd = ["java", "-jar", agent.config.sorald_jar_path, "mine", "--source", os.path.join(CCA_WORKSPACE, agent.ai_config.warning_repository_name, agent.ai_config.warning_file_path), "--stats-output-file",
-                           os.path.join(MINING_OUTPUT_FOLDER, file_name_fix + "_mining_out_after.json"), "--rule-parameters", "sonarqube_quality_profile/quality_profile_rule_parameters.json", "--target-java-version", agent.ai_config.warning_repository_target_java_version]
+                           os.path.join(MINING_OUTPUT_FOLDER, file_name_fix + "_mining_out_after.json"), "--rule-parameters", "sonarqube_quality_profile/quality_profile_rule_parameters.json", "--target-java-version", str(warning_item["targetJavaVersion"])]
 
                     cmd.append("--rule-keys")
                     cmd.append(

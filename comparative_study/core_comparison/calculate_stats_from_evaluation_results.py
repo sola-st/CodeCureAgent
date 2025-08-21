@@ -515,6 +515,16 @@ def calculate_stats_from_evaluation_results(core_evaluation_results_file: click.
     mdFile.new_line(
         f"CORE fix created + build successful + target warning removed + no other warning introduced + test successful: {fix_created_build_test_target_removed_no_other_introduced}/{total_rule_violations} ({percent_fix_created_build_test_target_removed_no_other_removed:.2f}%)  ")
 
+    # CORE fix successful + build successful + target warning removed + no other warning introduced + test successful for only true positives for cca
+    fix_created_build_test_target_removed_no_other_introduced_only_cca_TP = (
+        (evaluation_results_file_df["coreNumberBuildAndRemovedWarningAndNoNewWarningAndTest"] > 0) & (evaluation_results_file_df["classification"] == "TP")).sum()
+
+    percent_fix_created_build_test_target_removed_no_other_removed_only_cca_TP = 100 * fix_created_build_test_target_removed_no_other_introduced_only_cca_TP / \
+        classified_tp if classified_tp else 0
+
+    mdFile.new_line(
+        f"CORE Only for warnings classified as TP in CCA : fix created + build successful + target warning removed + no other warning introduced + test successful: {fix_created_build_test_target_removed_no_other_introduced_only_cca_TP}/{classified_tp} ({percent_fix_created_build_test_target_removed_no_other_removed_only_cca_TP:.2f}%)  ")
+
     # Sorald fix successful + build successful + target warning removed + no other warning introduced + test successful + fix correct
 
     percent_fix_created_build_test_target_removed_no_other_introduced_fix_correct = 100 * fix_correct / \

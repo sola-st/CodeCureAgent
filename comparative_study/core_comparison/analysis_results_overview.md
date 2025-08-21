@@ -105,6 +105,7 @@ CORE fix created + build successful: 197/291 (67.70%)
 CORE fix created + build successful + target warning removed: 197/291 (67.70%)  
 CORE fix created + build successful + target warning removed + no other warning introduced: 184/291 (63.23%)  
 CORE fix created + build successful + target warning removed + no other warning introduced + test successful: 172/291 (59.11%)  
+CORE Only for warnings classified as TP in CCA : fix created + build successful + target warning removed + no other warning introduced + test successful: 127/191 (66.49%)  
 CORE fix created + build successful + target warning removed + no other warning introduced + test successful + fix correct: 0/0 (0.00%)  
 CORE fix created + build successful + target warning removed + no other warning introduced + test successful + fix correct + no code smell outside introduced: 0/0 (0.00%)  
 ### Time Efficiency

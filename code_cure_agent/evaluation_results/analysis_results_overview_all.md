@@ -67,17 +67,17 @@ Multi Line: 94 (37.45%)
 Multi File: 3 (1.20%)  
 ### Iterations
 
-Total iterations: 17495  
+Total iterations: 18495  
 Iterations by sub-agent:  
 Classification: 9954  
-Fix_TP: 7102  
-Fix_FP: 439  
+Fix_TP: 7406  
+Fix_FP: 1135  
 
-Mean iterations: 17.50  
+Mean iterations: 24.33  
 Mean iterations by sub-agent:  
 Classification: 9.95  
-Fix_TP: 7.10  
-Fix_FP: 0.44  
+Fix_TP: 10.64  
+Fix_FP: 3.73  
 
 Median iterations: 19.00  
 Median iterations by sub-agent:  
@@ -150,15 +150,15 @@ Fix_TP: 85393950 (input uncached: 11327114, input cached: 71926272, input: 83253
 Fix_FP: 3407340 (input uncached: 1077378, input cached: 2135552, input: 3212930, output: 194410)  
 #### Mean Tokens Count
 
-Mean total tokens count: 139584.92  
-Mean total tokens input uncached: 28638.06  
-Mean total tokens input cached: 106711.42  
-Mean total tokens input: 135349.49  
-Mean total tokens output: 4235.43  
+Mean total tokens count: 184684.45  
+Mean total tokens input uncached: 36052.17  
+Mean total tokens input cached: 143016.79  
+Mean total tokens input: 179068.95  
+Mean total tokens output: 5615.49  
 Mean tokens by sub-agent:  
 Classification: 50783.63 (input uncached: 16233.57, input cached: 32649.60, input: 48883.17, output: 1900.46)  
-Fix_TP: 85393.95 (input uncached: 11327.11, input cached: 71926.27, input: 83253.39, output: 2140.56)  
-Fix_FP: 3407.34 (input uncached: 1077.38, input cached: 2135.55, input: 3212.93, output: 194.41)  
+Fix_TP: 122692.46 (input uncached: 16274.59, input cached: 103342.34, input: 119616.93, output: 3075.52)  
+Fix_FP: 11208.36 (input uncached: 3544.01, input cached: 7024.84, input: 10568.85, output: 639.51)  
 #### Median Tokens Count
 
 Median total tokens count: 79303.50  
@@ -179,11 +179,11 @@ Fix_TP: 15.148375 USD
 Fix_FP: 0.955562 USD  
 #### Average Tokens Cost
 
-Average Total Cost: 0.028903 USD  
+Average Total Cost: 0.037707 USD  
 Average cost by sub-agent:  
 Classification: 0.012799 USD  
-Fix_TP: 0.015148 USD  
-Fix_FP: 0.000956 USD  
+Fix_TP: 0.021765 USD  
+Fix_FP: 0.003143 USD  
 #### Median Tokens Cost
 
 Median Total Cost: 0.020956 USD  

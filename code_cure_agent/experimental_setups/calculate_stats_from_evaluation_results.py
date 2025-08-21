@@ -339,16 +339,23 @@ def calculate_stats_from_evaluation_results(evaluation_results_extended_file: cl
     # Iterations
     iterations_classification = evaluation_results_file_df["iterationsClassification"].sum(
     )
-    iterations_fix_tp = evaluation_results_file_df["iterationsFixTP"].sum()
-    iterations_fix_fp = evaluation_results_file_df["iterationsFixFP"].sum()
+    iterations_fix_tp = evaluation_results_file_df.loc[
+        evaluation_results_file_df["classification"] == "TP", "iterationsFixTP"
+    ].sum()
+    iterations_fix_fp = evaluation_results_file_df.loc[
+        evaluation_results_file_df["classification"] == "FP", "iterationsFixFP"].sum()
+
     total_iterations = iterations_classification + \
         iterations_fix_tp + iterations_fix_fp
 
     mean_iterations_classification = evaluation_results_file_df["iterationsClassification"].mean(
     )
-    mean_iterations_fix_tp = evaluation_results_file_df["iterationsFixTP"].mean(
+    mean_iterations_fix_tp = evaluation_results_file_df.loc[
+        evaluation_results_file_df["classification"] == "TP", "iterationsFixTP"
+    ].mean(
     )
-    mean_iterations_fix_fp = evaluation_results_file_df["iterationsFixFP"].mean(
+    mean_iterations_fix_fp = evaluation_results_file_df.loc[
+        evaluation_results_file_df["classification"] == "FP", "iterationsFixFP"].mean(
     )
     mean_total_iterations = mean_iterations_classification + \
         mean_iterations_fix_tp + mean_iterations_fix_fp
@@ -658,23 +665,34 @@ def calculate_stats_from_evaluation_results(evaluation_results_extended_file: cl
     mean_tokens_count_classification = mean_tokens_input_classification + \
         mean_tokens_output_classification
 
-    mean_tokens_input_uncached_fix_tp = evaluation_results_file_df["tokensInputUncachedFixTP"].mean(
+    mean_tokens_input_uncached_fix_tp = evaluation_results_file_df.loc[
+        evaluation_results_file_df["classification"] == "TP", "tokensInputUncachedFixTP"].mean(
     )
-    mean_tokens_input_cached_fix_tp = evaluation_results_file_df["tokensInputCachedFixTP"].mean(
+    mean_tokens_input_cached_fix_tp = evaluation_results_file_df.loc[
+        evaluation_results_file_df["classification"] == "TP", "tokensInputCachedFixTP"
+    ].mean(
     )
     mean_tokens_input_fix_tp = mean_tokens_input_uncached_fix_tp + \
         mean_tokens_input_cached_fix_tp
-    mean_tokens_output_fix_tp = evaluation_results_file_df["tokensOutputFixTP"].mean(
+    mean_tokens_output_fix_tp = evaluation_results_file_df.loc[
+        evaluation_results_file_df["classification"] == "TP", "tokensOutputFixTP"
+    ].mean(
     )
     mean_tokens_count_fix_tp = mean_tokens_input_fix_tp + mean_tokens_output_fix_tp
 
-    mean_tokens_input_uncached_fix_fp = evaluation_results_file_df["tokensInputUncachedFixFP"].mean(
+    mean_tokens_input_uncached_fix_fp = evaluation_results_file_df.loc[
+        evaluation_results_file_df["classification"] == "FP", "tokensInputUncachedFixFP"
+    ].mean(
     )
-    mean_tokens_input_cached_fix_fp = evaluation_results_file_df["tokensInputCachedFixFP"].mean(
+    mean_tokens_input_cached_fix_fp = evaluation_results_file_df.loc[
+        evaluation_results_file_df["classification"] == "FP", "tokensInputCachedFixFP"
+    ].mean(
     )
     mean_tokens_input_fix_fp = mean_tokens_input_uncached_fix_fp + \
         mean_tokens_input_cached_fix_fp
-    mean_tokens_output_fix_fp = evaluation_results_file_df["tokensOutputFixFP"].mean(
+    mean_tokens_output_fix_fp = evaluation_results_file_df.loc[
+        evaluation_results_file_df["classification"] == "FP", "tokensOutputFixFP"
+    ].mean(
     )
     mean_tokens_count_fix_fp = mean_tokens_input_fix_fp + mean_tokens_output_fix_fp
 
@@ -754,8 +772,10 @@ def calculate_stats_from_evaluation_results(evaluation_results_extended_file: cl
 
     avg_cost_classification = evaluation_results_file_df["costClassification"].mean(
     )
-    avg_cost_fix_tp = evaluation_results_file_df["costFixTP"].mean()
-    avg_cost_fix_fp = evaluation_results_file_df["costFixFP"].mean()
+    avg_cost_fix_tp = evaluation_results_file_df.loc[
+        evaluation_results_file_df["classification"] == "TP", "costFixTP"].mean()
+    avg_cost_fix_fp = evaluation_results_file_df.loc[
+        evaluation_results_file_df["classification"] == "FP", "costFixFP"].mean()
     avg_cost = avg_cost_classification + avg_cost_fix_tp + avg_cost_fix_fp
 
     median_cost_classification = evaluation_results_file_df["costClassification"].median(

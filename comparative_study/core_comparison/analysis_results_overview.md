@@ -61,19 +61,19 @@ Multi File: 3 (1.20%)
 
 ### Separate Performance Stats
 
-CORE fix created: 257/291 (88.32%)  
+CORE fix created: 267/291 (91.75%)  
 
-CORE build successful (in at least one fix): 197/257 (76.65%)  
-CORE build successful (in at least one fix) (of all instances): 197/291 (67.70%)  
+CORE build successful (in at least one fix): 233/267 (87.27%)  
+CORE build successful (in at least one fix) (of all instances): 233/291 (80.07%)  
 
-CORE removal of target warning (removed >=1 warnings in at least one fix): 257/257 (100.00%)  
-CORE removal of target warning (removed >=1 warnings in at least one fix) (of all instances): 257/291 (88.32%)  
+CORE removal of target warning (removed >=1 warnings in at least one fix): 266/267 (99.63%)  
+CORE removal of target warning (removed >=1 warnings in at least one fix) (of all instances): 266/291 (91.41%)  
 
-CORE no new warning introduced (in at least one fix): 243/257 (94.55%)  
-CORE no new warning introduced (in at least one fix) (of all instances): 243/291 (83.51%)  
+CORE no new warning introduced (in at least one fix): 250/267 (93.63%)  
+CORE no new warning introduced (in at least one fix) (of all instances): 250/291 (85.91%)  
 
-CORE test successful (in at least one fix) (of instances where fix created and build successful): 186/197 (94.42%)  
-CORE test successful (in at least one fix) (of all instances): 186/291 (63.92%)  
+CORE test successful (in at least one fix) (of instances where fix created and build successful): 220/233 (94.42%)  
+CORE test successful (in at least one fix) (of all instances): 220/291 (75.60%)  
 
 CORE TP assumption sound (not in conjunction with if a fix was created): 291/291 (100.00%)  
 CORE instances where TP assumption was not sound: 0 (0.00%)  
@@ -87,11 +87,11 @@ CORE further code smell introduced not reported by SonarQube (of all warnings wh
 
 ### Averages of number of fixes
 
-CORE average number of fixes created: 4.25085910652921  
-CORE average number of oracle passing fixes created: 2.2302405498281788  
-CORE average number of fixes not passing oracle: 2.020618556701031  
-CORE percentage of fixes passing oracle: 52.47%  
-CORE average number of fixes to look at until fix passing oracle found: 1.9060092449922958
+CORE average number of fixes created: 4.446735395189004  
+CORE average number of oracle passing fixes created: 2.536082474226804  
+CORE average number of fixes not passing oracle: 1.9106529209621994  
+CORE percentage of fixes passing oracle: 57.03%  
+CORE average number of fixes to look at until fix passing oracle found: 1.753387533875339
 
 CORE average number of correct fixes created: nan  
 (Valid only if run only on manually inspected instances):  
@@ -100,17 +100,17 @@ CORE average number of fixes to look at until correct fix found: nan
 
 ### Combined Performance Stats (Different checks are added together to form a final total performance of CORE)
 
-CORE fix created: 257/291 (88.32%)  
-CORE fix created + build successful: 197/291 (67.70%)  
-CORE fix created + build successful + target warning removed: 197/291 (67.70%)  
-CORE fix created + build successful + target warning removed + no other warning introduced: 184/291 (63.23%)  
-CORE fix created + build successful + target warning removed + no other warning introduced + test successful: 172/291 (59.11%)  
-CORE Only for warnings classified as TP in CCA : fix created + build successful + target warning removed + no other warning introduced + test successful: 127/191 (66.49%)  
+CORE fix created: 267/291 (91.75%)  
+CORE fix created + build successful: 233/291 (80.07%)  
+CORE fix created + build successful + target warning removed: 231/291 (79.38%)  
+CORE fix created + build successful + target warning removed + no other warning introduced: 210/291 (72.16%)  
+CORE fix created + build successful + target warning removed + no other warning introduced + test successful: 197/291 (67.70%)  
+CORE Only for warnings classified as TP in CCA : fix created + build successful + target warning removed + no other warning introduced + test successful: 146/191 (76.44%)  
 CORE fix created + build successful + target warning removed + no other warning introduced + test successful + fix correct: 0/0 (0.00%)  
 CORE fix created + build successful + target warning removed + no other warning introduced + test successful + fix correct + no code smell outside introduced: 0/0 (0.00%)  
 ### Time Efficiency
 
 CORE prompting time: mean=106.33s, median=92.45s  
 CORE stage 4 time: mean=14.07s, median=13.92s  
-CORE ranking time: mean=12.15s, median=9.40s  
-CORE total time: mean=132.53s, median=121.28s  
+CORE ranking time: mean=15.75s, median=11.07s  
+CORE total time: mean=136.13s, median=122.22s  

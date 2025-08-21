@@ -409,7 +409,6 @@ public class PrepStmtTest
         prep.setString(1, "a");
         prep.addBatch();
         int call1_length = prep.executeBatch().length;
-```java
         prep.setString(1, "b");
         prep.addBatch();
         int call2_length = prep.executeBatch().length;

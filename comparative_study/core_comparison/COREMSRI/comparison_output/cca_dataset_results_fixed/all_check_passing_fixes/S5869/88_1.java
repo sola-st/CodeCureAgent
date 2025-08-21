@@ -59,7 +59,6 @@ public abstract class MorphologyRules extends NLGModule {
 	@SuppressWarnings("nls")
 	private static final String[][][] PRONOUNS = {{{"I", "you", "he", "she", "it"},
 	                                               {"me", "you", "him", "her", "it"},
-```java
 	                                               {"myself", "yourself", "himself", "herself", "itself"},
 	                                               {"mine", "yours", "his", "hers", "its"},
 	                                               {"my", "your", "his", "her", "its"}},

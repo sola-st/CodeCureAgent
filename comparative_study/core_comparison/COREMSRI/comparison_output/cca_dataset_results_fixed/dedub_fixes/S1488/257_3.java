@@ -197,7 +197,6 @@ public class IndividualDaoJena extends JenaBaseDao implements IndividualDao {
     public String insertNewIndividualWebapp(Individual ent) throws InsertException {
         initInd(ent);
         return insertNewIndividual(ent, getOntModelSelector().getABoxModel());
-```java
     }
 
     /**

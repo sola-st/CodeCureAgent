@@ -64,7 +64,6 @@ final class AttributeStreamOfDbl extends AttributeStreamBase {
 	}
 	
 	public AttributeStreamOfDbl(int size) {
-```java
 		int sz = size;
 		if (sz < 2)
 			sz = 2;

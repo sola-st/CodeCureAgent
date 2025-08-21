@@ -49,7 +49,6 @@ import org.locationtech.jtstest.util.io.MultiFormatReader;
  * 
  * --- Compute the buffer of distance 10 of a WKT geometry, output as GeoJSON
  * jtsop -a some-file-with-geom.wkt -f geojson Buffer.buffer 10
-```java
  * 
  * --- Compute the buffer of a literal geometry, output as WKT
  * jtsop -a "POINT (10 10)" -f wkt Buffer.buffer 10

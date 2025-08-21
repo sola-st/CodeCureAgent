@@ -288,7 +288,6 @@ public class RepositoryTest {
 ```
 Explanation of fix:  
 The flagged line was:
-```java
 final Object local = new Object() {
 
 };

@@ -133,7 +133,6 @@ final class Clusterer {
 			int xyindex_2 = element_2;
 			m_shape.getXY(xyindex_1, m_pt);
 			m_shape.getXY(xyindex_2, m_pt_2);
-```java
 			return isClusterCandidate_(m_pt.x, m_pt.y, m_pt_2.x, m_pt_2.y,
 					m_sqr_tolerance);
 		}

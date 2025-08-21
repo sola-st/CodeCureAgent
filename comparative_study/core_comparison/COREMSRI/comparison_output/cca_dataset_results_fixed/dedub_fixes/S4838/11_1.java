@@ -350,7 +350,6 @@ public class ConfigSection extends LinkedHashMap<String, Object> {
      * Get List value of config section element
      *
      * @param key - key (inside) current section
-```java
      * @return
      */
     public List getList(String key) {

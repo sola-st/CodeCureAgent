@@ -231,7 +231,6 @@ public class TripPattern extends TransitEntity implements Cloneable, Serializabl
     // TODO get rid of the per stop flags and just use the values in StopPattern, or an Enum
     private void setStopsFromStopPattern(StopPattern stopPattern) {
         perStopFlags = new int[stopPattern.size];
-```java
         int i = 0;
         for (Stop stop : stopPattern.stops) {
             // Assume that stops can be boarded with wheelchairs by default (defer to per-trip data)

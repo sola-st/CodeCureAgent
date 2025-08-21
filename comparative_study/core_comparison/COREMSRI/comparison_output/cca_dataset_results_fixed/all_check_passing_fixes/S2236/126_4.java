@@ -93,7 +93,6 @@ If you want to strictly avoid calling wait/notify on a Thread instance (which is
 To fully fix the warning, replace all synchronization on `this` to synchronization on a dedicated lock object.
 
 Below is the code fixed accordingly:
-```java
 package cn.nukkit.utils;
 
 import cn.nukkit.Server;

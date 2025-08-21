@@ -158,7 +158,6 @@ public class NFeRetAutorizacao4Stub extends org.apache.axis2.client.Stub {
         return emptyEnvelope;
         //        } catch (final org.apache.axis2.databinding.ADBException e) {
         //            throw org.apache.axis2.AxisFault.makeFault(e);
-```java
         //        }
     }
 

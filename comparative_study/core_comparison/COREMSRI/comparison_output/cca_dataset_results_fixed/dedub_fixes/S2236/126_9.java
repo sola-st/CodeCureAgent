@@ -98,7 +98,6 @@ Here is the modification needed:
 
 Add a private final Object lock:
 
-```java
 private final Object lock = new Object();
 ```
 
@@ -106,7 +105,6 @@ Replace the synchronized blocks on `this` with synchronized blocks on `lock`, an
 
 Here is the corrected code with minimal changes applied:
 
-```java
 package cn.nukkit.utils;
 
 import cn.nukkit.Server;

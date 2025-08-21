@@ -19617,7 +19617,6 @@ public final class GtfsRealtime {
       return PARSER.parseFrom(data);
     }
     public static com.google.transit.realtime.GtfsRealtime.TranslatedString parseFrom(
-```java
         if ((bitField0_ & 0x00000001) != 0x00000001) {
 
         if (translationBuilder_ != null) {

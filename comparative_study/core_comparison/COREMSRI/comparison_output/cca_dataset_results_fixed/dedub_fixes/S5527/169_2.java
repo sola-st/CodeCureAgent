@@ -541,7 +541,6 @@ public class XMLRPCClient {
 
 	/**
 	 * The Caller class is used to make asynchronous calls to the server.
-```java
 	 * For synchronous calls the Thread function of this class isn't used.
 	 */
 	private class Caller extends Thread {

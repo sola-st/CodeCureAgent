@@ -409,7 +409,6 @@ public class PrepStmtTest
         prep.setString(1, "a");
         prep.addBatch();
         int call1_length = prep.executeBatch().length;
-```java
         prep.close();
 
         ResultSet rs = stat.executeQuery("select * from t");

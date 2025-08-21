@@ -3146,7 +3146,6 @@ class RelationalOperations {
 		// treat both as lines
 
 		Line line_a = new Line(), line_b = new Line();
-```java
 		double[] scalars_a = new double[2];
 		double[] scalars_b = new double[2];
 		Point2D pt = new Point2D();

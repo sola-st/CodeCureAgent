@@ -276,7 +276,6 @@ public class StringSerializerTest extends TestCase
             byte[] buffered = session.toByteArray();
             byte[] buffered_needed_to_grow = session2.toByteArray();
             byte[] builtin = STRING.ser(Float.toString(i));
-```java
 
             assertEquals(builtin, buffered);
             assertEquals(builtin, buffered_needed_to_grow);

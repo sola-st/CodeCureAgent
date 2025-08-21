@@ -301,7 +301,6 @@ public class WKTReader
     // read close token if it was opened here
     if (opened) {
       getNextCloser(tokenizer);
-```java
   /**
    * Returns the next array of <code>Coordinate</code>s in the stream.
    *

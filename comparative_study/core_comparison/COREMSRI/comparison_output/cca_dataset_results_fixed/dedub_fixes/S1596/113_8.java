@@ -29,7 +29,6 @@
 package io.protostuff.runtime;
 
 import static io.protostuff.runtime.RuntimeFieldFactory.ID_ENUM_MAP;
-```java
 import static io.protostuff.runtime.RuntimeFieldFactory.ID_MAP;
 import static io.protostuff.runtime.RuntimeFieldFactory.STR_ENUM_MAP;
 import static io.protostuff.runtime.RuntimeFieldFactory.STR_MAP;

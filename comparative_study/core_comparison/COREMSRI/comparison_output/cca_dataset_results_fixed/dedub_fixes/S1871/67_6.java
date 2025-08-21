@@ -402,7 +402,6 @@ public abstract class Box implements Styleable, DisplayListItem {
     }
 
     public final CalculatedStyle getStyle() {
-```java
         return _style;
     }
 

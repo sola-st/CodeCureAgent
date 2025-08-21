@@ -109,7 +109,6 @@ public abstract class DB implements Codes
      * @see <a href="http://www.sqlite.org/c3ref/errcode.html">http://www.sqlite.org/c3ref/errcode.html</a>
      */
     abstract String errmsg() throws SQLException;
-```java
 
     /**
      * Returns the value for SQLITE_VERSION, SQLITE_VERSION_NUMBER, and SQLITE_SOURCE_ID C

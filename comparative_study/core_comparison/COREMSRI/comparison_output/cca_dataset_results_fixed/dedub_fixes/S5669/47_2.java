@@ -519,7 +519,6 @@ public class SiriAlertsUpdateHandlerTest extends GtfsTest {
     final FeedScopedId tripId = new FeedScopedId(FEED_ID, "route0-trip1");
 
     assertTrue(transitAlertService.getAllAlerts().isEmpty());
-```java
     // ... (rest of the unchanged code above)
 
     PtSituationElement ptSituation = createPtSituationElement(situationNumber,

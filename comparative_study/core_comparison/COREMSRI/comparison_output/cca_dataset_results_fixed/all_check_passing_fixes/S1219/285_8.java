@@ -636,7 +636,6 @@ public class CSSParser {
                 skip_whitespace();
                 break;
         }
-```java
     }
 
 //  combinator

@@ -48,7 +48,6 @@ import org.apache.jena.rdf.model.StmtIterator;
 import org.apache.jena.shared.Lock;
 import org.apache.jena.util.iterator.ClosableIterator;
 import org.apache.jena.vocabulary.OWL;
-```java
 import org.apache.jena.vocabulary.RDF;
 import org.apache.jena.vocabulary.RDFS;
 

@@ -264,7 +264,6 @@ public class FastDatePrinter implements DatePrinter, Serializable {
                 rule = new TextField(Calendar.AM_PM, AmPmStrings);
                 break;
             case 'k': // hour in day (1..24)
-```java
                 rule = new TwentyFourHourField(selectNumberRule(Calendar.HOUR_OF_DAY, tokenLen));
                 break;
             case 'K': // hour in am/pm (0..11)

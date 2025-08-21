@@ -1159,7 +1159,6 @@ public final class RuntimeReflectionFieldFactory
     };
 
     public static final RuntimeFieldFactory<Integer> ENUM = new RuntimeFieldFactory<Integer>(
-```java
             ID_ENUM)
     {
         @Override

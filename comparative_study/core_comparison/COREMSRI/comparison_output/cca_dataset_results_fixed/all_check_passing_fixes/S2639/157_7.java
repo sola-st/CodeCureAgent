@@ -512,5 +512,4 @@ public abstract class AbstractLicenseMojo extends AbstractMojo {
         CompletionService completionService = new ExecutorCompletionService(executorService);
         int count = 0;
         debug("Number of execution threads: %s", nThreads);
-```java
         return str.replaceAll("\\.", "*");

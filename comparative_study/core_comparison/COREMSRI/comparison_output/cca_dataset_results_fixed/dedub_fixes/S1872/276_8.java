@@ -1538,7 +1538,6 @@ public abstract class Geometry
 
   /**
    *  Performs an operation on the coordinates in this <code>Geometry</code>'s
-```java
    *  {@link CoordinateSequence}s.
    *  If the filter reports that a coordinate value has been changed,
    *  {@link #geometryChanged} will be called automatically.

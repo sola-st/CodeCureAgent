@@ -126,7 +126,6 @@ public abstract class NSObject implements Cloneable {
     /**
      * Helper method that adds correct indentation to the xml output.
      * Calling this method will add <code>level</code> number of tab characters
-```java
      * to the <code>xml</code> string.
      *
      * @param xml   The {@link StringBuilder} onto which the XML representation is appended.

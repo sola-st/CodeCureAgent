@@ -113,11 +113,10 @@ def run_sonarqube_stage4(dataset, debug_folder, diff_folder):
                 proposer_results_of_warning_folder, fix_file_name)
             with open(fix_path, "r") as f:
                 content = f.read()
-            # Remove ```java prefix if present for comparison
-            if content.startswith("```java"):
-                content = content[len("```java"):].lstrip()
+            # Remove ```java if present for comparison
+            content = re.sub(r"```java\n?", "", content)
 
-             # Remove duplicate fixes with identical content
+            # Remove duplicate fixes with identical content
             if content not in unique_contents.values():
                 unique_contents[fix_file_name] = content
 

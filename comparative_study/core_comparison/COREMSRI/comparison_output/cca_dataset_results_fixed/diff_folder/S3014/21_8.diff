@@ -1,0 +1,87 @@
+@@ -4,8 +4,7 @@
+ import java.lang.management.ManagementFactory;
+ import java.lang.management.OperatingSystemMXBean;
+ import java.util.ArrayList;
+-
+-import com.sun.management.UnixOperatingSystemMXBean;
++import java.util.Set;
+ 
+ /**
+  * Default implementation of a IntervalLoggerModel.  The DefaultIntervalLoggerModel
+@@ -38,8 +37,6 @@
+  */
+ public class DefaultIntervalLoggerModel implements IntervalLoggerModel {
+ 	
+-	private static ThreadGroup rootThreadGroup = null;
+-	
+ 	private ArrayList<IntervalProperty> list = new ArrayList<IntervalProperty>();
+ 	
+ 	public DefaultIntervalLoggerModel() {
+@@ -182,42 +179,36 @@
+ 	}
+ 	
+ 	/**
+-	 * Utility method to return all threads in system owned by the
+-	 * root ThreadGroup.
++	 * Utility method to return all threads in the system using ThreadMXBean.
++	 * This avoids usage of ThreadGroup and deprecated methods.
+ 	 * @return Array of all threads.
+ 	 */
+ 	private Thread[] getAllThreads() {
+-		
+-	    final ThreadGroup root = getRootThreadGroup( );
+-	    int ct = Thread.activeCount();
+-	    int n = 0;
+-	    Thread[] threads;
+-	    do {
+-	        ct *= 2;
+-	        threads = new Thread[ ct ];
+-	        n = root.enumerate( threads, true );
+-	    } while ( n == ct );
+-	    return java.util.Arrays.copyOf( threads, n );
+-		
++		// Using ThreadMXBean to get thread IDs
++		long[] threadIds = java.lang.management.ManagementFactory.getThreadMXBean().getAllThreadIds();
++		Thread[] threads = new Thread[threadIds.length];
++		int count = 0;
++
++		// Since ThreadMXBean only returns IDs, we map them to live Thread objects where possible
++		// by iterating over all live threads.
++		// Get all live threads (by hooking root thread group, but since that is restricted, do a different approach)
++		// Instead we iterate all threads possible in Thread.getAllStackTraces(), which returns a Map<Thread, StackTraceElement[]>
++		for (Thread t : Thread.getAllStackTraces().keySet()) {
++			for (int i = 0; i < threadIds.length; i++) {
++				if (threadIds[i] == t.getId()) {
++					threads[count++] = t;
++					break;
++				}
++			}
+ 	}
+ 	
+-	/**
+-	 * Utility method to retrieve the root ThreadGroup.  Specifically, the
+-	 * root ThreadGroups is where ThreadGroup.getParent() == null.
+-	 * @return Root ThreadGroup
+-	 */
+-	private ThreadGroup getRootThreadGroup() {
+-	
+-	    if ( rootThreadGroup != null )
+-	        return rootThreadGroup;
+-	    
+-	    ThreadGroup tg = Thread.currentThread( ).getThreadGroup( );
+-	    ThreadGroup ptg;
+-	    while ( (ptg = tg.getParent( )) != null )
+-	        tg = ptg;
+-	    
+-	    return tg;
+-		
++		if (count < threads.length) {
++			// shrink array if some threads missing
++			Thread[] result = new Thread[count];
++			System.arraycopy(threads, 0, result, 0, count);
++			return result;
++		}
++		return threads;
+ 	}
+ 	
+ }

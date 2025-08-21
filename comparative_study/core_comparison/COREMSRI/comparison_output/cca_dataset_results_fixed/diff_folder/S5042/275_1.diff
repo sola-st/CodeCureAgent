@@ -1,0 +1,57 @@
+@@ -75,14 +75,51 @@
+         if(contentLoaded) { return; }
+         contentLoaded = true;
+ 
++        final int THRESHOLD_ENTRIES = 10000;
++        final long THRESHOLD_SIZE = 1000000000L; // 1 GB
++        final double THRESHOLD_RATIO = 10.0;
++
+         try {
+             // The get name on ZipFile returns the full path, we want just the name.
+             this.zipFile = new ZipFile(file, ZipFile.OPEN_READ);
+ 
+             Enumeration<? extends ZipEntry> entries = zipFile.entries();
+ 
++            int totalEntryArchive = 0;
++            long totalSizeArchive = 0;
++
+             while (entries.hasMoreElements()) {
+                 ZipEntry entry = entries.nextElement();
++                totalEntryArchive++;
++
++                if (totalEntryArchive > THRESHOLD_ENTRIES) {
++                    throw new IOException("Too many entries in the archive: " + totalEntryArchive);
++                }
++
++                // We cannot trust ZipEntry.getSize() and getCompressedSize(), so we calculate actual size during extraction
++                try (var in = zipFile.getInputStream(entry)) {
++                    long totalSizeEntry = 0;
++                    byte[] buffer = new byte[2048];
++                    int nBytes;
++                    while ((nBytes = in.read(buffer)) > 0) {
++                        totalSizeEntry += nBytes;
++                        totalSizeArchive += nBytes;
++
++                        if (totalSizeArchive > THRESHOLD_SIZE) {
++                            throw new IOException("Uncompressed data size exceeds threshold: " + totalSizeArchive);
++                        }
++
++                        // Calculate compression ratio if compressed size > 0
++                        long compressedSize = entry.getCompressedSize();
++                        if (compressedSize > 0) {
++                            double compressionRatio = (double) totalSizeEntry / compressedSize;
++                            if (compressionRatio > THRESHOLD_RATIO) {
++                                throw new IOException("Compression ratio exceeds threshold: " + compressionRatio);
++                            }
++                        }
++                    }
++                }
++
+                 content.add(new ZipFileEntryDataSource(this, entry));
+             }
+         }
+@@ -94,3 +131,4 @@
+         }
+     }
+ }
++

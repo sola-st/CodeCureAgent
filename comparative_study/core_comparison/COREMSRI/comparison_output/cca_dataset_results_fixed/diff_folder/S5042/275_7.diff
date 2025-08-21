@@ -1,0 +1,66 @@
+@@ -8,6 +8,7 @@
+ 
+ import java.io.File;
+ import java.io.IOException;
++import java.io.InputStream;
+ import java.util.ArrayList;
+ import java.util.Collection;
+ import java.util.Enumeration;
+@@ -75,14 +76,52 @@
+         if(contentLoaded) { return; }
+         contentLoaded = true;
+ 
++        final int THRESHOLD_ENTRIES = 10000;
++        final long THRESHOLD_SIZE = 1_000_000_000L; // 1 GB
++        final double THRESHOLD_RATIO = 10.0;
++
+         try {
+             // The get name on ZipFile returns the full path, we want just the name.
+             this.zipFile = new ZipFile(file, ZipFile.OPEN_READ);
+ 
+             Enumeration<? extends ZipEntry> entries = zipFile.entries();
+ 
++            int totalEntryCount = 0;
++            long totalUncompressedSize = 0;
++
+             while (entries.hasMoreElements()) {
+                 ZipEntry entry = entries.nextElement();
++
++                totalEntryCount++;
++                if (totalEntryCount > THRESHOLD_ENTRIES) {
++                    throw new IOException("Too many entries in archive: " + totalEntryCount);
++                }
++
++                // Calculate actual uncompressed size by reading stream
++                long uncompressedEntrySize = 0;
++                long compressedEntrySize = entry.getCompressedSize();
++                if (compressedEntrySize <= 0) {
++                    compressedEntrySize = 1; // Avoid division by zero or negative values
++                }
++
++                try (InputStream in = zipFile.getInputStream(entry)) {
++                    byte[] buffer = new byte[2048];
++                    int read;
++                    while ((read = in.read(buffer)) > 0) {
++                        uncompressedEntrySize += read;
++                        totalUncompressedSize += read;
++
++                        double compressionRatio = (double)uncompressedEntrySize / compressedEntrySize;
++                        if (compressionRatio > THRESHOLD_RATIO) {
++                            throw new IOException("Suspicious compression ratio detected for entry: " + entry.getName());
++                        }
++                        if (totalUncompressedSize > THRESHOLD_SIZE) {
++                            throw new IOException("Uncompressed data size limit exceeded");
++                        }
++                    }
++                }
++
++                // After checks passed, add the entry to content
+                 content.add(new ZipFileEntryDataSource(this, entry));
+             }
+         }
+@@ -94,3 +133,4 @@
+         }
+     }
+ }
++

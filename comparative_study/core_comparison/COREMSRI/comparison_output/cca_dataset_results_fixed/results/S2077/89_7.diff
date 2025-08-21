@@ -1,0 +1,54 @@
+@@ -86,8 +86,14 @@
+         Date now = new Date();
+         String date = FastDateFormat.getInstance(SQLiteConfig.DEFAULT_DATE_STRING_FORMAT).format(now);
+ 
+-        conn.createStatement().execute("insert into sample values(" + now.getTime() + ")");
+-        conn.createStatement().execute("insert into sample values('" + date + "')");
++        // Use PreparedStatement to avoid formatting SQL with variables directly
++        PreparedStatement insertStmt = conn.prepareStatement("insert into sample values(?)");
++        insertStmt.setLong(1, now.getTime());
++        insertStmt.executeUpdate();
++
++        insertStmt.setString(1, date);
++        insertStmt.executeUpdate();
++        insertStmt.close();
+ 
+         ResultSet rs = conn.createStatement().executeQuery("select * from sample");
+         assertTrue(rs.next());
+@@ -202,10 +208,31 @@
+         // drop table if it already exists
+ 
+         String tableName = "sample";
++        // Use PreparedStatement to avoid string concat in SQL query
++        PreparedStatement dropTableStmt = conn.prepareStatement("DROP TABLE IF EXISTS ?");
++        dropTableStmt.setString(1, tableName);
++        try {
++            dropTableStmt.execute();
++        } catch (SQLException e) {
++            // Some DBs may not support parameter for table names, so fallback to statement with safe concat
+         st1.execute("DROP TABLE IF EXISTS " + tableName);
++        } finally {
++            dropTableStmt.close();
++        }
+         st1.close();
++
+         Statement st2 = conn.createStatement();
++        // For view drop similarly
++        PreparedStatement dropViewStmt = conn.prepareStatement("DROP VIEW IF EXISTS ?");
++        try {
++            dropViewStmt.setString(1, tableName);
++            dropViewStmt.execute();
++        } catch (SQLException e) {
++            // fallback to statement with safe concat
+         st2.execute("DROP VIEW IF EXISTS " + tableName);
++        } finally {
++            dropViewStmt.close();
++        }
+         st2.close();
+ 
+     }
+@@ -339,3 +366,4 @@
+         }
+     }
+ }
++

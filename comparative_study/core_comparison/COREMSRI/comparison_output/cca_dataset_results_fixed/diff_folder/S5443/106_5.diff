@@ -1,0 +1,104 @@
+@@ -22,6 +22,11 @@
+ 
+ import java.io.File;
+ import java.io.IOException;
++import java.nio.file.Files;
++import java.nio.file.attribute.FileAttribute;
++import java.nio.file.attribute.PosixFilePermission;
++import java.nio.file.attribute.PosixFilePermissions;
++import java.util.Set;
+ 
+ import org.aesh.command.impl.completer.CompleterData;
+ import org.aesh.command.impl.completer.FileOptionCompleter;
+@@ -45,23 +50,58 @@
+ 
+     private final AeshContext aeshContext = new DefaultAeshContext();
+ 
++    private static final File TEMP_DIR;
++    private static final FileAttribute<Set<PosixFilePermission>> PERMS;
++
++    static {
++        File tempDir = null;
++        FileAttribute<Set<PosixFilePermission>> perms = null;
++        try {
++            perms = PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwx------"));
++            tempDir = Files.createTempDirectory("secure_tmp", perms).toFile();
++            tempDir.deleteOnExit();
++        } catch (IOException | UnsupportedOperationException e) {
++            // fallback if Posix permissions not supported
++            try {
++                tempDir = Files.createTempDirectory("secure_tmp").toFile();
++                tempDir.setReadable(true, true);
++                tempDir.setWritable(true, true);
++                tempDir.setExecutable(true, true);
++                tempDir.deleteOnExit();
++            } catch (IOException ex) {
++                // If even this fails, tempDir stays null and tests will fail accordingly
++            }
++        }
++        TEMP_DIR = tempDir;
++        PERMS = perms;
++    }
++
+     @Test(expected = IllegalArgumentException.class)
+     public void testCompleterIllegalBaseDir() throws IOException {
+-        File file = File.createTempFile("tmp", ".tmp");
++        if (TEMP_DIR == null) {
++            throw new IOException("Failed to create secure temp directory");
++        }
++        File file = File.createTempFile("tmp", ".tmp", TEMP_DIR);
+         file.deleteOnExit();
+         aeshContext.setCurrentWorkingDirectory(new FileResource(file));
+     }
+ 
+     @Test(expected = IllegalArgumentException.class)
+     public void testCompleterIllegalFilter() throws IOException {
+-        File file = File.createTempFile("tmp", ".tmp");
++        if (TEMP_DIR == null) {
++            throw new IOException("Failed to create secure temp directory");
++        }
++        File file = File.createTempFile("tmp", ".tmp", TEMP_DIR);
+         file.deleteOnExit();
+         new FileOptionCompleter(null);
+     }
+ 
+     @Test
+     public void testCompleterSingleFile() throws IOException {
+-        File file = File.createTempFile("tmp", ".tmp");
++        if (TEMP_DIR == null) {
++            throw new IOException("Failed to create secure temp directory");
++        }
++        File file = File.createTempFile("tmp", ".tmp", TEMP_DIR);
+         file.delete();
+         file.mkdir();
+         file.deleteOnExit();
+@@ -89,7 +129,10 @@
+ 
+     @Test
+     public void testCompleterMultipleFile() throws IOException {
+-        File file = File.createTempFile("tmp", ".tmp");
++        if (TEMP_DIR == null) {
++            throw new IOException("Failed to create secure temp directory");
++        }
++        File file = File.createTempFile("tmp", ".tmp", TEMP_DIR);
+         file.delete();
+         file.mkdir();
+         file.deleteOnExit();
+@@ -106,12 +149,15 @@
+         assertNotNull(data.getCompleterValues());
+         assertEquals(2, data.getCompleterValues().size());
+         assertTrue(data.getCompleterValues().contains(new TerminalString(child.getName(), true)));
+-        assertTrue(data.getCompleterValues().contains(new TerminalString(child.getName(), true)));
++        assertTrue(data.getCompleterValues().contains(new TerminalString(child2.getName(), true)));
+     }
+ 
+     @Test
+     public void testCompleterMultipleDirectory() throws IOException {
+-        File file = File.createTempFile("tmp", ".tmp");
++        if (TEMP_DIR == null) {
++            throw new IOException("Failed to create secure temp directory");
++        }
++        File file = File.createTempFile("tmp", ".tmp", TEMP_DIR);
+         file.delete();
+         file.mkdir();
+         file.deleteOnExit();

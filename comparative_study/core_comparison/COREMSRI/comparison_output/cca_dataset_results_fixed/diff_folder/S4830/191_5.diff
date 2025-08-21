@@ -1,0 +1,97 @@
+@@ -237,6 +237,59 @@
+ 					}
+ 				}
+ 			};
++		} else {
++			// Use default TrustManager that validates certificates properly
++			try {
++				TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
++				tmf.init((java.security.KeyStore) null);
++				trustManagers = tmf.getTrustManagers();
++			} catch (Exception e) {
++				// Fallback to default manager if initialization fails
++				trustManagers = new TrustManager[] {
++					new X509TrustManager() {
++						private final X509TrustManager defaultTrustManager;
++
++						{
++							X509TrustManager tempTm = null;
++							try {
++								TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
++								tmf.init((java.security.KeyStore) null);
++								for (TrustManager tm : tmf.getTrustManagers()) {
++									if (tm instanceof X509TrustManager) {
++										tempTm = (X509TrustManager) tm;
++										break;
++									}
++								}
++							} catch(Exception ex) {
++								// ignore
++							}
++							defaultTrustManager = tempTm;
++						}
++
++						@Override
++						public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
++							if (defaultTrustManager != null) {
++								defaultTrustManager.checkClientTrusted(chain, authType);
++							}
++						}
++
++						@Override
++						public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
++							if (defaultTrustManager != null) {
++								defaultTrustManager.checkServerTrusted(chain, authType);
++							}
++						}
++
++						@Override
++						public X509Certificate[] getAcceptedIssuers() {
++							if (defaultTrustManager != null) {
++								return defaultTrustManager.getAcceptedIssuers();
++							}
++							return new X509Certificate[0];
++						}
++					}
++				};
++			}
+ 		}
+ 
+ 		if(isFlagSet(FLAGS_USE_SYSTEM_PROXY)) {
+@@ -430,35 +483,7 @@
+      */
+     public void installCustomKeyManager(KeyManager keyManager) {
+         if(!isFlagSet(FLAGS_SSL_IGNORE_INVALID_CERT)) {
+-            keyManagers = new KeyManager[] { keyManager };
+-        }
+-    }
+-
+-    /**
+-     * Installs custom {@link KeyManager KeyManagers} to handle SSL/TLS certificate
+-     * verification. This will replace any previously installed {@code KeyManagers}s.
+-     * If {@link #FLAGS_SSL_IGNORE_INVALID_CERT} is set, this won't do anything.
+-     *
+-     * @param keyManagers {@link KeyManager KeyManagers} to install.
+-     *
+-     * @see #installCustomKeyManager(javax.net.ssl.KeyManager)
+-     */
+-    public void installCustomKeyManagers(KeyManager[] keyManagers) {
+-      if(!isFlagSet(FLAGS_SSL_IGNORE_INVALID_CERT)) {
+-        this.keyManagers = keyManagers.clone();
+-      }
+-    }
+-
+-	/**
+-	 * Call a remote procedure on the server. The method must be described by
+-	 * a method name. If the method requires parameters, this must be set.
+-	 * The type of the return object depends on the server. You should consult
+-	 * the server documentation and then cast the return value according to that.
+-	 * This method will block until the server returned a result (or an error occurred).
+-	 * Read the README file delivered with the source code of this library for more
+-	 * information.
+-	 *
+-	 * @param method A method name to call.
++            keyManagers = new KeyManager[] { keyManager
+ 	 * @param params An array of parameters for the method.
+ 	 * @return The result of the server.
+ 	 * @throws XMLRPCException Will be thrown if an error occurred during the call.

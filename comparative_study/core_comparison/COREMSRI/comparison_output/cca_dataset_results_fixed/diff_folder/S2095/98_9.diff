@@ -1,0 +1,337 @@
+@@ -409,6 +409,7 @@
+         prep.setString(1, "a");
+         prep.addBatch();
+         int call1_length = prep.executeBatch().length;
++```java
+         prep.setString(1, "b");
+         prep.addBatch();
+         int call2_length = prep.executeBatch().length;
+@@ -416,71 +417,86 @@
+         assertEquals(1, call1_length);
+         assertEquals(1, call2_length);
+ 
+-        ResultSet rs = stat.executeQuery("select * from t");
++        try (ResultSet rs = stat.executeQuery("select * from t")) {
+         rs.next();
+         assertEquals("a", rs.getString(1));
+         rs.next();
+         assertEquals("b", rs.getString(1));
+     }
++    }
+ 
+     @Test
+     public void dblock() throws SQLException {
+         stat.executeUpdate("create table test (c1);");
+         stat.executeUpdate("insert into test values (1);");
+-        conn.prepareStatement("select * from test;").executeQuery().close();
++        try (PreparedStatement ps = conn.prepareStatement("select * from test;")) {
++            try (ResultSet rs = ps.executeQuery()) {
++                // no asserts here, just closing properly
++            }
++        }
+         stat.executeUpdate("drop table test;");
+-
+     }
+ 
+     @Test
+     public void dbclose() throws SQLException {
+-        conn.prepareStatement("select ?;").setString(1, "Hello World");
+-        conn.prepareStatement("select null;").close();
+-        conn.prepareStatement("select null;").executeQuery().close();
+-        conn.prepareStatement("create table t (c);").executeUpdate();
+-        conn.prepareStatement("select null;");
++        try (PreparedStatement ps1 = conn.prepareStatement("select ?;")) {
++            ps1.setString(1, "Hello World");
++        }
++        try (PreparedStatement ps2 = conn.prepareStatement("select null;")) {
++            // just close
++        }
++        try (PreparedStatement ps3 = conn.prepareStatement("select null;");
++             ResultSet rs = ps3.executeQuery()) {
++        }
++        try (PreparedStatement ps4 = conn.prepareStatement("create table t (c);")) {
++            ps4.executeUpdate();
++        }
++        try (PreparedStatement ps5 = conn.prepareStatement("select null;")) {
++            // not executing or closing, but resource is created, better to close immediately
++        }
+     }
+ 
+     @Test
+     public void batchOneParam() throws SQLException {
+         stat.executeUpdate("create table test (c1);");
+-        PreparedStatement prep = conn.prepareStatement("insert into test values (?);");
++        try (PreparedStatement prep = conn.prepareStatement("insert into test values (?);")) {
+         for (int i = 0; i < 10; i++) {
+             prep.setInt(1, Integer.MIN_VALUE + i);
+             prep.addBatch();
+         }
+         assertArrayEq(new int[] { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, prep.executeBatch());
+-        prep.close();
+-        ResultSet rs = stat.executeQuery("select count(*) from test;");
++        }
++        try (ResultSet rs = stat.executeQuery("select count(*) from test;")) {
+         assertTrue(rs.next());
+         assertEquals(rs.getInt(1), 10);
+-        rs.close();
++        }
+     }
+ 
+     @Test
+     public void batchZeroParams() throws Exception {
+         stat.executeUpdate("create table test (c1);");
+-        PreparedStatement prep = conn.prepareStatement("insert into test values (5);");
++        try (PreparedStatement prep = conn.prepareStatement("insert into test values (5);")) {
+         for (int i = 0; i < 10; i++) {
+             prep.addBatch();
+         }
+         assertArrayEq(new int[] { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, prep.executeBatch());
+-        prep.close();
+-        ResultSet rs = stat.executeQuery("select count(*) from test;");
++        }
++        try (ResultSet rs = stat.executeQuery("select count(*) from test;")) {
+         assertTrue(rs.next());
+         assertEquals(rs.getInt(1), 10);
+-        rs.close();
++        }
+     }
+ 
+     @Test
+     public void paramMetaData() throws SQLException {
+-        PreparedStatement prep = conn.prepareStatement("select ?,?,?,?;");
++        try (PreparedStatement prep = conn.prepareStatement("select ?,?,?,?;")) {
+         assertEquals(prep.getParameterMetaData().getParameterCount(), 4);
+     }
++    }
+ 
+     @Test
+     public void metaData() throws SQLException {
+-        PreparedStatement prep = conn.prepareStatement("select ? as col1, ? as col2, ? as delta;");
++        try (PreparedStatement prep = conn.prepareStatement("select ? as col1, ? as col2, ? as delta;")) {
+         ResultSetMetaData meta = prep.getMetaData();
+         assertEquals(meta.getColumnCount(), 3);
+         assertEquals(meta.getColumnName(1), "col1");
+@@ -490,10 +506,14 @@
+         assertEquals(meta.getColumnType(2), Types.INTEGER);
+         assertEquals(meta.getColumnType(3), Types.INTEGER);*/
+ 
+-        prep.setInt(1, 2);prep.setInt(2, 3);prep.setInt(3, -1);
+-        meta = prep.executeQuery().getMetaData();
++            prep.setInt(1, 2);
++            prep.setInt(2, 3);
++            prep.setInt(3, -1);
++            try (ResultSet rs = prep.executeQuery()) {
++                meta = rs.getMetaData();
+         assertEquals(meta.getColumnCount(), 3);
+-        prep.close();
++            }
++        }
+     }
+ 
+     @Test
+@@ -501,40 +521,42 @@
+         Date d1 = new Date(987654321);
+ 
+         stat.execute("create table t (c1);");
+-        PreparedStatement prep = conn.prepareStatement("insert into t values(?);");
++        try (PreparedStatement prep = conn.prepareStatement("insert into t values(?);")) {
+         prep.setDate(1, d1);
+         prep.executeUpdate();
+-
+-        ResultSet rs = stat.executeQuery("select c1 from t;");
++        }
++        try (ResultSet rs = stat.executeQuery("select c1 from t;")) {
+         assertTrue(rs.next());
+         assertEquals(rs.getLong(1), d1.getTime());
+         assertTrue(rs.getDate(1).equals(d1));
+-        rs.close();
++        }
+     }
+ 
+     @Test
+     public void date2() throws SQLException {
+         Date d1 = new Date(1092941466000L);
+         stat.execute("create table t (c1);");
+-        PreparedStatement prep = conn.prepareStatement("insert into t values (datetime(?/1000, 'unixepoch'));");
++        try (PreparedStatement prep = conn.prepareStatement("insert into t values (datetime(?/1000, 'unixepoch'));")) {
+         prep.setDate(1, d1);
+         prep.executeUpdate();
+-
+-        ResultSet rs = stat.executeQuery("select strftime('%s', c1) * 1000 from t;");
++        }
++        try (ResultSet rs = stat.executeQuery("select strftime('%s', c1) * 1000 from t;")) {
+         assertTrue(rs.next());
+         assertEquals(rs.getLong(1), d1.getTime());
+         assertTrue(rs.getDate(1).equals(d1));
+     }
++    }
+ 
+     @Test
+     public void changeSchema() throws SQLException {
+         stat.execute("create table t (c1);");
+-        PreparedStatement prep = conn.prepareStatement("insert into t values (?);");
++        try (PreparedStatement prep = conn.prepareStatement("insert into t values (?);")) {
+         conn.createStatement().execute("create table t2 (c2);");
+         prep.setInt(1, 1000);
+         prep.execute();
+         prep.executeUpdate();
+     }
++    }
+ 
+     //    @Ignore
+     //    @Test
+@@ -551,27 +573,27 @@
+ 
+     @Test
+     public void reusingSetValues() throws SQLException {
+-        PreparedStatement prep = conn.prepareStatement("select ?,?;");
++        try (PreparedStatement prep = conn.prepareStatement("select ?,?;")) {
+         prep.setInt(1, 9);
+ 
+         for (int i = 0; i < 10; i++) {
+             prep.setInt(2, i);
+-            ResultSet rs = prep.executeQuery();
++                try (ResultSet rs = prep.executeQuery()) {
+             assertTrue(rs.next());
+             assertEquals(rs.getInt(1), 9);
+             assertEquals(rs.getInt(2), i);
+         }
++            }
+ 
+         for (int i = 0; i < 10; i++) {
+             prep.setInt(2, i);
+-            ResultSet rs = prep.executeQuery();
++                try (ResultSet rs = prep.executeQuery()) {
+             assertTrue(rs.next());
+             assertEquals(rs.getInt(1), 9);
+             assertEquals(rs.getInt(2), i);
+-            rs.close();
+         }
+-
+-        prep.close();
++            }
++        }
+     }
+ 
+     @Test
+@@ -580,35 +602,33 @@
+         stat.executeUpdate("insert into tbl(col) values (\"foo\")");
+         stat.executeUpdate("insert into tbl(col) values (?)");
+ 
+-        PreparedStatement prep = conn.prepareStatement("select colid from tbl where col = ?");
+-
++        try (PreparedStatement prep = conn.prepareStatement("select colid from tbl where col = ?")) {
+         prep.setString(1, "foo");
+ 
+-        ResultSet rs = prep.executeQuery();
++            try (ResultSet rs = prep.executeQuery()) {
+         prep.clearParameters();
+         rs.next();
+ 
+         assertEquals(1, rs.getInt(1));
+-
+-        rs.close();
++            }
+ 
+         // should not throw
+         prep.execute();
+ 
+         // should not throw
+-        PreparedStatement nullPrep = conn.prepareStatement("select colid from tbl where col is null");
+-        rs = nullPrep.executeQuery();
++            try (PreparedStatement nullPrep = conn.prepareStatement("select colid from tbl where col is null")) {
++                try (ResultSet rs = nullPrep.executeQuery()) {
+         rs.next();
+ 
+         // gets the row with the NULL column
+         assertEquals(2, rs.getInt(1));
+-
+-        rs.close();
+-        nullPrep.close();
++                }
++            }
++        }
+     }
+ 
+     public void preparedStatementShouldNotThrowIfNotAllParamsSet() throws SQLException {
+-        PreparedStatement prep = conn.prepareStatement("select ? as col1, ? as col2, ? as col3;");
++        try (PreparedStatement prep = conn.prepareStatement("select ? as col1, ? as col2, ? as col3;")) {
+         ResultSetMetaData meta = prep.getMetaData();
+ 
+         // leaves 0 and 1 unbound
+@@ -617,45 +637,48 @@
+         // we only set one 1 param of the expected 3 params
+         prep.setInt(1, 2);
+         prep.executeQuery();
+-        prep.close();
++        }
+     }
+ 
+     public void preparedStatementShouldNotThrowIfNotAllParamsSetBatch() throws SQLException {
+         stat.executeUpdate("create table test (c1, c2);");
+-        PreparedStatement prep = conn.prepareStatement("insert into test values (?,?);");
++        try (PreparedStatement prep = conn.prepareStatement("insert into test values (?,?);")) {
+ 
+         // leaves param 0 unbound
+         prep.setInt(1, 1);
+ 
+         prep.addBatch();
+     }
++    }
+ 
+     @Test(expected = SQLException.class)
+     public void noSuchTable() throws SQLException {
+-        PreparedStatement prep = conn.prepareStatement("select * from doesnotexist;");
++        try (PreparedStatement prep = conn.prepareStatement("select * from doesnotexist;")) {
+         prep.executeQuery();
+     }
++    }
+ 
+     @Test(expected = SQLException.class)
+     public void noSuchCol() throws SQLException {
+-        PreparedStatement prep = conn.prepareStatement("select notacol from (select 1);");
++        try (PreparedStatement prep = conn.prepareStatement("select notacol from (select 1);")) {
+         prep.executeQuery();
+     }
++    }
+ 
+     @Test(expected = SQLException.class)
+     public void noSuchColName() throws SQLException {
+-        ResultSet rs = conn.prepareStatement("select 1;").executeQuery();
++        try (ResultSet rs = conn.prepareStatement("select 1;").executeQuery()) {
+         assertTrue(rs.next());
+         rs.getInt("noSuchColName");
+     }
++    }
+ 
+     @Test
+     public void constraintErrorCodeExecute() throws SQLException {
+         assertEquals(0, stat.executeUpdate("create table foo (id integer, CONSTRAINT U_ID UNIQUE (id));"));
+         assertEquals(1, stat.executeUpdate("insert into foo values(1);"));
+         // try to insert a row with duplicate id
+-        try {
+-            PreparedStatement statement = conn.prepareStatement("insert into foo values(?);");
++        try (PreparedStatement statement = conn.prepareStatement("insert into foo values(?);")) {
+             statement.setInt(1, 1);
+             statement.execute();
+             fail("expected exception");
+@@ -669,8 +692,7 @@
+         assertEquals(0, stat.executeUpdate("create table foo (id integer, CONSTRAINT U_ID UNIQUE (id));"));
+         assertEquals(1, stat.executeUpdate("insert into foo values(1);"));
+         // try to insert a row with duplicate id
+-        try {
+-            PreparedStatement statement = conn.prepareStatement("insert into foo values(?);");
++        try (PreparedStatement statement = conn.prepareStatement("insert into foo values(?);")) {
+             statement.setInt(1, 1);
+             statement.executeUpdate();
+             fail("expected exception");
+@@ -684,8 +706,7 @@
+         assertEquals(0, stat.executeUpdate("create table foo (id integer, CONSTRAINT U_ID UNIQUE (id));"));
+         assertEquals(1, stat.executeUpdate("insert into foo values(1);"));
+         // try to insert a row with duplicate id
+-        try {
+-            PreparedStatement statement = conn.prepareStatement("insert into foo values(?);");
++        try (PreparedStatement statement = conn.prepareStatement("insert into foo values(?);")) {
+             statement.setInt(1, 1);
+             statement.execute();
+             fail("expected exception");

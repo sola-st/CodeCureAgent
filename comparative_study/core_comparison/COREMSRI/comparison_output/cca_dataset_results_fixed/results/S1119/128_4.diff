@@ -1,0 +1,148 @@
+@@ -246,6 +246,7 @@
+             if (t == Token.TK_IMPORT_SYM) {
+                 StylesheetInfo info = new StylesheetInfo();
+                 info.setOrigin(stylesheet.getOrigin());
++```java
+                 info.setType("text/css");
+ 
+                 skip_whitespace();
+@@ -268,21 +269,18 @@
+                         t = la();
+                         if (t == Token.TK_IDENT) {
+                             info.addMedium(medium());
+-                            while (true) {
+                                 t = la();
+-                                if (t == Token.TK_COMMA) {
++                            while (t == Token.TK_COMMA) {
+                                     next();
+                                     skip_whitespace();
+                                     t = la();
+                                     if (t == Token.TK_IDENT) {
+                                         info.addMedium(medium());
++                                    t = la();
+                                     } else {
+                                         throw new CSSParseException(
+                                                 t, Token.TK_IDENT, getCurrentLine());
+                                     }
+-                                } else {
+-                                    break;
+-                                }
+                             }
+                         }
+                         t = next();
+@@ -377,25 +375,21 @@
+                 t = la();
+                 if (t == Token.TK_IDENT) {
+                     mediaRule.addMedium(medium());
+-                    while (true) {
+                         t = la();
+-                        if (t == Token.TK_COMMA) {
++                    while (t == Token.TK_COMMA) {
+                             next();
+                             skip_whitespace();
+                             t = la();
+                             if (t == Token.TK_IDENT) {
+                                 mediaRule.addMedium(medium());
++                            t = la();
+                             } else {
+                                 throw new CSSParseException(t, Token.TK_IDENT, getCurrentLine());
+                             }
+-                        } else {
+-                            break;
+-                        }
+                     }
+                     t = next();
+                     if (t == Token.TK_LBRACE) {
+                         skip_whitespace();
+-                        LOOP:
+                         while (true) {
+                             t = la();
+                             if (t == null) {
+@@ -404,7 +398,8 @@
+                             switch (t.getType()) {
+                                 case Token.RBRACE:
+                                     next();
+-                                    break LOOP;
++                                    skip_whitespace();
++                                    return;
+                                 default:
+                                     ruleset(mediaRule);
+                             }
+@@ -466,7 +461,6 @@
+                     // Prevent runaway threads with a max loop/counter
+                     int maxLoops = 1 * 1024 * 1024; // 1M is too much, 1K is probably too...
+                     int i = 0;
+-                    LOOP:
+                     while (true) {
+                         if (++i >= maxLoops)
+                             throw new CSSParseException(t, Token.TK_RBRACE, getCurrentLine());
+@@ -475,7 +469,7 @@
+                         if (t == Token.TK_RBRACE) {
+                             next();
+                             skip_whitespace();
+-                            break LOOP;
++                            break;
+                         } else {
+                             declaration_list(ruleset, false, true, true);
+                         }
+@@ -526,14 +520,13 @@
+                 skip_whitespace();
+                 t = next();
+                 if (t == Token.TK_LBRACE) {
+-                    LOOP:
+                     while (true) {
+                         skip_whitespace();
+                         t = la();
+                         if (t == Token.TK_RBRACE) {
+                             next();
+                             skip_whitespace();
+-                            break LOOP;
++                            break;
+                         } else if (t == Token.TK_AT_RULE) {
+                             margin(stylesheet, pageRule);
+                         } else {
+@@ -701,7 +694,6 @@
+             Ruleset ruleset, boolean expectEOF, boolean expectAtRule, boolean inFontFace) throws IOException {
+         //System.out.println("declaration_list()");
+         Token t;
+-        LOOP:
+         while (true) {
+             t = la();
+             switch (t.getType()) {
+@@ -710,17 +702,17 @@
+                     skip_whitespace();
+                     continue;
+                 case Token.RBRACE:
+-                    break LOOP;
++                    return;
+                 case Token.AT_RULE:
+                     if (expectAtRule) {
+-                        break LOOP;
++                        return;
+                     } else {
+                         declaration(ruleset, inFontFace);
+                     }
+                     // FIXME: intentional fall-thru here?
+                 case Token.EOF:
+                     if (expectEOF) {
+-                        break LOOP;
++                        return;
+                     }
+                     // fall through
+                 default:
+@@ -785,7 +777,6 @@
+         List<Selector> selectors = new ArrayList<>();
+         List<Token> combinators = new ArrayList<>();
+         selectors.add(simple_selector(ruleset));
+-        LOOP:
+         while (true) {
+             Token t = la();
+             switch (t.getType()) {
+@@ -805,6 +796,7 @@
+                             break;
+                         default:
+                             throw new CSSParseException(t, new Token[] { Token.TK_IDENT,
++
+                                     Token.TK_ASTERISK, Token.TK_HASH, Token.TK_PERIOD,
+                                     Token.TK_LBRACKET, Token.TK_COLON }, getCurrentLine());
+                     }

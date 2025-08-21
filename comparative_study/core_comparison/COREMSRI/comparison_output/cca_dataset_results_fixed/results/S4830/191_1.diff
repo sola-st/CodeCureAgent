@@ -1,0 +1,42 @@
+@@ -230,10 +230,27 @@
+ 							throws CertificateException { }
+ 
+ 					public void checkServerTrusted(X509Certificate[] xcs, String string)
+-							throws CertificateException { }
++							throws CertificateException {
++                        // Properly validate the server certificate chain using default trust manager
++                        // To fix the SonarQube warning, delegate validation to default trust managers
++                        // Get default TrustManagerFactory and validate the chain
++                        try {
++                            TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
++                            tmf.init((java.security.KeyStore) null);
++                            for (TrustManager tm : tmf.getTrustManagers()) {
++                                if (tm instanceof X509TrustManager) {
++                                    ((X509TrustManager) tm).checkServerTrusted(xcs, string);
++                                    return;
++                                }
++                            }
++                            throw new CertificateException("No X509TrustManager found");
++                        } catch (Exception e) {
++                            throw new CertificateException("Certificate validation failed", e);
++                        }
++                    }
+ 
+ 					public X509Certificate[] getAcceptedIssuers() {
+-						return null;
++						return new X509Certificate[0];
+ 					}
+ 				}
+ 			};
+@@ -455,10 +472,7 @@
+ 	 * The type of the return object depends on the server. You should consult
+ 	 * the server documentation and then cast the return value according to that.
+ 	 * This method will block until the server returned a result (or an error occurred).
+-	 * Read the README file delivered with the source code of this library for more
+-	 * information.
+-	 *
+-	 * @param method A method name to call.
++	 * Read the README
+ 	 * @param params An array of parameters for the method.
+ 	 * @return The result of the server.
+ 	 * @throws XMLRPCException Will be thrown if an error occurred during the call.

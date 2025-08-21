@@ -1,0 +1,70 @@
+@@ -11,21 +11,35 @@
+ package me.superblaubeere27.jobf.processors.encryption.string;
+ 
+ import javax.crypto.Cipher;
++import javax.crypto.spec.GCMParameterSpec;
+ import javax.crypto.spec.SecretKeySpec;
+ import java.nio.charset.StandardCharsets;
+ import java.security.MessageDigest;
++import java.security.SecureRandom;
+ import java.util.Arrays;
+ import java.util.Base64;
+ 
+ public class DESEncryptionAlgorithm implements IStringEncryptionAlgorithm {
++    private static final int GCM_TAG_LENGTH = 128;
++    private static final int IV_LENGTH = 12; // 12 bytes IV for GCM recommended
++
+     public static String decrypt(String obj, String key) {
+         try {
+-            SecretKeySpec keySpec = new SecretKeySpec(Arrays.copyOf(MessageDigest.getInstance("MD5").digest(key.getBytes(StandardCharsets.UTF_8)), 8), "DES");
++            byte[] decoded = Base64.getDecoder().decode(obj.getBytes(StandardCharsets.UTF_8));
++            // Extract IV
++            byte[] iv = Arrays.copyOfRange(decoded, 0, IV_LENGTH);
++            byte[] cipherText = Arrays.copyOfRange(decoded, IV_LENGTH, decoded.length);
++
++            byte[] keyBytes = Arrays.copyOf(MessageDigest.getInstance("SHA-256").digest(key.getBytes(StandardCharsets.UTF_8)), 16);
++            SecretKeySpec keySpec = new SecretKeySpec(keyBytes, "AES");
++
++            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
++            GCMParameterSpec spec = new GCMParameterSpec(GCM_TAG_LENGTH, iv);
++            cipher.init(Cipher.DECRYPT_MODE, keySpec, spec);
+ 
+-            Cipher des = Cipher.getInstance("DES");
+-            des.init(Cipher.DECRYPT_MODE, keySpec);
++            byte[] decrypted = cipher.doFinal(cipherText);
+ 
+-            return new String(des.doFinal(Base64.getDecoder().decode(obj.getBytes(StandardCharsets.UTF_8))), StandardCharsets.UTF_8);
++            return new String(decrypted, StandardCharsets.UTF_8);
+ 
+         } catch (Exception e) {
+             e.printStackTrace();
+@@ -36,12 +50,25 @@
+     @Override
+     public String encrypt(String obj, String key) {
+         try {
+-            SecretKeySpec keySpec = new SecretKeySpec(Arrays.copyOf(MessageDigest.getInstance("MD5").digest(key.getBytes(StandardCharsets.UTF_8)), 8), "DES");
++            byte[] keyBytes = Arrays.copyOf(MessageDigest.getInstance("SHA-256").digest(key.getBytes(StandardCharsets.UTF_8)), 16);
++            SecretKeySpec keySpec = new SecretKeySpec(keyBytes, "AES");
++
++            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
++            byte[] iv = new byte[IV_LENGTH];
++            SecureRandom random = new SecureRandom();
++            random.nextBytes(iv);
++
++            GCMParameterSpec spec = new GCMParameterSpec(GCM_TAG_LENGTH, iv);
++            cipher.init(Cipher.ENCRYPT_MODE, keySpec, spec);
++
++            byte[] encrypted = cipher.doFinal(obj.getBytes(StandardCharsets.UTF_8));
+ 
+-            Cipher des = Cipher.getInstance("DES");
+-            des.init(Cipher.ENCRYPT_MODE, keySpec);
++            // Prepend IV to encrypted bytes
++            byte[] encryptedIVAndText = new byte[IV_LENGTH + encrypted.length];
++            System.arraycopy(iv, 0, encryptedIVAndText, 0, IV_LENGTH);
++            System.arraycopy(encrypted, 0, encryptedIVAndText, IV_LENGTH, encrypted.length);
+ 
+-            return new String(Base64.getEncoder().encode(des.doFinal(obj.getBytes(StandardCharsets.UTF_8))), StandardCharsets.UTF_8);
++            return new String(Base64.getEncoder().encode(encryptedIVAndText), StandardCharsets.UTF_8);
+ 
+         } catch (Exception e) {
+             e.printStackTrace();

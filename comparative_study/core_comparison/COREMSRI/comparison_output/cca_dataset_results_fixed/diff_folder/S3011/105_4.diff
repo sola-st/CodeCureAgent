@@ -1,0 +1,573 @@
+@@ -1159,6 +1159,7 @@
+     };
+ 
+     public static final RuntimeFieldFactory<Integer> ENUM = new RuntimeFieldFactory<Integer>(
++```java
+             ID_ENUM)
+     {
+         @Override
+@@ -1171,16 +1172,15 @@
+             return new Field<T>(FieldType.ENUM, number, name,
+                     f.getAnnotation(Tag.class))
+             {
+-                {
+-                    f.setAccessible(true);
+-                }
++                // Removed f.setAccessible(true); to avoid increasing accessibility
+ 
+                 public void mergeFrom(Input input, T message)
+                         throws IOException
+                 {
+                     try
+                     {
+-                        f.set(message, eio.readFrom(input));
++                        // Use a helper method or rely on accessible setter if available
++                        setFieldValue(message, eio.readFrom(input));
+                     }
+                     catch (IllegalAccessException e)
+                     {
+@@ -1198,7 +1198,7 @@
+                     final Enum<?> existing;
+                     try
+                     {
+-                        existing = (Enum<?>) f.get(message);
++                        existing = (Enum<?>) getFieldValue(message);
+                     }
+                     catch (IllegalAccessException e)
+                     {
+@@ -1218,6 +1218,36 @@
+                 {
+                     EnumIO.transfer(pipe, input, output, number, repeated, strategy);
+                 }
++
++                private void setFieldValue(Object message, Object value) throws IllegalAccessException {
++                    // Try to use setter method or other safe way instead of reflection field access
++                    try {
++                        String setterName = "set" + Character.toUpperCase(f.getName().charAt(0)) + f.getName().substring(1);
++                        java.lang.reflect.Method setter = message.getClass().getMethod(setterName, f.getType());
++                        setter.invoke(message, value);
++                    } catch (NoSuchMethodException | java.lang.reflect.InvocationTargetException e) {
++                        // Fallback if no setter, try to set field if accessible
++                        if (f.canAccess(message)) {
++                            f.set(message, value);
++                        } else {
++                            throw new IllegalAccessException("Cannot access field or setter for " + f.getName());
++                        }
++                    }
++                }
++
++                private Object getFieldValue(Object message) throws IllegalAccessException {
++                    try {
++                        String getterName = "get" + Character.toUpperCase(f.getName().charAt(0)) + f.getName().substring(1);
++                        java.lang.reflect.Method getter = message.getClass().getMethod(getterName);
++                        return getter.invoke(message);
++                    } catch (NoSuchMethodException | java.lang.reflect.InvocationTargetException e) {
++                        if (f.canAccess(message)) {
++                            return f.get(message);
++                        } else {
++                            throw new IllegalAccessException("Cannot access field or getter for " + f.getName());
++                        }
++                    }
++                }
+             };
+         }
+ 
+@@ -1269,17 +1299,15 @@
+                     strategy.getSchemaWrapper(type, true), FieldType.MESSAGE,
+                     number, name, false, f.getAnnotation(Tag.class))
+             {
+-                {
+-                    f.setAccessible(true);
+-                }
++                // Removed f.setAccessible(true);
+ 
+                 public void mergeFrom(Input input, T message)
+                         throws IOException
+                 {
+                     try
+                     {
+-                        f.set(message,
+-                                input.mergeObject(f.get(message), getSchema()));
++                        setFieldValue(message,
++                                input.mergeObject(getFieldValue(message), getSchema()));
+                     }
+                     catch (IllegalAccessException e)
+                     {
+@@ -1297,7 +1325,7 @@
+                     final Object existing;
+                     try
+                     {
+-                        existing = f.get(message);
++                        existing = getFieldValue(message);
+                     }
+                     catch (IllegalAccessException e)
+                     {
+@@ -1323,6 +1351,34 @@
+                 {
+                     return POJO.create(number, name, f, strategy);
+                 }
++
++                private void setFieldValue(Object message, Object value) throws IllegalAccessException {
++                    try {
++                        String setterName = "set" + Character.toUpperCase(f.getName().charAt(0)) + f.getName().substring(1);
++                        java.lang.reflect.Method setter = message.getClass().getMethod(setterName, f.getType());
++                        setter.invoke(message, value);
++                    } catch (NoSuchMethodException | java.lang.reflect.InvocationTargetException e) {
++                        if (f.canAccess(message)) {
++                            f.set(message, value);
++                        } else {
++                            throw new IllegalAccessException("Cannot access field or setter for " + f.getName());
++                        }
++                    }
++                }
++
++                private Object getFieldValue(Object message) throws IllegalAccessException {
++                    try {
++                        String getterName = "get" + Character.toUpperCase(f.getName().charAt(0)) + f.getName().substring(1);
++                        java.lang.reflect.Method getter = message.getClass().getMethod(getterName);
++                        return getter.invoke(message);
++                    } catch (NoSuchMethodException | java.lang.reflect.InvocationTargetException e) {
++                        if (f.canAccess(message)) {
++                            return f.get(message);
++                        } else {
++                            throw new IllegalAccessException("Cannot access field or getter for " + f.getName());
++                        }
++                    }
++                }
+             };
+         }
+ 
+@@ -1374,9 +1430,7 @@
+                     FieldType.MESSAGE, number, name, false,
+                     f.getAnnotation(Tag.class), strategy)
+             {
+-                {
+-                    f.setAccessible(true);
+-                }
++                // Removed f.setAccessible(true);
+ 
+                 public void mergeFrom(Input input, T message)
+                         throws IOException
+@@ -1388,7 +1442,7 @@
+                         // a reference from polymorphic+cyclic graph deser
+                         try
+                         {
+-                            f.set(message, value);
++                            setFieldValue(message, value);
+                         }
+                         catch (IllegalAccessException e)
+                         {
+@@ -1407,7 +1461,7 @@
+                     final Object existing;
+                     try
+                     {
+-                        existing = f.get(message);
++                        existing = getFieldValue(message);
+                     }
+                     catch (IllegalAccessException e)
+                     {
+@@ -1433,7 +1487,7 @@
+                 {
+                     try
+                     {
+-                        final Object existing = f.get(message);
++                        final Object existing = getFieldValue(message);
+ 
+                         // merge if not null and is same type.
+                         final Object value = existing == null
+@@ -1447,7 +1501,7 @@
+                         }
+ 
+                         schema.mergeFrom(input, value);
+-                        f.set(message, value);
++                        setFieldValue(message, value);
+                     }
+                     catch (IllegalAccessException e)
+                     {
+@@ -1464,6 +1518,34 @@
+                 {
+                     return POLYMORPHIC_POJO.create(number, name, f, strategy);
+                 }
++
++                private void setFieldValue(Object message, Object value) throws IllegalAccessException {
++                    try {
++                        String setterName = "set" + Character.toUpperCase(f.getName().charAt(0)) + f.getName().substring(1);
++                        java.lang.reflect.Method setter = message.getClass().getMethod(setterName, f.getType());
++                        setter.invoke(message, value);
++                    } catch (NoSuchMethodException | java.lang.reflect.InvocationTargetException e) {
++                        if (f.canAccess(message)) {
++                            f.set(message, value);
++                        } else {
++                            throw new IllegalAccessException("Cannot access field or setter for " + f.getName());
++                        }
++                    }
++                }
++
++                private Object getFieldValue(Object message) throws IllegalAccessException {
++                    try {
++                        String getterName = "get" + Character.toUpperCase(f.getName().charAt(0)) + f.getName().substring(1);
++                        java.lang.reflect.Method getter = message.getClass().getMethod(getterName);
++                        return getter.invoke(message);
++                    } catch (NoSuchMethodException | java.lang.reflect.InvocationTargetException e) {
++                        if (f.canAccess(message)) {
++                            return f.get(message);
++                        } else {
++                            throw new IllegalAccessException("Cannot access field or getter for " + f.getName());
++                        }
++                    }
++                }
+             };
+         }
+ 
+@@ -1517,9 +1599,7 @@
+                     PolymorphicSchemaFactories.getFactoryFromField(f, strategy),
+                     strategy)
+             {
+-                {
+-                    f.setAccessible(true);
+-                }
++                // Removed f.setAccessible(true);
+ 
+                 public void mergeFrom(Input input, T message)
+                         throws IOException
+@@ -1531,7 +1611,7 @@
+                         // a reference from polymorphic+cyclic graph deser
+                         try
+                         {
+-                            f.set(message, value);
++                            setFieldValue(message, value);
+                         }
+                         catch (IllegalAccessException e)
+                         {
+@@ -1550,7 +1630,7 @@
+                     final Object existing;
+                     try
+                     {
+-                        existing = f.get(message);
++                        existing = getFieldValue(message);
+                     }
+                     catch (IllegalAccessException e)
+                     {
+@@ -1576,7 +1656,7 @@
+                 {
+                     try
+                     {
+-                        f.set(message, value);
++                        setFieldValue(message, value);
+                     }
+                     catch (IllegalAccessException e)
+                     {
+@@ -1593,6 +1673,34 @@
+                 {
+                     return OBJECT.create(number, name, f, strategy);
+                 }
++
++                private void setFieldValue(Object message, Object value) throws IllegalAccessException {
++                    try {
++                        String setterName = "set" + Character.toUpperCase(f.getName().charAt(0)) + f.getName().substring(1);
++                        java.lang.reflect.Method setter = message.getClass().getMethod(setterName, f.getType());
++                        setter.invoke(message, value);
++                    } catch (NoSuchMethodException | java.lang.reflect.InvocationTargetException e) {
++                        if (f.canAccess(message)) {
++                            f.set(message, value);
++                        } else {
++                            throw new IllegalAccessException("Cannot access field or setter for " + f.getName());
++                        }
++                    }
++                }
++
++                private Object getFieldValue(Object message) throws IllegalAccessException {
++                    try {
++                        String getterName = "get" + Character.toUpperCase(f.getName().charAt(0)) + f.getName().substring(1);
++                        java.lang.reflect.Method getter = message.getClass().getMethod(getterName);
++                        return getter.invoke(message);
++                    } catch (NoSuchMethodException | java.lang.reflect.InvocationTargetException e) {
++                        if (f.canAccess(message)) {
++                            return f.get(message);
++                        } else {
++                            throw new IllegalAccessException("Cannot access field or getter for " + f.getName());
++                        }
++                    }
++                }
+             };
+         }
+ 
+@@ -1639,16 +1747,14 @@
+             return new Field<T>(FieldType.STRING, number, name,
+                     f.getAnnotation(Tag.class))
+             {
+-                {
+-                    f.setAccessible(true);
+-                }
++                // Removed f.setAccessible(true);
+ 
+                 public void mergeFrom(Input input, T message)
+                         throws IOException
+                 {
+                     try
+                     {
+-                        f.set(message, new BigDecimal(input.readString()));
++                        setFieldValue(message, new BigDecimal(input.readString()));
+                     }
+                     catch (IllegalAccessException e)
+                     {
+@@ -1665,7 +1771,7 @@
+                 {
+                     try
+                     {
+-                        BigDecimal value = (BigDecimal) f.get(message);
++                        BigDecimal value = (BigDecimal) getFieldValue(message);
+                         if (value != null)
+                             output.writeString(number, value.toString(), false);
+                     }
+@@ -1684,239 +1790,22 @@
+                 {
+                     input.transferByteRangeTo(output, true, number, repeated);
+                 }
+-            };
+-        }
+ 
+-        @Override
+-        public void transfer(Pipe pipe, Input input, Output output, int number,
+-                boolean repeated) throws IOException
+-        {
+-            input.transferByteRangeTo(output, true, number, repeated);
+-        }
+-
+-        @Override
+-        public BigDecimal readFrom(Input input) throws IOException
+-        {
+-            return new BigDecimal(input.readString());
+-        }
+-
+-        @Override
+-        public void writeTo(Output output, int number, BigDecimal value,
+-                boolean repeated) throws IOException
+-        {
+-            output.writeString(number, value.toString(), repeated);
+-        }
+-
+-        @Override
+-        public FieldType getFieldType()
+-        {
+-            return FieldType.STRING;
+-        }
+-
+-        @Override
+-        public Class<?> typeClass()
+-        {
+-            return BigDecimal.class;
+-        }
+-    };
+-
+-    public static final RuntimeFieldFactory<BigInteger> BIGINTEGER = new RuntimeFieldFactory<BigInteger>(
+-            ID_BIGINTEGER)
+-    {
+-        @Override
+-        public <T> Field<T> create(int number, String name,
+-                final java.lang.reflect.Field f, IdStrategy strategy)
+-        {
+-            return new Field<T>(FieldType.BYTES, number, name,
+-                    f.getAnnotation(Tag.class))
+-            {
+-                {
+-                    f.setAccessible(true);
+-                }
+-
+-                public void mergeFrom(Input input, T message)
+-                        throws IOException
+-                {
+-                    try
+-                    {
+-                        f.set(message, new BigInteger(input.readByteArray()));
+-                    }
+-                    catch (IllegalAccessException e)
+-                    {
+-                        throw new RuntimeException(e);
+-                    }
+-                    catch (IllegalArgumentException e)
+-                    {
+-                        throw new RuntimeException(e);
+-                    }
+-                }
+-
+-                public void writeTo(Output output, T message)
+-                        throws IOException
+-                {
+-                    try
+-                    {
+-                        BigInteger value = (BigInteger) f.get(message);
+-                        if (value != null)
+-                            output.writeByteArray(number, value.toByteArray(),
+-                                    false);
+-                    }
+-                    catch (IllegalAccessException e)
+-                    {
+-                        throw new RuntimeException(e);
+-                    }
+-                    catch (IllegalArgumentException e)
+-                    {
+-                        throw new RuntimeException(e);
+-                    }
+-                }
+-
+-                public void transfer(Pipe pipe, Input input, Output output,
+-                        boolean repeated) throws IOException
+-                {
+-                    input.transferByteRangeTo(output, false, number, repeated);
+-                }
+-            };
+-        }
+-
+-        @Override
+-        public void transfer(Pipe pipe, Input input, Output output, int number,
+-                boolean repeated) throws IOException
+-        {
+-            input.transferByteRangeTo(output, false, number, repeated);
+-        }
+-
+-        @Override
+-        public BigInteger readFrom(Input input) throws IOException
+-        {
+-            return new BigInteger(input.readByteArray());
+-        }
+-
+-        @Override
+-        public void writeTo(Output output, int number, BigInteger value,
+-                boolean repeated) throws IOException
+-        {
+-            output.writeByteArray(number, value.toByteArray(), repeated);
+-        }
+-
+-        @Override
+-        public FieldType getFieldType()
+-        {
+-            return FieldType.BYTES;
+-        }
+-
+-        @Override
+-        public Class<?> typeClass()
+-        {
+-            return BigInteger.class;
+-        }
+-    };
+-
+-    public static final RuntimeFieldFactory<Date> DATE = new RuntimeFieldFactory<Date>(
+-            ID_DATE)
+-    {
+-        @Override
+-        public <T> Field<T> create(int number, String name,
+-                final java.lang.reflect.Field f, IdStrategy strategy)
+-        {
+-            return new Field<T>(FieldType.FIXED64, number, name,
+-                    f.getAnnotation(Tag.class))
+-            {
+-                {
+-                    f.setAccessible(true);
+-                }
+-
+-                public void mergeFrom(Input input, T message)
+-                        throws IOException
+-                {
+-                    try
+-                    {
+-                        f.set(message, new Date(input.readFixed64()));
+-                    }
+-                    catch (IllegalAccessException e)
+-                    {
+-                        throw new RuntimeException(e);
+-                    }
+-                    catch (IllegalArgumentException e)
+-                    {
+-                        throw new RuntimeException(e);
+-                    }
+-                }
+-
+-                public void writeTo(Output output, T message)
+-                        throws IOException
+-                {
+-                    try
+-                    {
+-                        Date value = (Date) f.get(message);
+-                        if (value != null)
+-                            output.writeFixed64(number, value.getTime(), false);
+-                    }
+-                    catch (IllegalAccessException e)
+-                    {
+-                        throw new RuntimeException(e);
+-                    }
+-                    catch (IllegalArgumentException e)
+-                    {
+-                        throw new RuntimeException(e);
+-                    }
+-                }
+-
+-                public void transfer(Pipe pipe, Input input, Output output,
+-                        boolean repeated) throws IOException
+-                {
+-                    output.writeFixed64(number, input.readFixed64(), repeated);
+-                }
+-            };
+-        }
+-
+-        @Override
+-        public void transfer(Pipe pipe, Input input, Output output, int number,
+-                boolean repeated) throws IOException
+-        {
+-            output.writeFixed64(number, input.readFixed64(), repeated);
+-        }
+-
+-        @Override
+-        public Date readFrom(Input input) throws IOException
+-        {
+-            return new Date(input.readFixed64());
+-        }
+-
+-        @Override
+-        public void writeTo(Output output, int number, Date value,
+-                boolean repeated) throws IOException
+-        {
+-            output.writeFixed64(number, value.getTime(), repeated);
++                private void setFieldValue(Object message, Object value) throws IllegalAccessException {
++                    try {
++                        String setterName = "set" + Character.toUpperCase(f.getName().charAt(0)) + f.getName().substring(1);
++                        java.lang.reflect.Method setter = message.getClass().getMethod(setterName, f.getType());
++                        setter.invoke(message, value);
++                    } catch (NoSuchMethodException | java.lang.reflect.InvocationTargetException e) {
++                        if (f.canAccess(message)) {
++                            f.set(message, value);
++                        } else {
++                            throw new IllegalAccessException("Cannot access field or setter for " + f.getName());
+         }
+-
+-        @Override
+-        public FieldType getFieldType()
+-        {
+-            return FieldType.FIXED64;
+         }
+-
+-        @Override
+-        public Class<?> typeClass()
+-        {
+-            return Date.class;
+         }
+-    };
+ 
+-    public static final RuntimeFieldFactory<Object> DELEGATE = new RuntimeFieldFactory<Object>(
+-            ID_DELEGATE)
+-    {
+-        @Override
+-        @SuppressWarnings("unchecked")
+-        public <T> Field<T> create(int number, String name,
+-                final java.lang.reflect.Field f, IdStrategy strategy)
+-        {
+-            final Delegate<Object> delegate = strategy
+-                    .getDelegate((Class<Object>) f.getType());
+-
+-            return new Field<T>(FieldType.BYTES, number, name,
+-                    f.getAnnotation(Tag.class))
+-            {
++                private Object getFieldValue
+                 {
+                     f.setAccessible(true);
+                 }

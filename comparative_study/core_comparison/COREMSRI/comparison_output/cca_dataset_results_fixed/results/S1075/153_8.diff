@@ -1,0 +1,71 @@
+@@ -33,11 +33,20 @@
+   private final CopyExecutorStub copyExecutorStub = new CopyExecutorStub();
+   private MojoTestSupport mojoTestSupport;
+ 
++  private File testRoot;
++
+   @Before
+   public void setUp() throws Exception {
+     mojoTestSupport = new MojoTestSupport(BuildHelperMojo.class);
+     mementos.add(StaticStubSupport.install(BuildHelperMojo.class, "executor", copyExecutorStub));
+     mementos.add(SystemPropertySupport.preserve("user.dir"));
++
++    // Use a configurable test directory instead of hardcoded path
++    String testRootPath = System.getProperty("test.root.dir");
++    if (testRootPath == null || testRootPath.isEmpty()) {
++      testRootPath = System.getProperty("user.dir"); // fallback
++    }
++    testRoot = new File(testRootPath);
+   }
+ 
+   @After
+@@ -95,37 +104,37 @@
+ 
+   @Test
+   public void whenSourceAndTargetAbsolute_useAbsolutePaths() throws Exception {
+-    setMojoParameter("sourceFile", "/root/source");
+-    setMojoParameter("targetFile", new File("/root/target"));
++    setMojoParameter("sourceFile", testRoot.toPath().resolve("source").toString());
++    setMojoParameter("targetFile", new File(testRoot, "target"));
+ 
+     mojo.execute();
+ 
+-    assertThat(copyExecutorStub.sourcePath, equalTo("/root/source"));
+-    assertThat(copyExecutorStub.targetPath, equalTo("/root/target"));
++    assertThat(copyExecutorStub.sourcePath, equalTo(testRoot.toPath().resolve("source").toString()));
++    assertThat(copyExecutorStub.targetPath, equalTo(new File(testRoot, "target").getPath()));
+   }
+ 
+   @Test
+   public void whenSourcePathIsRelative_computeAbsoluteRelativeToUserDir() throws Exception {
+     setMojoParameter("sourceFile", "source");
+-    setMojoParameter("targetFile", new File("/root/target"));
+-    setMojoParameter("userDir", new File("/root/nested"));
++    setMojoParameter("targetFile", new File(testRoot, "target"));
++    setMojoParameter("userDir", new File(testRoot, "nested"));
+ 
+     mojo.execute();
+ 
+-    assertThat(copyExecutorStub.sourcePath, equalTo("/root/nested/source"));
+-    assertThat(copyExecutorStub.targetPath, equalTo("/root/target"));
++    assertThat(copyExecutorStub.sourcePath, equalTo(new File(new File(testRoot, "nested"), "source").getPath()));
++    assertThat(copyExecutorStub.targetPath, equalTo(new File(testRoot, "target").getPath()));
+   }
+ 
+   @Test
+   public void whenSourcePathIsRelativeAndNoUserDir_useSystemProperty() throws Exception {
+-    System.setProperty("user.dir", "/user");
++    System.setProperty("user.dir", testRoot.getPath());
+     setMojoParameter("sourceFile", "source");
+-    setMojoParameter("targetFile", new File("/root/target"));
++    setMojoParameter("targetFile", new File(testRoot, "target"));
+ 
+     mojo.execute();
+ 
+-    assertThat(copyExecutorStub.sourcePath, equalTo("/user/source"));
+-    assertThat(copyExecutorStub.targetPath, equalTo("/root/target"));
++    assertThat(copyExecutorStub.sourcePath, equalTo(new File(testRoot, "source").getPath()));
++    assertThat(copyExecutorStub.targetPath, equalTo(new File(testRoot, "target").getPath()));
+   }
+ 
+   private void setMojoParameter(String fieldName, Object value) throws Exception {

@@ -123,7 +123,6 @@ public class DataPropertyDaoJena extends PropertyDaoJena implements
 	        getOntModel().getBaseModel().notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(),false));
     	} finally {
     		ontModel.leaveCriticalSection();
-```java
     	}
         // remove ABox statements after removing property
         // so dependentResource deletion test will pass

@@ -126,7 +126,6 @@ public abstract class NSObject implements Cloneable {
     /**
      * Helper method that adds correct indentation to the xml output.
      * Calling this method will add <code>level</code> number of tab characters
-```java
         for (Map.Entry<String, NSObject> entry : originalMap.entrySet()) {
             clonedMap.put(entry.getKey(), entry.getValue().toJavaObject());
         }

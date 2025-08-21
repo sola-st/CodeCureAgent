@@ -197,7 +197,6 @@ public class Optimizer {
 				  lastVal.get(diffFeatId) == null ? initialLambda[diffFeatId] : lastVal.get(diffFeatId);
 			      Hii =
 				  H.get(diffFeatId) == null ? 0 : H.get(diffFeatId);
-```java
 		    candStr = aCandSet;
 
     } else { //in all other situations, use normal stats

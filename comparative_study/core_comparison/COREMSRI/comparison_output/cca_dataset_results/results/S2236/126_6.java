@@ -97,7 +97,6 @@ The only place where `notifyAll()` is called is on `this`, which is an instance 
 
 **Below is the updated code with those minimal changes:**
 
-```java
 package cn.nukkit.utils;
 
 import cn.nukkit.Server;

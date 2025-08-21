@@ -96,7 +96,6 @@ In this case, the wait and notifyAll calls are correctly synchronized on `this` 
 
 If you prefer to avoid using "this" due to SonarQube rules, create a dedicated lock object and synchronize/wait/notify on it. For completeness, here's how that minimal change would look:
 
-```java
 private final Object lock = new Object();
 
 public void kill() {

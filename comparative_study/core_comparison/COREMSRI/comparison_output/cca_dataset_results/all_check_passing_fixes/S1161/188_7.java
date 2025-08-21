@@ -138,7 +138,6 @@ public class DOMInspector extends JPanel {
         close = new JButton("close");
         this.add(close, "South");
         this.setPreferredSize(new Dimension(300, 300));
-```java
 
         setForDocument(doc, context, sr);
 

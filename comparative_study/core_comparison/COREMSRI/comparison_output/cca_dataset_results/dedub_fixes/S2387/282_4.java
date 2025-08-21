@@ -528,7 +528,6 @@ public class ReItrHashMap<K, V> extends AbstractMap<K, V>
                 size--;
                 if (prev == e)
                     table[i] = next;
-```java
                 else
                     prev.next = next;
                 e.recordRemoval(this);

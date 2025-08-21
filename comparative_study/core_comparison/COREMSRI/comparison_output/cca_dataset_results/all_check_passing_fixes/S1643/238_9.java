@@ -91,7 +91,6 @@ public class Optimizer {
       
       // for (int i = 1; i <= numParamToPrint; i++)
       //     result += String.format("%.4f", finalLambda[i]) + " ";
-```java
       output.add("Initial "
          + evalMetric.get_metricName() + ": " + String.format("%.4f", initMetricScore) + "\nFinal "
          + evalMetric.get_metricName() + ": " + String.format("%.4f", finalMetricScore));

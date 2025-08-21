@@ -101,7 +101,6 @@ public class QueryConverterTest {
     public void selectFieldSurroundedInQuotesInFunctions() throws ParseException {
         QueryConverter queryConverter = new QueryConverter.Builder().sqlString("select * from table where ignoreCaseMatch(\"field1\",\"value\") OR \"field1\" = \"value\"").build();
         MongoDBQueryHolder mongoDBQueryHolder = queryConverter.getMongoQuery();
-```java
         assertEquals(document("$or", objsToList(documentValuesArray("$ignoreCaseMatch", "field1", "value"), document("field1", "value"))), mongoDBQueryHolder.getQuery());
     }
 

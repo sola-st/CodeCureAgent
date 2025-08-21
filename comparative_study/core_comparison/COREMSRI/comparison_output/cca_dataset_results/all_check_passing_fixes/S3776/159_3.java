@@ -331,7 +331,6 @@ public class NFeConsultaProtocolo4Stub extends org.apache.axis2.client.Stub {
                             java.lang.String nsPrefix = null;
                             if (fullTypeName.contains(":")) {
                                 nsPrefix = fullTypeName.substring(0, fullTypeName.indexOf(":"));
-```java
         /**
          * Factory class that keeps the parse method
          */

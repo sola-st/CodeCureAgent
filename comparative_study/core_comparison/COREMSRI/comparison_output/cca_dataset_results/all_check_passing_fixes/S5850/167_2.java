@@ -548,7 +548,6 @@ public class TableValidator {
    * OWLClassExpression describing a rule to query that subject individual against, a string
    * representing the query types to use when evaluating the results of the query, and a list of
    * strings describing a row from the CSV: Determine whether, for any of the given query types, the
-```java
     term = term.replaceAll("^(?:')|'$", "");
 
       // Print error if not silent

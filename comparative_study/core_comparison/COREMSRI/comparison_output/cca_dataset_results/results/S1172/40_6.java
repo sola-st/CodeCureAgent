@@ -401,7 +401,6 @@ public class OraReader
        */
       List holeRings = new ArrayList();
       for (int i = elemIndex + 1; i < nElem; i++) {
-```java
         etype = oraGeom.eType(i);
         if (etype == OraGeom.ETYPE.POLYGON_INTERIOR) {
           holeRings.add(readLinearRing(oraGeom, i));

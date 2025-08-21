@@ -510,7 +510,6 @@ public class IOHelper {
     try {
       m = dataset.getDefaultModel();
       FileManager.get().readModel(m, inputPath);
-```java
       dataset.commit();
     } catch (JenaException e) {
       dataset.abort();

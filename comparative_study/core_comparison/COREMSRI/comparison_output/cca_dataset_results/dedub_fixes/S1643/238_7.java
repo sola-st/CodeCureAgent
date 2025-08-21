@@ -91,7 +91,6 @@ public class Optimizer {
       
       // for (int i = 1; i <= numParamToPrint; i++)
       //     result += String.format("%.4f", finalLambda[i]) + " ";
-```java
             StringBuilder featDiffBuilder = new StringBuilder();
             StringBuilder negFeatDiffBuilder = new StringBuilder();
 	for (Integer id : feat_diff.keySet()) {

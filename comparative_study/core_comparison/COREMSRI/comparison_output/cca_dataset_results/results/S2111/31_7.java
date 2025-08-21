@@ -67,7 +67,6 @@ public abstract class NullArrayElementInObjectArrayTest extends AbstractTest
             Schema<T> schema) throws IOException;
 
     protected abstract <T> void roundTrip(T message, Schema<T> schema,
-```java
             Pipe.Schema<T> pipeSchema) throws IOException;
 
     public static final class PojoWithNonPrimitiveArrays

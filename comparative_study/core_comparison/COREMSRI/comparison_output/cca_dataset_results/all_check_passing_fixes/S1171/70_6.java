@@ -597,7 +597,6 @@ public final class RuntimeReflectionFieldFactory
                     {
                         if (primitive)
                             f.setFloat(message, input.readFloat());
-```java
                         else
                             f.set(message, Float.valueOf(input.readFloat()));
                     }

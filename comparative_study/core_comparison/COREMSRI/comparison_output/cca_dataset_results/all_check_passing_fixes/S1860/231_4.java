@@ -187,7 +187,6 @@ public class DefaultLogMonitor implements LogMonitor, Runnable {
   /**
    * Monitor all SingerLogs configured.
    * <p>
-```java
   private final Object isStoppedLock = new Object();
 
   /**

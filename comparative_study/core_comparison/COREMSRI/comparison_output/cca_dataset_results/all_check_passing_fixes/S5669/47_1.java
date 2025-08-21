@@ -519,7 +519,6 @@ public class SiriAlertsUpdateHandlerTest extends GtfsTest {
     final FeedScopedId tripId = new FeedScopedId(FEED_ID, "route0-trip1");
 
     assertTrue(transitAlertService.getAllAlerts().isEmpty());
-```java
 
     final String situationNumber = "TST:SituationNumber:1234";
     final ZonedDateTime startTime = ZonedDateTime.parse("2014-01-01T00:00:00+01:00");

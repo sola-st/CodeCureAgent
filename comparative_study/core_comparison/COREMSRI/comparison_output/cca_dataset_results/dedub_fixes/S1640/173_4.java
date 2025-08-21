@@ -481,7 +481,6 @@ public class PagedSearchController extends FreemarkerHttpServlet {
             log.debug("Firing classgroup query ");
             log.debug("request.getParameter(classgroup) is "+ classgroupParam);
             query.addFilterQuery(VitroSearchTermNames.CLASSGROUP_URI + ":\"" + classgroupParam + "\"");
-```java
 
             //with ClassGroup filtering we want type facets
             query.addFacetFields(VitroSearchTermNames.RDFTYPE).setFacetLimit(-1);

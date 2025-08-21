@@ -409,7 +409,6 @@ public class ElevationModule implements GraphBuilderModule {
             } // end loop over incoming edges
 
             //limit elevation propagation to at max 2km; this prevents an infinite loop
-```java
             //in the case of islands missing elevation (and some other cases)
             if (bestDistance == Double.MAX_VALUE && state.distance > 2000) {
                 issueStore.add(new ElevationPropagationLimit(state.vertex));

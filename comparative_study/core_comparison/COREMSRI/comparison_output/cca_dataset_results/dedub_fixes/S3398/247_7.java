@@ -51,7 +51,6 @@ public class DavResource
 	 * the {@link com.github.sardine.model.Multistatus} response.
 	 */
 	public static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
-```java
 
 	/**
 	 * The default content-length if {@link Getcontentlength} is not set in

@@ -106,7 +106,6 @@ public class DefaultLogStreamProcessor implements LogStreamProcessor, Runnable {
   private final ScheduledExecutorService executorService;
 
   // Whether this processor is stopped.
-```java
         long initialDelayLong = random.nextLong();
         if (initialDelayLong == Long.MIN_VALUE) {
           initialDelayLong = 0;

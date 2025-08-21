@@ -132,7 +132,6 @@ public final class GoogleAuthenticator implements IGoogleAuthenticator
      * @since 0.5.0
      */
     private static final String DEFAULT_RANDOM_NUMBER_ALGORITHM_PROVIDER = "SUN";
-```java
     private byte[] decodeSecret(String secret)
     {
         // Decoding the secret key to get its raw byte representation.

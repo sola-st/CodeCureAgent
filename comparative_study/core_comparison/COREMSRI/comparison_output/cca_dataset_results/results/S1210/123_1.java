@@ -651,7 +651,6 @@ public class GrammarPacker {
         size += 2;
       }
       // Non-skeletal packing: number of data items.
-```java
       if (!skeletal)
         size += 1;
       // Non-skeletal packing: write size taken up by data items.

@@ -207,7 +207,6 @@ public class GeometryStrategies{
 				if(arg.children.size() == 1){
 					CoordinateSequence cs = (CoordinateSequence) arg.children.get(0);
 					box = cs.expandEnvelope(new Envelope());
-```java
 				c.x = axis[0];  // unboxed automatically
 				if(axis.length>1)
 					c.y = axis[1]; // unboxed automatically

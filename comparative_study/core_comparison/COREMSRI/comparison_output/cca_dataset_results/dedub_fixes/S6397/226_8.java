@@ -223,5 +223,4 @@ public class DefaultRequestMatcherTest {
         params = asMap("k1", "v1", "k2", "v2");
         
         RealRequest real = mockRealRequest("aaaaa", Method.GET, headers, params, content, contentType);
-```java
         ClientDriverRequest expected = new ClientDriverRequest("aaaaa").withMethod(Method.GET).withBody(Pattern.compile("o{4}h"), "text/junk");

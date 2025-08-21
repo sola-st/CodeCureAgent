@@ -97,7 +97,6 @@ Since the user requested minimal changes and no unrelated removals, we can intro
 
 I will add:
 
-```java
 private final Object lock = new Object();
 ```
 
@@ -105,7 +104,6 @@ and replace all `synchronized(this)` with `synchronized(lock)` and calls to `thi
 
 Updated fixed code:
 
-```java
 package cn.nukkit.utils;
 
 import cn.nukkit.Server;

@@ -331,7 +331,6 @@ public class ComponentExposedTypeGenerator {
     Prop prop = field.getAnnotation(Prop.class);
 
     collectionFieldsValidator.validateComponentPropField(field);
-```java
     TypeMirror typeMirror = field.asType();
     TypeName typeName = TypeName.get(typeMirror);
 

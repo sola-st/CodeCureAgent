@@ -1433,7 +1433,6 @@ public class CssParserTest {
 			+ " 	font-weight: bold;" 
 			+ " 	padding: 2px 4px;" 
 			+ " 	text-decoration: none; "
-```java
 			+ " }  /* tooltip may be custom styled as desired */ " 
 			+ " "
 			+ ".linkparent1:hover { "

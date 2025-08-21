@@ -86,7 +86,6 @@ public class SetupCommand implements Command, Listener {
         setup.convo = convo;
         convo.addConversationAbandonedListener(setup);
         convo.setLocalEchoEnabled(false);
-```java
         convo.begin();
         return true;
     }

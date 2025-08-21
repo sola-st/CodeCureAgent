@@ -88,7 +88,6 @@ public class RemoveConditionalMutatorTest extends MutatorTestBase {
   @Test
   public void shouldNotReplaceIFEQ_ORDER_F() throws Exception {
     createTesteeWith(new RemoveConditionalMutator(Choice.ORDER, false));
-```java
     assertNoMutants(HasIFEQ.class);
   }
 

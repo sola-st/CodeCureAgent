@@ -210,7 +210,6 @@ public class WKBWriter
   private int byteOrder;
   private boolean includeSRID = false;
   private ByteArrayOutputStream byteArrayOS = new ByteArrayOutputStream();
-```java
   private OutStream byteArrayOutStream = new OutputStreamOutStream(byteArrayOS);
   // holds output data values
   private byte[] buf = new byte[8];

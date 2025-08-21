@@ -106,7 +106,6 @@ public class DefaultLogStreamProcessor implements LogStreamProcessor, Runnable {
   private final ScheduledExecutorService executorService;
 
   // Whether this processor is stopped.
-```java
   private Boolean isStopped;
 
   // Whether we are in a processing cycle. This is made volatile for thread visibility.

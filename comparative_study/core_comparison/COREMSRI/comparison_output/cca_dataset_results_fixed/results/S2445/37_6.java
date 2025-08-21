@@ -409,7 +409,6 @@ public class ElevationModule implements GraphBuilderModule {
             } // end loop over incoming edges
 
             //limit elevation propagation to at max 2km; this prevents an infinite loop
-```java
     private final Object graphLock = new Object();
 
     // ... rest of the code unchanged ...

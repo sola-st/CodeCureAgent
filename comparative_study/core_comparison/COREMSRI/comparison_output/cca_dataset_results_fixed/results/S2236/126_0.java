@@ -99,7 +99,6 @@ To fix the warning, we can create a private final Object lock and synchronize on
 
 Here is the minimal fix with the addition of a private final lock object and changing synchronization and wait/notify calls accordingly:
 
-```java
 package cn.nukkit.utils;
 
 import cn.nukkit.Server;

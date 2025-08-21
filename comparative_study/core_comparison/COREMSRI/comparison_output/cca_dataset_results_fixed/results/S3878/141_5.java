@@ -208,7 +208,6 @@ public abstract class NullArrayElementInObjectArrayTest extends AbstractTest
         PojoWithNonPrimitiveArrays pFromByteArray = schema.newMessage();
         mergeFrom(data, 0, data.length, pFromByteArray, schema);
         assertArrayObjectEquals(p, pFromByteArray);
-```java
 
         PojoWithNonPrimitiveArrays pFromStream = schema.newMessage();
         ByteArrayInputStream in = new ByteArrayInputStream(data);

@@ -358,7 +358,6 @@ public class QueryTest
 Explanation of fix:  
 The only flagged formatting issue was the direct concatenation of the `tableName` variable (potentially untrusted) into the SQL query in the `viewTest` method:
 
-```java
 st1.execute("DROP TABLE IF EXISTS " + tableName);
 ```
 

@@ -926,7 +926,6 @@ public class PROCore {
 
           // now process the candidates of the current iteration
           // now determine the new candidates of the current iteration
-```java
 
           /*
            * remember: BufferedReader inFile_sentsCurrIt BufferedReader inFile_featsCurrIt

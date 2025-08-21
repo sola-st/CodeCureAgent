@@ -222,7 +222,6 @@ public class WFGHypervolume extends Hypervolume {
             j++;
             break;
           case -1: // AT THIS POINT WE KNOW THAT i CANNOT BE DOMINATED BY ANY OTHER PROMOTED POINT j
-```java
             // SWAP i INTO j, AND 1-WAY DOM FOR THE REST OF THE js
             t = fs[fr].points[j];
             fs[fr].points[j] = fs[fr].points[i];

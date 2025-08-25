@@ -73,7 +73,7 @@ Classification: 3042
 Fix_TP: 2023  
 Fix_FP: 355  
 
-Mean iterations: 24.60  
+Mean iterations: 18.63  
 Mean iterations by sub-agent:  
 Classification: 10.45  
 Fix_TP: 10.59  
@@ -150,22 +150,22 @@ Fix_TP: 20464035 (input uncached: 2727789, input cached: 17221376, input: 199491
 Fix_FP: 912929 (input uncached: 348961, input cached: 504960, input: 853921, output: 59008)  
 #### Mean Tokens Count
 
-Mean total tokens count: 171173.56  
-Mean total tokens input uncached: 34688.21  
-Mean total tokens input cached: 131183.63  
-Mean total tokens input: 165871.84  
-Mean total tokens output: 5301.71  
+Mean total tokens count: 128363.08  
+Mean total tokens input uncached: 27490.01  
+Mean total tokens input cached: 96885.00  
+Mean total tokens input: 124375.01  
+Mean total tokens output: 3988.07  
 Mean tokens by sub-agent:  
 Classification: 54902.72 (input uncached: 16916.98, input cached: 35969.76, input: 52886.74, output: 2015.98)  
 Fix_TP: 107141.54 (input uncached: 14281.62, input cached: 90164.27, input: 104445.89, output: 2695.65)  
 Fix_FP: 9129.29 (input uncached: 3489.61, input cached: 5049.60, input: 8539.21, output: 590.08)  
 #### Median Tokens Count
 
-Median total tokens count: 82645.00  
-Median total tokens input uncached: 25938.00  
-Median total tokens input cached: 53120.00  
-Median total tokens input: 79058.00  
-Median total tokens output: 3587.00  
+Median total tokens count: 71995.00  
+Median total tokens input uncached: 23105.00  
+Median total tokens input cached: 46208.00  
+Median total tokens input: 69045.00  
+Median total tokens output: 2950.00  
 Median tokens by sub-agent:  
 Classification: 46078.00 (input uncached: 15172.00, input cached: 29056.00, input: 44228.00, output: 1850.00)  
 Fix_TP: 29349.00 (input uncached: 7612.00, input cached: 20480.00, input: 28092.00, output: 1257.00)  
@@ -179,14 +179,14 @@ Fix_TP: 3.637045 USD
 Fix_FP: 0.284493 USD  
 #### Average Tokens Cost
 
-Average Total Cost: 0.035476 USD  
+Average Total Cost: 0.027065 USD  
 Average cost by sub-agent:  
 Classification: 0.013589 USD  
 Fix_TP: 0.019042 USD  
 Fix_FP: 0.002845 USD  
 #### Median Tokens Cost
 
-Median Total Cost: 0.021616 USD  
+Median Total Cost: 0.018717 USD  
 Median cost by sub-agent:  
 Classification: 0.012052 USD  
 Fix_TP: 0.007179 USD  

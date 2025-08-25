@@ -350,15 +350,15 @@ def calculate_stats_from_evaluation_results(evaluation_results_extended_file: cl
 
     mean_iterations_classification = evaluation_results_file_df["iterationsClassification"].mean(
     )
-    mean_iterations_fix_tp = evaluation_results_file_df.loc[
-        evaluation_results_file_df["classification"] == "TP", "iterationsFixTP"
-    ].mean(
+    mean_iterations_fix_tp = (
+        iterations_fix_tp / classified_tp if classified_tp else 0
     )
-    mean_iterations_fix_fp = evaluation_results_file_df.loc[
-        evaluation_results_file_df["classification"] == "FP", "iterationsFixFP"].mean(
+    mean_iterations_fix_fp = (
+        iterations_fix_fp / classified_fp if classified_fp else 0
     )
-    mean_total_iterations = mean_iterations_classification + \
-        mean_iterations_fix_tp + mean_iterations_fix_fp
+    mean_total_iterations = (
+        total_iterations / total_rule_violations if total_rule_violations else 0
+    )
 
     median_iterations_classification = evaluation_results_file_df["iterationsClassification"].median(
     )
@@ -402,18 +402,30 @@ def calculate_stats_from_evaluation_results(evaluation_results_extended_file: cl
     )
     mean_plausible_fixes = evaluation_results_file_df["plausible_fixes_count"].mean(
     )
-    mean_implausible_fixes_tp = evaluation_results_file_df.loc[
-        evaluation_results_file_df["classification"] == "TP", "implausible_fixes_count"
-    ].mean()
-    mean_implausible_fixes_fp = evaluation_results_file_df.loc[
-        evaluation_results_file_df["classification"] == "FP", "implausible_fixes_count"
-    ].mean()
-    mean_plausible_fixes_tp = evaluation_results_file_df.loc[
-        evaluation_results_file_df["classification"] == "TP", "plausible_fixes_count"
-    ].mean()
-    mean_plausible_fixes_fp = evaluation_results_file_df.loc[
-        evaluation_results_file_df["classification"] == "FP", "plausible_fixes_count"
-    ].mean()
+    mean_implausible_fixes_tp = (
+        evaluation_results_file_df.loc[
+            evaluation_results_file_df["classification"] == "TP", "implausible_fixes_count"
+        ].mean()
+        if classified_tp else 0
+    )
+    mean_implausible_fixes_fp = (
+        evaluation_results_file_df.loc[
+            evaluation_results_file_df["classification"] == "FP", "implausible_fixes_count"
+        ].mean()
+        if classified_fp else 0
+    )
+    mean_plausible_fixes_tp = (
+        evaluation_results_file_df.loc[
+            evaluation_results_file_df["classification"] == "TP", "plausible_fixes_count"
+        ].mean()
+        if classified_tp else 0
+    )
+    mean_plausible_fixes_fp = (
+        evaluation_results_file_df.loc[
+            evaluation_results_file_df["classification"] == "FP", "plausible_fixes_count"
+        ].mean()
+        if classified_fp else 0
+    )
 
     # Medians
     median_implausible_fixes = evaluation_results_file_df["implausible_fixes_count"].median(
@@ -665,47 +677,78 @@ def calculate_stats_from_evaluation_results(evaluation_results_extended_file: cl
     mean_tokens_count_classification = mean_tokens_input_classification + \
         mean_tokens_output_classification
 
-    mean_tokens_input_uncached_fix_tp = evaluation_results_file_df.loc[
-        evaluation_results_file_df["classification"] == "TP", "tokensInputUncachedFixTP"].mean(
+    mean_tokens_input_uncached_fix_tp = (
+        evaluation_results_file_df.loc[
+            evaluation_results_file_df["classification"] == "TP", "tokensInputUncachedFixTP"
+        ].mean()
+        if classified_tp else 0
     )
-    mean_tokens_input_cached_fix_tp = evaluation_results_file_df.loc[
-        evaluation_results_file_df["classification"] == "TP", "tokensInputCachedFixTP"
-    ].mean(
+    mean_tokens_input_cached_fix_tp = (
+        evaluation_results_file_df.loc[
+            evaluation_results_file_df["classification"] == "TP", "tokensInputCachedFixTP"
+        ].mean()
+        if classified_tp else 0
     )
     mean_tokens_input_fix_tp = mean_tokens_input_uncached_fix_tp + \
         mean_tokens_input_cached_fix_tp
-    mean_tokens_output_fix_tp = evaluation_results_file_df.loc[
-        evaluation_results_file_df["classification"] == "TP", "tokensOutputFixTP"
-    ].mean(
+    mean_tokens_output_fix_tp = (
+        evaluation_results_file_df.loc[
+            evaluation_results_file_df["classification"] == "TP", "tokensOutputFixTP"
+        ].mean()
+        if classified_tp else 0
     )
     mean_tokens_count_fix_tp = mean_tokens_input_fix_tp + mean_tokens_output_fix_tp
 
-    mean_tokens_input_uncached_fix_fp = evaluation_results_file_df.loc[
-        evaluation_results_file_df["classification"] == "FP", "tokensInputUncachedFixFP"
-    ].mean(
+    mean_tokens_input_uncached_fix_fp = (
+        evaluation_results_file_df.loc[
+            evaluation_results_file_df["classification"] == "FP", "tokensInputUncachedFixFP"
+        ].mean()
+        if classified_fp else 0
     )
-    mean_tokens_input_cached_fix_fp = evaluation_results_file_df.loc[
-        evaluation_results_file_df["classification"] == "FP", "tokensInputCachedFixFP"
-    ].mean(
+    mean_tokens_input_cached_fix_fp = (
+        evaluation_results_file_df.loc[
+            evaluation_results_file_df["classification"] == "FP", "tokensInputCachedFixFP"
+        ].mean()
+        if classified_fp else 0
     )
     mean_tokens_input_fix_fp = mean_tokens_input_uncached_fix_fp + \
         mean_tokens_input_cached_fix_fp
-    mean_tokens_output_fix_fp = evaluation_results_file_df.loc[
-        evaluation_results_file_df["classification"] == "FP", "tokensOutputFixFP"
-    ].mean(
+    mean_tokens_output_fix_fp = (
+        evaluation_results_file_df.loc[
+            evaluation_results_file_df["classification"] == "FP", "tokensOutputFixFP"
+        ].mean()
+        if classified_fp else 0
     )
     mean_tokens_count_fix_fp = mean_tokens_input_fix_fp + mean_tokens_output_fix_fp
 
-    mean_total_tokens_input_uncached = mean_tokens_input_uncached_classification + \
-        mean_tokens_input_uncached_fix_tp + mean_tokens_input_uncached_fix_fp
-    mean_total_tokens_input_cached = mean_tokens_input_cached_classification + \
-        mean_tokens_input_cached_fix_tp + mean_tokens_input_cached_fix_fp
-    mean_total_tokens_input = mean_tokens_input_classification + \
-        mean_tokens_input_fix_tp + mean_tokens_input_fix_fp
-    mean_total_tokens_output = mean_tokens_output_classification + \
-        mean_tokens_output_fix_tp + mean_tokens_output_fix_fp
-    mean_total_tokens_count = mean_tokens_count_classification + \
-        mean_tokens_count_fix_tp + mean_tokens_count_fix_fp
+    mean_total_tokens_input_uncached = (
+        (evaluation_results_file_df["tokensInputUncachedClassification"].sum() +
+         evaluation_results_file_df["tokensInputUncachedFixTP"].sum() +
+         evaluation_results_file_df["tokensInputUncachedFixFP"].sum()) / total_rule_violations
+        if total_rule_violations else 0
+    )
+    mean_total_tokens_input_cached = (
+        (evaluation_results_file_df["tokensInputCachedClassification"].sum() +
+         evaluation_results_file_df["tokensInputCachedFixTP"].sum() +
+         evaluation_results_file_df["tokensInputCachedFixFP"].sum()) / total_rule_violations
+        if total_rule_violations else 0
+    )
+    mean_total_tokens_input = (
+        (evaluation_results_file_df["tokensInputUncachedClassification"].sum() +
+         evaluation_results_file_df["tokensInputCachedClassification"].sum() +
+         evaluation_results_file_df["tokensInputUncachedFixTP"].sum() +
+         evaluation_results_file_df["tokensInputCachedFixTP"].sum() +
+         evaluation_results_file_df["tokensInputUncachedFixFP"].sum() +
+         evaluation_results_file_df["tokensInputCachedFixFP"].sum()) / total_rule_violations
+        if total_rule_violations else 0
+    )
+    mean_total_tokens_output = (
+        (evaluation_results_file_df["tokensOutputClassification"].sum() +
+         evaluation_results_file_df["tokensOutputFixTP"].sum() +
+         evaluation_results_file_df["tokensOutputFixFP"].sum()) / total_rule_violations
+        if total_rule_violations else 0
+    )
+    mean_total_tokens_count = mean_total_tokens_input + mean_total_tokens_output
 
     # Medians
     median_tokens_input_uncached_classification = evaluation_results_file_df["tokensInputUncachedClassification"].median(
@@ -751,16 +794,31 @@ def calculate_stats_from_evaluation_results(evaluation_results_extended_file: cl
     )
     median_tokens_count_fix_fp = median_tokens_input_fix_fp + median_tokens_output_fix_fp
 
-    median_total_tokens_input_uncached = median_tokens_input_uncached_classification + \
-        median_tokens_input_uncached_fix_tp + median_tokens_input_uncached_fix_fp
-    median_total_tokens_input_cached = median_tokens_input_cached_classification + \
-        median_tokens_input_cached_fix_tp + median_tokens_input_cached_fix_fp
-    median_total_tokens_input = median_tokens_input_classification + \
-        median_tokens_input_fix_tp + median_tokens_input_fix_fp
-    median_total_tokens_output = median_tokens_output_classification + \
-        median_tokens_output_fix_tp + median_tokens_output_fix_fp
-    median_total_tokens_count = median_tokens_count_classification + \
-        median_tokens_count_fix_tp + median_tokens_count_fix_fp
+    # Median calculations for total tokens (over all instances)
+    median_total_tokens_input_uncached = (
+        evaluation_results_file_df["tokensInputUncachedClassification"] +
+        evaluation_results_file_df["tokensInputUncachedFixTP"] +
+        evaluation_results_file_df["tokensInputUncachedFixFP"]
+    ).median()
+    median_total_tokens_input_cached = (
+        evaluation_results_file_df["tokensInputCachedClassification"] +
+        evaluation_results_file_df["tokensInputCachedFixTP"] +
+        evaluation_results_file_df["tokensInputCachedFixFP"]
+    ).median()
+    median_total_tokens_input = (
+        evaluation_results_file_df["tokensInputUncachedClassification"] +
+        evaluation_results_file_df["tokensInputCachedClassification"] +
+        evaluation_results_file_df["tokensInputUncachedFixTP"] +
+        evaluation_results_file_df["tokensInputCachedFixTP"] +
+        evaluation_results_file_df["tokensInputUncachedFixFP"] +
+        evaluation_results_file_df["tokensInputCachedFixFP"]
+    ).median()
+    median_total_tokens_output = (
+        evaluation_results_file_df["tokensOutputClassification"] +
+        evaluation_results_file_df["tokensOutputFixTP"] +
+        evaluation_results_file_df["tokensOutputFixFP"]
+    ).median()
+    median_total_tokens_count = median_total_tokens_input + median_total_tokens_output
 
     # Cost
     tokens_cost_classification = evaluation_results_file_df["costClassification"].sum(
@@ -772,11 +830,24 @@ def calculate_stats_from_evaluation_results(evaluation_results_extended_file: cl
 
     avg_cost_classification = evaluation_results_file_df["costClassification"].mean(
     )
-    avg_cost_fix_tp = evaluation_results_file_df.loc[
-        evaluation_results_file_df["classification"] == "TP", "costFixTP"].mean()
-    avg_cost_fix_fp = evaluation_results_file_df.loc[
-        evaluation_results_file_df["classification"] == "FP", "costFixFP"].mean()
-    avg_cost = avg_cost_classification + avg_cost_fix_tp + avg_cost_fix_fp
+    avg_cost_fix_tp = (
+        evaluation_results_file_df.loc[
+            evaluation_results_file_df["classification"] == "TP", "costFixTP"
+        ].mean()
+        if classified_tp else 0
+    )
+    avg_cost_fix_fp = (
+        evaluation_results_file_df.loc[
+            evaluation_results_file_df["classification"] == "FP", "costFixFP"
+        ].mean()
+        if classified_fp else 0
+    )
+    avg_cost = (
+        (evaluation_results_file_df["costClassification"].sum() +
+         evaluation_results_file_df["costFixTP"].sum() +
+         evaluation_results_file_df["costFixFP"].sum()) / total_rule_violations
+        if total_rule_violations else 0
+    )
 
     median_cost_classification = evaluation_results_file_df["costClassification"].median(
     )
@@ -786,8 +857,8 @@ def calculate_stats_from_evaluation_results(evaluation_results_extended_file: cl
     median_cost_fix_fp = evaluation_results_file_df.loc[
         evaluation_results_file_df["classification"] == "FP", "costFixFP"
     ].median()
-    median_cost = median_cost_classification + \
-        median_cost_fix_tp + median_cost_fix_fp
+    median_cost = (evaluation_results_file_df["costClassification"] +
+                   evaluation_results_file_df["costFixTP"] + evaluation_results_file_df["costFixFP"]).median()
 
     # --- Markdown Output ---
 

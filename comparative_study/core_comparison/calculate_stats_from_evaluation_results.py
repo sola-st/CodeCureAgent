@@ -515,6 +515,22 @@ def calculate_stats_from_evaluation_results(core_evaluation_results_file: click.
     mdFile.new_line(
         f"CORE fix created + build successful + target warning removed + no other warning introduced + test successful: {fix_created_build_test_target_removed_no_other_introduced}/{total_rule_violations} ({percent_fix_created_build_test_target_removed_no_other_removed:.2f}%)  ")
 
+    mdFile.new_line()
+
+    # Calculate margin of improvement from CORE with oracle to CCA's plausible fix performance
+    margin_improvement = percent_total_plausible - \
+        percent_fix_created_build_test_target_removed_no_other_removed
+    mdFile.new_line(
+        f"Margin of improvement from CORE's performance after oracle (all oracle steps applied) to CCA's plausible fix performance: {margin_improvement:.2f}%  ")
+
+    # Calculate margin of improvement from CORE with oracle to CCA's end-to-end performance
+    margin_improvement_cca_end_to_end = percent_end_to_end_all - \
+        percent_fix_created_build_test_target_removed_no_other_removed
+    mdFile.new_line(
+        f"Margin of improvement from CORE's performance after oracle (all oracle steps applied) to CCA's end-to-end performance: {margin_improvement_cca_end_to_end:.2f}%  ")
+
+    mdFile.new_line()
+
     # CORE fix successful + build successful + target warning removed + no other warning introduced + test successful for only true positives for cca
     fix_created_build_test_target_removed_no_other_introduced_only_cca_TP = (
         (evaluation_results_file_df["coreNumberBuildAndRemovedWarningAndNoNewWarningAndTest"] > 0) & (evaluation_results_file_df["classification"] == "TP")).sum()

@@ -465,7 +465,7 @@ def sorald_comparison_calculate_stats_from_evaluation_results(sorald_evaluation_
         (evaluation_results_file_df["soraldBuildSuccessful"] == True) &
         (evaluation_results_file_df["soraldNumberOfTargetWarningsRemoved"].fillna(0).astype(int) >= 1) &
         (evaluation_results_file_df["soraldNoNewWarningIntroduced"] == True) &
-        (evaluation_results_file_df["soraldTestSuccessful"] == True) 
+        (evaluation_results_file_df["soraldTestSuccessful"] == True)
     ).sum()
 
     percent_fix_created_build_test_target_removed_no_other_removed = 100 * fix_created_build_test_target_removed_no_other_introduced / \
@@ -473,6 +473,22 @@ def sorald_comparison_calculate_stats_from_evaluation_results(sorald_evaluation_
 
     mdFile.new_line(
         f"Sorald fix created + build successful + target warning removed + no other warning introduced + test successful: {fix_created_build_test_target_removed_no_other_introduced}/{total_rule_violations} ({percent_fix_created_build_test_target_removed_no_other_removed:.2f}%)  ")
+
+    mdFile.new_line()
+
+    # Calculate margin of improvement from Sorald with oracle to CCA's plausible fix performance (Absolute percentage point improvement)
+    margin_improvement = percent_total_plausible - \
+        percent_fix_created_build_test_target_removed_no_other_removed
+    mdFile.new_line(
+        f"Margin of improvement from Sorald's performance after oracle (all oracle steps applied) to CCA's plausible fix performance: {margin_improvement:.2f}%  ")
+
+    # Calculate margin of improvement from Sorald with oracle to CCA's end-to-end performance
+    margin_improvement_cca_end_to_end = percent_end_to_end_all - \
+        percent_fix_created_build_test_target_removed_no_other_removed
+    mdFile.new_line(
+        f"Margin of improvement from Sorald's performance after oracle (all oracle steps applied) to CCA's end-to-end performance: {margin_improvement_cca_end_to_end:.2f}%  ")
+
+    mdFile.new_line()
 
     # Sorald fix successful + build successful + target warning removed + no other warning introduced + test successful + fix correct
     fix_created_build_test_target_removed_no_other_introduced_fix_correct = (
@@ -489,6 +505,14 @@ def sorald_comparison_calculate_stats_from_evaluation_results(sorald_evaluation_
 
     mdFile.new_line(
         f"Sorald fix created + build successful + target warning removed + no other warning introduced + test successful + fix correct: {fix_created_build_test_target_removed_no_other_introduced_fix_correct}/{total_fix_correctness_all_warnings} ({percent_fix_created_build_test_target_removed_no_other_introduced_fix_correct:.2f}%)  ")
+
+    # Calculate margin of improvement from Sorald end-to-end with oracle (and correctness check) to CCA's end-to-end performance
+    margin_improvement_sorald_end_to_end_and_cca_end_to_end = percent_end_to_end_all - \
+        percent_fix_created_build_test_target_removed_no_other_introduced_fix_correct
+    mdFile.new_line(
+        f"Margin of improvement from Sorald's performance after oracle (all oracle steps applied) and manual inspection to CCA's end-to-end performance: {margin_improvement_sorald_end_to_end_and_cca_end_to_end:.2f}%  ")
+
+    mdFile.new_line()
 
     # Sorald fix successful + build successful + target warning removed + no other warning introduced + test successful + fix correct + no code smell outside introduced
     fix_created_build_test_target_removed_no_other_introduced_fix_correct_no_code_smell_outside = (

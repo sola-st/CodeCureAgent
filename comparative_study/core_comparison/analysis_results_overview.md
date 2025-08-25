@@ -105,6 +105,10 @@ CORE fix created + build successful: 233/291 (80.07%)
 CORE fix created + build successful + target warning removed: 231/291 (79.38%)  
 CORE fix created + build successful + target warning removed + no other warning introduced: 210/291 (72.16%)  
 CORE fix created + build successful + target warning removed + no other warning introduced + test successful: 197/291 (67.70%)  
+
+Margin of improvement from CORE's performance after oracle (all oracle steps applied) to CCA's plausible fix performance: 29.21%  
+Margin of improvement from CORE's performance after oracle (all oracle steps applied) to CCA's end-to-end performance: 18.56%  
+
 CORE Only for warnings classified as TP in CCA : fix created + build successful + target warning removed + no other warning introduced + test successful: 146/191 (76.44%)  
 CORE fix created + build successful + target warning removed + no other warning introduced + test successful + fix correct: 0/0 (0.00%)  
 CORE fix created + build successful + target warning removed + no other warning introduced + test successful + fix correct + no code smell outside introduced: 0/0 (0.00%)  

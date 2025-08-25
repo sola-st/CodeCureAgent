@@ -92,7 +92,16 @@ Sorald fix created + build successful: 18/21 (85.71%)
 Sorald fix created + build successful + target warning removed: 18/21 (85.71%)  
 Sorald fix created + build successful + target warning removed + no other warning introduced: 17/21 (80.95%)  
 Sorald fix created + build successful + target warning removed + no other warning introduced + test successful: 17/21 (80.95%)  
+
+Margin of improvement from Sorald's performance after oracle (all oracle steps applied) to CCA's plausible fix performance: 19.05%  
+ 
+Margin of improvement from Sorald's performance after oracle (all oracle steps applied) to CCA's end-to-end performance: 14.29%  
+
+
+#### Most relevant here: 
 Sorald fix created + build successful + target warning removed + no other warning introduced + test successful + fix correct: 16/21 (76.19%)  
+Margin of improvement from Sorald's performance after oracle (all oracle steps applied) and manual inspection to CCA's end-to-end performance: 19.05%  
+
 Sorald fix created + build successful + target warning removed + no other warning introduced + test successful + fix correct + no code smell outside introduced: 15/21 (71.43%)  
 ### Time Efficiency
 

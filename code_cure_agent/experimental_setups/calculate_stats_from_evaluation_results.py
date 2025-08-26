@@ -619,6 +619,187 @@ def calculate_stats_from_evaluation_results(evaluation_results_extended_file: cl
     mdFile.new_line(
         "Fix_FP: " + str(round(nano_to_second(median_execution_time_fix_fp) / 60, 2)) + " minutes  ")
 
+    # Time in maven build, test, analysis and LLM
+    total_maven_build_time = evaluation_results_file_df["mavenBuildAddedTime"].sum(
+    )
+    total_maven_test_time = evaluation_results_file_df["mavenTestAddedTime"].sum(
+    )
+    total_sonar_qube_time = evaluation_results_file_df["mavenAnalysisAddedTime"].sum(
+    )
+    total_llm_time = evaluation_results_file_df["LLMAddedTime"].sum()
+    mean_maven_build_time = evaluation_results_file_df["mavenBuildAddedTime"].mean(
+    )
+    mean_maven_test_time = evaluation_results_file_df["mavenTestAddedTime"].mean(
+    )
+    mean_sonar_qube_time = evaluation_results_file_df["mavenAnalysisAddedTime"].mean(
+    )
+    mean_llm_time = evaluation_results_file_df["LLMAddedTime"].mean()
+    median_maven_build_time = evaluation_results_file_df["mavenBuildAddedTime"].median(
+    )
+    median_maven_test_time = evaluation_results_file_df["mavenTestAddedTime"].median(
+    )
+    median_sonar_qube_time = evaluation_results_file_df["mavenAnalysisAddedTime"].median(
+    )
+    median_llm_time = evaluation_results_file_df["LLMAddedTime"].median()
+    mdFile.new_header(level=3, title="Maven Build, Test, SonarQube Analysis Time and LLM Time",
+                      add_table_of_contents="n")
+    mdFile.new_line(
+        f"Total Maven Build Time: {round(nano_to_second(total_maven_build_time) / 60, 2)} minutes  ")
+    mdFile.new_line(
+        f"Total Maven Test Time: {round(nano_to_second(total_maven_test_time) / 60, 2)} minutes  ")
+    mdFile.new_line(
+        f"Total SonarQube Analysis Time: {round(nano_to_second(total_sonar_qube_time) / 60, 2)} minutes  ")
+    mdFile.new_line(
+        f"Total LLM Time: {round(nano_to_second(total_llm_time) / 60, 2)} minutes  ")
+    mdFile.new_line()
+    mdFile.new_line(
+        f"Mean Maven Build Time (per warning): {round(nano_to_second(mean_maven_build_time) / 60, 2)} minutes  ")
+    mdFile.new_line(
+        f"Mean Maven Test Time (per warning): {round(nano_to_second(mean_maven_test_time) / 60, 2)} minutes  ")
+    mdFile.new_line(
+        f"Mean SonarQube Analysis Time (per warning): {round(nano_to_second(mean_sonar_qube_time) / 60, 2)} minutes  ")
+    mdFile.new_line(
+        f"Mean LLM Time (per warning): {round(nano_to_second(mean_llm_time) / 60, 2)} minutes  ")
+    mdFile.new_line()
+    mdFile.new_line(
+        f"Median Maven Build Time (per warning): {round(nano_to_second(median_maven_build_time) / 60, 2)} minutes  ")
+    mdFile.new_line(
+        f"Median Maven Test Time (per warning): {round(nano_to_second(median_maven_test_time) / 60, 2)} minutes  ")
+    mdFile.new_line(
+        f"Median SonarQube Analysis Time (per warning): {round(nano_to_second(median_sonar_qube_time) / 60, 2)} minutes  ")
+    mdFile.new_line(
+        f"Median LLM Time (per warning): {round(nano_to_second(median_llm_time) / 60, 2)} minutes  ")
+
+    total_time_outside_of_cca = total_maven_build_time + \
+        total_maven_test_time + total_sonar_qube_time
+    mean_time_outside_of_cca = total_time_outside_of_cca / total_rule_violations
+    median_time_outside_of_cca = (
+        evaluation_results_file_df["mavenBuildAddedTime"] +
+        evaluation_results_file_df["mavenTestAddedTime"] +
+        evaluation_results_file_df["mavenAnalysisAddedTime"]
+    ).median()
+    mdFile.new_line()
+    mdFile.new_line(
+        f"Total Time outside of CCA: {round(nano_to_second(total_time_outside_of_cca) / 60, 2)} minutes  ")
+    mdFile.new_line(
+        f"Mean Time outside of CCA: {round(nano_to_second(mean_time_outside_of_cca) / 60, 2)} minutes  ")
+    mdFile.new_line(
+        f"Median Time outside of CCA: {round(nano_to_second(median_time_outside_of_cca) / 60, 2)} minutes  ")
+
+    percentage_of_time_outside_of_cca = (
+        total_time_outside_of_cca / total_execution_time * 100
+        if total_execution_time else 0
+    )
+    mdFile.new_line()
+    mdFile.new_line(
+        f"Percentage of Time outside of CCA: {percentage_of_time_outside_of_cca:.2f}%  ")
+
+    percentage_of_time_in_llm = (
+        total_llm_time / total_execution_time * 100
+        if total_execution_time else 0
+    )
+    mdFile.new_line(
+        f"Percentage of Time in LLM: {percentage_of_time_in_llm:.2f}%  ")
+
+    percentage_of_time_executing_tools_and_middleware = (
+        (total_execution_time - total_llm_time -
+         total_time_outside_of_cca) / total_execution_time * 100
+        if total_execution_time else 0
+    )
+    mdFile.new_line(
+        f"Percentage of Time executing tools and middleware (everything else): {percentage_of_time_executing_tools_and_middleware:.2f}%  ")
+
+    mdFile.new_line(
+        "#### Execution time in subparts for unfixed warnings only  ")
+    mdFile.new_line()
+
+    mean_time_outside_of_cca_for_unfixed_warnings = (
+        (evaluation_results_file_df.loc[
+            ~evaluation_results_file_df["plausibleFix"], "mavenBuildAddedTime"
+        ].sum() +
+            evaluation_results_file_df.loc[
+            ~evaluation_results_file_df["plausibleFix"], "mavenTestAddedTime"
+        ].sum() +
+            evaluation_results_file_df.loc[
+            ~evaluation_results_file_df["plausibleFix"], "mavenAnalysisAddedTime"
+        ].sum()) /
+        evaluation_results_file_df.loc[
+            ~evaluation_results_file_df["plausibleFix"]].shape[0]
+        if evaluation_results_file_df.loc[
+            ~evaluation_results_file_df["plausibleFix"]].shape[0] else 0
+    )
+    mdFile.new_line(
+        f"Mean Time outside of CCA for unfixed warnings: {round(nano_to_second(mean_time_outside_of_cca_for_unfixed_warnings) / 60, 2)} minutes  ")
+
+    mean_time_in_llm_for_unfixed_warnings = (
+        evaluation_results_file_df.loc[
+            ~evaluation_results_file_df["plausibleFix"], "LLMAddedTime"
+        ].sum() /
+        evaluation_results_file_df.loc[
+            ~evaluation_results_file_df["plausibleFix"]].shape[0]
+        if evaluation_results_file_df.loc[
+            ~evaluation_results_file_df["plausibleFix"]].shape[0] else 0
+    )
+    mdFile.new_line(
+        f"Mean Time in LLM for unfixed warnings: {round(nano_to_second(mean_time_in_llm_for_unfixed_warnings) / 60, 2)} minutes  ")
+
+    percentage_of_time_outside_of_cca_for_unfixed_warnings = (
+        (evaluation_results_file_df.loc[
+            ~evaluation_results_file_df["plausibleFix"], "mavenBuildAddedTime"
+        ].sum() +
+            evaluation_results_file_df.loc[
+            ~evaluation_results_file_df["plausibleFix"], "mavenTestAddedTime"
+        ].sum() +
+            evaluation_results_file_df.loc[
+            ~evaluation_results_file_df["plausibleFix"], "mavenAnalysisAddedTime"
+        ].sum()) /
+        (evaluation_results_file_df.loc[
+            ~evaluation_results_file_df["plausibleFix"], "executionTimeClassification"
+        ].sum() + evaluation_results_file_df.loc[
+            ~evaluation_results_file_df["plausibleFix"], "executionTimeFixTP"
+        ].sum() + evaluation_results_file_df.loc[
+            ~evaluation_results_file_df["plausibleFix"], "executionTimeFixFP"
+        ].sum()) * 100
+        if (evaluation_results_file_df.loc[
+            ~evaluation_results_file_df["plausibleFix"], "executionTimeClassification"
+        ].sum() + evaluation_results_file_df.loc[
+            ~evaluation_results_file_df["plausibleFix"], "executionTimeFixTP"
+        ].sum() + evaluation_results_file_df.loc[
+            ~evaluation_results_file_df["plausibleFix"], "executionTimeFixFP"
+        ].sum()) else 0
+    )
+    mdFile.new_line(
+        f"Percentage of Time outside of CCA for unfixed warnings: {percentage_of_time_outside_of_cca_for_unfixed_warnings:.2f}%  ")
+
+    percentage_of_time_in_llm_for_unfixed_warnings = (
+        evaluation_results_file_df.loc[
+            ~evaluation_results_file_df["plausibleFix"], "LLMAddedTime"
+        ].sum() /
+        (evaluation_results_file_df.loc[
+            ~evaluation_results_file_df["plausibleFix"], "executionTimeClassification"
+        ].sum() + evaluation_results_file_df.loc[
+            ~evaluation_results_file_df["plausibleFix"], "executionTimeFixTP"
+        ].sum() + evaluation_results_file_df.loc[
+            ~evaluation_results_file_df["plausibleFix"], "executionTimeFixFP"
+        ].sum()) * 100
+        if (evaluation_results_file_df.loc[
+            ~evaluation_results_file_df["plausibleFix"], "executionTimeClassification"
+        ].sum() + evaluation_results_file_df.loc[
+            ~evaluation_results_file_df["plausibleFix"], "executionTimeFixTP"
+        ].sum() + evaluation_results_file_df.loc[
+            ~evaluation_results_file_df["plausibleFix"], "executionTimeFixFP"
+        ].sum()) else 0
+    )
+    mdFile.new_line(
+        f"Percentage of Time in LLM for unfixed warnings: {percentage_of_time_in_llm_for_unfixed_warnings:.2f}%  ")
+
+    percentage_of_time_executing_tools_and_middleware_for_unfixed_warnings = (
+        (100 - percentage_of_time_in_llm_for_unfixed_warnings -
+         percentage_of_time_outside_of_cca_for_unfixed_warnings)
+    )
+    mdFile.new_line(
+        f"Percentage of Time executing tools and middleware (everything else) for unfixed warnings: {percentage_of_time_executing_tools_and_middleware_for_unfixed_warnings:.2f}%  ")
+
     # --- Tokens and Cost Calculations ---
 
     # Classification tokens

@@ -40,6 +40,8 @@ def extend_evaluation_results_with_more_stats(evaluation_results_file: click.Fil
 
     add_info_change_approver_ablation(evaluation_results_file_df)
 
+    add_info_execution_time_in_substeps(evaluation_results_file_df)
+
     # Move the new columns to the end of the DataFrame
     # cols = [col for col in evaluation_results_file_df.columns if col not in ["compilationPassed", "sonarQubeCheckPassed"]]
     # cols += ["compilationPassed", "sonarQubeCheckPassed"]
@@ -236,6 +238,131 @@ def add_info_change_approver_ablation(evaluation_results_file_df: pd.DataFrame):
         ),
         axis=1
     )
+
+
+def add_info_execution_time_in_substeps(evaluation_results_file_df: pd.DataFrame):
+
+    evaluation_results_file_df["mavenBuildAddedTime"] = evaluation_results_file_df.apply(
+        lambda row: get_time_added("build",
+                                   row["instanceID"],
+                                   row["experimentNumber"],
+                                   row["classification"]
+                                   ),
+        axis=1
+    )
+    evaluation_results_file_df["mavenTestAddedTime"] = evaluation_results_file_df.apply(
+        lambda row: get_time_added("test",
+                                   row["instanceID"],
+                                   row["experimentNumber"],
+                                   row["classification"]
+                                   ),
+        axis=1
+    )
+    evaluation_results_file_df["mavenAnalysisAddedTime"] = evaluation_results_file_df.apply(
+        lambda row: get_time_added("analysis",
+                                   row["instanceID"],
+                                   row["experimentNumber"],
+                                   row["classification"]
+                                   ),
+        axis=1
+    )
+    evaluation_results_file_df["LLMAddedTime"] = evaluation_results_file_df.apply(
+        lambda row: get_time_added("LLM",
+                                   row["instanceID"],
+                                   row["experimentNumber"],
+                                   row["classification"]
+                                   ),
+        axis=1
+    )
+
+
+def get_time_added(step_to_get_time_for: str, instance_id: int, experiment_number: int, classification: str) -> int:
+
+    time_added = 0
+
+    # times in classification
+    try:
+        execution_info_file_name = next(f for f in os.listdir(os.path.join("experimental_setups", "experiment_" + str(experiment_number), "classification", "execution_info"))
+                                        if os.path.isfile(os.path.join("experimental_setups", "experiment_" + str(experiment_number), "classification", "execution_info", f)) and f.startswith(str(instance_id) + "_"))
+    except StopIteration:
+        print(
+            f"ERROR: execution_info file not found for {str(instance_id)} in classification")
+        return 0
+
+    execution_info_file_path = os.path.join("experimental_setups", "experiment_" + str(
+        experiment_number), "classification", "execution_info", execution_info_file_name)
+
+    with open(execution_info_file_path, "r") as f:
+        execution_info_file_content = f.read()
+
+    if step_to_get_time_for == "build":
+        pattern_start = r"!! Maven build startup timestamp: (\d+)"
+    elif step_to_get_time_for == "test":
+        pattern_start = r"!! Maven test startup timestamp: (\d+)"
+    elif step_to_get_time_for == "analysis":
+        pattern_start = r"!! SonarQube analysis startup timestamp: (\d+)"
+    elif step_to_get_time_for == "LLM":
+        pattern_start = r"!! AI Chat Completion startup timestamp: (\d+)"
+
+    start_time_match_iter = re.finditer(
+        pattern_start, execution_info_file_content)
+
+    if step_to_get_time_for == "build":
+        pattern_end = r"!! Maven build end timestamp: (\d+)"
+    elif step_to_get_time_for == "test":
+        pattern_end = r"!! Maven test end timestamp: (\d+)"
+    elif step_to_get_time_for == "analysis":
+        pattern_end = r"!! SonarQube analysis end timestamp: (\d+)"
+    elif step_to_get_time_for == "LLM":
+        pattern_end = r"!! AI Chat Completion end timestamp: (\d+)"
+
+    end_time_match_iter = re.finditer(
+        pattern_end, execution_info_file_content)
+
+    for start_time_match in start_time_match_iter:
+        start_time = int(start_time_match.group(1).strip())
+        try:
+            end_time_match = next(end_time_match_iter)
+        except StopIteration:
+            print(
+                f"ERROR: No end time found for a start time of {step_to_get_time_for} for {str(instance_id)} in classification")
+            return 0
+        end_time = int(end_time_match.group(1).strip())
+        time_added += end_time - start_time
+
+    # times in fix_tp or fix_fp
+    try:
+        execution_info_file_name = next(f for f in os.listdir(os.path.join("experimental_setups", "experiment_" + str(experiment_number), "fix_" + str(classification).lower(), "execution_info"))
+                                        if os.path.isfile(os.path.join("experimental_setups", "experiment_" + str(experiment_number), "fix_" + str(classification).lower(), "execution_info", f)) and f.startswith(str(instance_id) + "_"))
+    except StopIteration:
+        print(
+            f"ERROR: execution_info file not found for {str(instance_id)} in fix_{str(classification).lower()}")
+        return 0
+
+    execution_info_file_path = os.path.join("experimental_setups", "experiment_" + str(
+        experiment_number), "fix_" + str(classification).lower(), "execution_info", execution_info_file_name)
+
+    with open(execution_info_file_path, "r") as f:
+        execution_info_file_content = f.read()
+
+    start_time_match_iter = re.finditer(
+        pattern_start, execution_info_file_content)
+
+    end_time_match_iter = re.finditer(
+        pattern_end, execution_info_file_content)
+
+    for start_time_match in start_time_match_iter:
+        start_time = int(start_time_match.group(1).strip())
+        try:
+            end_time_match = next(end_time_match_iter)
+        except StopIteration:
+            print(
+                f"ERROR: No end time found for a start time of {step_to_get_time_for} for {str(instance_id)} in fix_{str(classification).lower()}")
+            return 0
+        end_time = int(end_time_match.group(1).strip())
+        time_added += end_time - start_time
+
+    return time_added
 
 
 def get_ablation_no_change_approver_is_still_plausible(instance_id: int, experiment_number: int, classification: str, plausible_fix: bool) -> bool:

@@ -135,6 +135,37 @@ Median execution time by sub-agent:
 Classification: 1.27 minutes  
 Fix_TP: 1.65 minutes  
 Fix_FP: 1.04 minutes  
+### Maven Build, Test, SonarQube Analysis Time and LLM Time
+
+Total Maven Build Time: 248.73 minutes  
+Total Maven Test Time: 145.69 minutes  
+Total SonarQube Analysis Time: 36.27 minutes  
+Total LLM Time: 398.4 minutes  
+
+Mean Maven Build Time (per warning): 0.85 minutes  
+Mean Maven Test Time (per warning): 0.5 minutes  
+Mean SonarQube Analysis Time (per warning): 0.12 minutes  
+Mean LLM Time (per warning): 1.37 minutes  
+
+Median Maven Build Time (per warning): 0.58 minutes  
+Median Maven Test Time (per warning): 0.3 minutes  
+Median SonarQube Analysis Time (per warning): 0.1 minutes  
+Median LLM Time (per warning): 1.02 minutes  
+
+Total Time outside of CCA: 430.69 minutes  
+Mean Time outside of CCA: 1.48 minutes  
+Median Time outside of CCA: 1.08 minutes  
+
+Percentage of Time outside of CCA: 42.48%  
+Percentage of Time in LLM: 39.29%  
+Percentage of Time executing tools and middleware (everything else): 18.23%  
+#### Execution time in subparts for unfixed warnings only  
+
+Mean Time outside of CCA for unfixed warnings: 2.84 minutes  
+Mean Time in LLM for unfixed warnings: 6.16 minutes  
+Percentage of Time outside of CCA for unfixed warnings: 24.56%  
+Percentage of Time in LLM for unfixed warnings: 53.26%  
+Percentage of Time executing tools and middleware (everything else) for unfixed warnings: 22.18%  
 ### Cost
 
 #### Tokens Count

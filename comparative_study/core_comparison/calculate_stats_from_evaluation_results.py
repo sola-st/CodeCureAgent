@@ -381,7 +381,7 @@ def calculate_stats_from_evaluation_results(core_evaluation_results_file: click.
     # CORE fix correctness
     fix_correct = ((evaluation_results_file_df["coreNumberCorrectFixes"] > 0) &
                    (evaluation_results_file_df["coreFixCreated"] == True)).sum()
-    fix_not_correct = ((evaluation_results_file_df["coreNumberCorrectFixes"] > 0) &
+    fix_not_correct = ((evaluation_results_file_df["coreNumberCorrectFixes"] == 0) &
                        (evaluation_results_file_df["coreFixCreated"] == True)).sum()
     total_fix_correctness = fix_correct + fix_not_correct
     percent_fix_correct = 100 * fix_correct / \
@@ -392,7 +392,7 @@ def calculate_stats_from_evaluation_results(core_evaluation_results_file: click.
     fix_correct_all_warnings = (
         evaluation_results_file_df["coreNumberCorrectFixes"] > 0).sum()
     fix_not_correct_all_warnings = (
-        evaluation_results_file_df["coreNumberCorrectFixes"] > 0).sum()
+        evaluation_results_file_df["coreNumberCorrectFixes"] == 0).sum()
     total_fix_correctness_all_warnings = fix_correct_all_warnings + \
         fix_not_correct_all_warnings
 
@@ -561,6 +561,14 @@ def calculate_stats_from_evaluation_results(core_evaluation_results_file: click.
 
     mdFile.new_line(
         f"CORE fix created + build successful + target warning removed + no other warning introduced + test successful + fix correct + no code smell outside introduced: {fix_created_build_test_target_removed_no_other_introduced_fix_correct_no_code_smell_outside}/{total_fix_correctness_all_warnings} ({percent_fix_created_build_test_target_removed_no_other_introduced_fix_correct_no_code_smell_outside:.2f}%)  ")
+
+    mdFile.new_line()
+
+    # Calculate margin of improvement from CORE with oracle and correctness inspection to CCA's end-to-end performance
+    margin_improvement_with_man_insepction_cca_end_to_end = percent_end_to_end_all - \
+        percent_fix_created_build_test_target_removed_no_other_introduced_fix_correct
+    mdFile.new_line(
+        f"Margin of improvement from CORE's performance after oracle (all oracle steps applied) and correctness manual inspection to CCA's end-to-end performance: {margin_improvement_with_man_insepction_cca_end_to_end:.2f}%  ")
 
     mdFile.new_header(level=3, title="Time Efficiency",
                       add_table_of_contents="n")

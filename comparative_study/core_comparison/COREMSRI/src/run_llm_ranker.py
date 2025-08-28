@@ -6,6 +6,7 @@ import time
 from jinja2 import Environment
 from pathlib import Path
 import json
+import pandas as pd
 from tqdm import tqdm
 
 from dotenv import load_dotenv
@@ -39,6 +40,12 @@ def verify_files(
 ):
 
     assert os.path.exists(diffs_folder)
+
+    warnings_to_rerun_path = "../evaluation_dataset_filled_up_to_1000_input_file_extended_with_column_numbers.csv"
+    warnings_to_rerun_df = pd.read_csv(warnings_to_rerun_path)
+    warning_ids_to_rerun = warnings_to_rerun_df["instanceID"].to_list()
+
+    print(warning_ids_to_rerun)
 
     # Verify the generated file using LLMs
     model_config = {
@@ -88,6 +95,11 @@ def verify_files(
             warning_id = re.match(r"(?P<warning_id>\d+)_.*",
                                   diff_file).group("warning_id")
 
+            warning_id_is_to_be_regenerated = False
+
+            if int(warning_id) in warning_ids_to_rerun:
+                warning_id_is_to_be_regenerated = True
+
             if current_warning_id != warning_id:
                 # If previous ID is now changed (and was not initial -1 value) => record end timestamp of previous warningID
                 if current_warning_id != -1:
@@ -95,10 +107,11 @@ def verify_files(
                         with open(os.path.join(output_log_dir, query_folderName, str(current_warning_id) + "_execution_log.log"), "a+") as execution_log_file:
                             execution_log_file.write(
                                 f"!! Warning {str(current_warning_id)} ranker end timestamp: " + str(time.time_ns()) + "\n")
+                    log_current_warning = False
 
                 current_warning_id = warning_id
 
-                if (overwrite is True) or not os.path.exists(os.path.join(output_log_dir, query_folderName, str(current_warning_id) + "_execution_log.log")):
+                if (overwrite is True) or not os.path.exists(os.path.join(output_log_dir, query_folderName, str(current_warning_id) + "_execution_log.log")) or warning_id_is_to_be_regenerated:
                     log_current_warning = True
                     # Record start timestamp
                     with open(os.path.join(output_log_dir, query_folderName, str(current_warning_id) + "_execution_log.log"), "w") as execution_log_file:
@@ -148,7 +161,7 @@ def verify_files(
             # call model
             if dry_run is True:
                 continue
-            if overwrite is False:
+            if overwrite is False and warning_id_is_to_be_regenerated is False:
                 if os.path.exists(
                     os.path.join(
                         query_output_dir, diff_file.split(".")[0] + "_logs.log"

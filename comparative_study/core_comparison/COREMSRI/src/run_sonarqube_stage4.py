@@ -9,7 +9,7 @@ import time
 import pandas as pd
 
 
-WARNINGS_TO_RUN_ON_FILE_NAME = "../evaluation_dataset_first_291_input_file_extended_with_column_numbers.csv"
+WARNINGS_TO_RUN_ON_FILE_NAME = "../evaluation_dataset_filled_up_to_1000_input_file_extended_with_column_numbers.csv"
 
 SORALD_JAR_PATH = "/workspaces/master-thesis-pascal-joos/code_cure_agent/sorald/sorald.jar"
 

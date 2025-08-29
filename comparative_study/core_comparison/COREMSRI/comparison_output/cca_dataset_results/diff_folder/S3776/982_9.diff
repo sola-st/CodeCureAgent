@@ -1,0 +1,457 @@
+@@ -904,255 +904,17 @@
+ 						clusterHalfEdge, visitedEdges);
+ 				if (visited != 1) {
+ 					int parentage = getCombinedHalfEdgeParentage_(clusterHalfEdge);
+-					if (isGoodParentage(parentage)) {
+-						restorePolylineParts_(clusterHalfEdge, newPolyline,
+-								visitedEdges, visitedClusters,
+-								geometry_dominant);
+-					} else {
+-						//
+-					}
+-				}
+-
+-				clusterHalfEdge = m_topo_graph.getHalfEdgeNext(m_topo_graph
+-						.getHalfEdgeTwin(clusterHalfEdge));
+-			} while (clusterHalfEdge != firstClusterHalfEdge);
+-		}
+-
+-		for (int cluster = m_topo_graph.getFirstCluster(); cluster != -1; cluster = m_topo_graph
+-				.getNextCluster(cluster)) {
+-			int visited = m_topo_graph.getClusterUserIndex(cluster,
+-					visitedClusters);
+-			if (visited != 1) {
+-				int parentage = m_topo_graph.getClusterParentage(cluster);
+-				if (isGoodParentage(parentage)) {
+-					if (multipointPath == -1)
+-						multipointPath = shape.insertPath(newMultipoint, -1);
+-
+-					int viter = m_topo_graph.getClusterVertexIterator(cluster);
+-					int v;
+-					if (viter != -1) {
+-						v = m_topo_graph.getVertexFromVertexIterator(viter);
+-						int vertex_dominant = getVertexByID_(v,
+-								geometry_dominant);
+-						shape.addVertex(multipointPath, vertex_dominant);
+-					}
+-				} else {
+-					//
+-				}
+-			}
+-		}
+-
+-		m_topo_graph.deleteUserIndexForHalfEdges(visitedEdges);
+-		m_topo_graph.deleteUserIndexForClusters(visitedClusters);
+-		int[] result = new int[2];
+-		result[0] = newMultipoint;
+-		result[1] = newPolyline;
+-		return result;
+-	}
+-
+-	private int topoOperationMultiPoint_() {
+-		EditShape shape = m_topo_graph.getShape();
+-		int newGeometry = shape.createGeometry(Geometry.Type.MultiPoint);
+-		int newPath = shape.insertPath(newGeometry, -1);// add new path at the
+-														// end
+-
+-		// Now extract paths that
+-		for (int cluster = m_topo_graph.getFirstCluster(); cluster != -1; cluster = m_topo_graph
+-				.getNextCluster(cluster)) {
+-			int parentage = m_topo_graph.getClusterParentage(cluster);
+-			if (isGoodParentage(parentage)) {
+-				int vert = -1;
+-				for (int iterator = m_topo_graph
+-						.getClusterVertexIterator(cluster); iterator != -1; iterator = m_topo_graph
+-						.incrementVertexIterator(iterator)) {
+-					int vertex = m_topo_graph
+-							.getVertexFromVertexIterator(iterator);
+-					if (vert == -1)
+-						vert = vertex;
+-					int geometry = shape.getGeometryFromPath(shape
+-							.getPathFromVertex(vertex));
+-					int geomID = m_topo_graph.getGeometryID(geometry);
+-					if (isGoodParentage(geomID)) {
+-						vert = vertex;
+-						break;
+-					}
+-				}
+-				assert (vert != -1);
+-				shape.addVertex(newPath, vert);
+-			}
+-		}
+-
+-		return newGeometry;
+-	}
+-
+-	void initMaskLookupArray_(int len) {
+-		m_mask_lookup = new boolean[len];
+-		for (int i = 0; i < len; i++) {
+-			m_mask_lookup[i] = false;
+-		}
+-	}
+-
+-	static MultiPoint processMultiPointIntersectOrDiff_(MultiPoint multi_point,
+-			Geometry intersector, double tolerance, boolean bClipIn) {
+-		MultiPoint multi_point_out = ((MultiPoint) multi_point.createInstance());
+-		Point2D[] input_points = new Point2D[1000];
+-		PolygonUtils.PiPResult[] test_results = new PolygonUtils.PiPResult[1000];
+-		int npoints = multi_point.getPointCount();
+-		boolean bFirstOut = true;
+-		boolean bArea = (intersector.getDimension() == 2);
+-		if (intersector.getDimension() != 1 && intersector.getDimension() != 2)
+-			throw GeometryException.GeometryInternalError();
+-
+-		for (int ipoints = 0; ipoints < npoints;) {
+-			int num = multi_point.queryCoordinates(input_points, 1000, ipoints,
+-					-1) - ipoints;
+-
+-			if (bArea)
+-				PolygonUtils.testPointsInArea2D(intersector, input_points,
+-						(int) num, tolerance, test_results);
+-			else
+-				PolygonUtils.testPointsOnLine2D(intersector, input_points,
+-						(int) num, tolerance, test_results);
+-			int i0 = 0;
+-			for (int i = 0; i < num; i++) {
+-				boolean bTest = test_results[i] == PolygonUtils.PiPResult.PiPOutside;
+-				if (!bClipIn)
+-					bTest = !bTest;
+-
+-				if (bTest) {
+-					if (bFirstOut) {
+-						bFirstOut = false;
+-						multi_point_out.add(multi_point, 0, ipoints);
+-					}
+-
+-					if (i0 != i)
+-						multi_point_out.add(multi_point, ipoints + i0, ipoints
+-								+ i);
+-
+-					i0 = i + 1;
+-				}
+-			}
+-
+-			if (!bFirstOut && i0 != num)
+-				multi_point_out.add(multi_point, ipoints + i0, ipoints + num);
+-
+-			ipoints += num;
+-		}
+-
+-		if (bFirstOut)
+-			return multi_point;
+-
+-		return multi_point_out;
+-	}
+-
+-	static MultiPoint intersection(MultiPoint multi_point, Geometry multi_path,
+-			double tolerance) {
+-		return processMultiPointIntersectOrDiff_(multi_point, multi_path,
+-				tolerance, true);
+-	}
+-
+-	static MultiPoint difference(MultiPoint multi_point, Geometry multi_path,
+-			double tolerance) {
+-		return processMultiPointIntersectOrDiff_(multi_point, multi_path,
+-				tolerance, false);
+-	}
+-
+-	static Point processPointIntersectOrDiff_(Point point,
+-			Geometry intersector, double tolerance, boolean bClipIn) {
+-		if (point.isEmpty())
+-			return ((Point) point.createInstance());
+-		if (intersector.isEmpty()) {
+-			return bClipIn ? ((Point) point.createInstance()) : null;
+-		}
+-
+-		Point2D[] input_points = new Point2D[1];
+-		PolygonUtils.PiPResult[] test_results = new PolygonUtils.PiPResult[1];
+-		boolean bArea = intersector.getDimension() == 2;
+-		if (intersector.getDimension() != 1 && intersector.getDimension() != 2)
+-			throw GeometryException.GeometryInternalError();
+-		input_points[0] = point.getXY();
+-		if (bArea)
+-			PolygonUtils.testPointsInArea2D(intersector, input_points, 1,
+-					tolerance, test_results);
+-		else
+-			PolygonUtils.testPointsOnLine2D(intersector, input_points, 1,
+-					tolerance, test_results);
+-
+-		boolean bTest = test_results[0] == PolygonUtils.PiPResult.PiPOutside;
+-		if (!bClipIn)
+-			bTest = !bTest;
+-
+-		if (!bTest)
+-			return point;
+-		else
+-			return ((Point) point.createInstance());
+-	}
+-
+-	static Point intersection(Point point, Geometry geom, double tolerance) {
+-		return processPointIntersectOrDiff_(point, geom, tolerance, true);
+-	}
+-
+-	static Point difference(Point point, Geometry geom, double tolerance) {
+-		return processPointIntersectOrDiff_(point, geom, tolerance, false);
+-	}
+-
+-	static Point intersection(Point point, Point point2, double tolerance) {
+-		if (point.isEmpty() || point2.isEmpty())
+-			return (Point) point.createInstance();
+-
+-		if (CrackAndCluster.non_empty_points_need_to_cluster(tolerance, point,
+-				point2)) {
+-			return CrackAndCluster.cluster_non_empty_points(point, point2, 1,
+-					1, 1, 1);
+-		}
+-
+-		return (Point) point.createInstance();
+-	}
+-
+-	static Point difference(Point point, Point point2, double tolerance) {
+-		if (point.isEmpty())
+-			return (Point) point.createInstance();
+-		if (point2.isEmpty())
+-			return point;
+-
+-		if (CrackAndCluster.non_empty_points_need_to_cluster(tolerance, point,
+-				point2)) {
+-			return (Point) point.createInstance();
+-		}
+-
+-		return point;
+-	}
+-
+-	MultiVertexGeometry planarSimplifyImpl_(MultiVertexGeometry input_geom,
+-			double tolerance, boolean b_use_winding_rule_for_polygons,
+-			boolean dirty_result, ProgressTracker progress_tracker) {
+-		if (input_geom.isEmpty())
+-			return input_geom;
+-
+-		EditShape shape = new EditShape();
+-		int geom = shape.addGeometry(input_geom);
+-		return planarSimplify(shape, geom, tolerance,
+-				b_use_winding_rule_for_polygons, dirty_result, progress_tracker);
+-	}
+-
+ 	MultiVertexGeometry planarSimplify(EditShape shape, int geom,
+ 			double tolerance, boolean b_use_winding_rule_for_polygons,
+ 			boolean dirty_result, ProgressTracker progress_tracker) {
+-		// This method will produce a polygon from a polyline when
+-		// b_use_winding_rule_for_polygons is true. This is used by buffer.
+ 		m_topo_graph = new TopoGraph();
+-		try
+-		{
++		try {
+ 			if (dirty_result
+ 					&& shape.getGeometryType(geom) != Geometry.Type.MultiPoint
+ 							.value()) {
+ 				PlaneSweepCrackerHelper plane_sweeper = new PlaneSweepCrackerHelper();
+ 				plane_sweeper.sweepVertical(shape, tolerance);
+-				if (plane_sweeper.hadCompications())// shame. The one pass
+-													// planesweep had some
+-													// complications. Need to do
+-													// full crack and cluster.
+-				{
++				if (plane_sweeper.hadCompications()) {
+ 					CrackAndCluster.execute(shape, tolerance, progress_tracker, true);
+ 					dirty_result = false;
+ 				} else {
+@@ -1165,171 +927,81 @@
+ 			
+ 			if (!b_use_winding_rule_for_polygons
+ 					|| shape.getGeometryType(geom) == Geometry.Type.MultiPoint
+-							.value())
++							.value()) {
+ 				m_topo_graph.setAndSimplifyEditShapeAlternate(shape, geom, progress_tracker);
+-			else
++			} else {
+ 				m_topo_graph.setAndSimplifyEditShapeWinding(shape, geom, progress_tracker);
++			}
+ 	
+ 			if (m_topo_graph.dirty_check_failed()) {
+-				// we ran the sweep_vertical() before and it produced some
+-				// issues that where detected by topo graph only.
+ 				assert (dirty_result);
+ 				m_topo_graph.removeShape();
+ 				m_topo_graph = null;
+-				// that's at most two level recursion
+ 				return planarSimplify(shape, geom, tolerance,
+ 						b_use_winding_rule_for_polygons, false,
+ 						progress_tracker);
+-			} else {
+-				//can proceed
+ 			}
+ 			
+ 			m_topo_graph.check_dirty_planesweep(NumberUtils.TheNaN);
+ 			
+ 			int ID_a = m_topo_graph.getGeometryID(geom);
+ 			initMaskLookupArray_((ID_a) + 1);
+-			m_mask_lookup[ID_a] = true; // Works only when there is a single
+-										// geometry in the edit shape.
+-			// To make it work when many geometries are present, this need to be
+-			// modified.
++			m_mask_lookup[ID_a] = true;
+ 	
+ 			if (shape.getGeometryType(geom) == Geometry.Type.Polygon.value()
+ 					|| (b_use_winding_rule_for_polygons && shape
+ 							.getGeometryType(geom) != Geometry.Type.MultiPoint
+ 							.value())) {
+-				// geom can be a polygon or a polyline.
+-				// It can be a polyline only when the winding rule is true.
+ 				shape.setFillRule(geom,  Polygon.FillRule.enumFillRuleOddEven);
+ 				int resGeom = topoOperationPolygonPolygon_(geom, -1, -1);
+ 	
+ 				Polygon polygon = (Polygon) shape.getGeometry(resGeom);
+-				polygon.setFillRule(Polygon.FillRule.enumFillRuleOddEven);//standardize the fill rule.
++				polygon.setFillRule(Polygon.FillRule.enumFillRuleOddEven);
++
+ 				if (!dirty_result) {
+ 					((MultiVertexGeometryImpl) polygon._getImpl()).setIsSimple(
+ 							GeometryXSimple.Strong, tolerance, false);
+ 					((MultiPathImpl) polygon._getImpl())._updateOGCFlags();
+-				} else
++				} else {
+ 					((MultiVertexGeometryImpl) polygon._getImpl()).setIsSimple(
+-							GeometryXSimple.Weak, 0.0, false);// dirty result means
+-																// simple but with 0
+-																// tolerance.
++							GeometryXSimple.Weak, 0.0, false);
++				}
+ 	
+ 				return polygon;
+ 			} else if (shape.getGeometryType(geom) == Geometry.Type.Polyline
+ 					.value()) {
+-				int resGeom = topoOperationPolylinePolylineOrPolygon_(-1);
+-	
+-				Polyline polyline = (Polyline) shape.getGeometry(resGeom);
+-				if (!dirty_result)
+-					((MultiVertexGeometryImpl) polyline._getImpl()).setIsSimple(
+-							GeometryXSimple.Strong, tolerance, false);
+-	
+-				return polyline;
++				return planarSimplifyPolyline_(shape, geom, tolerance, dirty_result);
+ 			} else if (shape.getGeometryType(geom) == Geometry.Type.MultiPoint
+ 					.value()) {
+-				int resGeom = topoOperationMultiPoint_();
+-	
+-				MultiPoint mp = (MultiPoint) shape.getGeometry(resGeom);
+-				if (!dirty_result)
+-					((MultiVertexGeometryImpl) mp._getImpl()).setIsSimple(
+-							GeometryXSimple.Strong, tolerance, false);
+-	
+-				return mp;
++				return planarSimplifyMultiPoint_(shape, geom, tolerance, dirty_result);
+ 			} else {
+ 				throw GeometryException.GeometryInternalError();
+ 			}
+-		}
+-		finally {
++		} finally {
+ 			m_topo_graph.removeShape();
+ 		}
+ 	}
+ 
+-	// static
+-	static MultiVertexGeometry planarSimplify(MultiVertexGeometry input_geom,
+-			double tolerance, boolean use_winding_rule_for_polygons,
+-			boolean dirty_result, ProgressTracker progress_tracker) {
+-		TopologicalOperations topoOps = new TopologicalOperations();
+-		return topoOps.planarSimplifyImpl_(input_geom, tolerance,
+-				use_winding_rule_for_polygons, dirty_result, progress_tracker);
+-	}
+-
+-    boolean planarSimplifyNoCrackingAndCluster(boolean OGCoutput, EditShape shape, int geom, ProgressTracker progress_tracker)
+-    {
+-      m_bOGCOutput = OGCoutput;
+-      m_topo_graph = new TopoGraph();
+-      int rule = shape.getFillRule(geom);
+-      int gt = shape.getGeometryType(geom);
+-      if (rule != Polygon.FillRule.enumFillRuleWinding || gt == GeometryType.MultiPoint)
+-        m_topo_graph.setAndSimplifyEditShapeAlternate(shape, geom, progress_tracker);
+-      else
+-        m_topo_graph.setAndSimplifyEditShapeWinding(shape, geom, progress_tracker);
+-
+-      if (m_topo_graph.dirty_check_failed())
+-        return false;
+-
+-      m_topo_graph.check_dirty_planesweep(NumberUtils.TheNaN);
+-
+-      int ID_a = m_topo_graph.getGeometryID(geom);
+-      initMaskLookupArray_((ID_a)+1);
+-      m_mask_lookup[ID_a] = true; //Works only when there is a single geometry in the edit shape.
+-      //To make it work when many geometries are present, this need to be modified.
+-
+-      if (shape.getGeometryType(geom) == GeometryType.Polygon || (rule == Polygon.FillRule.enumFillRuleWinding && shape.getGeometryType(geom) != GeometryType.MultiPoint))
+-      {
+-        //geom can be a polygon or a polyline.
+-        //It can be a polyline only when the winding rule is true.
+-        shape.setFillRule(geom, Polygon.FillRule.enumFillRuleOddEven);
+-        int resGeom = topoOperationPolygonPolygon_(geom, -1, -1);
+-        shape.swapGeometry(resGeom, geom);
+-        shape.removeGeometry(resGeom);
+-      }
+-      else if (shape.getGeometryType(geom) == GeometryType.Polyline)
+-      {
++	private MultiVertexGeometry planarSimplifyPolyline_(EditShape shape, int geom,
++			double tolerance, boolean dirty_result) {
+         int resGeom = topoOperationPolylinePolylineOrPolygon_(-1);
+-        shape.swapGeometry(resGeom, geom);
+-        shape.removeGeometry(resGeom);
+-      }
+-      else if (shape.getGeometryType(geom) == GeometryType.MultiPoint)
+-      {
+-        int resGeom = topoOperationMultiPoint_();
+-        shape.swapGeometry(resGeom, geom);
+-        shape.removeGeometry(resGeom);
+-      }
+-      else
+-      {
+-        throw new GeometryException("internal error");
+-      }
+-      
+-      return true;
+-    }
+-	
+-	
+-    static MultiVertexGeometry simplifyOGC(MultiVertexGeometry input_geom, double tolerance, boolean dirty_result, ProgressTracker progress_tracker)
+-    {
+-      TopologicalOperations topoOps = new TopologicalOperations();
+-      topoOps.m_bOGCOutput = true;
+-      return topoOps.planarSimplifyImpl_(input_geom, tolerance, false, dirty_result, progress_tracker);
++		Polyline polyline = (Polyline) shape.getGeometry(resGeom);
++		if (!dirty_result)
++			((MultiVertexGeometryImpl) polyline._getImpl()).setIsSimple(
++					GeometryXSimple.Strong, tolerance, false);
++		return polyline;
+     }
+ 	
+-	public int difference(int geometry_a, int geometry_b) {
+-		int gtA = m_topo_graph.getShape().getGeometryType(geometry_a);
+-		int gtB = m_topo_graph.getShape().getGeometryType(geometry_b);
+-		int dim_a = Geometry.getDimensionFromType(gtA);
+-		int dim_b = Geometry.getDimensionFromType(gtB);
+-		if (dim_a > dim_b) {
+-			return geometry_a;
++	private MultiVertexGeometry planarSimplifyMultiPoint_(EditShape shape, int geom,
++			double tolerance, boolean dirty_result) {
++		int resGeom = topoOperationMultiPoint_();
++		MultiPoint mp = (MultiPoint) shape.getGeometry(resGeom);
++		if (!dirty_result)
++			((MultiVertexGeometryImpl) mp._getImpl()).setIsSimple(
++					GeometryXSimple.Strong, tolerance, false);
++		return mp;
+ 		}
+ 
+-		int ID_a = m_topo_graph.getGeometryID(geometry_a);
+-		int ID_b = m_topo_graph.getGeometryID(geometry_b);
+-		initMaskLookupArray_((ID_a | ID_b) + 1);
+-		m_mask_lookup[m_topo_graph.getGeometryID(geometry_a)] = true;
+-
+-		if (dim_a == 2 && dim_b == 2)
+-			return topoOperationPolygonPolygon_(geometry_a, geometry_b, -1);
+-		if (dim_a == 1 && dim_b == 2)
+-			return topoOperationPolylinePolylineOrPolygon_(-1);
+-		if (dim_a == 1 && dim_b == 1)
+ 			return topoOperationPolylinePolylineOrPolygon_(-1);
+ 		if (dim_a == 0)
+ 			return topoOperationMultiPoint_();

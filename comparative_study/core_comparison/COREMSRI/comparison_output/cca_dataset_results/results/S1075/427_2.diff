@@ -1,0 +1,73 @@
+@@ -64,9 +64,12 @@
+ 	private final String dataDir;
+ 	private final ServletContextListener parent;
+ 
+-	public UpdateKnowledgeBase(String dataDir, ServletContextListener parent) {
++	private final ServletContext servletContext;
++
++	public UpdateKnowledgeBase(ServletContext ctx, String dataDir, ServletContextListener parent) {
+ 		this.dataDir = dataDir;
+ 		this.parent = parent;
++		this.servletContext = ctx;
+ 	}
+ 
+ 	private String diffFile() { return dataDir + "diff.tab.txt"; }
+@@ -76,13 +79,23 @@
+ 	private String oldTBoxAnnotationsDir() { return dataDir + "oldAnnotations/"; }
+ 	//For display model migration
+ 	private String oldDisplayModelTBoxPath() { return dataDir + "oldDisplayModel/displayTBOX.n3"; }
+-	private static final String NEW_DISPLAYMODEL_TBOX_PATH = "/WEB-INF/ontologies/app/menuload/displayTBOX.n3";
+ 	private String oldDisplayModelDisplayMetadataPath() { return dataDir + "oldDisplayModel/displayDisplay.n3"; }
+-	private static final String NEW_DISPLAYMODEL_DISPLAYMETADATA_PATH = "/WEB-INF/ontologies/app/menuload/displayDisplay.n3";
+-	private static final String NEW_DISPLAYMODEL_PATH = "/WEB-INF/ontologies/app/menu.n3";
+-	private static final String LOADED_STARTUPT_DISPLAYMODEL_DIR = "/WEB-INF/ontologies/app/loadedAtStartup/";
+ 	private String oldDisplayModelVivoListViewPath() { return dataDir + "oldDisplayModel/vivoListViewConfig.rdf"; }
+ 
++	// The following are no longer hardcoded URIs, will be resolved dynamically via ServletContext
++	private String newDisplayModelTboxPath() {
++		return servletContext.getRealPath("/WEB-INF/ontologies/app/menuload/displayTBOX.n3");
++	}
++	private String newDisplayModelDisplayMetadataPath() {
++		return servletContext.getRealPath("/WEB-INF/ontologies/app/menuload/displayDisplay.n3");
++	}
++	private String newDisplayModelPath() {
++		return servletContext.getRealPath("/WEB-INF/ontologies/app/menu.n3");
++	}
++	private String loadedStartupDisplayModelDir() {
++		return servletContext.getRealPath("/WEB-INF/ontologies/app/loadedAtStartup/");
++	}
++
+ 	public void contextInitialized(ServletContextEvent sce) {
+ 		ServletContext ctx = sce.getServletContext();
+ 		StartupStatus ss = StartupStatus.getBean(ctx);
+@@ -125,18 +138,18 @@
+ 			    OntModel oldDisplayModelTboxModel = loadModelFromFile(ctx.getRealPath(oldDisplayModelTBoxPath()));
+ 			    settings.setOldDisplayModelTboxModel(oldDisplayModelTboxModel);
+ 			    //new display model tbox model
+-			    OntModel newDisplayModelTboxModel = loadModelFromFile(ctx.getRealPath(NEW_DISPLAYMODEL_TBOX_PATH));
++			    OntModel newDisplayModelTboxModel = loadModelFromFile(newDisplayModelTboxPath());
+ 			    settings.setNewDisplayModelTboxModel(newDisplayModelTboxModel);
+ 			    //old display model display model metadata
+ 			    OntModel oldDisplayModelDisplayMetadataModel = loadModelFromFile(ctx.getRealPath(oldDisplayModelDisplayMetadataPath()));
+ 			    settings.setOldDisplayModelDisplayMetadataModel(oldDisplayModelDisplayMetadataModel);
+ 			    //new display model display model metadata
+-			    OntModel newDisplayModelDisplayMetadataModel = loadModelFromFile(ctx.getRealPath(NEW_DISPLAYMODEL_DISPLAYMETADATA_PATH));
++			    OntModel newDisplayModelDisplayMetadataModel = loadModelFromFile(newDisplayModelDisplayMetadataPath());
+ 			    settings.setNewDisplayModelDisplayMetadataModel(newDisplayModelDisplayMetadataModel);
+ 			    //Get new display model
+-			    OntModel newDisplayModelFromFile = loadModelFromFile(ctx.getRealPath(NEW_DISPLAYMODEL_PATH));
++			    OntModel newDisplayModelFromFile = loadModelFromFile(newDisplayModelPath());
+ 			    settings.setNewDisplayModelFromFile(newDisplayModelFromFile);
+-			    OntModel loadedAtStartupFiles = loadModelFromDirectory(ctx.getRealPath(LOADED_STARTUPT_DISPLAYMODEL_DIR));
++			    OntModel loadedAtStartupFiles = loadModelFromDirectory(loadedStartupDisplayModelDir());
+ 			    settings.setLoadedAtStartupDisplayModel(loadedAtStartupFiles);
+ 			    OntModel oldDisplayModelVivoListView = loadModelFromFile(ctx.getRealPath(oldDisplayModelVivoListViewPath()));
+ 			    settings.setVivoListViewConfigDisplayModel(oldDisplayModelVivoListView);
+@@ -251,6 +264,7 @@
+ 	public void migrateDisplayModel(UpdateSettings settings) throws Exception {
+ 		log.debug("Beginning migration of display model");
+ 		OntModel displayModel = settings.getDisplayModel();
++
+ 		Model addStatements = ModelFactory.createDefaultModel();
+ 		Model removeStatements = ModelFactory.createDefaultModel();
+ 		//remove old tbox and display metadata statements and add statements from new versions

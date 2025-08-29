@@ -1,0 +1,370 @@
+@@ -551,368 +551,7 @@
+         ArrayList<DBValue> values = binddesc.getAllValues();
+ 
+         for( int i = 0, col=0; i < values.size(); i++ )
+-        {
+-            if( isHidden( i ) )
+-                continue;
+-
+-            if( values.get(i).hashCode() == column.hashCode() )
+-            {
+-                tabledesign.colls.get(col).additional_autocomplete_values = data;
+-                return;
+-            }
+-
+-            col++;
+-        }
+-    }
+-
+-    public void hide( DBValue ... columns )
+-    {
+-        hide(Arrays.asList(columns));
+-    }
+-
+-    public void hide( DBStrukt hist )
+-    {
+-        hide( hist.getAllValues() );
+-    }
+-
+-    public void hide( List<DBValue> columns )
+-    {
+-        for (DBValue column : columns )
+-        {
+-            if( column == null )
+-                continue;
+-
+-            ArrayList<DBValue> values = binddesc.getAllValues();
+-
+-            boolean found = false;
+-
+-            for (int i = 0; i < values.size(); i++) {
+-                if (values.get(i).hashCode() == column.hashCode()) {
+-                    hidden_values.add(i);
+-                    found = true;
+-                    break;
+-                }
+-            }
+-
+-            if (!found) {
+-                System.out.println("Didn't found: " + column.getName());
+-                return;
+-            }
+-        }
+-
+-        configure( table, binddesc, allEditable );
+-    }
+-
+-
+-    public void stopEditing()
+-    {
+-       TableCellEditor ce =  table.getCellEditor();
+-
+-       if( ce != null )
+-           ce.stopCellEditing();
+-    }
+-
+-
+-    public void setCellColor (DBValue column, int row, Color color) {
+-
+-        ArrayList<DBValue> values = binddesc.getAllValues();
+-
+-
+-        for( int i = 0, col=0; i < values.size(); i++ )
+-        {
+-            if( isHidden( i ) )
+-                continue;
+-
+-
+-            if( values.get(i).getName().equals(column.getName()) )
+-            {
+-                tabledesign.addColoredCell(row, col, color);
+-                return;
+-            }
+-
+-            col++;
+-        }
+-    }
+-
+-    public void setToolTip (DBValue column, int row, String tooltip) {
+-
+-        ArrayList<DBValue> values = binddesc.getAllValues();
+-
+-
+-        for( int i = 0, col=0; i < values.size(); i++ )
+-        {
+-            if( isHidden( i ) )
+-                continue;
+-
+-
+-            if( values.get(i).getName().equals(column.getName()) )
+-            {
+-                tabledesign.addToolTipCell(row, col, tooltip);
+-                return;
+-            }
+-
+-            col++;
+-        }
+-    }
+-
+-    public void updateValue( DBValue value, int row )
+-    {
+-        ArrayList<DBValue> values = binddesc.getAllValues();
+-
+-        for( int i = 0, col=0; i < values.size(); i++ )
+-        {
+-            if( isHidden( i ) )
+-                continue;
+-
+-            if( values.get(i).getName().equals(value.getName()) )
+-            {
+-                model.setValueAt(value, row, col);
+-                //model.fireTableCellUpdated(row, col);
+-                return;
+-            }
+-
+-            col++;
+-        }
+-    }
+-
+-    public void updateUI()
+-    {
+-        model.fireTableDataChanged();
+-        row_header.updateUI();
+-        //table.updateUI();
+-    }
+-
+-    /**
+-     * @return -1 if nothing was selected
+-     */
+-    public int getSelectedRow()
+-    {
+-        int row = table.getSelectedRow();
+-
+-        if( row < 0 || row > table.getRowCount() )
+-            return row;
+-
+-        return TableDesign.getModelRow(table, row);
+-    }
+-
+-    public TableDesign getTabledesign() {
+-        return tabledesign;
+-    }
+-
+-    public void showRowHeader(boolean selected)
+-    {
+-        if( selected )
+-            showRowHeader();
+-        else
+-            hideRowHeader();
+-    }
+-
+-    public void showRowHeader()
+-    {
+-        row_header.setVisible(true);
+-    }
+-
+-    public void hideRowHeader()
+-    {
+-        row_header.setVisible(false);
+-    }
+-
+-    private void checkRowHeaderLimit()
+-    {
+-        if( auto_show_row_header < 0 )
+-        {
+-            row_header.setVisible(false);
+-        }
+-        else if( auto_show_row_header == 0 )
+-        {
+-             row_header.setVisible(true);
+-        }
+-        else
+-        {
+-            row_header.setVisible(auto_show_row_header <= table.getRowCount() || row_header.isScrollBarVisible());
+-        }
+-    }
+-
+-    private void readShowHeaderLimit()
+-    {
+-        try {
+-            auto_show_row_header = Integer.parseInt(root.getSetup().getLocalConfig(
+-                    FrameWorkConfigDefinitions.SpreadSheetRowHeaderLimit));
+-
+-        } catch ( NumberFormatException ex ) {
+-            logger.error(StringUtils.exceptionToString(ex));
+-        }
+-    }
+-
+-    public void disableAutoRowHeader()
+-    {
+-        auto_show_row_header = -1;
+-    }
+-
+-    public void enableAutoRowHeader()
+-    {
+-        readShowHeaderLimit();
+-    }
+-
+-    private void addCloseListener()
+-    {
+-        BaseDialogBase base = getBaseDialog();
+-
+-        if( base == null )
+-            return;
+-
+-        base.registerOnCloseListener(() -> {
+-            if( saveUserColWidth )
+-                saveTableHeaderSize();
+-        });
+-    }
+-
+-    private BaseDialogBase getBaseDialog()
+-    {
+-        if( base_dlg == null )
+-            base_dlg = getBaseDialogInt();
+-
+-        return base_dlg;
+-    }
+-
+-    private BaseDialogBase getBaseDialogInt()
+-    {
+-        Container parent = table;
+-
+-        do
+-        {
+-            parent = parent.getParent();
+-
+-            if( parent instanceof BaseDialog ||
+-                parent instanceof BaseDialogDialog )
+-            {
+-                return (BaseDialogBase) parent;
+-            }
+-
+-        } while( parent != null );
+-
+-        return null;
+-    }
+-
+-    private String getUniqueSaveIdForTable()
+-    {
+-        BaseDialogBase base = getBaseDialog();
+-
+-        if( base == null )
+-            return null;
+-
+-        return base.getUniqueDialogIdentifier(this);
+-    }
+-
+-    public void saveTableHeaderSize()
+-    {
+-        if( binddesc == null )
+-        {
+-            logger.error("save Table size without a binddesc not testet yet");
+-            return;
+-        }
+-
+-        String uid = getUniqueSaveIdForTable();
+-
+-        if( uid == null )
+-        {
+-            logger.error("die Tabelle befindet sich nicht in einem BaseDialog sichern nicht möglich!");
+-        }
+-
+-        uid += binddesc.getName();
+-
+-        JTableHeader header = table.getTableHeader();
+-
+-        logger.info("saving cols width for binddesc: " + binddesc.getName() );
+-
+-        Setup setup = root.getSetup();
+-
+-        for( int j = 0; j < table.getColumnCount(); j++ )
+-        {
+-            Rectangle col_rect = header.getHeaderRect(j);
+-
+-            TableDesign.Coll col =  tabledesign.colls.get(TableDesign.getModelCol(table, j));
+-
+-            logger.info(j + ": " + col_rect.width + " " +col.Title + " => " +  col.dbval.getName() );
+-
+-            String col_uid = uid + "_" + col.dbval.getName();
+-
+-            // das j hinten drann ist die Position an der sich die Spalte befindet
+-            setup.setLocalConfig(col_uid, col_rect.width + "," + j);
+-        }
+-    }
+-
+-    private void setUserColWidth()
+-    {
+-        if( binddesc == null )
+-        {
+-            logger.error("save Table size without a binddesc not testet yet");
+-            return;
+-        }
+-
+-        String uid = getUniqueSaveIdForTable();
+-
+-        if( uid == null )
+-        {
+-            logger.error("die Tabelle befindet sich nicht in einem BaseDialog sichern nicht möglich!");
+-        }
+-
+-        uid += binddesc.getName();
+-        Setup setup = root.getSetup();
+-
+-        // remember the position of each column
+-        // in this array
+-        List<Entry<String,Integer>> positions = new ArrayList<>();
+-
+-        for (int i = 0; i < table.getColumnCount(); i++) {
+-            DefaultTableColumnModel colModel  = (DefaultTableColumnModel) table.getColumnModel();
+-            TableColumn             tcol       = colModel.getColumn(i);
+-
+-            int width = 0;
+-
+-            TableDesign.Coll col =  tabledesign.colls.get(TableDesign.getModelCol(table, i));
+-
+-            String col_uid = uid + "_" + col.dbval.getName();
+-
+-            String val = setup.getLocalConfig(col_uid,"");
+-
+-            logger.debug(col_uid + "=" + val);
+-
+-            if( val.isEmpty() )
+-                continue;
+-
+-            String[] values = val.split(",");
+-
+-            try
+-            {
+-                width = Integer.parseInt(values[0]);
+-
+-                if( values.length > 1 )
+-                    positions.add(new AbstractMap.SimpleEntry<>(col_uid, Integer.parseInt(values[1])));
+-
+-            } catch( NumberFormatException ex ) {
+-                logger.error(StringUtils.exceptionToString(ex));
+-                positions.add(new AbstractMap.SimpleEntry<>(col_uid, -1));
+-            }
+-
+-            if( width > 5 )
+-                tcol.setPreferredWidth(width);
+-        }
+-
+-        if (allowReordering) {
+-            ColumnOrder orderer = new ColumnOrder(table);
+-
+-            for (int i = 0; i < positions.size(); i++)
+-            {
+-                Entry<String,Integer> entry = positions.get(i);
+-                orderer.addColumn(entry.getKey(), i, entry.getValue());
+-            }
+-
+-            orderer.moveColumns();
+-        }
+-    }
+-
+-    public String MlM( String message )
++    public String mlm( String message )
+     {
+         base_dlg = getBaseDialog();
+ 

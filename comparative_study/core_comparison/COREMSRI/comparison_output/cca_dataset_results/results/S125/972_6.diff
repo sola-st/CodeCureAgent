@@ -1,0 +1,155 @@
+@@ -537,10 +537,6 @@
+ 
+     int[] maxIndex = new int[numSentences];
+ 
+-    // HashMap<Integer,int[]>[] suffStats_array = new HashMap[numSentences];
+-    // suffStats_array[i] maps candidates of interest for sentence i to an array
+-    // storing the sufficient statistics for that candidate
+-
+     int earlyStop = 0;
+     // number of consecutive iteration an early stopping criterion was satisfied
+ 
+@@ -571,10 +567,8 @@
+ 
+     if (!returnBest)
+       println("FINAL lambda: " + lambdaToString(lambda), 1);
+-    // + " (" + metricName_display + ": " + FINAL_score + ")",1);
+     else
+       println("BEST lambda: " + lambdaToString(lambda), 1);
+-    // + " (" + metricName_display + ": " + FINAL_score + ")",1);
+ 
+     // delete intermediate .temp.*.it* decoder output files
+     for (int iteration = 1; iteration <= maxIts; ++iteration) {
+@@ -694,10 +688,8 @@
+           if (compressFiles == 1 && !decRunResult[0].endsWith(".gz")) {
+             gzipFile(decRunResult[0] + ".PRO.it" + iteration);
+           }
+-        } // if (!fake)
+       }
+-
+-      // ------------- end of saving .pro.it* files ---------------
++      }
+ 
+       int[] candCount = new int[numSentences];
+       int[] lastUsedIndex = new int[numSentences];
+@@ -706,23 +698,14 @@
+       for (int i = 0; i < numSentences; ++i) {
+         candCount[i] = 0;
+         lastUsedIndex[i] = -1;
+-        // suffStats_array[i].clear();
+         suffStats_array[i] = new ConcurrentHashMap<>();
+       }
+ 
+-      // initLambda[0] is not used!
+       double[] initialLambda = new double[1 + numParams];
+       for (int i = 1; i <= numParams; ++i)
+         initialLambda[i] = lambda.get(i);
+ 
+-      // the "score" in initialScore refers to that
+-      // assigned by the evaluation metric)
+-
+-      // you may consider all candidates from iter 1, or from iter (iteration-prevIts) to current
+-      // iteration
+       int firstIt = Math.max(1, iteration - prevIts);
+-      // i.e. only process candidates from the current iteration and candidates
+-      // from up to prevIts previous iterations.
+       println("Reading candidate translations from iterations " + firstIt + "-" + iteration, 1);
+       println("(and computing " + metricName
+           + " sufficient statistics for previously unseen candidates)", 1);
+@@ -733,19 +716,10 @@
+         newCandidatesAdded[it] = 0;
+ 
+       try {
+-        // read temp files from all past iterations
+-        // 3 types of temp files:
+-        // 1. output hypo at iter i
+-        // 2. feature value of each hypo at iter i
+-        // 3. suff stats of each hypo at iter i
+-
+-        // each inFile corresponds to the output of an iteration
+-        // (index 0 is not used; no corresponding index for the current iteration)
+         BufferedReader[] inFile_sents = new BufferedReader[iteration];
+         BufferedReader[] inFile_feats = new BufferedReader[iteration];
+         BufferedReader[] inFile_stats = new BufferedReader[iteration];
+ 
+-        // temp file(array) from previous iterations
+         for (int it = firstIt; it < iteration; ++it) {
+           InputStream inStream_sents, inStream_feats, inStream_stats;
+           if (compressFiles == 0) {
+@@ -767,7 +741,6 @@
+         }
+ 
+         InputStream inStream_sentsCurrIt, inStream_featsCurrIt, inStream_statsCurrIt;
+-        // temp file for current iteration!
+         if (compressFiles == 0) {
+           inStream_sentsCurrIt = new FileInputStream(tmpDirPrefix + "temp.sents.it" + iteration);
+           inStream_featsCurrIt = new FileInputStream(tmpDirPrefix + "temp.feats.it" + iteration);
+@@ -783,12 +756,9 @@
+         BufferedReader inFile_featsCurrIt = new BufferedReader(new InputStreamReader(
+             inStream_featsCurrIt, "utf8"));
+ 
+-        BufferedReader inFile_statsCurrIt = null; // will only be used if statsCurrIt_exists below
+-                                                  // is set to true
+-        PrintWriter outFile_statsCurrIt = null; // will only be used if statsCurrIt_exists below is
+-                                                // set to false
++        BufferedReader inFile_statsCurrIt = null;
++        PrintWriter outFile_statsCurrIt = null;
+ 
+-        // just to check if temp.stat.it.iteration exists
+         boolean statsCurrIt_exists = false;
+ 
+         if (fileExists(tmpDirPrefix + "temp.stats.it" + iteration)) {
+@@ -810,16 +780,10 @@
+           outFile_statsCurrIt = new PrintWriter(tmpDirPrefix + "temp.stats.it" + iteration);
+         }
+ 
+-        // output the 4^th temp file: *.temp.stats.merged
+         PrintWriter outFile_statsMerged = new PrintWriter(tmpDirPrefix + "temp.stats.merged");
+-        // write sufficient statistics from all the sentences
+-        // from the output files into a single file
+         PrintWriter outFile_statsMergedKnown = new PrintWriter(tmpDirPrefix
+             + "temp.stats.mergedKnown");
+-        // write sufficient statistics from all the sentences
+-        // from the output files into a single file
+ 
+-        // output the 5^th 6^th temp file, but will be deleted at the end of the function
+         FileOutputStream outStream_unknownCands = new FileOutputStream(tmpDirPrefix
+             + "temp.currIt.unknownCands", false);
+         OutputStreamWriter outStreamWriter_unknownCands = new OutputStreamWriter(
+@@ -831,35 +795,17 @@
+ 
+         String sents_str, feats_str, stats_str;
+ 
+-        // BUG: this assumes a candidate string cannot be produced for two
+-        // different source sentences, which is not necessarily true
+-        // (It's not actually a bug, but only because existingCandStats gets
+-        // cleared before moving to the next source sentence.)
+-        // FIX: should be made an array, indexed by i
+         HashMap<String, String> existingCandStats = new HashMap<>();
+-        // VERY IMPORTANT:
+-        // A CANDIDATE X MAY APPEARED IN ITER 1, ITER 3
+-        // BUT IF THE USER SPECIFIED TO CONSIDER ITERATIONS FROM ONLY ITER 2, THEN
+-        // X IS NOT A "REPEATED" CANDIDATE IN ITER 3. THEREFORE WE WANT TO KEEP THE
+-        // SUFF STATS FOR EACH CANDIDATE(TO SAVE COMPUTATION IN THE FUTURE)
+-
+-        // Stores precalculated sufficient statistics for candidates, in case
+-        // the same candidate is seen again. (SS stored as a String.)
+-        // Q: Why do we care? If we see the same candidate again, aren't we going
+-        // to ignore it? So, why do we care about the SS of this repeat candidate?
+-        // A: A "repeat" candidate may not be a repeat candidate in later
+-        // iterations if the user specifies a value for prevMERTIterations
+-        // that causes MERT to skip candidates from early iterations.
+ 
+         String[] featVal_str;
+ 
+         int totalCandidateCount = 0;
+ 
+-        // new candidate size for each sentence
+         int[] sizeUnknown_currIt = new int[numSentences];
+ 
+         for (int i = 0; i < numSentences; ++i) {
+           // process candidates from previous iterations
++
+           // low efficiency? for each iteration, it reads in all previous iteration outputs
+           // therefore a lot of overlapping jobs
+           // this is an easy implementation to deal with the situation in which user only specified

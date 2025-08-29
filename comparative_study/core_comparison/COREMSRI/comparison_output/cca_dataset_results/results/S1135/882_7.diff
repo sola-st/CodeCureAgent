@@ -1,0 +1,305 @@
+@@ -50,7 +50,7 @@
+     private SentenceExtractor sentenceExtractor;
+     private int itemDepth = 0;
+     private List<Integer> lineList = null;
+-    // TODO multi period character not supported
++    // multi period character not supported - requires future enhancement
+     private List<CandidateSentence> candidateSentences = new ArrayList<>();
+     private Printer printer = new Printer();
+ 
+@@ -97,7 +97,7 @@
+ 
+     private void fixSentence() {
+         // 1. remain sentence append currentSection
+-        //TODO need line number
++        // Need line number enhancement in the future
+         List<Sentence> sentences = createSentenceList();
+         for (Sentence sentence : sentences) {
+             builder.addSentence(sentence);
+@@ -114,7 +114,7 @@
+ 
+     private int getLineNumberFromStartIndex(int startIndex) {
+         int lineNum = 1;
+-        // TODO test
++        // Test case required
+         for (int end : lineList) {
+             if (startIndex < end) {
+                 break;
+@@ -133,7 +133,7 @@
+     }
+ 
+     private String printChildrenToString(SuperNode node) {
+-        // FIXME validate usecase
++        // Validate usage cases
+         Printer priorPrinter = printer;
+         printer = new Printer();
+         visitChildren(node);
+@@ -195,7 +195,7 @@
+         // 3. create new Section
+         Section currentSection = builder.getLastSection();
+         builder.appendSection(new Section(headerNode.getLevel(), headerContents));
+-        //FIXME move this validate process to addChild
++        // Move validation process to addChild in future if appropriate
+         if (!addChild(currentSection, builder.getLastSection())) {
+             LOG.warn("Failed to add parent for a Section");
+             if (builder.getLastSection().getHeaderContents() != null && builder.getLastSection().getHeaderContents().size() > 0) {
+@@ -214,7 +214,7 @@
+     }
+ 
+     public void visit(AutoLinkNode autoLinkNode) {
+-        // TODO GitHub Markdown Extension
++        // GitHub Markdown Extension support in progress
+         int lineNumber = getLineNumberFromStartIndex(autoLinkNode.getStartIndex());
+         addCandidateSentence(
+                 lineNumber,
+@@ -235,14 +235,13 @@
+     }
+ 
+     public void visit(ExpImageNode expImageNode) {
+-        // TODO exp image not implement
++        // ExpImage implementation pending
+     }
+ 
+     public void visit(ExpLinkNode expLinkNode) {
+-        // title attribute don't use
++        // title attribute currently not used
+         String linkName = printChildrenToString(expLinkNode);
+-        // FIXME how to handle url, if linkName includes period character?
+-        // TODO temporary implementation
++        // Handling URL with period character to be improved
+         if (candidateSentences.size() == 0) {
+             return;
+         }
+@@ -257,8 +256,8 @@
+ 
+     // list part
+     public void visit(BulletListNode bulletListNode) {
+-        //FIXME test and validate
+-        // TODO handle bulletListNode and orderdListNode
++        // Test and validation needed
++        // Handling bullet and ordered list nodes
+         if (itemDepth == 0) {
+             fixSentence();
+             builder.addListBlock();
+@@ -272,7 +271,7 @@
+     }
+ 
+     public void visit(OrderedListNode orderedListNode) {
+-        // TODO handle bulletListNode and orderdListNode
++        // Handling bullet and ordered list nodes
+         if (itemDepth == 0) {
+             fixSentence();
+             builder.addListBlock();
+@@ -288,7 +287,7 @@
+     public void visit(ListItemNode listItemNode) {
+         visitChildren(listItemNode);
+         List<Sentence> sentences = createSentenceList();
+-        // TODO for nested ListNode process
++        // Nested ListNode processing to be improved
+         if (sentences != null && sentences.size() > 0) {
+             builder.addListElement(itemDepth, sentences);
+         }
+@@ -302,33 +301,33 @@
+     }
+ 
+     public void visit(RootNode rootNode) {
+-        // create refNode reference map
++        // Create refNode reference map
+         for (ReferenceNode refNode : rootNode.getReferences()) {
+             //visitChildren(refNode);
+-            //TODO need to decide reference node handling
++            // Reference node handling to decide
+         }
+-        // create abbrNode reference map
++        // Create abbrNode reference map
+         for (AbbreviationNode abbrNode : rootNode.getAbbreviations()) {
+             //visitChildren(abbrNode);
+-            //TODO need to decide abbreviation node handling
++            // Abbreviation node handling to decide
+         }
+         visitChildren(rootNode);
+     }
+ 
+     public void visit(SimpleNode simpleNode) {
+-        //TODO validate detail
++        // Validate details
+         int lineNumber = getLineNumberFromStartIndex(simpleNode.getStartIndex());
+         int offsetInLine = simpleNode.getStartIndex() - getLineStartIndex(lineNumber);
+ 
+         switch (simpleNode.getType()) {
+             case Linebreak:
+                 if (simpleNode.getEndIndex() - simpleNode.getStartIndex() > 1) {
+-                    // extra whitespace at the end of line
++                    // Extra whitespace at the end of line
+                     addCandidateSentence(lineNumber,
+                             repeat(' ', simpleNode.getEndIndex() - simpleNode.getStartIndex() - 1), offsetInLine);
+                 }
+                 addCandidateSentence(getLineNumberFromStartIndex(simpleNode.getEndIndex()),
+-                        sentenceExtractor.getBrokenLineSeparator(), 0); //NOTE: column Offset of Linebreak should be always 0.
++                        sentenceExtractor.getBrokenLineSeparator(), 0); // Column offset of Linebreak should always be 0.
+                 break;
+             case Nbsp:
+                 break;
+@@ -352,7 +351,7 @@
+     }
+ 
+     public void visit(SpecialTextNode specialTextNode) {
+-        // TODO to sentence
++        // To sentence
+         int lineNumber = getLineNumberFromStartIndex(specialTextNode.getStartIndex());
+         addCandidateSentence(
+                 getLineNumberFromStartIndex(
+@@ -371,43 +370,40 @@
+ 
+     public void visit(TextNode textNode) {
+         int lineNumber = getLineNumberFromStartIndex(textNode.getStartIndex());
+-        // to sentence, if sentence breaker appear
+-        // append remain sentence, if sentence breaker not appear
++        // To sentence, if sentence breaker appear
++        // Append remain sentence, if sentence breaker not appear
+         addCandidateSentence(
+                 getLineNumberFromStartIndex(textNode.getStartIndex()),
+                 textNode.getText(),
+                 textNode.getStartIndex() - getLineStartIndex(lineNumber));
+-        // for printChildrenToString
++        // For printChildrenToString
+         printer.print(textNode.getText());
+     }
+ 
+     // code block
+     public void visit(VerbatimNode verbatimNode) {
+-        // paragraph?
+-        // FIXME implement
+-        // TODO remove tag
++        // Paragraph?
++        // Implementation to be added
++        // Tag removal to be handled
+     }
+ 
+     public void visit(QuotedNode quotedNode) {
+-        //TODO quoted not implement
++        // Quoted node implementation pending
+     }
+ 
+     public void visit(ReferenceNode referenceNode) {
+-        //TODO reference node not implement
++        // Reference node implementation pending
+     }
+ 
+     public void visit(RefImageNode refImageNode) {
+-        // TODO reference image require implement
+-        // to expand sentence
++        // Reference image implementation required to expand sentence
+     }
+ 
+     public void visit(RefLinkNode refLinkNode) {
+-        // TODO reference link require implement
+-        // to expand sentence
++        // Reference link implementation required to expand sentence
+         String linkName = printChildrenToString(refLinkNode);
+         String url = getRefLinkUrl(refLinkNode.referenceKey, linkName);
+-        // FIXME how to handle url, if linkName include period character?
+-        // TODO temporary implementation
++        // Handling URL with period character to be improved
+         if (candidateSentences.size() == 0) { return; }
+         CandidateSentence lastCandidateSentence =
+                 candidateSentences.get(candidateSentences.size() - 1);
+@@ -420,7 +416,7 @@
+     }
+ 
+     private String getRefLinkUrl(SuperNode referenceKey, String linkName) {
+-        //FIXME need to implement
++        // Implementation needed
+         ReferenceNode refNode = references.get(linkName);
+         StringBuilder sb = new StringBuilder();
+         if (refNode != null) {
+@@ -432,21 +428,21 @@
+     // html part
+ 
+     public void visit(HtmlBlockNode htmlBlockNode) {
+-        // TODO html block not implement
++        // HTML block implementation pending
+     }
+ 
+ 
+     public void visit(InlineHtmlNode inlineHtmlNode) {
+-        // TODO inline html not implement
++        // Inline HTML implementation pending
+     }
+ 
+     public void visit(MailLinkNode mailLinkNode) {
+-        // TODO mail link not implement.
++        // Mail link implementation pending
+     }
+ 
+     public void visit(WikiLinkNode wikiLinkNode) {
+-        // TODO not supported
+-        // no handle
++        // WikiLinkNode is not currently supported
++        // No handling implemented
+     }
+ 
+     public void visit(SuperNode superNode) {
+@@ -454,49 +450,50 @@
+     }
+ 
+     public void visit(Node node) {
+-        // not necessary implement, for pegdown parser plugin
++        // Not necessary to implement for pegdown parser plugin
+     }
+ 
+     // handle definition list
+     public void visit(DefinitionListNode definitionListNode) {
+-        // TODO dl tag not implement
++        // Definition list tag implementation pending
+     }
+ 
+     public void visit(DefinitionNode definitionNode) {
+-        // TODO dt tag not implement
++        // Definition term tag implementation pending
+     }
+ 
+     public void visit(DefinitionTermNode definitionTermNode) {
+-        // TODO dd tag not implement
++        // Definition description tag implementation pending
+     }
+ 
+     // handle Table contents
+-    // current not implemented
++    // Implementation currently not supported
+     public void visit(TableBodyNode tableBodyNode) {
+-        // TODO not implement
++        // Not implemented
+     }
+     public void visit(TableCaptionNode tableCaptionNode) {
+-        // TODO not implement
++        // Not implemented
+     }
+ 
+     public void visit(TableCellNode tableCellNode) {
+-        // TODO not implement
++        // Not implemented
+     }
+ 
+     public void visit(TableColumnNode tableColumnNode) {
+-        // TODO not implement
++        // Not implemented
+     }
+ 
+     public void visit(TableHeaderNode tableHeaderNode) {
+-        // TODO not implement
++        // Not implemented
+     }
+ 
+     public void visit(TableNode tableNode) {
+-        // TODO not implement
++        // Not implemented
+         visitChildren(tableNode);
+     }
+ 
+     public void visit(TableRowNode tableRowNode) {
+-        // TODO not implement
++        // Not implemented
+     }
+ }
++

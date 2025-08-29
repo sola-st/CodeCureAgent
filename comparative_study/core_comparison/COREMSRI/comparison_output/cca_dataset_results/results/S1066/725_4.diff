@@ -1,0 +1,46 @@
+@@ -223,7 +223,7 @@
+     }
+ 
+     private static void output(ByteBuf data, Kcp kcp) {
+-        if (log.isDebugEnabled()) {
++        if (log.isDebugEnabled() && data.readableBytes() != 0) {
+             log.debug("{} [RO] {} bytes", kcp, data.readableBytes());
+         }
+         if (data.readableBytes() == 0) {
+@@ -524,8 +524,7 @@
+         }
+ 
+         // append to previous segment in streaming mode (if possible)
+-        if (stream) {
+-            if (!sndQueue.isEmpty()) {
++        if (stream && !sndQueue.isEmpty()) {
+                 Segment last = sndQueue.peekLast();
+                 ByteBuf lastData = last.data;
+                 int lastLen = lastData.readableBytes();
+@@ -546,7 +545,6 @@
+                     }
+                 }
+             }
+-        }
+ 
+         int count = 0;
+         if (len <= mss) {
+@@ -788,16 +786,15 @@
+                     if (!flag) {
+                         flag = true;
+                         maxack = sn;
+-                    } else {
+-                        if (itimediff(sn, maxack) > 0) {
++                    } else if (itimediff(sn, maxack) > 0) {
+                             maxack = sn;
+                         }
+-                    }
+                     if (log.isDebugEnabled()) {
+                         log.debug("{} input ack: sn={}, rtt={}, rto={}", this, sn, rtt, rxRto);
+                     }
+                     break;
+                 }
++
+                 case IKCP_CMD_PUSH: {
+                     if (itimediff(sn, rcvNxt + rcvWnd) < 0) {
+                         ackPush(sn, ts);

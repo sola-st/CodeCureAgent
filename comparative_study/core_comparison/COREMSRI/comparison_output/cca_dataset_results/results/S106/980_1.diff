@@ -1,0 +1,117 @@
+@@ -18,6 +18,7 @@
+ import java.util.List;
+ import java.util.logging.ConsoleHandler;
+ import java.util.logging.Level;
++import java.util.logging.Logger;
+ import java.util.stream.Collectors;
+ 
+ import javax.imageio.ImageIO;
+@@ -36,6 +37,8 @@
+ import com.openhtmltopdf.util.XRSimpleLogFormatter;
+ 
+ public class Java2DVisualTester {
++    private static final Logger logger = Logger.getLogger(Java2DVisualTester.class.getName());
++
+     @FunctionalInterface
+     public interface Java2DBuilderConfig {
+         public void configure(Java2DRendererBuilder builder);
+@@ -75,8 +78,8 @@
+         try {
+             builder.runFirstPage();
+         } catch (Exception e) {
+-            System.err.println("Failed to render resource (" + resourcePath + ")");
+-            e.printStackTrace();
++            logger.severe("Failed to render resource (" + resourcePath + ")");
++            logger.log(Level.SEVERE, "Exception details:", e);
+             return null;
+         }
+ 
+@@ -101,8 +104,8 @@
+         try {
+             builder.runPaged();
+         } catch (Exception e) {
+-            System.err.println("Failed to render resource (" + resourcePath + ")");
+-            e.printStackTrace();
++            logger.severe("Failed to render resource (" + resourcePath + ")");
++            logger.log(Level.SEVERE, "Exception details:", e);
+             return null;
+         }
+ 
+@@ -137,12 +140,12 @@
+         BufferedImage actual = runRendererSingle(resourcePath, html, additionalBuilderConfiguration);
+ 
+         if (actual == null) {
+-            System.err.println("When running test (" + resource + ") on single-page mode, rendering failed, writing log to failure file.");
++            logger.severe("When running test (" + resource + ") on single-page mode, rendering failed, writing log to failure file.");
+             File output = new File(this.outputPath, resource + ".failure.txt");
+             FileUtils.writeByteArrayToFile(output, sb.toString().getBytes(Charsets.UTF_8));
+             return false;
+         } else if (TestcaseRunner.class.getResource(absExpPath) == null) {
+-            System.err.println("When running test (" + resource + ") on single-page mode, nothing to compare against as resource (" + absExpPath + ") does not exist.");
++            logger.warning("When running test (" + resource + ") on single-page mode, nothing to compare against as resource (" + absExpPath + ") does not exist.");
+ 
+             outputPath.mkdirs();
+             File output = new File(outputPath, resource + ".png");
+@@ -155,7 +158,7 @@
+             BufferedImage diffImage = compareImages(expectedPng, actualPng);
+ 
+             if (diffImage != null) {
+-                System.err.println("When running test (" + resource + ") on single-page mode, there were differences.");
++                logger.warning("When running test (" + resource + ") on single-page mode, there were differences.");
+ 
+                 outputPath.mkdirs();
+ 
+@@ -195,7 +198,7 @@
+         boolean failed = false;
+ 
+         if (actualPages == null) {
+-            System.err.println("When running test (" + resource + "), rendering failed, writing log to failure file.");
++            logger.severe("When running test (" + resource + "), rendering failed, writing log to failure file.");
+             File output = new File(this.outputPath, resource + ".failure.txt");
+             FileUtils.writeByteArrayToFile(output, sb.toString().getBytes(Charsets.UTF_8));
+             return false;
+@@ -209,7 +212,7 @@
+             String expectedPath = absExpPath + expectedCnt + ".png";
+ 
+             if (TestcaseRunner.class.getResource(expectedPath) == null && expectedCnt < actualPages.size()) {
+-                System.err.println("When running test (" + resource + ") on page(" + expectedCnt + "), nothing to compare against as resource (" + expectedPath + ") does not exist.");
++                logger.warning("When running test (" + resource + ") on page(" + expectedCnt + "), nothing to compare against as resource (" + expectedPath + ") does not exist.");
+                 failed = true;
+             } else if (TestcaseRunner.class.getResource(expectedPath) == null) {
+                 // Do nothing, we must be after the actual page count.
+@@ -222,7 +225,7 @@
+         }
+ 
+         if (expectedPages.size() != actualPages.size()) {
+-            System.err.println("When running test (" + resource + "), page count did not match (actual=" + actualPages.size() + ", expected=" + expectedPages.size() + ")");
++            logger.warning("When running test (" + resource + "), page count did not match (actual=" + actualPages.size() + ", expected=" + expectedPages.size() + ")");
+         }
+ 
+         List<byte[]> actualPngBytes = actualPages.stream()
+@@ -235,7 +238,7 @@
+             BufferedImage diffImage = compareImages(expected, actualPng);
+ 
+             if (diffImage != null) {
+-                System.err.println("Page " + i + " for (" + resource + ") was different to expected");
++                logger.warning("Page " + i + " for (" + resource + ") was different to expected");
+                 failed = true;
+                 outputPath.mkdirs();
+                 File output = new File(outputPath, "/diff-" + i + ".png");
+@@ -245,7 +248,7 @@
+ 
+         if (failed) {
+             outputPath.mkdirs();
+-            System.err.println("When running test (" + resource + "), there were differences.");
++            logger.warning("When running test (" + resource + "), there were differences.");
+             writeOutImages(actualPages, outputPath, "");
+             writeOutImages(expectedPages, outputPath, "expected-");
+         }
+@@ -292,7 +295,7 @@
+         DataBuffer dbActual = imgActual.getData().getDataBuffer();
+         
+         if (dbExpected.getDataType() != dbActual.getDataType()) {
+-            System.out.println("Different image types (actual=" + dbActual.getDataType() + ", expected=" + dbExpected.getDataType());
++            logger.info("Different image types (actual=" + dbActual.getDataType() + ", expected=" + dbExpected.getDataType());
+             return true;
+         }
+         

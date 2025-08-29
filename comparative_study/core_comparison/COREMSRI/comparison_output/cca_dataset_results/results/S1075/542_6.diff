@@ -1,0 +1,93 @@
+@@ -63,10 +63,12 @@
+ 
+ 	private final String dataDir;
+ 	private final ServletContextListener parent;
++	private final ServletContext ctx;
+ 
+-	public UpdateKnowledgeBase(String dataDir, ServletContextListener parent) {
++	public UpdateKnowledgeBase(String dataDir, ServletContextListener parent, ServletContext ctx) {
+ 		this.dataDir = dataDir;
+ 		this.parent = parent;
++		this.ctx = ctx;
+ 	}
+ 
+ 	private String diffFile() { return dataDir + "diff.tab.txt"; }
+@@ -76,13 +78,43 @@
+ 	private String oldTBoxAnnotationsDir() { return dataDir + "oldAnnotations/"; }
+ 	//For display model migration
+ 	private String oldDisplayModelTBoxPath() { return dataDir + "oldDisplayModel/displayTBOX.n3"; }
+-	private static final String NEW_DISPLAYMODEL_TBOX_PATH = "/WEB-INF/ontologies/app/menuload/displayTBOX.n3";
+ 	private String oldDisplayModelDisplayMetadataPath() { return dataDir + "oldDisplayModel/displayDisplay.n3"; }
+-	private static final String NEW_DISPLAYMODEL_DISPLAYMETADATA_PATH = "/WEB-INF/ontologies/app/menuload/displayDisplay.n3";
+-	private static final String NEW_DISPLAYMODEL_PATH = "/WEB-INF/ontologies/app/menu.n3";
+-	private static final String LOADED_STARTUPT_DISPLAYMODEL_DIR = "/WEB-INF/ontologies/app/loadedAtStartup/";
+ 	private String oldDisplayModelVivoListViewPath() { return dataDir + "oldDisplayModel/vivoListViewConfig.rdf"; }
+ 
++	private String getConfiguredPath(String configKey, String defaultPath) {
++		String configuredPath = null;
++		if (ctx != null) {
++			try {
++				Object value = ctx.getInitParameter(configKey);
++				if (value != null) {
++					configuredPath = value.toString();
++				}
++			} catch (Exception e) {
++				log.warn("Unable to get init parameter for " + configKey + ", using default path.");
++			}
++		}
++		if (configuredPath == null) {
++			configuredPath = defaultPath;
++		}
++		return configuredPath;
++	}
++
++	private String getNewDisplayModelTBoxPath() {
++		return getConfiguredPath("newDisplayModelTBoxPath", "/WEB-INF/ontologies/app/menuload/displayTBOX.n3");
++	}
++
++	private String getNewDisplayModelDisplayMetadataPath() {
++		return getConfiguredPath("newDisplayModelDisplayMetadataPath", "/WEB-INF/ontologies/app/menuload/displayDisplay.n3");
++	}
++
++	private String getNewDisplayModelPath() {
++		return getConfiguredPath("newDisplayModelPath", "/WEB-INF/ontologies/app/menu.n3");
++	}
++
++	private String getLoadedStartupDisplayModelDir() {
++		return getConfiguredPath("loadedStartupDisplayModelDir", "/WEB-INF/ontologies/app/loadedAtStartup/");
++	}
++
+ 	public void contextInitialized(ServletContextEvent sce) {
+ 		ServletContext ctx = sce.getServletContext();
+ 		StartupStatus ss = StartupStatus.getBean(ctx);
+@@ -125,18 +157,18 @@
+ 			    OntModel oldDisplayModelTboxModel = loadModelFromFile(ctx.getRealPath(oldDisplayModelTBoxPath()));
+ 			    settings.setOldDisplayModelTboxModel(oldDisplayModelTboxModel);
+ 			    //new display model tbox model
+-			    OntModel newDisplayModelTboxModel = loadModelFromFile(ctx.getRealPath(NEW_DISPLAYMODEL_TBOX_PATH));
++			    OntModel newDisplayModelTboxModel = loadModelFromFile(ctx.getRealPath(getNewDisplayModelTBoxPath()));
+ 			    settings.setNewDisplayModelTboxModel(newDisplayModelTboxModel);
+ 			    //old display model display model metadata
+ 			    OntModel oldDisplayModelDisplayMetadataModel = loadModelFromFile(ctx.getRealPath(oldDisplayModelDisplayMetadataPath()));
+ 			    settings.setOldDisplayModelDisplayMetadataModel(oldDisplayModelDisplayMetadataModel);
+ 			    //new display model display model metadata
+-			    OntModel newDisplayModelDisplayMetadataModel = loadModelFromFile(ctx.getRealPath(NEW_DISPLAYMODEL_DISPLAYMETADATA_PATH));
++			    OntModel newDisplayModelDisplayMetadataModel = loadModelFromFile(ctx.getRealPath(getNewDisplayModelDisplayMetadataPath()));
+ 			    settings.setNewDisplayModelDisplayMetadataModel(newDisplayModelDisplayMetadataModel);
+ 			    //Get new display model
+-			    OntModel newDisplayModelFromFile = loadModelFromFile(ctx.getRealPath(NEW_DISPLAYMODEL_PATH));
++			    OntModel newDisplayModelFromFile = loadModelFromFile(ctx.getRealPath(getNewDisplayModelPath()));
+ 			    settings.setNewDisplayModelFromFile(newDisplayModelFromFile);
+-			    OntModel loadedAtStartupFiles = loadModelFromDirectory(ctx.getRealPath(LOADED_STARTUPT_DISPLAYMODEL_DIR));
++			    OntModel loadedAtStartupFiles = loadModelFromDirectory(ctx.getRealPath(getLoadedStartupDisplayModelDir()));
+ 			    settings.setLoadedAtStartupDisplayModel(loadedAtStartupFiles);
+ 			    OntModel oldDisplayModelVivoListView = loadModelFromFile(ctx.getRealPath(oldDisplayModelVivoListViewPath()));
+ 			    settings.setVivoListViewConfigDisplayModel(oldDisplayModelVivoListView);
+@@ -254,6 +286,7 @@
+ 		Model addStatements = ModelFactory.createDefaultModel();
+ 		Model removeStatements = ModelFactory.createDefaultModel();
+ 		//remove old tbox and display metadata statements and add statements from new versions
++
+ 		replaceTboxAndDisplayMetadata(displayModel, addStatements, removeStatements,settings);
+ 		//Update statements for data getter class types that have changed in 1.5
+ 		updateDataGetterClassNames(displayModel, addStatements, removeStatements);

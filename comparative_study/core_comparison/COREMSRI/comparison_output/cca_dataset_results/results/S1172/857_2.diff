@@ -1,0 +1,253 @@
+@@ -1524,212 +1524,7 @@
+ 																				// polyline
+ 			Polyline polyline_b = new Polyline();
+ 			Point p = new Point();
+-			envelope_b.queryCornerByVal(0, p);
+-			polyline_b.startPath(p);
+-			envelope_b.queryCornerByVal(2, p);
+-			polyline_b.lineTo(p);
+-			return polygonContainsPolylineImpl_(polygon_a, polyline_b,
+-					tolerance, null);
+-		}
+-
+-		// treat as polygon
+-		Polygon polygon_b = new Polygon();
+-		polygon_b.addEnvelope(envelope_b, false);
+-		return polygonContainsPolygonImpl_(polygon_a, polygon_b, tolerance,
+-				null);
+-	}
+-
+-	// Returns true if polygon_a crosses envelope_b.
+-	private static boolean polygonCrossesEnvelope_(Polygon polygon_a,
+-			Envelope envelope_b, double tolerance,
+-			ProgressTracker progress_tracker) {
+-		Envelope2D env_a = new Envelope2D(), env_b = new Envelope2D();
+-		polygon_a.queryEnvelope2D(env_a);
+-		envelope_b.queryEnvelope2D(env_b);
+-
+-		if (envelopeInfContainsEnvelope_(env_b, env_a, tolerance))
+-			return false;
+-
+-		if (env_b.getHeight() > tolerance && env_b.getWidth() > tolerance)
+-			return false; // when treated as an area, areas cannot cross areas.
+-
+-		if (env_b.getHeight() <= tolerance && env_b.getWidth() <= tolerance)
+-			return false; // when treated as a point, areas cannot cross points.
+-
+-		// Treat as polyline
+-		Polyline polyline_b = new Polyline();
+-		Point p = new Point();
+-		envelope_b.queryCornerByVal(0, p);
+-		polyline_b.startPath(p);
+-		envelope_b.queryCornerByVal(2, p);
+-		polyline_b.lineTo(p);
+-		return polygonCrossesPolylineImpl_(polygon_a, polyline_b, tolerance,
+-				progress_tracker);
+-	}
+-
+-	// Returns true if polyline_a equals polyline_b.
+-	private static boolean polylineEqualsPolyline_(Polyline polyline_a,
+-			Polyline polyline_b, double tolerance,
+-			ProgressTracker progress_tracker) {
+-		Envelope2D env_a = new Envelope2D(), env_b = new Envelope2D();
+-		polyline_a.queryEnvelope2D(env_a);
+-		polyline_b.queryEnvelope2D(env_b);
+-
+-		// Quick envelope rejection test for false equality.
+-		if (!envelopeEqualsEnvelope_(env_a, env_b, tolerance, progress_tracker))
+-			return false;
+-
+-		// Quick rasterize test to see whether the the geometries are disjoint.
+-		if (tryRasterizedContainsOrDisjoint_(polyline_a, polyline_b, tolerance,
+-				false) == Relation.disjoint)
+-			return false;
+-
+-		// Quick point equality check for true equality. This just checks if all
+-		// the points in each ring are the same (within a tolerance) and in the
+-		// same order
+-		if (multiPathExactlyEqualsMultiPath_(polyline_a, polyline_b, tolerance,
+-				progress_tracker))
+-			return true;
+-
+-		return linearPathEqualsLinearPath_(polyline_a, polyline_b, tolerance, false);
+-	}
+-
+-	// Returns true if polyline_a is disjoint from polyline_b.
+-	private static boolean polylineDisjointPolyline_(Polyline polyline_a,
+-			Polyline polyline_b, double tolerance,
+-			ProgressTracker progress_tracker) {
+-		// Quick rasterize test to see whether the the geometries are disjoint.
+-		if (tryRasterizedContainsOrDisjoint_(polyline_a, polyline_b, tolerance,
+-				false) == Relation.disjoint)
+-			return true;
+-
+-        MultiPathImpl multi_path_impl_a = (MultiPathImpl)polyline_a._getImpl();
+-        MultiPathImpl multi_path_impl_b = (MultiPathImpl)polyline_b._getImpl();
+-
+-        PairwiseIntersectorImpl intersector_paths = new PairwiseIntersectorImpl(multi_path_impl_a, multi_path_impl_b, tolerance, true);
+-
+-        if (!intersector_paths.next())
+-            return false;
+-
+-		return !linearPathIntersectsLinearPath_(polyline_a, polyline_b,
+-				tolerance);
+-	}
+-
+-	// Returns true if polyline_a touches polyline_b.
+-	private static boolean polylineTouchesPolyline_(Polyline polyline_a,
+-			Polyline polyline_b, double tolerance,
+-			ProgressTracker progress_tracker) {
+-		// Quick rasterize test to see whether the the geometries are disjoint.
+-		if (tryRasterizedContainsOrDisjoint_(polyline_a, polyline_b, tolerance,
+-				false) == Relation.disjoint)
+-			return false;
+-
+-		AttributeStreamOfDbl intersections = new AttributeStreamOfDbl(0);
+-
+-		int dim = linearPathIntersectsLinearPathMaxDim_(polyline_a, polyline_b,
+-				tolerance, intersections);
+-
+-		if (dim != 0)
+-			return false;
+-
+-		MultiPoint intersection = new MultiPoint();
+-
+-		for (int i = 0; i < intersections.size(); i += 2) {
+-			double x = intersections.read(i);
+-			double y = intersections.read(i + 1);
+-			intersection.add(x, y);
+-		}
+-
+-		MultiPoint boundary_a_b = (MultiPoint) (polyline_a.getBoundary());
+-		MultiPoint boundary_b = (MultiPoint) (polyline_b.getBoundary());
+-
+-		boundary_a_b.add(boundary_b, 0, boundary_b.getPointCount());
+-
+-		return multiPointContainsMultiPointBrute_(boundary_a_b, intersection,
+-				tolerance);
+-	}
+-
+-	// Returns true if polyline_a crosses polyline_b.
+-	private static boolean polylineCrossesPolyline_(Polyline polyline_a,
+-			Polyline polyline_b, double tolerance,
+-			ProgressTracker progress_tracker) {
+-		// Quick rasterize test to see whether the the geometries are disjoint.
+-		if (tryRasterizedContainsOrDisjoint_(polyline_a, polyline_b, tolerance,
+-				false) == Relation.disjoint)
+-			return false;
+-
+-		AttributeStreamOfDbl intersections = new AttributeStreamOfDbl(0);
+-
+-		int dim = linearPathIntersectsLinearPathMaxDim_(polyline_a, polyline_b,
+-				tolerance, intersections);
+-
+-		if (dim != 0)
+-			return false;
+-
+-		MultiPoint intersection = new MultiPoint();
+-
+-		for (int i = 0; i < intersections.size(); i += 2) {
+-			double x = intersections.read(i);
+-			double y = intersections.read(i + 1);
+-			intersection.add(x, y);
+-		}
+-
+-		MultiPoint boundary_a_b = (MultiPoint) (polyline_a.getBoundary());
+-		MultiPoint boundary_b = (MultiPoint) (polyline_b.getBoundary());
+-
+-		boundary_a_b.add(boundary_b, 0, boundary_b.getPointCount());
+-
+-		return !multiPointContainsMultiPointBrute_(boundary_a_b, intersection,
+-				tolerance);
+-	}
+-
+-	// Returns true if polyline_a overlaps polyline_b.
+-	private static boolean polylineOverlapsPolyline_(Polyline polyline_a,
+-			Polyline polyline_b, double tolerance,
+-			ProgressTracker progress_tracker) {
+-		// Quick rasterize test to see whether the the geometries are disjoint.
+-		if (tryRasterizedContainsOrDisjoint_(polyline_a, polyline_b, tolerance,
+-				false) == Relation.disjoint)
+-			return false;
+-
+-		return linearPathOverlapsLinearPath_(polyline_a, polyline_b, tolerance);
+-	}
+-
+-	// Returns true if polyline_a contains polyline_b.
+-	private static boolean polylineContainsPolyline_(Polyline polyline_a,
+-			Polyline polyline_b, double tolerance,
+-			ProgressTracker progress_tracker) {
+-		Envelope2D env_a = new Envelope2D(), env_b = new Envelope2D();
+-		polyline_a.queryEnvelope2D(env_a);
+-		polyline_b.queryEnvelope2D(env_b);
+-
+-		// Quick envelope rejection test for false equality.
+-		if (!envelopeInfContainsEnvelope_(env_a, env_b, tolerance))
+-			return false;
+-
+-		// Quick rasterize test to see whether the the geometries are disjoint.
+-		if (tryRasterizedContainsOrDisjoint_(polyline_a, polyline_b, tolerance,
+-				false) == Relation.disjoint)
+-			return false;
+-
+-		return linearPathWithinLinearPath_(polyline_b, polyline_a, tolerance, false);
+-	}
+-
+-	// Returns true if polyline_a is disjoint from point_b.
+-	private static boolean polylineDisjointPoint_(Polyline polyline_a,
+-			Point point_b, double tolerance, ProgressTracker progress_tracker) {
+-		// Quick rasterize test to see whether the the geometries are disjoint.
+-		if (tryRasterizedContainsOrDisjoint_(polyline_a, point_b, tolerance,
+-				false) == Relation.disjoint)
+-			return true;
+-
+-		Point2D pt_b = point_b.getXY();
+-		return !linearPathIntersectsPoint_(polyline_a, pt_b, tolerance);
+-	}
+-
+-	// Returns true if polyline_a touches point_b.
+-	private static boolean polylineTouchesPoint_(Polyline polyline_a,
+-			Point point_b, double tolerance, ProgressTracker progress_tracker) {
++			Point point_b, double tolerance) {
+ 		// Quick rasterize test to see whether the the geometries are disjoint.
+ 		if (tryRasterizedContainsOrDisjoint_(polyline_a, point_b, tolerance,
+ 				false) == Relation.disjoint)
+@@ -1741,7 +1536,7 @@
+ 
+ 	// Returns true of polyline_a contains point_b.
+ 	private static boolean polylineContainsPoint_(Polyline polyline_a,
+-			Point point_b, double tolerance, ProgressTracker progress_tracker) {
++			Point point_b, double tolerance) {
+ 		// Quick rasterize test to see whether the the geometries are disjoint.
+ 		if (tryRasterizedContainsOrDisjoint_(polyline_a, point_b, tolerance,
+ 				false) == Relation.disjoint)
+@@ -1753,8 +1548,7 @@
+ 
+ 	// Returns true if polyline_a is disjoint from multipoint_b.
+ 	private static boolean polylineDisjointMultiPoint_(Polyline polyline_a,
+-			MultiPoint multipoint_b, double tolerance,
+-			ProgressTracker progress_tracker) {
++			MultiPoint multipoint_b, double tolerance) {
+ 		// Quick rasterize test to see whether the the geometries are disjoint.
+ 		if (tryRasterizedContainsOrDisjoint_(polyline_a, multipoint_b,
+ 				tolerance, false) == Relation.disjoint)
+@@ -1766,8 +1560,7 @@
+ 
+ 	// Returns true if polyline_a touches multipoint_b.
+ 	private static boolean polylineTouchesMultiPoint_(Polyline polyline_a,
+-			MultiPoint multipoint_b, double tolerance,
+-			ProgressTracker progress_tracker) {
++			MultiPoint multipoint_b, double tolerance) {
+ 		// Quick rasterize test to see whether the the geometries are disjoint.
+ 		if (tryRasterizedContainsOrDisjoint_(polyline_a, multipoint_b,
+ 				tolerance, false) == Relation.disjoint) {
+@@ -1882,8 +1675,7 @@
+ 
+ 	// Returns true if polyline_a crosses multipoint_b.
+ 	private static boolean polylineCrossesMultiPoint_(Polyline polyline_a,
+-			MultiPoint multipoint_b, double tolerance,
+-			ProgressTracker progress_tracker) {
++			MultiPoint multipoint_b, double tolerance) {
+ 		// Quick rasterize test to see whether the the geometries are disjoint.
+ 		if (tryRasterizedContainsOrDisjoint_(polyline_a, multipoint_b,
+ 				tolerance, false) == Relation.disjoint) {

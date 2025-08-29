@@ -1,0 +1,289 @@
+@@ -180,233 +180,6 @@
+                 }
+             } catch (FileNotFoundException fnfe) {
+                 String logMsg = "WARNING: performSparqlConstructs() could not find " +
+-                        " SPARQL CONSTRUCT file " + sparqlFile + ". Skipping.";
+-                logger.log(logMsg);
+-                log.info(logMsg);
+-                continue;
+-            }
+-            Model anonModel = ModelFactory.createDefaultModel();
+-            try {
+-                log.debug("\t\tprocessing SPARQL construct query from file " + sparqlFile.getName());
+-
+-                anonModel = RDFServiceUtils.parseModel(
+-                        rdfService.sparqlConstructQuery(fileContents.toString(),
+-                                RDFService.ModelSerializationFormat.NTRIPLE),
+-                                ModelSerializationFormat.NTRIPLE);
+-
+-                long num = anonModel.size();
+-                if (num > 0) {
+-                    String logMsg = (add ? "Added " : "Removed ") + num +
+-                            " statement"  + ((num > 1) ? "s" : "") +
+-                            " using the SPARQL construct query from file " +
+-                            sparqlFile.getParentFile().getName() +
+-                            "/" + sparqlFile.getName();
+-                    logger.log(logMsg);
+-                    log.info(logMsg);
+-                }
+-
+-            } catch (Exception e) {
+-                logger.logError(this.getClass().getName() +
+-                        ".performSparqlConstructs() unable to execute " +
+-                        "query at " + sparqlFile + ". Error message is: " + e.getMessage());
+-                log.error(e,e);
+-            }
+-
+-            if(!add) {
+-                StmtIterator sit = anonModel.listStatements();
+-                while (sit.hasNext()) {
+-                    Statement stmt = sit.nextStatement();
+-                    // Skip statements with blank nodes (unsupported) to avoid
+-                    // excessive deletion.  In the future, the whole updater
+-                    // could be modified to change whole graphs at once through
+-                    // the RDFService, but right now this whole thing is statement
+-                    // based.
+-                    if (stmt.getSubject().isAnon() || stmt.getObject().isAnon()) {
+-                        continue;
+-                    }
+-                    Iterator<String> graphIt = dataset.listNames();
+-                    while(graphIt.hasNext()) {
+-                        String graph = graphIt.next();
+-                        if(!isUpdatableABoxGraph(graph)) {
+-                            continue;
+-                        }
+-                        Model writeModel = dataset.getNamedModel(graph);
+-                        if (writeModel.contains(stmt)) {
+-                            writeModel.remove(stmt);
+-                        }
+-                    }
+-                }
+-                record.recordRetractions(anonModel);
+-                //log.info("removed " + anonModel.size() + " statements from SPARQL CONSTRUCTs");
+-            } else {
+-                Model writeModel = dataset.getNamedModel(ModelNames.ABOX_ASSERTIONS);
+-                Model dedupeModel = dataset.getDefaultModel();
+-                Model additions = jiu.renameBNodes(
+-                        anonModel, settings.getDefaultNamespace() + "n", dedupeModel);
+-                additions = stripBadURIs(additions);
+-                Model actualAdditions = ModelFactory.createDefaultModel();
+-                StmtIterator stmtIt = additions.listStatements();
+-                while (stmtIt.hasNext()) {
+-                    Statement stmt = stmtIt.nextStatement();
+-                    if (!writeModel.contains(stmt)) {
+-                        actualAdditions.add(stmt);
+-                    }
+-                }
+-                writeModel.add(actualAdditions);
+-                //log.info("added " + actualAdditions.size() + " statements from SPARQL CONSTRUCTs");
+-                record.recordAdditions(actualAdditions);
+-            }
+-
+-        }
+-    }
+-
+-    private Model stripBadURIs(Model additions) {
+-        Model badURITriples = ModelFactory.createDefaultModel();
+-        StmtIterator stmtIt = additions.listStatements();
+-        while (stmtIt.hasNext()) {
+-            String[] uris = new String[3];
+-            Statement stmt = stmtIt.nextStatement();
+-            if(stmt.getSubject().isURIResource()) {
+-                uris[0] = stmt.getSubject().getURI();
+-            }
+-            uris[1] = stmt.getPredicate().getURI();
+-            if(stmt.getObject().isURIResource()) {
+-                uris[2] = ((Resource) stmt.getObject()).getURI();
+-            }
+-            for (int i = 0; i < 3; i++) {
+-                String uri = uris[i];
+-                if (uri != null) {
+-                    IRIFactory factory = IRIFactory.jenaImplementation();
+-                    IRI iri = factory.create(uri);
+-                    if (iri.hasViolation(false)) {
+-                        badURITriples.add(stmt);
+-                        log.error("Discarding added triple " + stmt + " because " +
+-                                  "it includes one or more invalid URIs.");
+-                        break;
+-                    }
+-                }
+-            }
+-        }
+-        additions.remove(badURITriples);
+-        return additions;
+-    }
+-
+-	private List<AtomicOntologyChange> getAtomicOntologyChanges()
+-			throws IOException {
+-		return (new OntologyChangeParser(logger)).parseFile(settings.getDiffFile());
+-	}
+-
+-
+-
+-	private void updateABox(AtomicOntologyChangeLists changes)
+-			throws IOException {
+-
+-
+-		ABoxUpdater aboxUpdater = new ABoxUpdater(settings, logger, record);
+-		aboxUpdater.processPropertyChanges(changes.getAtomicPropertyChanges());
+-		aboxUpdater.processClassChanges(changes.getAtomicClassChanges());
+-	}
+-
+-	private void updateTBoxAnnotations() {
+-		TBoxUpdater tboxUpdater = new TBoxUpdater(settings, logger, record);
+-		try {
+-		    tboxUpdater.modifyPropertyQualifications();
+-		} catch (Exception e) {
+-		    log.error("Unable to modify qualified property config file ", e);
+-		}
+-		try {
+-            tboxUpdater.updateDefaultAnnotationValues();
+-		} catch (Exception e) {
+-		    log.error("Unable to update default annotation values ", e);
+-		}
+-	}
+-
+-	/**
+-	 * Executes a SPARQL ASK query to determine whether the knowledge base
+-	 * needs to be updated to conform to a new ontology version
+-	 */
+-	public boolean updateRequired(ServletContext servletContext) throws IOException {
+-		boolean required = true;
+-
+-		String sparqlQueryStr = loadSparqlQuery(settings.getAskUpdatedQueryFile());
+-		if (sparqlQueryStr == null) {
+-			return required;
+-		}
+-
+-		RDFService rdfService = ModelAccess.on(servletContext).getRDFService();
+-
+-		// if the ASK query DOES have a solution (i.e. the assertions exist
+-		// showing that the update has already been performed), then the update
+-		// is NOT required.
+-		try {
+-			if (rdfService.sparqlAskQuery(sparqlQueryStr)) {
+-				required = false;
+-			} else {
+-				required = true;
+-				if (JenaDataSourceSetupBase.isFirstStartup()) {
+-					assertSuccess(servletContext);
+-					log.info("The application is starting with an empty database. " +
+-					         "An indication will be added to the database that a " +
+-					         "knowledge base migration to the current version is " +
+-					         "not required.");
+-				    required = false;
+-				}
+-			}
+-		} catch (RDFServiceException e) {
+-			log.error("error trying to execute query to find out if knowledge base update is required",e);
+-		}
+-
+-		return required;
+-	}
+-
+-	/**
+-	 * loads a SPARQL ASK query from a text file
+-	 * @param filePath Path of a file
+-	 * @return the query string or null if file not found
+-	 */
+-	public static String loadSparqlQuery(String filePath) throws IOException {
+-
+-		File file = new File(filePath);
+-		if (!file.exists()) {
+-			throw new RuntimeException("SPARQL file not found at " + filePath);
+-		}
+-		BufferedReader reader = new BufferedReader(new FileReader(file));
+-		StringBuilder fileContents = new StringBuilder();
+-		String ln;
+-		while ((ln = reader.readLine()) != null) {
+-			fileContents.append(ln).append('\n');
+-		}
+-		return fileContents.toString();
+-	}
+-
+-	private void assertSuccess(ServletContext servletContext) throws FileNotFoundException, IOException {
+-		try {
+-			RDFService rdfService = ModelAccess.on(servletContext).getRDFService();
+-
+-			ChangeSet changeSet = rdfService.manufactureChangeSet();
+-		    File successAssertionsFile = new File(settings.getSuccessAssertionsFile());
+-		    InputStream inStream = new FileInputStream(successAssertionsFile);
+-		    changeSet.addAddition(inStream, RDFService.ModelSerializationFormat.N3, ModelNames.APPLICATION_METADATA);
+-			rdfService.changeSetUpdate(changeSet);
+-		} catch (Exception e) {
+-			log.error("unable to make RDF assertions about successful " +
+-					" update to new ontology version: ", e);
+-		}
+-	}
+-
+-	public static boolean isUpdatableABoxGraph(String graphName) {
+-	    return (graphName != null && !graphName.contains("tbox")
+-	            && !graphName.contains("filegraph")
+-	            && !graphName.contains("x-arq:UnionGraph"));
+-	}
+-
+-	/**
+-	 * A class that allows to access two different ontology change lists,
+-	 * one for class changes and the other for property changes.  The
+-	 * constructor will split a list containing both types of changes.
+-	 * @author bjl23
+-	 *
+-	 */
+ 	private class AtomicOntologyChangeLists {
+ 
+ 		private List<AtomicOntologyChange> atomicClassChanges =
+@@ -421,6 +194,17 @@
+ 
+ 			for (AtomicOntologyChange changeObj : changeList) {
+ 				if (changeObj.getSourceURI() != null) {
++						triageChangeBySource(changeObj, oldTboxModel);
++					} else if (changeObj.getDestinationURI() != null) {
++						triageChangeByDestination(changeObj, newTboxModel);
++					} else {
++						logger.log("WARNING: Source and Destination URI can't be null. " + "Change Object skipped");
++					}
++				}
++				//logger.log("Property and Class change Object lists have been created");
++			}
++
++			private void triageChangeBySource(AtomicOntologyChange changeObj, OntModel oldTboxModel) {
+ 					log.debug("triaging " + changeObj);
+ 					if (oldTboxModel.getOntProperty(changeObj.getSourceURI()) != null) {
+ 						atomicPropertyChanges.add(changeObj);
+@@ -433,26 +217,18 @@
+ 					} else if ("Class".equals(changeObj.getNotes())) {
+ 						atomicClassChanges.add(changeObj);
+ 					} else {
+-						logger.log("WARNING: Source URI is neither a Property" +
+-								" nor a Class. " + "Change Object skipped for sourceURI: " + changeObj.getSourceURI());
++					logger.log("WARNING: Source URI is neither a Property nor a Class. Change Object skipped for sourceURI: " + changeObj.getSourceURI());
++				}
+ 					}
+ 
+-				} else if (changeObj.getDestinationURI() != null) {
+-
++			private void triageChangeByDestination(AtomicOntologyChange changeObj, OntModel newTboxModel) {
+ 					if (newTboxModel.getOntProperty(changeObj.getDestinationURI()) != null) {
+ 						atomicPropertyChanges.add(changeObj);
+-					} else if (newTboxModel.getOntClass(changeObj.
+-							getDestinationURI()) != null) {
++				} else if (newTboxModel.getOntClass(changeObj.getDestinationURI()) != null) {
+ 						atomicClassChanges.add(changeObj);
+ 					} else {
+-						logger.log("WARNING: Destination URI is neither a Property" +
+-								" nor a Class. " + "Change Object skipped for destinationURI: " + changeObj.getDestinationURI());
+-					}
+-				} else {
+-					logger.log("WARNING: Source and Destination URI can't be null. " + "Change Object skipped");
+-				}
++					logger.log("WARNING: Destination URI is neither a Property nor a Class. Change Object skipped for destinationURI: " + changeObj.getDestinationURI());
+ 			}
+-			//logger.log("Property and Class change Object lists have been created");
+ 		}
+ 
+ 		public List<AtomicOntologyChange> getAtomicClassChanges() {
+@@ -464,4 +240,3 @@
+ 		}
+ 
+ 	}
+-}

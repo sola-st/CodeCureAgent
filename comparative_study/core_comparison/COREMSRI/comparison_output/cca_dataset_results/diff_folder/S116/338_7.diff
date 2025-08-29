@@ -1,0 +1,457 @@
+@@ -39,20 +39,20 @@
+    * Two operations: add and multi add: different hyperedges lead to a specific item multi: prob of
+    * a derivation is a multi of all constituents
+    */
+-  int ADD_MODE = 0; // 0: sum; 1: viterbi-min, 2: viterbi-max
+-  final int LOG_SEMIRING = 1;
+-  int SEMIRING = LOG_SEMIRING; // default is in log; or real, or logic
+-  double ZERO_IN_SEMIRING = Double.NEGATIVE_INFINITY;// log-domain
+-  double ONE_IN_SEMIRING = 0;// log-domain
+-  double scaling_factor; // try to scale the original distribution: smooth or winner-take-all
++  int addMode = 0; // 0: sum; 1: viterbi-min, 2: viterbi-max
++  final int logSemiring = 1;
++  int semiring = logSemiring; // default is in log; or real, or logic
++  double zeroInSemiring = Double.NEGATIVE_INFINITY;// log-domain
++  double oneInSemiring = 0;// log-domain
++  double scalingFactor; // try to scale the original distribution: smooth or winner-take-all
+ 
+-  private final HashMap<HGNode, Double> tbl_inside_prob = new HashMap<>();// remember inside
++  private final HashMap<HGNode, Double> tblInsideProb = new HashMap<>();// remember inside
+                                                                                   // prob of each
+                                                                                   // item:
+-  private final HashMap<HGNode, Double> tbl_outside_prob = new HashMap<>();// remember
++  private final HashMap<HGNode, Double> tblOutsideProb = new HashMap<>();// remember
+                                                                                    // outside prob
+                                                                                    // of each item
+-  double normalizationConstant = ONE_IN_SEMIRING;
++  double normalizationConstant = oneInSemiring;
+ 
+   /**
+    * for each item, remember how many deductions pointering to me, this is needed for outside
+@@ -61,19 +61,19 @@
+    * because the outside estimation of the items under its deductions require the item's outside
+    * value
+    */
+-  private final HashMap<HGNode, Integer> tbl_num_parent_deductions = new HashMap<>();
++  private final HashMap<HGNode, Integer> tblNumParentDeductions = new HashMap<>();
+ 
+-  private HashMap<HGNode, Integer> tbl_for_sanity_check = null;
++  private HashMap<HGNode, Integer> tblForSanityCheck = null;
+ 
+   // get feature-set specific **log probability** for each hyperedge
+-  protected abstract double getHyperedgeLogProb(HyperEdge dt, HGNode parent_it);
++  protected abstract double getHyperedgeLogProb(HyperEdge dt, HGNode parentIt);
+ 
+-  protected double getHyperedgeLogProb(HyperEdge dt, HGNode parent_it, double scaling_factor) {
+-    return getHyperedgeLogProb(dt, parent_it) * scaling_factor;
++  protected double getHyperedgeLogProb(HyperEdge dt, HGNode parentIt, double scalingFactor) {
++    return getHyperedgeLogProb(dt, parentIt) * scalingFactor;
+   }
+ 
+   // the results are stored in tbl_inside_prob and tbl_outside_prob
+-  public void runInsideOutside(HyperGraph hg, int add_mode, int semiring, double scaling_factor_) {// add_mode|||
++  public void runInsideOutside(HyperGraph hg, int addMode, int semiring, double scalingFactor_) {// add_mode|||
+                                                                                                    // 0:
+                                                                                                    // sum;
+                                                                                                    // 1:
+@@ -81,24 +81,24 @@
+                                                                                                    // 2:
+                                                                                                    // viterbi-max
+ 
+-    setup_semiring(semiring, add_mode);
+-    scaling_factor = scaling_factor_;
++    setupSemiring(semiring, addMode);
++    this.scalingFactor = scalingFactor_;
+ 
+     // System.out.println("outside estimation");
+-    inside_estimation_hg(hg);
++    insideEstimationHg(hg);
+     // System.out.println("inside estimation");
+-    outside_estimation_hg(hg);
+-    normalizationConstant = tbl_inside_prob.get(hg.goalNode);
++    outsideEstimationHg(hg);
++    normalizationConstant = tblInsideProb.get(hg.goalNode);
+     System.out.println("normalization constant is " + normalizationConstant);
+-    tbl_num_parent_deductions.clear();
++    tblNumParentDeductions.clear();
+     sanityCheckHG(hg);
+   }
+ 
+   // to save memory, external class should call this method
+   public void clearState() {
+-    tbl_num_parent_deductions.clear();
+-    tbl_inside_prob.clear();
+-    tbl_outside_prob.clear();
++    tblNumParentDeductions.clear();
++    tblInsideProb.clear();
++    tblOutsideProb.clear();
+   }
+ 
+   // ######### use of inside-outside probs ##########################
+@@ -111,25 +111,25 @@
+   // without normalization
+   public double getEdgeUnormalizedPosteriorLogProb(HyperEdge dt, HGNode parent) {
+     // ### outside of parent
+-    double outside = tbl_outside_prob.get(parent);
++    double outside = tblOutsideProb.get(parent);
+ 
+     // ### get inside prob of all my ant-items
+-    double inside = ONE_IN_SEMIRING;
++    double inside = oneInSemiring;
+     if (dt.getTailNodes() != null) {
+-      for (HGNode ant_it : dt.getTailNodes())
+-        inside = multi_in_semiring(inside, tbl_inside_prob.get(ant_it));
++      for (HGNode antIt : dt.getTailNodes())
++        inside = multiInSemiring(inside, tblInsideProb.get(antIt));
+     }
+ 
+     // ### add deduction/rule specific prob
+-    double merit = multi_in_semiring(inside, outside);
+-    merit = multi_in_semiring(merit, getHyperedgeLogProb(dt, parent, this.scaling_factor));
++    double merit = multiInSemiring(inside, outside);
++    merit = multiInSemiring(merit, getHyperedgeLogProb(dt, parent, this.scalingFactor));
+ 
+     return merit;
+   }
+ 
+   // normalized probabily in [0,1]
+   public double getEdgePosteriorProb(HyperEdge dt, HGNode parent) {
+-    if (SEMIRING == LOG_SEMIRING) {
++    if (semiring == logSemiring) {
+       double res =
+           Math.exp((getEdgeUnormalizedPosteriorLogProb(dt, parent) - getLogNormalizationConstant()));
+       if (res < 0.0 - 1e-2 || res > 1.0 + 1e-2) {
+@@ -145,15 +145,15 @@
+   // without normalization
+   public double getNodeUnnormalizedPosteriorLogProb(HGNode node) {
+     // ### outside of parent
+-    double inside = tbl_inside_prob.get(node);
+-    double outside = tbl_outside_prob.get(node);
+-    return multi_in_semiring(inside, outside);
++    double inside = tblInsideProb.get(node);
++    double outside = tblOutsideProb.get(node);
++    return multiInSemiring(inside, outside);
+   }
+ 
+ 
+   // normalized probabily in [0,1]
+   public double getNodePosteriorProb(HGNode node) {
+-    if (SEMIRING == LOG_SEMIRING) {
++    if (semiring == logSemiring) {
+       double res =
+           Math.exp((getNodeUnnormalizedPosteriorLogProb(node) - getLogNormalizationConstant()));
+       if (res < 0.0 - 1e-2 || res > 1.0 + 1e-2) {
+@@ -170,33 +170,33 @@
+    * However, this won't work! The sum should be greater than 1.
+    */
+   public void sanityCheckHG(HyperGraph hg) {
+-    tbl_for_sanity_check = new HashMap<>();
++    tblForSanityCheck = new HashMap<>();
+     // System.out.println("num_dts: " + hg.goal_item.l_deductions.size());
+-    sanity_check_item(hg.goalNode);
++    sanityCheckItem(hg.goalNode);
+     System.out.println("survied sanity check!!!!");
+   }
+ 
+-  private void sanity_check_item(HGNode it) {
+-    if (tbl_for_sanity_check.containsKey(it)) return;
+-    tbl_for_sanity_check.put(it, 1);
+-    double prob_sum = 0;
++  private void sanityCheckItem(HGNode it) {
++    if (tblForSanityCheck.containsKey(it)) return;
++    tblForSanityCheck.put(it, 1);
++    double probSum = 0;
+     // ### recursive call on each deduction
+     for (HyperEdge dt : it.hyperedges) {
+-      prob_sum += getEdgePosteriorProb(dt, it);
+-      sanity_check_deduction(dt);// deduction-specifc operation
++      probSum += getEdgePosteriorProb(dt, it);
++      sanityCheckDeduction(dt);// deduction-specifc operation
+     }
+-    double supposed_sum = getNodePosteriorProb(it);
+-    if (Math.abs(prob_sum - supposed_sum) > 1e-3) {
+-      throw new RuntimeException("prob_sum=" + prob_sum + "; supposed_sum=" + supposed_sum
++    double supposedSum = getNodePosteriorProb(it);
++    if (Math.abs(probSum - supposedSum) > 1e-3) {
++      throw new RuntimeException("prob_sum=" + probSum + "; supposed_sum=" + supposedSum
+           + "; sanity check fail!!!!");
+     }
+     // ### item-specific operation
+   }
+ 
+-  private void sanity_check_deduction(HyperEdge dt) {
++  private void sanityCheckDeduction(HyperEdge dt) {
+     // ### recursive call on each ant item
+     if (null != dt.getTailNodes()) {
+-      dt.getTailNodes().forEach(this::sanity_check_item);
++      dt.getTailNodes().forEach(this::sanityCheckItem);
+     }
+ 
+     // ### deduction-specific operation
+@@ -208,120 +208,120 @@
+ 
+ 
+   // ############ bottomn-up insdide estimation ##########################
+-  private void inside_estimation_hg(HyperGraph hg) {
+-    tbl_inside_prob.clear();
+-    tbl_num_parent_deductions.clear();
+-    inside_estimation_item(hg.goalNode);
++  private void insideEstimationHg(HyperGraph hg) {
++    tblInsideProb.clear();
++    tblNumParentDeductions.clear();
++    insideEstimationItem(hg.goalNode);
+   }
+ 
+-  private double inside_estimation_item(HGNode it) {
++  private double insideEstimationItem(HGNode it) {
+     // ### get number of deductions that point to me
+-    Integer num_called = tbl_num_parent_deductions.get(it);
+-    if (null == num_called) {
+-      tbl_num_parent_deductions.put(it, 1);
++    Integer numCalled = tblNumParentDeductions.get(it);
++    if (null == numCalled) {
++      tblNumParentDeductions.put(it, 1);
+     } else {
+-      tbl_num_parent_deductions.put(it, num_called + 1);
++      tblNumParentDeductions.put(it, numCalled + 1);
+     }
+ 
+-    if (tbl_inside_prob.containsKey(it)) {
+-      return tbl_inside_prob.get(it);
++    if (tblInsideProb.containsKey(it)) {
++      return tblInsideProb.get(it);
+     }
+-    double inside_prob = ZERO_IN_SEMIRING;
++    double insideProb = zeroInSemiring;
+ 
+     // ### recursive call on each deduction
+     for (HyperEdge dt : it.hyperedges) {
+-      double v_dt = inside_estimation_deduction(dt, it);// deduction-specifc operation
+-      inside_prob = add_in_semiring(inside_prob, v_dt);
++      double vDt = insideEstimationDeduction(dt, it);// deduction-specifc operation
++      insideProb = addInSemiring(insideProb, vDt);
+     }
+     // ### item-specific operation, but all the prob should be factored into each deduction
+ 
+-    tbl_inside_prob.put(it, inside_prob);
+-    return inside_prob;
++    tblInsideProb.put(it, insideProb);
++    return insideProb;
+   }
+ 
+-  private double inside_estimation_deduction(HyperEdge dt, HGNode parent_item) {
+-    double inside_prob = ONE_IN_SEMIRING;
++  private double insideEstimationDeduction(HyperEdge dt, HGNode parentItem) {
++    double insideProb = oneInSemiring;
+     // ### recursive call on each ant item
+-    if (dt.getTailNodes() != null) for (HGNode ant_it : dt.getTailNodes()) {
+-      double v_item = inside_estimation_item(ant_it);
+-      inside_prob = multi_in_semiring(inside_prob, v_item);
++    if (dt.getTailNodes() != null) for (HGNode antIt : dt.getTailNodes()) {
++      double vItem = insideEstimationItem(antIt);
++      insideProb = multiInSemiring(insideProb, vItem);
+     }
+ 
+     // ### deduction operation
+-    double deduct_prob = getHyperedgeLogProb(dt, parent_item, this.scaling_factor);// feature-set
++    double deductProb = getHyperedgeLogProb(dt, parentItem, this.scalingFactor);// feature-set
+                                                                                    // specific
+-    inside_prob = multi_in_semiring(inside_prob, deduct_prob);
+-    return inside_prob;
++    insideProb = multiInSemiring(insideProb, deductProb);
++    return insideProb;
+   }
+ 
+   // ########### end inside estimation
+ 
+   // ############ top-downn outside estimation ##########################
+ 
+-  private void outside_estimation_hg(HyperGraph hg) {
+-    tbl_outside_prob.clear();
+-    tbl_outside_prob.put(hg.goalNode, ONE_IN_SEMIRING);// initialize
++  private void outsideEstimationHg(HyperGraph hg) {
++    tblOutsideProb.clear();
++    tblOutsideProb.put(hg.goalNode, oneInSemiring);// initialize
+     for (HyperEdge dt : hg.goalNode.hyperedges)
+-      outside_estimation_deduction(dt, hg.goalNode);
++      outsideEstimationDeduction(dt, hg.goalNode);
+   }
+ 
+-  private void outside_estimation_item(HGNode cur_it, HGNode upper_item, HyperEdge parent_dt,
+-      double parent_deduct_prob) {
+-    Integer num_called = tbl_num_parent_deductions.get(cur_it);
+-    if (null == num_called || 0 == num_called) {
++  private void outsideEstimationItem(HGNode curIt, HGNode upperItem, HyperEdge parentDt,
++      double parentDeductProb) {
++    Integer numCalled = tblNumParentDeductions.get(curIt);
++    if (null == numCalled || 0 == numCalled) {
+       throw new RuntimeException("un-expected call, must be wrong");
+     }
+-    tbl_num_parent_deductions.put(cur_it, num_called - 1);
++    tblNumParentDeductions.put(curIt, numCalled - 1);
+ 
+-    double old_outside_prob = ZERO_IN_SEMIRING;
+-    if (tbl_outside_prob.containsKey(cur_it)) {
+-      old_outside_prob = tbl_outside_prob.get(cur_it);
++    double oldOutsideProb = zeroInSemiring;
++    if (tblOutsideProb.containsKey(curIt)) {
++      oldOutsideProb = tblOutsideProb.get(curIt);
+     }
+ 
+-    double additional_outside_prob = ONE_IN_SEMIRING;
++    double additionalOutsideProb = oneInSemiring;
+ 
+     // ### add parent deduction prob
+-    additional_outside_prob = multi_in_semiring(additional_outside_prob, parent_deduct_prob);
++    additionalOutsideProb = multiInSemiring(additionalOutsideProb, parentDeductProb);
+ 
+     // ### sibing specifc
+-    if (parent_dt.getTailNodes() != null && parent_dt.getTailNodes().size() > 1)
+-      for (HGNode ant_it : parent_dt.getTailNodes()) {
+-        if (ant_it != cur_it) {
+-          double inside_prob_item = tbl_inside_prob.get(ant_it);// inside prob
+-          additional_outside_prob = multi_in_semiring(additional_outside_prob, inside_prob_item);
++    if (parentDt.getTailNodes() != null && parentDt.getTailNodes().size() > 1)
++      for (HGNode antIt : parentDt.getTailNodes()) {
++        if (antIt != curIt) {
++          double insideProbItem = tblInsideProb.get(antIt);// inside prob
++          additionalOutsideProb = multiInSemiring(additionalOutsideProb, insideProbItem);
+         }
+       }
+ 
+     // ### upper item
+-    double outside_prob_item = tbl_outside_prob.get(upper_item);// outside prob
+-    additional_outside_prob = multi_in_semiring(additional_outside_prob, outside_prob_item);
++    double outsideProbItem = tblOutsideProb.get(upperItem);// outside prob
++    additionalOutsideProb = multiInSemiring(additionalOutsideProb, outsideProbItem);
+ 
+     // #### add to old prob
+-    additional_outside_prob = add_in_semiring(additional_outside_prob, old_outside_prob);
++    additionalOutsideProb = addInSemiring(additionalOutsideProb, oldOutsideProb);
+ 
+-    tbl_outside_prob.put(cur_it, additional_outside_prob);
++    tblOutsideProb.put(curIt, additionalOutsideProb);
+ 
+     // ### recursive call on each deduction
+-    if (num_called - 1 <= 0) {// i am done
+-      for (HyperEdge dt : cur_it.hyperedges) {
++    if (numCalled - 1 <= 0) {// i am done
++      for (HyperEdge dt : curIt.hyperedges) {
+         // TODO: potentially, we can collect the feature expection in each hyperedge here, to avoid
+         // another pass of the hypergraph to get the counts
+-        outside_estimation_deduction(dt, cur_it);
++        outsideEstimationDeduction(dt, curIt);
+       }
+     }
+   }
+ 
+ 
+-  private void outside_estimation_deduction(HyperEdge dt, HGNode parent_item) {
++  private void outsideEstimationDeduction(HyperEdge dt, HGNode parentItem) {
+     // we do not need to outside prob if no ant items
+     if (dt.getTailNodes() != null) {
+       // ### deduction specific prob
+-      double deduction_prob = getHyperedgeLogProb(dt, parent_item, this.scaling_factor);// feature-set
++      double deductionProb = getHyperedgeLogProb(dt, parentItem, this.scalingFactor);// feature-set
+                                                                                         // specific
+ 
+       // ### recursive call on each ant item
+-      for (HGNode ant_it : dt.getTailNodes()) {
+-        outside_estimation_item(ant_it, parent_item, dt, deduction_prob);
++      for (HGNode antIt : dt.getTailNodes()) {
++        outsideEstimationItem(antIt, parentItem, dt, deductionProb);
+       }
+     }
+   }
+@@ -333,19 +333,19 @@
+   // ############ common ##########################
+   // BUG: replace integer pseudo-enum with a real Java enum
+   // BUG: use a Semiring class instead of all this?
+-  private void setup_semiring(int semiring, int add_mode) {
+-    ADD_MODE = add_mode;
+-    SEMIRING = semiring;
+-    if (SEMIRING == LOG_SEMIRING) {
+-      if (ADD_MODE == 0) { // sum
+-        ZERO_IN_SEMIRING = Double.NEGATIVE_INFINITY;
+-        ONE_IN_SEMIRING = 0;
+-      } else if (ADD_MODE == 1) { // viter-min
+-        ZERO_IN_SEMIRING = Double.POSITIVE_INFINITY;
+-        ONE_IN_SEMIRING = 0;
+-      } else if (ADD_MODE == 2) { // viter-max
+-        ZERO_IN_SEMIRING = Double.NEGATIVE_INFINITY;
+-        ONE_IN_SEMIRING = 0;
++  private void setupSemiring(int semiring, int addMode) {
++    this.addMode = addMode;
++    this.semiring = semiring;
++    if (this.semiring == logSemiring) {
++      if (this.addMode == 0) { // sum
++        zeroInSemiring = Double.NEGATIVE_INFINITY;
++        oneInSemiring = 0;
++      } else if (this.addMode == 1) { // viter-min
++        zeroInSemiring = Double.POSITIVE_INFINITY;
++        oneInSemiring = 0;
++      } else if (this.addMode == 2) { // viter-max
++        zeroInSemiring = Double.NEGATIVE_INFINITY;
++        oneInSemiring = 0;
+       } else {
+         throw new RuntimeException("invalid add mode");
+       }
+@@ -354,32 +354,32 @@
+     }
+   }
+ 
+-  private double multi_in_semiring(double x, double y) {
+-    if (SEMIRING == LOG_SEMIRING) {
+-      return multi_in_log_semiring(x, y);
++  private double multiInSemiring(double x, double y) {
++    if (semiring == logSemiring) {
++      return multiInLogSemiring(x, y);
+     } else {
+       throw new RuntimeException("un-supported semiring");
+     }
+   }
+ 
+-  private double add_in_semiring(double x, double y) {
+-    if (SEMIRING == LOG_SEMIRING) {
+-      return add_in_log_semiring(x, y);
++  private double addInSemiring(double x, double y) {
++    if (semiring == logSemiring) {
++      return addInLogSemiring(x, y);
+     } else {
+       throw new RuntimeException("un-supported semiring");
+     }
+   }
+ 
+   // AND
+-  private double multi_in_log_semiring(double x, double y) { // value is Log prob
++  private double multiInLogSemiring(double x, double y) { // value is Log prob
+     return x + y;
+   }
+ 
+ 
+   // OR: return Math.log(Math.exp(x) + Math.exp(y));
+   // BUG: Replace ADD_MODE pseudo-enum with a real Java enum
+-  private double add_in_log_semiring(double x, double y) { // prevent under-flow
+-    if (ADD_MODE == 0) { // sum
++  private double addInLogSemiring(double x, double y) { // prevent under-flow
++    if (addMode == 0) { // sum
+       if (x == Double.NEGATIVE_INFINITY) { // if y is also n-infinity, then return n-infinity
+         return y;
+       }
+@@ -392,9 +392,9 @@
+       } else {
+         return y + Math.log(1 + Math.exp(x - y));
+       }
+-    } else if (ADD_MODE == 1) { // viter-min
++    } else if (addMode == 1) { // viter-min
+       return (x <= y ? x : y);
+-    } else if (ADD_MODE == 2) { // viter-max
++    } else if (addMode == 2) { // viter-max
+       return (x >= y ? x : y);
+     } else {
+       throw new RuntimeException("invalid add mode");
+@@ -403,3 +403,4 @@
+   // ############ end common #####################
+ 
+ }
++

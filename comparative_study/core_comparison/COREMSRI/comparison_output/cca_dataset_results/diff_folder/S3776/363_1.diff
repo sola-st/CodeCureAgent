@@ -1,0 +1,528 @@
+@@ -282,276 +282,13 @@
+ 
+         if (running) {
+             if (isNeedAnalyzePageBreaks()) {
+-                analyzePageBreaks(c);
+-
+-                setExtraSpaceTop(0);
+-                setExtraSpaceBottom(0);
+-            } else {
+-                setExtraSpaceTop(c.getExtraSpaceTop() - prevExtraTop);
+-                setExtraSpaceBottom(c.getExtraSpaceBottom() - prevExtraBottom);
+-            }
+-            c.setExtraSpaceTop(prevExtraTop);
+-            c.setExtraSpaceBottom(prevExtraBottom);
+-        }
+-    }
+-
+-    @Override
+-    protected void layoutChildren(LayoutContext c, int contentStart) {
+-        ensureChildren(c);
+-        // If we have a running footer, we need its dimensions right away
+-        boolean running = c.isPrint() && getStyle().isPaginateTable();
+-        if (running) {
+-            int headerHeight = layoutRunningHeader(c);
+-            int footerHeight = layoutRunningFooter(c);
+-            int spacingHeight = footerHeight == 0 ? 0 : getStyle().getBorderVSpacing(c);
+-
+-            PageBox first = c.getRootLayer().getFirstPage(c, this);
+-            if (getAbsY() + getTy() + headerHeight + footerHeight + spacingHeight > first.getBottom()) {
+-                // XXX Performance problem here.  This forces the table
+-                // to move to the next page (which we want), but the initial
+-                // table layout run still completes (which we don't)
+-                setNeedPageClear(true);
+-            }
+-        }
+-        super.layoutChildren(c, contentStart);
+-    }
+-
+-    private int layoutRunningHeader(LayoutContext c) {
+-        int result = 0;
+-        if (getChildCount() > 0) {
+-            TableSectionBox section = (TableSectionBox)getChild(0);
+-            if (section.isHeader()) {
+-                c.setNoPageBreak(c.getNoPageBreak() + 1);
+-
+-                section.initContainingLayer(c);
+-                section.layout(c);
+-
+-                c.setExtraSpaceTop(c.getExtraSpaceTop() + section.getHeight());
+-
+-                result = section.getHeight();
+-
+-                section.reset(c);
+-
+-                c.setNoPageBreak(c.getNoPageBreak() - 1);
+-            }
+-        }
+-
+-        return result;
+-    }
+-
+-    private int layoutRunningFooter(LayoutContext c) {
+-        int result = 0;
+-        if (getChildCount() > 0) {
+-            TableSectionBox section = (TableSectionBox)getChild(getChildCount()-1);
+-            if (section.isFooter()) {
+-                c.setNoPageBreak(c.getNoPageBreak() + 1);
+-
+-                section.initContainingLayer(c);
+-                section.layout(c);
+-
+-                c.setExtraSpaceBottom(c.getExtraSpaceBottom() +
+-                        section.getHeight() +
+-                        getStyle().getBorderVSpacing(c));
+-
+-                result = section.getHeight();
+-
+-                section.reset(c);
+-
+-                c.setNoPageBreak(c.getNoPageBreak() - 1);
+-            }
+-        }
+-        return result;
+-    }
+-
+-    private boolean isNeedAnalyzePageBreaks() {
+-        Box b = findAncestor(bx -> bx.getStyle().isTable() && bx.getStyle().isPaginateTable());
+-        return b == null;
+-    }
+-
+-    private void analyzePageBreaks(LayoutContext c) {
+-        analyzePageBreaks(c, null);
+-    }
+-
+-    @Override
+-    public void analyzePageBreaks(LayoutContext c, ContentLimitContainer container) {
+-        _contentLimitContainer = new ContentLimitContainer(c, getAbsY());
+-        _contentLimitContainer.setParent(container);
+-
+-        if (container != null) {
+-            container.updateTop(c, getAbsY());
+-            container.updateBottom(c, getAbsY() + getHeight());
+-        }
+-
+-        for (Box b : getChildren()) {
+-            b.analyzePageBreaks(c, _contentLimitContainer);
+-        }
+-
+-        if (container != null && _contentLimitContainer.isContainsMultiplePages() &&
+-                (getExtraSpaceTop() > 0 || getExtraSpaceBottom() > 0)) {
+-            propagateExtraSpace(c, container, _contentLimitContainer, getExtraSpaceTop(), getExtraSpaceBottom());
+-        }
+-    }
+-
+-    @Override
+-    public void paintBackground(RenderingContext c) {
+-        if (_contentLimitContainer == null) {
+-            super.paintBackground(c);
+-        } else if (getStyle().isVisible(c, this)) {
+-            c.getOutputDevice().paintBackground(
+-                    c, getStyle(), getContentLimitedBorderEdge(c), getPaintingBorderEdge(c),
+-                    getStyle().getBorder(c));
+-        }
+-    }
+-
+-    @Override
+-    public void paintBorder(RenderingContext c) {
+-        if (_contentLimitContainer == null) {
+-            super.paintBorder(c);
+-        } else if (getStyle().isVisible(c, this)) {
+-            c.getOutputDevice().paintBorder(c, getStyle(), getContentLimitedBorderEdge(c), getBorderSides());
+-        }
+-    }
+-
+-    private Rectangle getContentLimitedBorderEdge(RenderingContext c) {
+-        Rectangle result = getPaintingBorderEdge(c);
+-
+-        ContentLimit limit = _contentLimitContainer.getContentLimit(c.getPageNo());
+-
+-        if (limit == null) {
+-            XRLog.log(Level.WARNING, LogMessageId.LogMessageId0Param.LAYOUT_NO_CONTENT_LIMIT_FOUND);
+-            return result;
+-        } else {
+-            if (limit.getTop() == ContentLimit.UNDEFINED ||
+-                    limit.getBottom() == ContentLimit.UNDEFINED) {
+-                return result;
+-            }
+-
+-            RectPropertySet padding = getPadding(c);
+-            BorderPropertySet border = getBorder(c);
+-
+-            int top;
+-            if (c.getPageNo() == _contentLimitContainer.getInitialPageNo()) {
+-                top = result.y;
+-            } else {
+-                top = limit.getTop() - (int)padding.top() -
+-                    (int)border.top() - getStyle().getBorderVSpacing(c);
+-                if (getChildCount() > 0) {
+-                    TableSectionBox section = (TableSectionBox)getChild(0);
+-                    if (section.isHeader()) {
+-                        top -= section.getHeight();
+-                    }
+-                }
+-            }
+-
+-            int bottom;
+-            if (c.getPageNo() == _contentLimitContainer.getLastPageNo()) {
+-                bottom = result.y + result.height;
+-            } else {
+-                bottom = limit.getBottom() + (int)padding.bottom() +
+-                            (int)border.bottom() + getStyle().getBorderVSpacing(c);
+-                if (getChildCount() > 0) {
+-                    TableSectionBox section = (TableSectionBox)getChild(getChildCount()-1);
+-                    if (section.isFooter()) {
+-                        bottom += section.getHeight();
+-                    }
+-                }
+-            }
+-
+-            result.y = top;
+-            result.height = bottom - top;
+-
+-            return result;
+-        }
+-    }
+-
+-    public void updateHeaderFooterPosition(RenderingContext c) {
+-        ContentLimit limit = _contentLimitContainer.getContentLimit(c.getPageNo());
+-
+-        if (limit != null) {
+-            updateHeaderPosition(c, limit);
+-            updateFooterPosition(c, limit);
+-        }
+-    }
+-
+-    private void updateHeaderPosition(RenderingContext c, ContentLimit limit) {
+-        if (limit.getTop() != ContentLimit.UNDEFINED ||
+-                c.getPageNo() == _contentLimitContainer.getInitialPageNo()) {
+-            if (getChildCount() > 0) {
+-                TableSectionBox section = (TableSectionBox)getChild(0);
+-                if (section.isHeader()) {
+-                    if (! section.isCapturedOriginalAbsY()) {
+-                        section.setOriginalAbsY(section.getAbsY());
+-                        section.setCapturedOriginalAbsY(true);
+-                    }
+-
+-                    int newAbsY;
+-                    if (c.getPageNo() == _contentLimitContainer.getInitialPageNo()) {
+-                        newAbsY = section.getOriginalAbsY();
+-                    } else {
+-                        newAbsY = limit.getTop() -
+-                            getStyle().getBorderVSpacing(c) -
+-                            section.getHeight();
+-                    }
+-
+-                    int diff = newAbsY - section.getAbsY();
+-
+-                    if (diff != 0) {
+-                        section.setY(section.getY() + diff);
+-                        section.calcCanvasLocation();
+-                        section.calcChildLocations();
+-                        section.calcPaintingInfo(c, false);
+-                    }
+-                }
+-            }
+-        }
+-    }
+-
+-    private void updateFooterPosition(RenderingContext c, ContentLimit limit) {
+-        if (limit.getBottom() != ContentLimit.UNDEFINED ||
+-                c.getPageNo() == _contentLimitContainer.getLastPageNo()) {
+-            if (getChildCount() > 0) {
+-                TableSectionBox section = (TableSectionBox)getChild(getChildCount()-1);
+-                if (section.isFooter()) {
+-                    if (! section.isCapturedOriginalAbsY()) {
+-                        section.setOriginalAbsY(section.getAbsY());
+-                        section.setCapturedOriginalAbsY(true);
+-                    }
+-
+-                    int newAbsY;
+-                    if (c.getPageNo() == _contentLimitContainer.getLastPageNo()) {
+-                        newAbsY = section.getOriginalAbsY();
+-                    } else {
+-                        newAbsY = limit.getBottom();
+-                    }
+-
+-                    int diff = newAbsY - section.getAbsY();
+-
+-                    if (diff != 0) {
+-                        section.setY(section.getY() + diff);
+-                        section.calcCanvasLocation();
+-                        section.calcChildLocations();
+-                        section.calcPaintingInfo(c, false);
+-                    }
+-                }
+-            }
+-        }
+-    }
+-
+     private void calcPageClearance(LayoutContext c) {
+         if (c.isPrint() && getStyle().isCollapseBorders()) {
+             PageBox page = c.getRootLayer().getFirstPage(c, this);
+             if (page != null) {
+                 TableRowBox row = getFirstRow();
+                 if (row != null) {
+-                    int spill = 0;
+-                    for (Iterator<TableCellBox> i = row.getChildIteratorOfType(TableCellBox.class); i.hasNext(); ) {
+-                        TableCellBox cell = i.next();
+-                        BorderPropertySet collapsed = cell.getCollapsedPaintingBorder();
+-                        int tmp = (int)collapsed.top() / 2;
+-                        if (tmp > spill) {
+-                            spill = tmp;
+-                        }
+-                    }
++                    int spill = calculateSpill(row);
+ 
+                     int borderTop = getAbsY() + (int)getMargin(c).top() - spill;
+                     int delta = page.getTop() - borderTop;
+@@ -566,240 +303,19 @@
+         }
+     }
+ 
+-    private void calcWidth() {
+-        if (getMinWidth() > getWidth()) {
+-            setContentWidth(getContentWidth() + getMinWidth() - getWidth());
+-        } else if (getStyle().isIdent(CSSName.WIDTH, IdentValue.AUTO) &&
+-                    getMaxWidth() < getWidth()) {
+-            setContentWidth(getContentWidth() - (getWidth() - getMaxWidth()));
+-        }
+-    }
+-
+-    public TableRowBox getFirstRow() {
+-        for (TableSectionBox section : getTableSections()) {
+-            if (section.getChildCount() > 0) {
+-                return (TableRowBox)section.getChild(0);
+-            }
+-        }
+-
+-        return null;
+-    }
+-
+-    public TableRowBox getFirstBodyRow() {
+-        for (TableSectionBox section : getTableSections()) {
+-            if (section.isHeader() || section.isFooter()) {
+-                continue;
+-            }
+-            if (section.getChildCount() > 0) {
+-                return (TableRowBox)section.getChild(0);
+-            }
+-        }
+-
+-        return null;
+-    }
+-
+-    private void setCellWidths(LayoutContext c) {
+-        for (TableSectionBox section : getTableSections()) {
+-             section.setCellWidths(c);
+-        }
+-    }
+-
+-    @Override
+-    protected void calcLayoutHeight(LayoutContext c, BorderPropertySet border,
+-            RectPropertySet margin, RectPropertySet padding) {
+-        super.calcLayoutHeight(c, border, margin, padding);
+-
+-        if (getChildCount() > 0) {
+-            setHeight(getHeight() + getStyle().getBorderVSpacing(c));
+-        }
+-    }
+-
+-    public void reset(LayoutContext c) {
+-        super.reset(c);
+-
+-        _contentLimitContainer = null;
+-
+-        _tableLayout.reset();
+-    }
+-
+-    @Override
+-    protected int getCSSWidth(CssContext c) {
+-        if (getStyle().isAutoWidth()) {
+-            return -1;
+-        } else {
+-            // XHTML 1.0 specifies that a table width refers to the border
+-            // width.  This can be removed if/when we support the box-sizing
+-            // property.
+-            int result = (int)getStyle().getFloatPropertyProportionalWidth(
+-                    CSSName.WIDTH, getContainingBlock().getContentWidth(), c);
+-
+-            BorderPropertySet border = getBorder(c);
+-            result -= (int)border.left() + (int)border.right();
+-            if (! getStyle().isCollapseBorders()) {
+-                RectPropertySet padding = getPadding(c);
+-                result -= (int)padding.left() + (int)padding.right();
+-            }
+-
+-            return result >= 0 ? result : -1;
+-        }
+-    }
+-
+-    public TableColumn colElement(int col) {
+-        List<TableColumn> styleColumns = getStyleColumns();
+-        if (styleColumns.size() == 0) {
+-            return null;
+-        }
+-        int cCol = 0;
+-        for (TableColumn colElem : styleColumns) {
+-            int span = colElem.getStyle().getColSpan();
+-            cCol += span;
+-            if (cCol > col) {
+-                return colElem;
+-            }
+-        }
+-        return null;
+-    }
+-
+-    public Rectangle getColumnBounds(CssContext c, int col) {
+-        int effCol = colToEffCol(col);
+-
+-        int hspacing = getStyle().getBorderHSpacing(c);
+-        int vspacing = getStyle().getBorderVSpacing(c);
+-
+-        Rectangle result = getContentAreaEdge(getAbsX(), getAbsY(), c);
+-
+-        result.y += vspacing;
+-        result.height -= vspacing*2;
+-
+-        result.x += _columnPos[effCol] + hspacing;
+-
+-        return result;
+-    }
+-
+-    @Override
+-    public BorderPropertySet getBorder(CssContext cssCtx) {
+-        if (getStyle().isCollapseBorders()) {
+-            return BorderPropertySet.EMPTY_BORDER;
+-        } else {
+-            return super.getBorder(cssCtx);
+-        }
+-    }
+-
+-    public int calcFixedHeightRowBottom(CssContext c) {
+-        if (! isAnonymous()) {
+-            int cssHeight = getCSSHeight(c);
+-            if (cssHeight != -1) {
+-                return getAbsY() + cssHeight
+-                    - (int)getBorder(c).bottom() - (int)getPadding(c).bottom()
+-                    - getStyle().getBorderVSpacing(c);
+-            }
+-        }
+-
+-        return -1;
+-    }
+-
+-    @Override
+-    protected boolean isMayCollapseMarginsWithChildren() {
+-        return false;
+-    }
+-
+-    protected TableSectionBox sectionAbove(
+-            TableSectionBox section, boolean skipEmptySections) {
+-        TableSectionBox prevSection = (TableSectionBox)section.getPreviousSibling();
+-
+-        if (prevSection == null) {
+-            return null;
+-        }
+-
+-        while (prevSection != null) {
+-            if (prevSection.numRows() > 0 || !skipEmptySections) {
+-                break;
+-            }
+-            prevSection = (TableSectionBox)prevSection.getPreviousSibling();
+-        }
+-
+-        return prevSection;
+-    }
+-
+-    protected TableSectionBox sectionBelow(
+-            TableSectionBox section, boolean skipEmptySections) {
+-        TableSectionBox nextSection = (TableSectionBox)section.getNextSibling();
+-
+-        if (nextSection == null) {
+-            return null;
+-        }
+-
+-        while (nextSection != null) {
+-            if (nextSection.numRows() > 0 || !skipEmptySections) {
+-                break;
+-            }
+-            nextSection = (TableSectionBox)nextSection.getNextSibling();
+-        }
+-
+-        return nextSection;
+-    }
+-
+-    protected TableCellBox cellAbove(TableCellBox cell) {
+-        // Find the section and row to look in
+-        int r = cell.getRow();
+-        TableSectionBox section = null;
+-        int rAbove = 0;
+-        if (r > 0) {
+-            // cell is not in the first row, so use the above row in its own
+-            // section
+-            section = cell.getSection();
+-            rAbove = r - 1;
+-        } else {
+-            section = sectionAbove(cell.getSection(), true);
+-            if (section != null) {
+-                rAbove = section.numRows() - 1;
+-            }
+-        }
+-
+-        // Look up the cell in the section's grid, which requires effective col
+-        // index
+-        if (section != null) {
+-            int effCol = colToEffCol(cell.getCol());
+-            TableCellBox aboveCell;
+-            // If we hit a span back up to a real cell.
+-            do {
+-                aboveCell = section.cellAt(rAbove, effCol);
+-                effCol--;
+-            } while (aboveCell == TableCellBox.SPANNING_CELL && effCol >= 0);
+-            return (aboveCell == TableCellBox.SPANNING_CELL) ? null : aboveCell;
+-        } else {
+-            return null;
++    private int calculateSpill(TableRowBox row) {
++        int spill = 0;
++        for (Iterator<TableCellBox> i = row.getChildIteratorOfType(TableCellBox.class); i.hasNext(); ) {
++            TableCellBox cell = i.next();
++            BorderPropertySet collapsed = cell.getCollapsedPaintingBorder();
++            int tmp = (int)collapsed.top() / 2;
++            if (tmp > spill) {
++                spill = tmp;
+         }
+     }
+-
+-    protected TableCellBox cellBelow(TableCellBox cell) {
+-        // Find the section and row to look in
+-        int r = cell.getRow() + cell.getStyle().getRowSpan() - 1;
+-        TableSectionBox section = null;
+-        int rBelow = 0;
+-        if (r < cell.getSection().numRows() - 1) {
+-            // The cell is not in the last row, so use the next row in the
+-            // section.
+-            section = cell.getSection();
+-            rBelow = r + 1;
+-        } else {
+-            section = sectionBelow(cell.getSection(), true);
+-            if (section != null)
+-                rBelow = 0;
++        return spill;
+         }
+ 
+-        // Look up the cell in the section's grid, which requires effective col
+-        // index
+-        if (section != null) {
+-            int effCol = colToEffCol(cell.getCol());
+-            TableCellBox belowCell;
+-            // If we hit a colspan back up to a real cell.
+-            do {
+-                belowCell = section.cellAt(rBelow, effCol);
+-                effCol--;
+-            } while (belowCell == TableCellBox.SPANNING_CELL && effCol >= 0);
+-            return (belowCell == TableCellBox.SPANNING_CELL) ? null : belowCell;
+-        } else {
+             return null;
+         }
+     }

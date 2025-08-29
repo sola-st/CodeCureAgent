@@ -1,0 +1,467 @@
+@@ -692,247 +692,19 @@
+ 						AttributeStreamOfDbl dst_stream_dbl = (AttributeStreamOfDbl) (dst_stream);
+ 						Point2D pt = new Point2D();
+ 						for (int vertex = getFirstVertex(path); dst_index < nvert; vertex = getNextVertex(vertex), dst_index++) {
+-							int src_index = getVertexIndex(vertex);
+-							src_stream_dbl.read(src_index * 2, pt);
+-							dst_stream_dbl.write(dst_index * 2, pt);
+-						}
+-					} else {
+-						for (int vertex = getFirstVertex(path); dst_index < nvert; vertex = getNextVertex(vertex), dst_index++) {
+-							int src_index = getVertexIndex(vertex);
+-							for (int icomp = 0; icomp < ncomps; icomp++) {
+-								double d = src_stream.readAsDbl(src_index
+-										* ncomps + icomp);
+-								dst_stream.writeAsDbl(dst_index * ncomps
+-										+ icomp, d);
+-							}
+-						}
+-					}
+-				}
+-
+-				assert (nvert == point_count);// Inconsistent content in the
+-												// Edit_shape. Please, fix.
+-				assert (ipath == path_count);
+-				mp_impl.setAttributeStreamRef(semantics, dst_stream);
+-				parts.write(path_count, point_count);
+-			}
+-
+-			mp_impl.setPathFlagsStreamRef(pathFlags);
+-			mp_impl.setPathStreamRef(parts);
+-			mp_impl.notifyModified(MultiVertexGeometryImpl.DirtyFlags.DirtyAll);
+-		} else if (gt == Geometry.GeometryType.MultiPoint) {
+-			MultiPointImpl mp_impl = (MultiPointImpl) geom._getImpl();
+-			VertexDescription description = geom.getDescription();
+-			// mp_impl.reserve(point_count);
+-			mp_impl.resize(point_count);
+-
+-			for (int iattrib = 0, nattrib = description.getAttributeCount(); iattrib < nattrib; iattrib++) {
+-				int semantics = description.getSemantics(iattrib);
+-				int ncomps = VertexDescription.getComponentCount(semantics);
+-				AttributeStreamBase dst_stream = mp_impl
+-						.getAttributeStreamRef(semantics);
+-				// std::shared_ptr<Attribute_stream_base> dst_stream =
+-				// Attribute_stream_base::create_attribute_stream(semantics,
+-				// point_count);
+-				AttributeStreamBase src_stream = m_vertices
+-						.getAttributeStreamRef(semantics);
+-				int dst_index = 0;
+-				assert (getPathCount(geometry) == 1);
+-				int path = getFirstPath(geometry);
+-				int path_size = getPathSize(path);
+-				for (int vertex = getFirstVertex(path); dst_index < path_size; vertex = getNextVertex(vertex), dst_index++) {
+-					int src_index = getVertexIndex(vertex);
+-					for (int icomp = 0; icomp < ncomps; icomp++) {
+-						double d = src_stream.readAsDbl(src_index * ncomps
+-								+ icomp);
+-						dst_stream.writeAsDbl(dst_index * ncomps + icomp, d);
+-					}
+-				}
+-
+-				mp_impl.setAttributeStreamRef(semantics, dst_stream);
+-			}
+-
+-			mp_impl.notifyModified(MultiVertexGeometryImpl.DirtyFlags.DirtyAll);
+-		} else {
+-			assert (false);
+-		}
+-
+-		return geom;
+-	}
+-
+-	// create a new empty geometry of the given type
+-	int createGeometry(Geometry.Type geometry_type) {
+-		return createGeometry(geometry_type,
+-				VertexDescriptionDesignerImpl.getDefaultDescriptor2D());
+-	}
+-
+-	// Deletes existing geometry from the edit shape and returns the next one.
+-	int removeGeometry(int geometry) {
+-		for (int path = getFirstPath(geometry); path != -1; path = removePath(path)) {
+-			// removing paths in a loop
+-		}
+-
+-		int prev = getPrevGeometry(geometry);
+-		int next = getNextGeometry(geometry);
+-		if (prev != -1)
+-			setNextGeometry_(prev, next);
+-		else {
+-			m_first_geometry = next;
+-		}
+-		if (next != -1)
+-			setPrevGeometry_(next, prev);
+-		else {
+-			m_last_geometry = prev;
+-		}
+-
+-		freeGeometry_(geometry);
+-		return next;
+-	}
+-
+-	// create a new empty geometry of the given type and attribute set.
+-	int createGeometry(Geometry.Type geometry_type,
+-			VertexDescription description) {
+-		int newgeom = newGeometry_(geometry_type.value());
+-		if (m_vertices == null) {
+-			m_vertices_mp = new MultiPoint(description);
+-			m_vertices = (MultiPointImpl) m_vertices_mp._getImpl();
+-		} else
+-			m_vertices_mp.mergeVertexDescription(description);
+-
+-		m_vertex_description = m_vertices_mp.getDescription();// this
+-																// description
+-																// will be a
+-																// merge of
+-																// existing
+-																// description
+-																// and the
+-																// description
+-																// of the
+-																// multi_path
+-		m_b_has_attributes = m_vertex_description.getAttributeCount() > 1;
+-
+-		if (m_first_geometry == -1) {
+-			m_first_geometry = newgeom;
+-			m_last_geometry = newgeom;
+-		} else {
+-			setPrevGeometry_(newgeom, m_last_geometry);
+-			setNextGeometry_(m_last_geometry, newgeom);
+-			m_last_geometry = newgeom;
+-		}
+-		return newgeom;
+-	}
+-
+-	// Returns the first geometry in the Edit_shape.
+-	int getFirstGeometry() {
+-		return m_first_geometry;
+-	}
+-
+-	// Returns the next geometry in the Edit_shape. Returns -1 when there are no
+-	// more geometries.
+-	int getNextGeometry(int geom) {
+-		return m_geometry_index_list.getField(geom, 1);
+-	}
+-
+-	// Returns the previous geometry in the Edit_shape. Returns -1 when there
+-	// are no more geometries.
+-	int getPrevGeometry(int geom) {
+-		return m_geometry_index_list.getField(geom, 0);
+-	}
+-
+-	// Returns the type of the Geometry.
+-	int getGeometryType(int geom) {
+-		return m_geometry_index_list.getField(geom, 2) & 0x7FFFFFFF;
+-	}
+-
+-	// Sets value to the given user index on a geometry.
+-	void setGeometryUserIndex(int geom, int index, int value) {
+-		AttributeStreamOfInt32 stream = m_geometry_indices.get(index);
+-		int pindex = getGeometryIndex_(geom);
+-		if (pindex >= stream.size())
+-			stream.resize(Math.max((int) (pindex * 1.25), (int) 16), -1);
+-		stream.write(pindex, value);
+-	}
+-
+-	// Returns the value of the given user index of a geometry
+-	int getGeometryUserIndex(int geom, int index) {
+-		int pindex = getGeometryIndex_(geom);
+-		AttributeStreamOfInt32 stream = m_geometry_indices.get(index);
+-		if (pindex < stream.size())
+-			return stream.read(pindex);
+-		else
+-			return -1;
+-	}
+-
+-	// Creates new user index on a geometry. The geometry index allows to store
+-	// an integer user value on the geometry.
+-	// Until set_geometry_user_index is called for a given geometry, the index
+-	// stores -1 for that geometry.
+-	int createGeometryUserIndex() {
+-		if (m_geometry_indices == null)
+-			m_geometry_indices = new ArrayList<AttributeStreamOfInt32>(4);
+-
+-		// Try getting existing index. Use linear search. We do not expect many
+-		// indices to be created.
+-		for (int i = 0; i < m_geometry_indices.size(); i++) {
+-			if (m_geometry_indices.get(i) == null) {
+-				m_geometry_indices.set(i,
+-						(AttributeStreamOfInt32) AttributeStreamBase
+-								.createIndexStream(0));
+-				return i;
+-			}
+-		}
+-
+-		m_geometry_indices.add((AttributeStreamOfInt32) AttributeStreamBase
+-				.createIndexStream(0));
+-		return m_geometry_indices.size() - 1;
+-	}
+-
+-	// Removes the geometry user index.
+-	void removeGeometryUserIndex(int index) {
+-		m_geometry_indices.set(index, null);
+-	}
+-
+-	// Returns the first path of the geometry.
+-	int getFirstPath(int geometry) {
+-		return m_geometry_index_list.getField(geometry, 3);
+-	}
+-
+-	// Returns the first path of the geometry.
+-	int getLastPath(int geometry) {
+-		return m_geometry_index_list.getField(geometry, 4);
+-	}
+-
+-	// Point count in a geometry
+-	int getPointCount(int geom) {
+-		return m_geometry_index_list.getField(geom, 5);
+-	}
+-
+-	// Path count in a geometry
+-	int getPathCount(int geom) {
+-		return m_geometry_index_list.getField(geom, 6);
+-	}
+-
+-	// Filters degenerate segments in all multipath geometries
+-	// Returns 1 if a non-zero length segment has been removed. -1, if only zero
+-	// length segments have been removed.
+-	// 0 if no segments have been removed.
+-	// When b_remove_last_vertices and the result path is < 3 for polygon or < 2
+-	// for polyline, it'll be removed.
+-	int filterClosePoints(double tolerance, boolean b_remove_last_vertices, boolean only_polygons) {
+-		int res = 0;
+ 		for (int geometry = getFirstGeometry(); geometry != -1; geometry = getNextGeometry(geometry)) {
+-			int gt = getGeometryType(geometry);
+-			if (!Geometry.isMultiPath(gt))
++	if (!Geometry.isMultiPath(getGeometryType(geometry)))
+ 				continue;
+-			if (only_polygons && gt != GeometryType.Polygon)
++
++	if (only_polygons && getGeometryType(geometry) != GeometryType.Polygon)
+ 				continue;
+ 
+ 			boolean b_polygon = getGeometryType(geometry) == Geometry.GeometryType.Polygon;
+ 
+ 			for (int path = getFirstPath(geometry); path != -1;) {
+-				// We go from the start to the half of the path first, then we
+-				// go from the end to the half of the path.
++		// We go from the start to the half of the path first, then we go from the end to the half of the path.
+ 				int vertex_counter = 0;
+-				for (int vertex = getFirstVertex(path); vertex_counter < getPathSize(path) / 2;) {
++		for (int vertex = getFirstVertex(path); vertex_counter < getPathSize(path) / 2; vertex_counter++) {
+ 					int next = getNextVertex(vertex);
+ 					if (next == -1)
+ 						break;
+@@ -943,8 +715,7 @@
+ 						length = seg.calculateLength2D();
+ 					} else {
+ 						int vindex_next = getVertexIndex(next);
+-						length = m_vertices._getShortestDistance(vindex,
+-								vindex_next);
++				length = m_vertices._getShortestDistance(vindex, vindex_next);
+ 					}
+ 
+ 					if (length <= tolerance) {
+@@ -958,15 +729,14 @@
+ 							transferAllDataToTheVertex(next, vertex);
+ 							removeVertex(next, true);
+ 						}
++				break;  // Only one break allowed, so break here and no other breaks in this loop
+ 					} else {
+ 						vertex = getNextVertex(vertex);
+ 					}
+-					vertex_counter++;
+ 				}
+ 
+ 				int first_vertex = getFirstVertex(path);
+-				for (int vertex = isClosedPath(path) ? first_vertex
+-						: getLastVertex(path); getPathSize(path) > 0;) {
++		for (int vertex = isClosedPath(path) ? first_vertex : getLastVertex(path); getPathSize(path) > 0;) {
+ 					int prev = getPrevVertex(vertex);
+ 					if (prev != -1) {
+ 						int vindex_prev = getVertexIndex(prev);
+@@ -976,8 +746,7 @@
+ 							length = seg.calculateLength2D();
+ 						} else {
+ 							int vindex = getVertexIndex(vertex);
+-							length = m_vertices._getShortestDistance(vindex,
+-									vindex_prev);
++					length = m_vertices._getShortestDistance(vindex, vindex_prev);
+ 						}
+ 
+ 						if (length <= tolerance) {
+@@ -991,14 +760,14 @@
+ 							removeVertex(prev, false);
+ 							if (first_vertex == prev)
+ 								first_vertex = getFirstVertex(path);
++					break;  // Only one break allowed, so break here and no other breaks in this loop
+ 						} else {
+ 							vertex = getPrevVertex(vertex);
+ 							if (vertex == first_vertex)
+ 								break;
+ 						}
+ 					} else {
+-						removeVertex(vertex, true);// remove the last vertex in
+-													// the path
++				removeVertex(vertex, true);// remove the last vertex in the path
+ 						if (res == 0)
+ 							res = -1;
+ 						break;
+@@ -1006,8 +775,7 @@
+ 				}
+ 
+ 				int path_size = getPathSize(path);
+-				if (b_remove_last_vertices
+-						&& (b_polygon ? path_size < 3 : path_size < 2)) {
++		if (b_remove_last_vertices && (b_polygon ? path_size < 3 : path_size < 2)) {
+ 					path = removePath(path);
+ 					res = path_size > 0 ? 1 : (res == 0 ? -1 : res);
+ 				} else
+@@ -1015,148 +783,6 @@
+ 			}
+ 		}
+ 
+-		return res;
+-	}
+-
+-	// Checks if there are degenerate segments in any of multipath geometries
+-	boolean hasDegenerateSegments(double tolerance) {
+-		for (int geometry = getFirstGeometry(); geometry != -1; geometry = getNextGeometry(geometry)) {
+-			if (!Geometry.isMultiPath(getGeometryType(geometry)))
+-				continue;
+-
+-			boolean b_polygon = getGeometryType(geometry) == Geometry.GeometryType.Polygon;
+-
+-			for (int path = getFirstPath(geometry); path != -1;) {
+-				int path_size = getPathSize(path);
+-				if (b_polygon ? path_size < 3 : path_size < 2)
+-					return true;
+-
+-				int vertex = getFirstVertex(path);
+-				for (int index = 0; index < path_size; index++) {
+-					int next = getNextVertex(vertex);
+-					if (next == -1)
+-						break;
+-					int vindex = getVertexIndex(vertex);
+-					Segment seg = getSegmentFromIndex_(vindex);
+-					double length = 0;
+-					if (seg != null) {
+-						length = seg.calculateLength2D();
+-					} else {
+-						int vindex_next = getVertexIndex(next);
+-						length = m_vertices._getShortestDistance(vindex,
+-								vindex_next);
+-					}
+-
+-					if (length <= tolerance)
+-						return true;
+-
+-					vertex = next;
+-				}
+-
+-				path = getNextPath(path);
+-			}
+-		}
+-
+-		return false;
+-	}
+-
+-	void transferAllDataToTheVertex(int from_vertex, int to_vertex) {
+-		int vindexFrom = getVertexIndex(from_vertex);
+-		int vindexTo = getVertexIndex(to_vertex);
+-		if (m_weights != null) {
+-			double weight = m_weights.read(vindexFrom);
+-			m_weights.write(vindexTo, weight);
+-		}
+-
+-		if (m_b_has_attributes) {
+-			// TODO: implement copying of attributes with exception of x and y
+-			//
+-			// for (int i = 0, nattrib = 0; i < nattrib; i++)
+-			// {
+-			// m_vertices->get_attribute
+-			// }
+-		}
+-		// Copy user index data
+-		if (m_indices != null) {
+-			for (int i = 0, n = (int) m_indices.size(); i < n; i++) {
+-				if (m_indices.get(i) != null) {
+-					int value = getUserIndex(from_vertex, i);
+-					if (value != -1)
+-						setUserIndex(to_vertex, i, value);
+-				}
+-			}
+-		}
+-	}
+-
+-	// Splits segment originating from the origingVertex split_count times at
+-	// splitScalar points and inserts new vertices into the shape.
+-	// The split is not done, when the splitScalar[i] is 0 or 1, or is equal to
+-	// the splitScalar[i - 1].
+-	// Returns the number of splits actually happend (0 if no splits have
+-	// happend).
+-	int splitSegment(int origin_vertex, double[] split_scalars, int split_count) {
+-		int actual_splits = 0;
+-		int next_vertex = getNextVertex(origin_vertex);
+-		if (next_vertex == -1)
+-			throw GeometryException.GeometryInternalError();
+-
+-		int vindex = getVertexIndex(origin_vertex);
+-		int vindex_next = getVertexIndex(next_vertex);
+-		Segment seg = getSegmentFromIndex_(vindex);
+-		double seg_length = seg == null ? m_vertices._getShortestDistance(
+-				vindex, vindex_next) : seg.calculateLength2D();
+-		double told = 0.0;
+-		for (int i = 0; i < split_count; i++) {
+-			double t = split_scalars[i];
+-			if (told < t && t < 1.0) {
+-				double f = t;
+-				if (seg != null) {
+-					f = seg_length > 0 ? seg._calculateSubLength(t)
+-							/ seg_length : 0.0;
+-				}
+-
+-				m_vertices._interpolateTwoVertices(vindex, vindex_next, f,
+-						getHelperPoint_());// use this call mainly to
+-											// interpolate the attributes. XYs
+-											// are interpolated incorrectly for
+-											// curves and are recalculated when
+-											// segment is cut below.
+-				int inserted_vertex = insertVertex_(
+-						getPathFromVertex(origin_vertex), next_vertex,
+-						getHelperPoint_());
+-				actual_splits++;
+-				if (seg != null) {
+-					Segment subseg = seg.cut(told, t);
+-					int prev_vertex = getPrevVertex(inserted_vertex);
+-					int vindex_prev = getVertexIndex(prev_vertex);
+-					setSegmentToIndex_(vindex_prev, subseg);
+-					setXY(inserted_vertex, subseg.getEndXY()); // fix XY
+-																// coordinates
+-																// to be
+-																// parameter
+-																// based
+-																// (interpolate_two_vertices_)
+-					if (i == split_count - 1 || split_scalars[i + 1] == 1.0) {// last
+-																				// chance
+-																				// to
+-																				// set
+-																				// last
+-																				// split
+-																				// segment
+-																				// here:
+-						Segment subseg_end = seg.cut(t, 1.0);
+-						setSegmentToIndex_(vindex_prev, subseg_end);
+-					}
+-				}
+-			}
+-		}
+-
+-		return actual_splits;
+-	}
+-
+-	// interpolates the attributes for the specified path between from_vertex
+-	// and to_vertex
+-	void interpolateAttributesForClosedPath(int path, int from_vertex,
+ 			int to_vertex) {
+ 		assert (isClosedPath(path));
+ 

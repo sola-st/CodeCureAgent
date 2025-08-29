@@ -1,0 +1,93 @@
+@@ -136,12 +136,12 @@
+ 	 * Selects the protocol to use for encrypting the passphrase when
+ 	 * encoding this Radius packet.
+ 	 * 
+-	 * @param authProtocol
++	 * @param protocol
+ 	 *            AUTH_PAP or AUTH_CHAP
+ 	 */
+-	public void setAuthProtocol(String authProtocol) {
+-		if (authProtocol != null && AUTH_PROTOCOLS.contains(authProtocol))
+-			this.authProtocol = authProtocol;
++	public void setAuthProtocol(String protocol) {
++		if (protocol != null && AUTH_PROTOCOLS.contains(protocol))
++			this.authProtocol = protocol;
+ 		else
+ 			throw new IllegalArgumentException("protocol must be in " + AUTH_PROTOCOLS);
+ 	}
+@@ -173,35 +173,35 @@
+ 	 */
+ 	protected void decodeRequestAttributes(String sharedSecret) throws RadiusException {
+ 		// detect auth protocol
+-		RadiusAttribute userPassword = getAttribute(USER_PASSWORD);
+-		RadiusAttribute chapPassword = getAttribute(CHAP_PASSWORD);
+-		RadiusAttribute chapChallenge = getAttribute(CHAP_CHALLENGE);
+-		RadiusAttribute msChapChallenge = getAttribute(MICROSOFT, MS_CHAP_CHALLENGE);
+-		RadiusAttribute msChap2Response = getAttribute(MICROSOFT, MS_CHAP2_RESPONSE);
+-		List<RadiusAttribute> eapMessage = getAttributes(EAP_MESSAGE);
+-		if (userPassword != null) {
++		RadiusAttribute userPasswordAttr = getAttribute(USER_PASSWORD);
++		RadiusAttribute chapPasswordAttr = getAttribute(CHAP_PASSWORD);
++		RadiusAttribute chapChallengeAttr = getAttribute(CHAP_CHALLENGE);
++		RadiusAttribute msChapChallengeAttr = getAttribute(MICROSOFT, MS_CHAP_CHALLENGE);
++		RadiusAttribute msChap2ResponseAttr = getAttribute(MICROSOFT, MS_CHAP2_RESPONSE);
++		List<RadiusAttribute> eapMessageAttrs = getAttributes(EAP_MESSAGE);
++		if (userPasswordAttr != null) {
+ 			setAuthProtocol(AUTH_PAP);
+-			this.password = decodePapPassword(userPassword.getAttributeData(), RadiusUtil.getUtf8Bytes(sharedSecret));
++			this.password = decodePapPassword(userPasswordAttr.getAttributeData(), RadiusUtil.getUtf8Bytes(sharedSecret));
+ 			// copy truncated data
+-			userPassword.setAttributeData(RadiusUtil.getUtf8Bytes(this.password));
++			userPasswordAttr.setAttributeData(RadiusUtil.getUtf8Bytes(this.password));
+ 		}
+-		else if (chapPassword != null && chapChallenge != null) {
++		else if (chapPasswordAttr != null && chapChallengeAttr != null) {
+ 			setAuthProtocol(AUTH_CHAP);
+-			this.chapPassword = chapPassword.getAttributeData();
+-			this.chapChallenge = chapChallenge.getAttributeData();
++			this.chapPassword = chapPasswordAttr.getAttributeData();
++			this.chapChallenge = chapChallengeAttr.getAttributeData();
+ 		}
+-		else if (chapPassword != null && getAuthenticator().length == 16) {
++		else if (chapPasswordAttr != null && getAuthenticator().length == 16) {
+ 			// thanks to Guillaume Tartayre
+ 			setAuthProtocol(AUTH_CHAP);
+-			this.chapPassword = chapPassword.getAttributeData();
++			this.chapPassword = chapPasswordAttr.getAttributeData();
+ 			this.chapChallenge = getAuthenticator();
+ 		}
+-		else if (msChapChallenge != null && msChap2Response != null) {
++		else if (msChapChallengeAttr != null && msChap2ResponseAttr != null) {
+ 			setAuthProtocol(AUTH_MS_CHAP_V2);
+-			this.chapPassword = msChap2Response.getAttributeData();
+-			this.chapChallenge = msChapChallenge.getAttributeData();
++			this.chapPassword = msChap2ResponseAttr.getAttributeData();
++			this.chapChallenge = msChapChallengeAttr.getAttributeData();
+ 		}
+-		else if (eapMessage.size() > 0) {
++		else if (eapMessageAttrs.size() > 0) {
+ 			setAuthProtocol(AUTH_EAP);
+ 		}
+ 		else
+@@ -373,8 +373,8 @@
+ 	private byte[] encodeChapPassword(String plaintext, byte[] chapChallenge) {
+ 		// see RFC 2865 section 2.2
+ 		byte chapIdentifier = (byte) random.nextInt(256);
+-		byte[] chapPassword = new byte[17];
+-		chapPassword[0] = chapIdentifier;
++		byte[] chapPasswordBytes = new byte[17];
++		chapPasswordBytes[0] = chapIdentifier;
+ 
+ 		MessageDigest md5 = getMd5Digest();
+ 		md5.reset();
+@@ -382,8 +382,8 @@
+ 		md5.update(RadiusUtil.getUtf8Bytes(plaintext));
+ 		byte[] chapHash = md5.digest(chapChallenge);
+ 
+-		System.arraycopy(chapHash, 0, chapPassword, 1, 16);
+-		return chapPassword;
++		System.arraycopy(chapHash, 0, chapPasswordBytes, 1, 16);
++		return chapPasswordBytes;
+ 	}
+ 
+ 	/**

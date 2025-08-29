@@ -1,0 +1,219 @@
+@@ -17,18 +17,18 @@
+   private final ArrayList<Long> roots;
+   private MappedByteBuffer[] buffers;
+ 
+-  private final int DIMENSION, MIN_LEAF_SIZE;
+-  private final IndexType INDEX_TYPE;
+-  private final int INDEX_TYPE_OFFSET;
++  private final int dimension, minLeafSize;
++  private final IndexType indexType;
++  private final int indexTypeOffset;
+ 
+   // size of C structs in bytes (initialized in init)
+-  private final int K_NODE_HEADER_STYLE;
+-  private final long NODE_SIZE;
++  private final int kNodeHeaderStyle;
++  private final long nodeSize;
+ 
+-  private final int INT_SIZE = 4;
+-  private final int FLOAT_SIZE = 4;
+-  private final int MAX_NODES_IN_BUFFER;
+-  private final int BLOCK_SIZE;
++  private final int intSize = 4;
++  private final int floatSize = 4;
++  private final int maxNodesInBuffer;
++  private final int blockSize;
+   private RandomAccessFile memoryMappedFile;
+ 
+ 
+@@ -62,17 +62,17 @@
+                   final String filename,
+                   IndexType indexType,
+                   final int blockSize) throws IOException {
+-    DIMENSION = dimension;
+-    INDEX_TYPE = indexType;
+-    INDEX_TYPE_OFFSET = INDEX_TYPE.getOffset();
+-    K_NODE_HEADER_STYLE = INDEX_TYPE.getkNodeHeaderStyle();
+-    // we can store up to MIN_LEAF_SIZE children in leaf nodes (we put
++    this.dimension = dimension;
++    this.indexType = indexType;
++    this.indexTypeOffset = this.indexType.getOffset();
++    this.kNodeHeaderStyle = this.indexType.getkNodeHeaderStyle();
++    // we can store up to minLeafSize children in leaf nodes (we put
+     // them where the separating plane normally goes)
+-    this.MIN_LEAF_SIZE = DIMENSION + 2;
+-    this.NODE_SIZE = K_NODE_HEADER_STYLE + FLOAT_SIZE * DIMENSION;
+-    this.MAX_NODES_IN_BUFFER = (int) (blockSize == 0 ?
+-            Integer.MAX_VALUE / NODE_SIZE : blockSize * NODE_SIZE);
+-    BLOCK_SIZE = (int) (this.MAX_NODES_IN_BUFFER * NODE_SIZE);
++    this.minLeafSize = this.dimension + 2;
++    this.nodeSize = this.kNodeHeaderStyle + floatSize * this.dimension;
++    this.maxNodesInBuffer = (int) (blockSize == 0 ?
++            Integer.MAX_VALUE / nodeSize : blockSize * nodeSize);
++    this.blockSize = (int) (this.maxNodesInBuffer * nodeSize);
+     roots = new ArrayList<>();
+     load(filename);
+   }
+@@ -84,30 +84,30 @@
+       throw new IOException("Index is a 0-byte file?");
+     }
+ 
+-    int numNodes = (int) (fileSize / NODE_SIZE);
+-    int buffIndex =  (numNodes - 1) / MAX_NODES_IN_BUFFER;
+-    int rest = (int) (fileSize % BLOCK_SIZE);
+-    int blockSize = (rest > 0 ? rest : BLOCK_SIZE);
++    int numNodes = (int) (fileSize / nodeSize);
++    int buffIndex =  (numNodes - 1) / maxNodesInBuffer;
++    int rest = (int) (fileSize % blockSize);
++    int blockSizeLocal = (rest > 0 ? rest : blockSize);
+     // Two valid relations between dimension and file size:
+     // 1) rest % NODE_SIZE == 0 makes sure either everything fits into buffer or rest is a multiple of NODE_SIZE;
+     // 2) (file_size - rest) % NODE_SIZE == 0 makes sure everything else is a multiple of NODE_SIZE.
+-    if (rest % NODE_SIZE != 0 || (fileSize - rest) % NODE_SIZE != 0) {
++    if (rest % nodeSize != 0 || (fileSize - rest) % nodeSize != 0) {
+       throw new RuntimeException("ANNIndex initiated with wrong dimension size");
+     }
+-    long position = fileSize - blockSize;
++    long position = fileSize - blockSizeLocal;
+     buffers = new MappedByteBuffer[buffIndex + 1];
+     boolean process = true;
+     int m = -1;
+     long index = fileSize;
+     while (position >= 0) {
+       MappedByteBuffer annBuf = memoryMappedFile.getChannel().map(
+-              FileChannel.MapMode.READ_ONLY, position, blockSize);
++              FileChannel.MapMode.READ_ONLY, position, blockSizeLocal);
+       annBuf.order(ByteOrder.LITTLE_ENDIAN);
+ 
+       buffers[buffIndex--] = annBuf;
+ 
+-      for (int i = blockSize - (int) NODE_SIZE; process && i >= 0; i -= NODE_SIZE) {
+-        index -= NODE_SIZE;
++      for (int i = blockSizeLocal - (int) nodeSize; process && i >= 0; i -= nodeSize) {
++        index -= nodeSize;
+         int k = annBuf.getInt(i);  // node[i].n_descendants
+         if (m == -1 || k == m) {
+           roots.add(index);
+@@ -116,35 +116,35 @@
+           process = false;
+         }
+       }
+-      blockSize = BLOCK_SIZE;
+-      position -= blockSize;
++      blockSizeLocal = blockSize;
++      position -= blockSizeLocal;
+     }
+   }
+ 
+   private float getFloatInAnnBuf(long pos) {
+-    int b = (int) (pos / BLOCK_SIZE);
+-    int f = (int) (pos % BLOCK_SIZE);
++    int b = (int) (pos / blockSize);
++    int f = (int) (pos % blockSize);
+     return buffers[b].getFloat(f);
+   }
+ 
+   private int getIntInAnnBuf(long pos) {
+-    int b = (int) (pos / BLOCK_SIZE);
+-    int i = (int) (pos % BLOCK_SIZE);
++    int b = (int) (pos / blockSize);
++    int i = (int) (pos % blockSize);
+     return buffers[b].getInt(i);
+   }
+ 
+   @Override
+   public void getNodeVector(final long nodeOffset, float[] v) {
+-    MappedByteBuffer nodeBuf = buffers[(int) (nodeOffset / BLOCK_SIZE)];
+-    int offset = (int) ((nodeOffset % BLOCK_SIZE) + K_NODE_HEADER_STYLE);
+-    for (int i = 0; i < DIMENSION; i++) {
+-      v[i] = nodeBuf.getFloat(offset + i * FLOAT_SIZE);
++    MappedByteBuffer nodeBuf = buffers[(int) (nodeOffset / blockSize)];
++    int offset = (int) ((nodeOffset % blockSize) + kNodeHeaderStyle);
++    for (int i = 0; i < dimension; i++) {
++      v[i] = nodeBuf.getFloat(offset + i * floatSize);
+     }
+   }
+ 
+   @Override
+   public void getItemVector(int itemIndex, float[] v) {
+-    getNodeVector(itemIndex * NODE_SIZE, v);
++    getNodeVector(itemIndex * nodeSize, v);
+   }
+ 
+   private float getNodeBias(final long nodeOffset) { // euclidean-only
+@@ -156,11 +156,11 @@
+   }
+ 
+   public final float[] getItemVector(final int itemIndex) {
+-    return getNodeVector(itemIndex * NODE_SIZE);
++    return getNodeVector(itemIndex * nodeSize);
+   }
+ 
+   public float[] getNodeVector(final long nodeOffset) {
+-    float[] v = new float[DIMENSION];
++    float[] v = new float[dimension];
+     getNodeVector(nodeOffset, v);
+     return v;
+   }
+@@ -278,13 +278,13 @@
+    }
+   
+   public List<PQEntry> getNearestPqEntries(final float[] queryVector, final int nResults, int searchK ) {
+-    if (queryVector.length != DIMENSION) {
++    if (queryVector.length != dimension) {
+       throw new RuntimeException(String.format("queryVector must be size of %d, but was %d",
+-              DIMENSION, queryVector.length));
++              dimension, queryVector.length));
+     }
+ 
+     PriorityQueue<PQEntry> pq = new PriorityQueue<>(
+-            roots.size() * FLOAT_SIZE);
++            roots.size() * floatSize);
+     final float kMaxPriority = 1e30f;
+ 
+     for (long r : roots) {
+@@ -305,23 +305,23 @@
+         // FIXME: does this ever happen?
+         if (isZeroVec(v))
+           continue;
+-        nearestNeighbors.add((int) (topNodeOffset / NODE_SIZE));
+-      } else if (nDescendants <= MIN_LEAF_SIZE) {
++        nearestNeighbors.add((int) (topNodeOffset / nodeSize));
++      } else if (nDescendants <= minLeafSize) {
+         for (int i = 0; i < nDescendants; i++) {
+           int j = getIntInAnnBuf(topNodeOffset +
+-                  INDEX_TYPE_OFFSET +
+-                  i * INT_SIZE);
+-          if (isZeroVec(getNodeVector(j * NODE_SIZE)))
++                  indexTypeOffset +
++                  i * intSize);
++          if (isZeroVec(getNodeVector(j * nodeSize)))
+             continue;
+           nearestNeighbors.add(j);
+         }
+       } else {
+-        float margin = (INDEX_TYPE == IndexType.ANGULAR) ? cosineMargin(v, queryVector)
+-                     : (INDEX_TYPE == IndexType.DOT) ? dotMargin(v, queryVector, getDotFactor(topNodeOffset))
++        float margin = (indexType == IndexType.ANGULAR) ? cosineMargin(v, queryVector)
++                     : (indexType == IndexType.DOT) ? dotMargin(v, queryVector, getDotFactor(topNodeOffset))
+                      : euclideanMargin(v, queryVector, getNodeBias(topNodeOffset));
+-        long childrenMemOffset = topNodeOffset + INDEX_TYPE_OFFSET;
+-        long lChild = NODE_SIZE * getIntInAnnBuf(childrenMemOffset);
+-        long rChild = NODE_SIZE * getIntInAnnBuf(childrenMemOffset + 4);
++        long childrenMemOffset = topNodeOffset + indexTypeOffset;
++        long lChild = nodeSize * getIntInAnnBuf(childrenMemOffset);
++        long rChild = nodeSize * getIntInAnnBuf(childrenMemOffset + 4);
+         pq.add(new PQEntry(-margin, lChild));
+         pq.add(new PQEntry(margin, rChild));
+       }
+@@ -331,8 +331,8 @@
+     for (int nn : nearestNeighbors) {
+       float[] v = getItemVector(nn);
+       if (!isZeroVec(v)) {
+-        float margin = (INDEX_TYPE == IndexType.ANGULAR) ? cosineMargin(v, queryVector)
+-                     : (INDEX_TYPE == IndexType.DOT) ? dot(v, queryVector)
++        float margin = (indexType == IndexType.ANGULAR) ? cosineMargin(v, queryVector)
++                     : (indexType == IndexType.DOT) ? dot(v, queryVector)
+                      : -euclideanDistance(v, queryVector);
+         sortedNNs.add(new PQEntry(margin, nn));
+       }

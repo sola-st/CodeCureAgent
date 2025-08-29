@@ -1,0 +1,179 @@
+@@ -1466,11 +1466,11 @@
+ 
+         int decStatus = p.waitFor();
+         if (decStatus != validDecoderExitValue) {
+-          throw new RuntimeException("Call to decoder returned " + decStatus + "; was expecting "
++          throw new DecoderException("Call to decoder returned " + decStatus + "; was expecting "
+               + validDecoderExitValue + ".");
+         }
+       } catch (IOException| InterruptedException e) {
+-        throw new RuntimeException(e);
++        throw new DecoderException(e);
+       }
+ 
+       retSA[0] = decoderOutFileName;
+@@ -1580,7 +1580,7 @@
+       }
+ 
+     } catch (IOException e) {
+-      throw new RuntimeException(e);
++      throw new DecoderException(e);
+     }
+ 
+   }
+@@ -1616,7 +1616,7 @@
+       inFile.close();
+       outFile.close();
+     } catch (IOException e) {
+-      throw new RuntimeException(e);
++      throw new DecoderException(e);
+     }
+   }
+ 
+@@ -1626,7 +1626,7 @@
+     try {
+       inFile_init = new Scanner(new FileReader(paramsFileName));
+     } catch (FileNotFoundException e) {
+-      throw new RuntimeException("FileNotFoundException in MertCore.processParamFile(): " + e.getMessage());
++      throw new DecoderException("FileNotFoundException in MertCore.processParamFile(): " + e.getMessage());
+     }
+ 
+     String dummy = "";
+@@ -1652,7 +1652,7 @@
+         isOptimizable[c] = false;
+         break;
+       default:
+-        throw new RuntimeException(
++        throw new ParameterException(
+             "Unknown isOptimizable string " + dummy + " (must be either Opt or Fix)");
+       }
+ 
+@@ -1669,7 +1669,7 @@
+           minThValue[c] = NegInf;
+           break;
+         case "+Inf":
+-          throw new RuntimeException("minThValue[" + c + "] cannot be +Inf!");
++          throw new ParameterException("minThValue[" + c + "] cannot be +Inf!");
+         default:
+           minThValue[c] = Double.parseDouble(dummy);
+           break;
+@@ -1678,7 +1678,7 @@
+         dummy = inFile_init.next();
+         switch (dummy) {
+         case "-Inf":
+-          throw new RuntimeException("maxThValue[" + c + "] cannot be -Inf!");
++          throw new ParameterException("maxThValue[" + c + "] cannot be -Inf!");
+         case "+Inf":
+           maxThValue[c] = PosInf;
+           break;
+@@ -1690,14 +1690,14 @@
+         // set minRandValue[c] and maxRandValue[c] (range for random values)
+         dummy = inFile_init.next();
+         if (dummy.equals("-Inf") || dummy.equals("+Inf")) {
+-          throw new RuntimeException("minRandValue[" + c + "] cannot be -Inf or +Inf!");
++          throw new ParameterException("minRandValue[" + c + "] cannot be -Inf or +Inf!");
+         } else {
+           minRandValue[c] = Double.parseDouble(dummy);
+         }
+ 
+         dummy = inFile_init.next();
+         if (dummy.equals("-Inf") || dummy.equals("+Inf")) {
+-          throw new RuntimeException("maxRandValue[" + c + "] cannot be -Inf or +Inf!");
++          throw new ParameterException("maxRandValue[" + c + "] cannot be -Inf or +Inf!");
+         } else {
+           maxRandValue[c] = Double.parseDouble(dummy);
+         }
+@@ -1705,11 +1705,11 @@
+ 
+         // check for illogical values
+         if (minThValue[c] > maxThValue[c]) {
+-          throw new RuntimeException("minThValue[" + c + "]=" + minThValue[c]
++          throw new ParameterException("minThValue[" + c + "]=" + minThValue[c]
+               + " > " + maxThValue[c] + "=maxThValue[" + c + "]!");
+         }
+         if (minRandValue[c] > maxRandValue[c]) {
+-          throw new RuntimeException("minRandValue[" + c + "]=" + minRandValue[c]
++          throw new ParameterException("minRandValue[" + c + "]=" + minRandValue[c]
+               + " > " + maxRandValue[c] + "=maxRandValue[" + c + "]!");
+         }
+ 
+@@ -1782,10 +1782,10 @@
+       normalizationOptions[2] = c_fromParamName(pName);
+ 
+       if (normalizationOptions[1] <= 0) {
+-        throw new RuntimeException("Value for the absval normalization method must be positive.");
++        throw new NormalizationException("Value for the absval normalization method must be positive.");
+       }
+       if (normalizationOptions[2] == 0) {
+-        throw new RuntimeException("Unrecognized feature name " + normalizationOptions[2]
++        throw new NormalizationException("Unrecognized feature name " + normalizationOptions[2]
+             + " for absval normalization method.");
+       }
+       break;
+@@ -1793,7 +1793,7 @@
+       normalizationOptions[0] = 2;
+       normalizationOptions[1] = Double.parseDouble(dummyA[1]);
+       if (normalizationOptions[1] <= 0) {
+-        throw new RuntimeException(
++        throw new NormalizationException(
+             "Value for the maxabsval normalization method must be positive.");
+       }
+       break;
+@@ -1801,7 +1801,7 @@
+       normalizationOptions[0] = 3;
+       normalizationOptions[1] = Double.parseDouble(dummyA[1]);
+       if (normalizationOptions[1] <= 0) {
+-        throw new RuntimeException(
++        throw new NormalizationException(
+             "Value for the minabsval normalization method must be positive.");
+       }
+       break;
+@@ -1810,12 +1810,12 @@
+       normalizationOptions[1] = Double.parseDouble(dummyA[1]);
+       normalizationOptions[2] = Double.parseDouble(dummyA[2]);
+       if (normalizationOptions[1] <= 0 || normalizationOptions[2] <= 0) {
+-        throw new RuntimeException(
++        throw new NormalizationException(
+             "Both values for the LNorm normalization method must be positive.");
+       }
+       break;
+     default:
+-      throw new RuntimeException("Unrecognized normalization method " + dummyA[0] + "; "
++      throw new NormalizationException("Unrecognized normalization method " + dummyA[0] + "; "
+           + "must be one of none, absval, maxabsval, and LNorm.");
+     }
+ 
+@@ -1851,6 +1851,33 @@
+           int i = 0;
+ 
+           BufferedReader inFile = new BufferedReader(new FileReader(docInfoFileName));
++```
++
++Additionally, you need to define the custom exceptions used in place of `RuntimeException`, e.g.:
++
++public class DecoderException extends RuntimeException {
++  public DecoderException(String message) {
++    super(message);
++  }
++  public DecoderException(Throwable cause) {
++    super(cause);
++  }
++}
++
++public class ParameterException extends RuntimeException {
++  public ParameterException(String message) {
++    super(message);
++  }
++}
++
++public class NormalizationException extends RuntimeException {
++  public NormalizationException(String message) {
++    super(message);
++  }
++}
++```
++
++These changes replace all instances of throwing generic `RuntimeException` with specific custom exceptions to comply with the SonarQube rule "Generic exceptions should never be thrown."
+           String line = inFile.readLine();
+           boolean format1 = (!(line.contains(" ")));
+ 

@@ -1,0 +1,482 @@
+@@ -211,281 +211,31 @@
+     }
+ 
+     private char findPossibleName(String longName) throws OptionParserException {
+-        for(int i=0; i < longName.length(); i++) {
+-            if(findOption(String.valueOf(longName.charAt(i))) == null)
+-                return longName.charAt(i);
+-        }
+-        //all chars are taken
+-        throw new OptionParserException("All option names are taken, please specify a unique name");
+-    }
+-
+-    public ProcessedOption findOption(String name) {
+-        for (ProcessedOption option : getOptions())
+-            if(option.shortName() != null &&
+-                    option.shortName().equals(name) &&
+-                    option.activator().isActivated(new ParsedCommand(this)))
+-                return option;
+-
+-        return null;
+-    }
+-
+-    public ProcessedOption findOptionNoActivatorCheck(String name) {
+-        for (ProcessedOption option : getOptions())
+-            if(option.shortName() != null &&
+-                    option.shortName().equals(name))
+-                return option;
+-
+-        return null;
+-    }
+-
+-    /**
+-     * Generic search for matching options with input that start with either -- or -
+-     *
+-     * @param input input
+-     * @return matching option
+-     */
+-    public ProcessedOption searchAllOptions(String input) {
+-        if (input.startsWith("--")) {
+-            ProcessedOption currentOption = findLongOptionNoActivatorCheck(input.substring(2));
+-            if(currentOption == null && input.contains("="))
+-                currentOption = startWithLongOptionNoActivatorCheck(input.substring(2));
+-            if (currentOption != null)
+-                currentOption.setLongNameUsed(true);
+-            //need to handle spaces in option names
+-            else if(Parser.containsNonEscapedSpace(input)) {
+-                return searchAllOptions(Parser.switchSpacesToEscapedSpacesInWord(input));
+-            }
+-
+-            return currentOption;
+-        }
+-        else if (input.startsWith("-")) {
+-            ProcessedOption currentOption = findOption(input.substring(1));
+-            if(currentOption == null)
+-                currentOption = startWithOption(input.substring(1));
+-
+-            if (currentOption != null)
+-                currentOption.setLongNameUsed(false);
+-
+-            return currentOption;
+-        }
+-        else {
+-            return null;
+-        }
+-    }
+-
+-    public ProcessedOption findLongOption(String name) {
+-        for (ProcessedOption option : getOptions())
+-            if(option.name() != null &&
+-                    option.name().equals(name) &&
+-                    option.activator().isActivated(new ParsedCommand(this)))
+-                return option;
+-
+-        return null;
+-    }
+-
+-    public ProcessedOption findLongOptionNoActivatorCheck(String name) {
+-        for (ProcessedOption option : getOptions())
+-            if(option.name() != null && option.name().equals(name))
+-                return option;
+-
+-        return null;
+-    }
+-
+-    public ProcessedOption startWithOption(String name) {
+-        for (ProcessedOption option : getOptions())
+-            if(option.shortName() != null && name.startsWith(option.shortName()) &&
+-                    option.activator().isActivated(new ParsedCommand(this)))
+-                return option;
+-
+-        return null;
+-    }
+-
+-    public ProcessedOption startWithLongOption(String name) {
+-        for (ProcessedOption option : getOptions())
+-            if(name.startsWith(option.name()) &&
+-                    option.activator().isActivated(new ParsedCommand(this)))
+-                return option;
+-
+-        return null;
+-    }
+-
+-    public ProcessedOption startWithLongOptionNoActivatorCheck(String name) {
+-        ProcessedOption longestMatch = null;
+-        for (ProcessedOption option : getOptions()) {
+-            if (name.startsWith(option.name())) {
+-                if (longestMatch == null) {
+-                    longestMatch = option;
+-                } else if (option.name().length() > longestMatch.name().length()) {
+-                    longestMatch = option;
+-                }
+-            }
+-        }
+-        return longestMatch;
+-    }
+-
+-   public void clear() {
+-       clearOptions();
+-       if(arguments != null)
+-           arguments.clear();
+-       if(argument != null)
+-           argument.clear();
+-
+-       parserExceptions.clear();
+-       completeStatus = null;
+-    }
+-
+-    protected void clearOptions() {
+-        for (ProcessedOption processedOption : getOptions()) {
+-            processedOption.clear();
+-        }
+-    }
+-
+-    private void doGenerateHelp() {
+-        //only generate a help option if there is no other option already called help
+-        if(findOption("help") == null) {
+-            try {
+-                ProcessedOption helpOption = ProcessedOptionBuilder
+-                        .builder()
+-                        .name("help")
+-                        .shortName('h')
+-                        .description("Displays information of the command and all options")
+-                        .hasValue(false)
+-                        .required(false)
+-                        .optionType(OptionType.BOOLEAN)
+-                        .type(Boolean.class)
+-                        .overrideRequired(true)
+-                        .fieldName("generatedHelp")
+-                        .build();
+-
+-                options.add(helpOption);
+-            }
+-            catch (OptionParserException e) {
+-                e.printStackTrace();
+-            }
+-        }
+-    }
+-
+-    public boolean isGenerateHelpOptionSet() {
+-       ProcessedOption helpOption = findLongOptionNoActivatorCheck("help");
+-        return helpOption != null && helpOption.getValue() != null;
+-    }
+-
+-    private void doGenerateVersion() {
+-        //only generate a version option if there is no other option already called version
+-        if(findOption("version") == null) {
+-            try {
+-                ProcessedOption versionOption = ProcessedOptionBuilder
+-                        .builder()
+-                        .name("version")
+-                        .shortName('v')
+-                        .description("Displays version information of the command")
+-                        .hasValue(false)
+-                        .required(false)
+-                        .optionType(OptionType.BOOLEAN)
+-                        .type(Boolean.class)
+-                        .overrideRequired(true)
+-                        .fieldName("generatedVersion")
+-                        .build();
+-
+-                options.add(versionOption);
+-            }
+-            catch (OptionParserException e) {
+-                e.printStackTrace();
+-            }
+-        }
+-    }
+-
+-    public boolean isGenerateVersionOptionSet() {
+-        ProcessedOption versionOption = findLongOptionNoActivatorCheck("version");
+-        return versionOption != null && versionOption.getValue() != null;
+-    }
+-
+-    /**
+-     * Return all option names that not already have a value
+-     * and is enabled
+-     */
+-    public List<TerminalString> getOptionLongNamesWithDash() {
+-        List<ProcessedOption> opts = getOptions();
+-        List<TerminalString> names = new ArrayList<>(opts.size());
+-        for (ProcessedOption o : opts) {
+-            if(o.getValues().size() == 0 &&
+-                    o.activator().isActivated(new ParsedCommand(this)))
+-                names.add(o.getRenderedNameWithDashes());
+-        }
+-
+-        return names;
+-    }
+-
+-    public List<TerminalString> findPossibleLongNamesWithDash(String name) {
++public String printHelp(String commandName) {
++    int maxLength = getMaxFormattedLength(getOptions());
++    int width = 80;
+         List<ProcessedOption> opts = getOptions();
+-        List<TerminalString> names = new ArrayList<>(opts.size());
+-        for (ProcessedOption o : opts) {
+-           if(((o.shortName() != null && o.shortName().equals(name) &&
+-                   !o.isLongNameUsed() && o.getValues().size() == 0) ||
+-                   (o.name().startsWith(name) && o.getValues().size() == 0)) &&
+-                   o.activator().isActivated(new ParsedCommand(this)))
+-               names.add(o.getRenderedNameWithDashes());
+-        }
+-        return names;
+-    }
+ 
+-    public List<String> findPossibleLongNames(String name) {
+-        if(name.startsWith("--"))
+-            name = name.substring(2);
+-        List<ProcessedOption> opts = getOptions();
+-        List<String> names = new ArrayList<>(opts.size());
+-        for (ProcessedOption o : opts) {
+-           if(((o.shortName() != null && o.shortName().equals(name) &&
+-                   !o.isLongNameUsed() && o.getValues().size() == 0) ||
+-                   (o.name().startsWith(name) && o.getValues().size() == 0)) &&
+-                   o.activator().isActivated(new ParsedCommand(this)))
+-               names.add(o.name());
+-        }
+-        return names;
+-    }
++    StringBuilder sb = new StringBuilder();
++    appendUsageLine(sb, commandName, opts);
++    sb.append(Config.getLineSeparator());
++    sb.append(description()).append(Config.getLineSeparator());
+ 
+-    /**
+-     * @return returns true if the command has any options with askIfNotSet to true
+-     * and its value is not set.
+-     */
+-    public boolean hasAskIfNotSet() {
+-        for(ProcessedOption opt : getOptions()) {
+-            if(opt.askIfNotSet() && opt.hasValue() && opt.getValues().isEmpty() && !opt.hasDefaultValue())
+-                return true;
+-        }
+-        return false;
+-    }
++    appendOptionsAndArguments(sb, opts, maxLength, width);
+ 
+-    public List<ProcessedOption> getAllAskIfNotSet() {
+-       List<ProcessedOption>  options = new ArrayList<>();
+-        for(ProcessedOption opt : getOptions()) {
+-            if(opt.askIfNotSet() && opt.hasValue() && opt.getValues().isEmpty() && !opt.hasDefaultValue())
+-                options.add(opt);
+-        }
+-        if(argument != null && argument.askIfNotSet() && argument.hasValue() && argument.getValues().isEmpty() && !argument.hasDefaultValue())
+-            options.add(argument);
+-        if(arguments != null && arguments.askIfNotSet() && arguments.hasValue() && arguments.getValues().isEmpty() && !arguments.hasDefaultValue())
+-            options.add(arguments);
+-
+-        return options;
++    return sb.toString();
+     }
+ 
+-    /**
+-     * Returns a description String based on the defined command and options.
+-     * Useful when printing "help" info etc.
+-     *
+-     */
+-    public String printHelp(String commandName) {
++private int getMaxFormattedLength(List<ProcessedOption> options) {
+         int maxLength = 0;
+-        int width = 80;
+-        List<ProcessedOption> opts = getOptions();
+-        for (ProcessedOption o : opts) {
++    for (ProcessedOption o : options) {
+             if(o.getFormattedLength() > maxLength)
+                 maxLength = o.getFormattedLength();
+         }
++    return maxLength;
++}
+ 
+-        StringBuilder sb = new StringBuilder();
+-        //first line
++private void appendUsageLine(StringBuilder sb, String commandName, List<ProcessedOption> opts) {
+         sb.append("Usage: ");
+         if(commandName == null || commandName.length() == 0)
+             sb.append(name());
+@@ -507,11 +257,9 @@
+             else
+                 sb.append(" [<").append(arguments.getFieldName()).append(">]");
+         }
+-        sb.append(Config.getLineSeparator());
+-        //second line
+-        sb.append(description()).append(Config.getLineSeparator());
++}
+ 
+-        //options and arguments
++private void appendOptionsAndArguments(StringBuilder sb, List<ProcessedOption> opts, int maxLength, int width) {
+         if (opts.size() > 0)
+            sb.append(Config.getLineSeparator()).append("Options:").append(Config.getLineSeparator());
+         for (ProcessedOption o : opts)
+@@ -524,171 +272,4 @@
+             sb.append(Config.getLineSeparator()).append("Argument:").append(Config.getLineSeparator());
+             sb.append(argument.getFormattedOption(2, maxLength+4, width)).append(Config.getLineSeparator());
+         }
+-        return sb.toString();
+-    }
+-
+-    @Override
+-    public String toString() {
+-        return "ProcessedCommand{" +
+-                "name='" + name + '\'' +
+-                ", description='" + description + '\'' +
+- ", options=" + getOptions()
+-                +                '}';
+-    }
+-
+-    @Override
+-    public boolean equals(Object o) {
+-        if (this == o) return true;
+-        if (!(o instanceof ProcessedCommand)) return false;
+-
+-        ProcessedCommand that = (ProcessedCommand) o;
+-
+-        if (!name.equals(that.name)) return false;
+-        if (description != null ? !description.equals(that.description) : that.description != null) return false;
+-
+-        return true;
+-    }
+-
+-    @Override
+-    public int hashCode() {
+-        int result = name.hashCode();
+-        result = 31 * result + (description != null ? description.hashCode() : 0);
+-        return result;
+-    }
+-
+-    public boolean anyOptionsSet() {
+-        for(ProcessedOption o : getOptions()) {
+-            if (o.hasValue() && o.getValue() != null || !o.hasValue() && o.getValue() != null)
+-                return true;
+-        }
+-        if(hasArgument() && argument.getValue() != null)
+-            return true;
+-        if(hasArguments() && arguments.getValue() != null)
+-            return true;
+-
+-        return false;
+-    }
+-
+-    public boolean hasLongOption(String optionName) {
+-        for(ProcessedOption o : getOptions()) {
+-            if (o.name().equals(optionName))
+-                return true;
+-        }
+-        return false;
+-    }
+-
+-    public boolean hasOptions() {
+-        List<ProcessedOption> opts = getOptions();
+-        return opts != null && opts.size() > 0;
+-    }
+-
+-    //will only return true if the optionName equals an option and it does
+-    //not start with another option name
+-    public boolean hasUniqueLongOption(String optionName) {
+-        if(hasLongOption(optionName)) {
+-            for(ProcessedOption o : getOptions()) {
+-                if(o.name().startsWith(optionName) && !o.name().equals(optionName))
+-                    return false;
+-            }
+-            return true;
+-        }
+-        return false;
+-    }
+-
+-    public void updateInvocationProviders(InvocationProviders invocationProviders) {
+-        updateOptionsInvocationProviders(invocationProviders);
+-        if (argument != null) {
+-            argument.updateInvocationProviders(invocationProviders);
+-        }
+-        if (arguments != null) {
+-            arguments.updateInvocationProviders(invocationProviders);
+-        }
+-        activator = invocationProviders.getCommandActivatorProvider().enhanceCommandActivator(activator);
+-    }
+-
+-    protected void updateOptionsInvocationProviders(InvocationProviders invocationProviders) {
+-        for (ProcessedOption option : getOptions()) {
+-            option.updateInvocationProviders(invocationProviders);
+-        }
+-    }
+-
+-    public void addParserException(CommandLineParserException exception) {
+-        parserExceptions.add(exception);
+-    }
+-
+-    public List<CommandLineParserException> parserExceptions() {
+-        return parserExceptions;
+-    }
+-
+-    public boolean hasOptionsWithInjectedValues() {
+-        for(ProcessedOption option : options)
+-            if(option.getValue() != null)
+-                return true;
+-        return false;
+-    }
+-
+-    public boolean hasOptionWithOverrideRequired() {
+-        for(ProcessedOption option : options) {
+-            if(option.getValue() != null && option.doOverrideRequired())
+-                return true;
+-        }
+-        return false;
+-    }
+-
+-    public CompleteStatus completeStatus() {
+-        return completeStatus;
+-    }
+-
+-    public void setCompleteStatus(CompleteStatus completeStatus) {
+-        this.completeStatus = completeStatus;
+-    }
+-
+-    public void setArgument(ProcessedOption arg) {
+-        this.argument = arg;
+-        this.argument.setParent(this);
+-    }
+-
+-    public ProcessedOption getArgument() {
+-        return argument;
+-    }
+-
+-    public boolean hasArgument() {
+-        return argument != null;
+-    }
+-
+-    public boolean hasArgumentWithNoValue() {
+-        return argument != null && argument.getValue() == null;
+-    }
+-
+-    public boolean hasArgumentsWithNoValue() {
+-        return arguments != null && arguments.getValue() == null;
+-    }
+-
+-    public boolean hasSelector() {
+-        boolean selector = false;
+-        for(ProcessedOption opt : getOptions()) {
+-            // if we have an option that's marked with override required and is set
+-            // it should override selector
+-            if(opt.doOverrideRequired() && opt.getValue() != null)
+-                return false;
+-            if(opt.selectorType() != SelectorType.NO_OP && opt.hasValue())
+-                selector = true;
+-        }
+-        return selector;
+-     }
+-
+-    public List<ProcessedOption> getAllSelectors() {
+-       List<ProcessedOption>  options = new ArrayList<>();
+-        for(ProcessedOption opt : getOptions()) {
+-            if(opt.selectorType() != SelectorType.NO_OP && opt.hasValue() && opt.getValue() == null)
+-                options.add(opt);
+-        }
+-        if(argument != null && argument.selectorType() != SelectorType.NO_OP &&
+-                   (argument.hasValue() || argument.getOptionType().equals(OptionType.BOOLEAN)))
+-            options.add(argument);
+-        if(arguments != null && arguments.selectorType() != SelectorType.NO_OP && arguments.hasValue())
+-            options.add(arguments);
+-
+-        return options;
+-    }
+ }

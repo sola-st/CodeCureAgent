@@ -84,7 +84,7 @@ You can open the `hyperparams.json` file to review or customize its parameters (
 
 ## IV. Experiment Setup and Evaluation
 
-All utility scipts must be run from the folder [code_cure_agent](code_cure_agent).
+All utility scripts must be run from the folder [code_cure_agent](code_cure_agent).
 
 ### Creating your own csv input file, based on repositories you want to run CodeCureAgent on
 
@@ -200,6 +200,7 @@ Change the model_version to one of the following supported models:
 Reasoning models are not supported by the used OpenAI API version.
 
 ---
+TODO: Write the following sections for CodeCureAgent
 
 ## 📊 V. RepairAgent Data
 

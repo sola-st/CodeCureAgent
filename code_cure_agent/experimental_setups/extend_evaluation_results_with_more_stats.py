@@ -42,6 +42,8 @@ def extend_evaluation_results_with_more_stats(evaluation_results_file: click.Fil
 
     add_info_execution_time_in_substeps(evaluation_results_file_df)
 
+    add_info_number_of_different_tool_calls(evaluation_results_file_df)
+
     # Move the new columns to the end of the DataFrame
     # cols = [col for col in evaluation_results_file_df.columns if col not in ["compilationPassed", "sonarQubeCheckPassed"]]
     # cols += ["compilationPassed", "sonarQubeCheckPassed"]
@@ -274,6 +276,134 @@ def add_info_execution_time_in_substeps(evaluation_results_file_df: pd.DataFrame
                                    ),
         axis=1
     )
+
+
+def add_info_number_of_different_tool_calls(evaluation_results_file_df: pd.DataFrame):
+    evaluation_results_file_df["tool_calls_read_sonarqube_docu"] = evaluation_results_file_df.apply(
+        lambda row: get_number_tool_calls("read_sonarqube_docu",
+                                          row["instanceID"],
+                                          row["experimentNumber"],
+                                          row["classification"]
+                                          ),
+        axis=1
+    )
+    evaluation_results_file_df["tool_calls_read_range"] = evaluation_results_file_df.apply(
+        lambda row: get_number_tool_calls("read_range",
+                                          row["instanceID"],
+                                          row["experimentNumber"],
+                                          row["classification"]
+                                          ),
+        axis=1
+    )
+    evaluation_results_file_df["tool_calls_find_references"] = evaluation_results_file_df.apply(
+        lambda row: get_number_tool_calls("find_references",
+                                          row["instanceID"],
+                                          row["experimentNumber"],
+                                          row["classification"]
+                                          ),
+        axis=1
+    )
+    evaluation_results_file_df["tool_calls_find_definition"] = evaluation_results_file_df.apply(
+        lambda row: get_number_tool_calls("find_definition",
+                                          row["instanceID"],
+                                          row["experimentNumber"],
+                                          row["classification"]
+                                          ),
+        axis=1
+    )
+    evaluation_results_file_df["tool_calls_search_for_patterns"] = evaluation_results_file_df.apply(
+        lambda row: get_number_tool_calls("search_for_patterns",
+                                          row["instanceID"],
+                                          row["experimentNumber"],
+                                          row["classification"]
+                                          ),
+        axis=1
+    )
+    evaluation_results_file_df["tool_calls_answer_question"] = evaluation_results_file_df.apply(
+        lambda row: get_number_tool_calls("answer_question",
+                                          row["instanceID"],
+                                          row["experimentNumber"],
+                                          row["classification"]
+                                          ),
+        axis=1
+    )
+    evaluation_results_file_df["tool_calls_give_final_verdict"] = evaluation_results_file_df.apply(
+        lambda row: get_number_tool_calls("give_final_verdict",
+                                          row["instanceID"],
+                                          row["experimentNumber"],
+                                          row["classification"]
+                                          ),
+        axis=1
+    )
+    evaluation_results_file_df["tool_calls_formulate_plan"] = evaluation_results_file_df.apply(
+        lambda row: get_number_tool_calls("formulate_plan",
+                                          row["instanceID"],
+                                          row["experimentNumber"],
+                                          row["classification"]
+                                          ),
+        axis=1
+    )
+    evaluation_results_file_df["tool_calls_write_fix"] = evaluation_results_file_df.apply(
+        lambda row: get_number_tool_calls("write_fix",
+                                          row["instanceID"],
+                                          row["experimentNumber"],
+                                          row["classification"]
+                                          ),
+        axis=1
+    )
+    evaluation_results_file_df["tool_calls_goals_accomplished"] = evaluation_results_file_df.apply(
+        lambda row: get_number_tool_calls("goals_accomplished",
+                                          row["instanceID"],
+                                          row["experimentNumber"],
+                                          row["classification"]
+                                          ),
+        axis=1
+    )
+
+
+def get_number_tool_calls(tool_name: str, instance_id: int, experiment_number: int, classification: str) -> int:
+
+    tool_calls = 0
+
+    # tool calls in classification
+    try:
+        execution_file_name = next(f for f in os.listdir(os.path.join("experimental_setups", "experiment_" + str(experiment_number), "classification", "execution_info"))
+                                   if os.path.isfile(os.path.join("experimental_setups", "experiment_" + str(experiment_number), "classification", "execution_info", f)) and f.startswith(str(instance_id) + "_"))
+    except StopIteration:
+        print(
+            f"ERROR: execution_info file not found for {str(instance_id)} in classification")
+        return 0
+
+    execution_file_path = os.path.join("experimental_setups", "experiment_" + str(
+        experiment_number), "classification", "execution_info", execution_file_name)
+
+    with open(execution_file_path, "r") as f:
+        execution_file_content = f.read()
+
+    pattern = rf"!! Command {tool_name} startup timestamp: (\d+)"
+    matches = re.findall(pattern, execution_file_content)
+    tool_calls += len(matches)
+
+    # tool calls in fix_tp or fix_fp
+    try:
+        execution_file_name = next(f for f in os.listdir(os.path.join("experimental_setups", "experiment_" + str(experiment_number), "fix_" + str(classification).lower(), "execution_info"))
+                                   if os.path.isfile(os.path.join("experimental_setups", "experiment_" + str(experiment_number), "fix_" + str(classification).lower(), "execution_info", f)) and f.startswith(str(instance_id) + "_"))
+    except StopIteration:
+        print(
+            f"ERROR: execution_info file not found for {str(instance_id)} in fix_{str(classification).lower()}")
+        return 0
+
+    execution_file_path = os.path.join("experimental_setups", "experiment_" + str(
+        experiment_number), "fix_" + str(classification).lower(), "execution_info", execution_file_name)
+
+    with open(execution_file_path, "r") as f:
+        execution_file_content = f.read()
+
+    pattern = rf"!! Command {tool_name} startup timestamp: (\d+)"
+    matches = re.findall(pattern, execution_file_content)
+    tool_calls += len(matches)
+
+    return tool_calls
 
 
 def get_time_added(step_to_get_time_for: str, instance_id: int, experiment_number: int, classification: str) -> int:

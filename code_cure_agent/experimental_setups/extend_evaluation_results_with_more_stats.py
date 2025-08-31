@@ -19,7 +19,7 @@ from agent_core.llm.providers.openai import OPEN_AI_CHAT_MODELS
 @click.option(
     "--target-csv-file-path",
     "-t",
-    default="./evaluation_results_extended.csv",
+    default="./evaluation_results/evaluation_results_extended.csv",
     help="Path where the extended evaluation results file should be written."
 )
 def extend_evaluation_results_with_more_stats(evaluation_results_file: click.File, target_csv_file_path: str):

@@ -14,8 +14,8 @@ import csv
 @click.option(
     "--target-csv-file-path",
     "-t",
-    default="./comparative_study/sorald_comparison/comparison_dataset_sorald.csv",
-    help="Path where thecsv file with covered instances by sorald should be written to."
+    default="./dataset_sorald_supported_instances_1000_instances_dataset.csv",
+    help="Path where the csv file with covered instances by sorald should be written to."
 )
 def extract_instances_covered_by_sorald(csv_input_evaluation_dataset_file: click.File, target_csv_file_path: str):
 

@@ -21,7 +21,7 @@ import click
     "--target-file-path",
     "-t",
     default="./experimental_setups/repos_list_with_commits_and_java_target_versions.csv",
-    help="Path where the txt file with java versions should be written to."
+    help="Path where the csv file with java versions should be written to."
 )
 def infer_target_java_version_of_projects(repos_list_with_commits_file: click.File, target_file_path):
     cca_workspace = os.path.join(

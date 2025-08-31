@@ -1,7 +1,7 @@
 # CodeCureAgent
 
 CodeCureAgent is an autonomous LLM-based agent designed for automated static analysis warning repair.  
-It can fix arbitrary SonarQube rule violations in Java code.
+It can classify and fix arbitrary SonarQube rule violations in Java code.
 
 <div style="text-align: left;">
   <img src="./code_cure_agent/code_cure_agent_project_image.png" alt="Alt text" width="300" height="300">
@@ -9,12 +9,12 @@ It can fix arbitrary SonarQube rule violations in Java code.
 
 ---
 
-## 📋 I. Requirements
+## I. Requirements
 
 Before you start using CodeCureAgent, ensure that your system meets the following requirements:
 
 - **Docker**: Version 20.04 or higher. For installation instructions, see the [Docker documentation](https://docs.docker.com/get-docker).
-- **VS Code**: Not a hard requirement but highly recommended. VS Code provides an easy way to interact with CodeCureAgent using Dev Containers (see the instructions below).
+- **VS Code**: VS Code provides an easy way to interact with CodeCureAgent using Dev Containers (see the instructions below).
 - **OpenAI Token and Credits**:
   - Create an account on the OpenAI website and purchase credits to use the API.
   - Generate an API token on the same website.
@@ -24,7 +24,7 @@ Before you start using CodeCureAgent, ensure that your system meets the followin
 
 ---
 
-## ⚙️ II. Setup CodeCureAgent
+## II. Setup CodeCureAgent
 
 ### **STEP 1: Open CodeCureAgent in a Dev Container**
 
@@ -61,50 +61,52 @@ The script will prompt you to paste your API token.
 
 ## III. Run CodeCureAgent
 
-CodeCureAgent takes a csv file as input where each line specifies a single violation of a SonarQube rule in a single Java file in a single Git repository.  
+CodeCureAgent takes a csv file as input, where each line specifies a single warning of a SonarQube rule in a single Java file in a single Git repository.  
 
-For an example on how the input file has to look like see [specific_commit_quality_profile_rules_input_file_single_rule_violations.csv](code_cure_agent/experimental_setups/dev_dataset/mining_results/specific_commit_quality_profile_rules_input_file_single_rule_violations.csv).  
+For an example on how the input file has to look like see [evaluation_dataset_filled_up_to_1000_input_file.csv](code_cure_agent/experimental_setups/evaluation_dataset/evaluation_dataset_filled_up_to_1000_input_file.csv).  
 You can create your own by following the steps described further down below in this paragraph.
 
 To execute CodeCureAgent on an input file, run the following from the `code_cure_agent` folder:
 
   ```bash
-   ./run_on_dataset.sh ./experimental_setups/dev_dataset/mining_results/specific_commit_quality_profile_rules_input_file_single_rule_violations.csv hyperparams.json
+   ./run_on_dataset.sh ./experimental_setups/evaluation_dataset/evaluation_dataset_filled_up_to_1000_input_file.csv hyperparams.json
    ```
 
 The first argument is the csv input file to run on. The second argument specifies hyperparameter settings.  
 You can open the `hyperparams.json` file to review or customize its parameters (explained further in the customization section).  
 
+If you only care for CodeCureAgent itself and not the comparison to baselines, you can delete the [comparative_study](comparative_study) folder to improve VS Code responsiveness.  
+
 ### What Happens When You Start CodeCureAgent?
 
 - CodeCureAgent goes through the input file line by line
 - For each line CodeCureAgent checks out the project with the given URL and commit.
-- It initiates the autonomous repair process, trying to fix the given rule violation in the given file.
+- It initiates the autonomous repair process, first classifying the warning as true positive or false positive and then fixing or suppressing the warning accordingly.
 - Logs detailing each step performed will be displayed in your terminal.
 
 ## IV. Experiment Setup and Evaluation
 
 All utility scripts must be run from the folder [code_cure_agent](code_cure_agent).
 
-### Creating your own csv input file, based on repositories you want to run CodeCureAgent on
+### 1. Creating your own csv input file, based on repositories you want to run CodeCureAgent on
 
-1. Create a .csv file with one line per Git repository with three columns:
+1. Create a .csv file with one line per Git repository with three columns (without header):
      - URL to the Git repository  
      - CommitID that you want to run on. If you want to use the most current commit on the master/main branch set the commitID to 'MASTER'.  
-     - targetJavaVersion. The Java version the project is compiled to. Used to configure the SonarQube analyzer with the correct rules. Can be automatically inferred by using the script [infer_target_java_version_of_projects.py](code_cure_agent/experimental_setups/infer_target_java_version_of_projects.py)  
+     - targetJavaVersion. The Java version the project compiles to. Used to configure the SonarQube analyzer with the correct rules. Can be automatically inferred by using the script [code_cure_agent/experimental_setups/infer_target_java_version_of_projects.py](code_cure_agent/experimental_setups/infer_target_java_version_of_projects.py)  
 
-    For an example see [sampled_repos_with_commits_and_java_target_versions.csv](code_cure_agent/experimental_setups/dev_dataset/sampled_repos_with_commits_and_java_target_versions.csv). 
+    For an example see [evaluation_dataset_repos_list_with_java_versions.csv](code_cure_agent/experimental_setups/evaluation_dataset/evaluation_dataset_repos_list_with_java_versions.csv). 
     Currently, CodeCureAgent only supports Maven projects that can be built by running a simple `mvn clean package` with Maven 3.6.3.  
 
 2. Use the Sorald mining tool to mine SonarQube warnings on the repositories specified in the file.  
-Example usage (run from `code_cure_agent` on the `sampled_repos_with_commits_and_java_target_versions.csv` file):  
+Example usage (run from `code_cure_agent` on the `evaluation_dataset_repos_list_with_java_versions.csv` file):  
 
    ```bash
    java -jar ./sorald/sorald.jar mine \
-      --git-repos-list ./experimental_setups/dev_dataset/sampled_repos_with_commits_and_java_target_versions.csv \
-      --miner-output-file ./experimental_setups/dev_dataset/mining_results/specific_commit_handled_rules_out.txt \
-      --stats-output-file ./experimental_setups/dev_dataset/mining_results/specific_commit_handled_rules_mining_result.json \
-      --temp-dir ./experimental_setups/dev_dataset/temp \
+      --git-repos-list ./experimental_setups/evaluation_dataset/evaluation_dataset_repos_list_with_java_versions.csv \
+      --miner-output-file ./experimental_setups/evaluation_dataset/mining_results/evaluation_dataset_out.txt \
+      --stats-output-file ./experimental_setups/evaluation_dataset/mining_results/evaluation_dataset_mining_result.json \
+      --temp-dir ./experimental_setups/evaluation_dataset/temp \
       --stats-on-git-repos \
       --rule-parameters ./sonarqube_quality_profile/quality_profile_rule_parameters.json \
       --handled-rules
@@ -113,38 +115,58 @@ Example usage (run from `code_cure_agent` on the `sampled_repos_with_commits_and
    Remove the --handled-rules flag if you want to mine all warnings supported by the used SonarQube version.  
    If you only want to mine specific rules, pass the IDs of the rules via --rule-keys, or to only mine for specific types of rules use --rule-types.  
    For our experiments we use only rules that are part of the SonarWay quality profile, by using the keys from `code_cure_agent/sonarqube_quality_profile/quality_profile_rule_keys.txt`.  
-   After running the mining tool the output is saved in a json file. In the example this is `specific_commit_handled_rules_mining_result.json`.
+   After running the mining tool the output is saved in a json file. In the example this is `evaluation_dataset_mining_result.json`.
 
-3. Finally you can create your csv input file from the json report by using `code_cure_agent/experimental_setups/prepare_experiment_input_file.py`.  
+3. Finally, you can create your csv input file from the json report by using `code_cure_agent/experimental_setups/prepare_experiment_input_file.py`.  
 To this script provide the previously created json report as the first argument. Also --rule-violations-mode must be set to `single`.  
-Additionally you can provide the path, the csv-file is to be saved to, via --target-csv-file-path.  
+Additionally, you can provide the path, the csv-file is to be saved to, via --target-csv-file-path.  
 Example:
 
   ```bash
-    python3 ./experimental_setups/prepare_experiment_input_file.py ./experimental_setups/dev_dataset/mining_results/specific_commit_handled_rules_mining_result.json \
-      --target-csv-file-path ./experimental_setups/dev_dataset/mining_results/specific_commit_handled_rules_input_file_single_rule_violations.csv --rule-violations-mode single
+    python3 ./experimental_setups/prepare_experiment_input_file.py ./experimental_setups/evaluation_dataset/mining_results/evaluation_dataset_mining_result.json \
+      --target-csv-file-path ./experimental_setups/evaluation_dataset/mining_results/evaluation_dataset_input_file_all_violations.csv --rule-violations-mode single
   ```
 
-### **Retrieve Repair Logs and History**
+### 2. Repair Logs
 
 CodeCureAgent saves the output in multiple files.
 
 - The primary logs are located in the folder `experimental_setups/experiment_X`, where `experiment_X` increments automatically with each run of the command `./run_on_dataset.sh`.
+- The folder is structured into subfolders `classification`, `fix_fp`, `fix_tp` and `tasks`.
+- Most interesting are the classification_result files in the `classification` folder and the prompt_history files in the `prompt_history` subfolders of `classification`, `fix_fp` and `fix_tp`.
 
-- Within this folder, you may find several subfolders, which each hold one file per rule violation:
-  - **prompt_history**: Prompt history (prompts made to the model)
-  - **responses**: History of agent answers and the results of running the commands
-  - **all_messages**: Full message history (prompts to the agent, answers of the agent, and result of running a command)
-  - **plausible_patches**: Any plausible patches generated
-  - **implausible_patches**: Any implausible patches generated (rejected by the ChangeApprover steps)
-  - further subfolders for debugging purposes
 
-### Scripts for Evaluation
+### 3. Scripts for Evaluation
 
-Within the `experimental_setups` folder, several scripts are available to post-process the logs:  
-TODO: explain all the scripts for evaluation
+Within the `experimental_setups` folder, several scripts are available to calculate evaluation results.  
+All scripts are expected to be run from the `code_cure_agent` folder.  
 
-## ✨ IV. Customize CodeCureAgent
+1. Create evaluation results file  
+    After running one or multiple experiments, logs are located in the folder `experimental_setups/experiment_X`.  
+    The script [code_cure_agent/experimental_setups/write_experiment_results_to_csv_file.py](code_cure_agent/experimental_setups/write_experiment_results_to_csv_file.py) can be used to extract the experiment run results from the experiment logs into a csv file.  
+    By default, the evaluation results are appended to the csv file [code_cure_agent/evaluation_results/evaluation_results.csv](code_cure_agent/evaluation_results/evaluation_results.csv).  
+
+2. Create extended evaluation results file with further info  
+    An extended version of the evaluation results file can be created by using the [code_cure_agent/experimental_setups/extend_evaluation_results_with_more_stats.py](code_cure_agent/experimental_setups/extend_evaluation_results_with_more_stats.py) script. It expects the previously created evaluation results file as input.  
+    By default, the extended evaluation results are written to the csv file [code_cure_agent/evaluation_results/evaluation_results_extended.csv](code_cure_agent/evaluation_results/evaluation_results_extended.csv).  
+
+3. Aggregate results into a Markdown  
+    The evaluation results can be aggregated into a Markdown file that presents relevant stats.  
+    Use the script [code_cure_agent/experimental_setups/calculate_stats_from_evaluation_results.py](code_cure_agent/experimental_setups/calculate_stats_from_evaluation_results.py) for this.  
+    It expects the extended evaluation results csv file as first argument.  
+    By default, the Markdown is written to `code_cure_agent/evaluation_results/analysis_results_overview.md`.  
+    See an example result Markdown here: [code_cure_agent/evaluation_results/analysis_results_overview_all.md](code_cure_agent/evaluation_results/analysis_results_overview_all.md)
+
+4. Manually inspect a repaired warning  
+    We provide a further script [code_cure_agent/experimental_setups/show_next_warning_for_manual_inspection.py](code_cure_agent/experimental_setups/show_next_warning_for_manual_inspection.py) that can be used to quickly open relevant files for a specified warning, including a VS Code diff between the unfixed and fixed versions of the warning.  
+    The instanceID of the warning that is to be looked at can be provided via option `--id-to-show`.  
+
+5. Create plots  
+    We provide further Jupyter notebooks for creating plots, including a Venn diagram.
+
+
+
+## IV. Customize CodeCureAgent
 
 ### 1. Modify `hyperparams.json`
 
@@ -168,14 +190,14 @@ TODO: explain all the scripts for evaluation
   "repetition_handling": "RESTRICT",
   ```
 
-- **Command Limits**: Control the maximum allowed cycles (budget) in the different phases of the agent.
+- **Cycle Limits**: Control the maximum allowed cycles (budget) in the different sub-agents.
   Default for our experiment:  
   ```json
   "classification_cycles_limit": 20,
   "fix_cycles_limit": 40 
   ```
 
-- **Threshold of cycles left after which write_fix is prioratized**: Set the threshold of cycles left before the cycle budget is exhausted, where, when reached, the prompt is modified to force the agent to use write_fix.
+- **Threshold of cycles left after which write_fix is prioritized**: Set the threshold of cycles left before the cycle budget is exhausted, where, when reached, the prompt is modified to force the agent to use write_fix.
   Default for our experiment:  
   ```json
   "prioritize_write_fix_cycle_threshold": 5
@@ -200,62 +222,41 @@ Change the model_version to one of the following supported models:
 Reasoning models are not supported by the used OpenAI API version.
 
 ---
-TODO: Write the following sections for CodeCureAgent
 
-## 📊 V. RepairAgent Data
+## V. CodeCureAgent Data
 
-In RepairAgent for our experiments, we utilized RepairAgent on the Defects4J dataset, successfully fixing 164 bugs. You can check our data under the folder data.
-- The list of fixed bugs [here](./data/final_list_of_fixed_bugs). The list allows to compare with prior and future work.
-  * For example, we compare to ChatRepair, SelfAPR, and ITER. The venn diagram of Figure 6 is produced using the command:
-    ```bash
-    python3.10 draw_venn_chatrepair_clean.py
-    ```
-  * The file [d4j12.csv](./code_cure_agent/experimental_setups/d4j12.csv) contains the list of bugs fixed by previous work. The script draw_venn_chatrepair_clean.py contains the list of fixes that we compare to.
-- The implementation details of the patches in [this file](./data/fixes_implementation).
- 
-- The folder **data/root_patches** contains patches produced by CodeCureAgent in the main phase
-- The folder **data/derivated_pathces** contains patches obtained by mutating **root_patches**
+For our experiments, we utilized CodeCureAgent on a dataset of 1000 warnings, successfully creating plausible fixes for 968 of them.  
 
+The experiment input files are located in [code_cure_agent/experimental_setups/evaluation_dataset](code_cure_agent/experimental_setups/evaluation_dataset).  
+Most relevant is here the file [code_cure_agent/experimental_setups/evaluation_dataset/evaluation_dataset_filled_up_to_1000_input_file.csv](code_cure_agent/experimental_setups/evaluation_dataset/evaluation_dataset_filled_up_to_1000_input_file.csv), which is the input file to CodeCureAgent.
 
-Note: RepairAgent encountered exceptions due to Middleware errors in 29 bugs, which were not re-run.
+All log files from running the experiment on the 1000 warnings are located in [code_cure_agent/experimental_setups/evaluation_dataset/evaluation_outputs](code_cure_agent/experimental_setups/evaluation_dataset/evaluation_outputs) (split into multiple batches of experiment runs).
+
+The extracted and aggregated evaluation results, as described in `IV. Experiment Setup and Evaluation: 3. Scripts for Evaluation` above, are located in [code_cure_agent/evaluation_results](code_cure_agent/evaluation_results).
+
 
 ---
 
-## 🧫 VI. Replicate Experiments
-This part is about running RepairAgent on full evaluation datasets to replicate our experiments. The process is the same as above; We just provide ready-to-use input files and instructions for replication.
+## VI. Replicate Experiments
 
-### Replicate Defects4J experiments
-1. Create the execution batches for Defects4J which will create lists of bugs to run on.
-    ```bash
-    python3.10 get_defects4j_list.py
-    ```
-    The result of this command can be found in `experimental_setups/batches`
+### Replicate CodeCureAgent experiment on 1000 warnings dataset
+1. Run CodeCureAgent on the [code_cure_agent/experimental_setups/evaluation_dataset/evaluation_dataset_filled_up_to_1000_input_file.csv](code_cure_agent/experimental_setups/evaluation_dataset/evaluation_dataset_filled_up_to_1000_input_file.csv) input file as described in `III. Run CodeCureAgent`.
 
-2. Run RepairAgent on each of the batches (either singularly or concurrently)
-    ```bash
-    ./run_on_defects4j.sh experimental_setups/batches/0 hyperparameters.json
-    # replace 0 with the desired batch number
-    ```
-
-3. Refer to sections `4.2 Retrieve Repair Logs and History` and `4.3 Analyze Logs` on how to analyze logs and summarize the results of the experiments.
-
-4. Furthermore, you can adapt the script `experimental_setups/generate_main_table.py` to generate the main comparative table (Table III in the paper)
-   - 4.1. You can also use `experimental_setups/draw_venn_chatrepair_clean.py` to draw a venn diagram to compare different techniques (Figure 6 of the paper)  
-5. You can use the script `experimental_setups/calculate_tokens.py` to calculate the costs of the agent (used to generate figure 9).
-
-6. You can use the script `experimental_setups/collect_plausible_patches_files.py` to get the list of plausible patches to inspect.
+2. Post-process the created log files as described in `IV. Experiment Setup and Evaluation: 3. Scripts for Evaluation` to receive aggregated results (Markdown file and plots).
 
 
-### Replicate GitBugsJava Experiment
-GitBugsJava is another dataset for program repair evaluation.
- 
- 1. First,prepare the GitBugsJava VM. Since this dataset requires a heavy VM (at least 140 GB of disk), we could not include it in this artifact. We added more detailed instruction on how to prepare such VM. Please check the step by step process here: https://github.com/gitbugactions/gitbug-java
 
- 2. Copy the repository of RepairAgent inside the VM.
+### Replicate Comparison to Sorald
+We ran Sorald on the same dataset of 1000 warnings, of which Sorald supports 62 warnings.  
 
- 3. Run RepairAgent on the list of bugs by specifying the file `experimental_setups/gitbuglist` as the target file.
+The scripts and results are found in [comparative_study/sorald_comparison](comparative_study/sorald_comparison).  
+Refer to the dedicated README for more information: [comparative_study/sorald_comparison/README.md](comparative_study/sorald_comparison/README.md).  
 
- 4. Use the same analysis scripts as part 1 (D4j replication) to analyse the results of the experiments.
+### Replicate Comparison to CORE
+We ran CORE on the same dataset of 1000 warnings.  
+
+The scripts and results are found in [comparative_study/core_comparison](comparative_study/core_comparison).  
+Refer to the dedicated README for more information: [comparative_study/core_comparison/README.md](comparative_study/core_comparison/README.md).  
 
 
 --- 

@@ -20,7 +20,7 @@ from agent_core.llm.providers.openai import OPEN_AI_CHAT_MODELS
 @click.option(
     "--target-md-file-path",
     "-t",
-    default="./analysis_results_overview.md",
+    default="./evaluation_results/analysis_results_overview.md",
     help="Path where the stats file should be written."
 )
 def calculate_stats_from_evaluation_results(evaluation_results_extended_file: click.File, target_md_file_path: str):

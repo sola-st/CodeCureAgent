@@ -644,4 +644,4 @@ class BaseAgent(metaclass=ABCMeta):
             title="Commands Limit set for fixing violation to: ", title_color=Fore.GREEN, message=f"{self.config.cycle_limit}"
         )
         logger.info(
-            title="CodeCureAgent is now running its main fixing loop.", title_color=Fore.GREEN, message="")
+            title="CodeCureAgent is now running the Repair-Sub-Agent.", title_color=Fore.GREEN, message="")

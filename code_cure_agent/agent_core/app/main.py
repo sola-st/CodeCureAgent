@@ -283,7 +283,7 @@ def run_interaction_loop(
     signal.signal(signal.SIGINT, agent_interrupt)
 
     logger.info(
-        title="CodeCureAgent is now running the WarningClassifyAgent.", title_color=Fore.GREEN, message="This is the subagent dealing with the preliminary task of classifying the violation as TP or FP.")
+        title="CodeCureAgent is now running the Classification-Sub-Agent.", title_color=Fore.GREEN, message="This is the sub-agent dealing with the task of classifying the violation as TP or FP.")
 
     #########################
     # Application Main Loop #

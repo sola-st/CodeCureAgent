@@ -113,7 +113,7 @@ CORE Only for warnings classified as TP in CCA : fix created + build successful 
 CORE fix created + build successful + target warning removed + no other warning introduced + test successful + fix correct: 0/0 (0.00%)  
 CORE fix created + build successful + target warning removed + no other warning introduced + test successful + fix correct + no code smell outside introduced: 0/0 (0.00%)  
 
-Margin of improvement from CORE's performance after oracle (all oracle steps applied) and correctness manual inspection to CCA's end-to-end performance: 86.25%  
+(Margin of improvement from CORE's performance after oracle (all oracle steps applied) and correctness manual inspection to CCA's end-to-end performance: 86.25%)  
 ### Time Efficiency
 
 CORE prompting time: mean=112.78s, median=110.62s  

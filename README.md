@@ -39,9 +39,11 @@ Before you start using CodeCureAgent, ensure that your system meets the followin
 3. Open the repository folder in VS Code.
 
 4. When prompted by VS Code to "Reopen in Container," click it. If not prompted, open the Command Palette (Ctrl+Shift+P) and select "Dev Containers: Reopen in Container."  
-VS Code will now build and start the Dev Container, setting up the environment for you. This will take a while.
+VS Code will now build and start the Dev Container, setting up the environment for you. This will take a while.  
+After the Dev Container is built it will continue to run further setups in the terminal. Wait until this is completed too.  
+If the Dev Container opened in less than a few minutes it likely failed to create the container properly. Then rebuild the container via opening the Command Palette (Ctrl+Shift+P) and selecting "Dev Containers: Rebuild in Container."
 
-5. Within your VS Code terminal, move to the folder code_cure_agent
+6. Within your VS Code terminal, move to the folder code_cure_agent
 
     ```bash
     cd code_cure_agent

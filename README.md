@@ -138,7 +138,7 @@ CodeCureAgent saves the output in multiple files.
 
 ### 3. Scripts for Evaluation
 
-Within the `experimental_setups` folder, several scripts are available to calculate evaluation results.  
+Within the [code_cure_agent/experimental_setups](code_cure_agent/experimental_setups) folder, several scripts are available to calculate evaluation results.  
 All scripts are expected to be run from the `code_cure_agent` folder.  
 
 1. Create evaluation results file  

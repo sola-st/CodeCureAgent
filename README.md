@@ -140,30 +140,31 @@ CodeCureAgent saves the output in multiple files.
 
 ### 3. Scripts for Evaluation
 
-Within the [code_cure_agent/experimental_setups](code_cure_agent/experimental_setups) folder, several scripts are available to calculate evaluation results.  
+Within the [code_cure_agent/experimental_setups](code_cure_agent/experimental_setups) folder, several scripts are available to calculate evaluation results from one or multiple executed CodeCureAgent runs.  
 All scripts are expected to be run from the `code_cure_agent` folder.  
 
 1. Create evaluation results file  
     After running one or multiple experiments, logs are located in the folder `experimental_setups/experiment_X`.  
+    If you do not want to run your own experiments, but calculate evaluation results on the log files of our experiment runs, copy the folders from [code_cure_agent/experimental_setups/evaluation_dataset/evaluation_outputs](code_cure_agent/experimental_setups/evaluation_dataset/evaluation_outputs) to [code_cure_agent/experimental_setups](code_cure_agent/experimental_setups).  
     The script [code_cure_agent/experimental_setups/write_experiment_results_to_csv_file.py](code_cure_agent/experimental_setups/write_experiment_results_to_csv_file.py) can be used to extract the experiment run results from the experiment logs into a csv file.  
     By default, the evaluation results are appended to the csv file [code_cure_agent/evaluation_results/evaluation_results.csv](code_cure_agent/evaluation_results/evaluation_results.csv).  
 
-2. Create extended evaluation results file with further info  
+3. Create extended evaluation results file with further info  
     An extended version of the evaluation results file can be created by using the [code_cure_agent/experimental_setups/extend_evaluation_results_with_more_stats.py](code_cure_agent/experimental_setups/extend_evaluation_results_with_more_stats.py) script. It expects the previously created evaluation results file as input.  
     By default, the extended evaluation results are written to the csv file [code_cure_agent/evaluation_results/evaluation_results_extended.csv](code_cure_agent/evaluation_results/evaluation_results_extended.csv).  
 
-3. Aggregate results into a Markdown  
+4. Aggregate results into a Markdown  
     The evaluation results can be aggregated into a Markdown file that presents relevant stats.  
     Use the script [code_cure_agent/experimental_setups/calculate_stats_from_evaluation_results.py](code_cure_agent/experimental_setups/calculate_stats_from_evaluation_results.py) for this.  
     It expects the extended evaluation results csv file as first argument.  
     By default, the Markdown is written to `code_cure_agent/evaluation_results/analysis_results_overview.md`.  
     See an example result Markdown here: [code_cure_agent/evaluation_results/analysis_results_overview_all.md](code_cure_agent/evaluation_results/analysis_results_overview_all.md)
 
-4. Manually inspect a repaired warning  
+5. Manually inspect a repaired warning  
     We provide a further script [code_cure_agent/experimental_setups/show_next_warning_for_manual_inspection.py](code_cure_agent/experimental_setups/show_next_warning_for_manual_inspection.py) that can be used to quickly open relevant files for a specified warning, including a VS Code diff between the unfixed and fixed versions of the warning.  
     The instanceID of the warning that is to be looked at can be provided via option `--id-to-show`.  
 
-5. Create plots  
+6. Create plots  
     We provide further Jupyter notebooks for creating plots, including a Venn diagram.
 
 

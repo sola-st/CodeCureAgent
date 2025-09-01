@@ -129,6 +129,8 @@ Example:
       --target-csv-file-path ./experimental_setups/evaluation_dataset/mining_results/evaluation_dataset_input_file_all_violations.csv --rule-violations-mode single
   ```
 
+4. Optionally, you can sample from the input file to run only on some of the warnings using [code_cure_agent/experimental_setups/sample_rule_violations_from_input_file.py](code_cure_agent/experimental_setups/sample_rule_violations_from_input_file.py).
+
 ### 2. Repair Logs
 
 CodeCureAgent saves the output in multiple files.

@@ -85,52 +85,6 @@ give_final_verdict_desc = """give_final_verdict:
     - reason (string): Explanation of what led you to your decision."""
 
 
-# RepairAgent unused commands:
-
-search_code_desc = """search_code_base:  
-    Scans all Java files in a project for a list of keywords.  
-    Returns a dictionary structured as: { file_name: { class_name: { method_name: [matched keywords] } } }.  
-    This helps identify reusable methods or locate similar code to inform your fix strategy.  
-    Note: This function does not return source code. Use extract_method_code for that. (only do it for the ones that are relevant)  
-    Required params:  
-    - project_name (string)
-    - bug_index (int)
-    - key_words (list)"""
-
-get_classes_desc = """get_classes_and_methods:  
-    Returns all class names and their methods in a file.  
-    It returns a dictionary where keys are class names and values are lists of method names within each class.  
-    Required params:  
-    - project_name (string)
-    - bug_index: (int)
-    - file_path: (string)"""
-
-get_similar_desc = """extract_similar_functions_calls:  
-    Given a buggy code snippet and its file path, extracts similar function calls to help identify appropriate parameter usage.
-    Required params:  
-    - project_name (string)
-    - bug_index (string)
-    - file_path (string)
-    - code_snippet (string)"""
-
-extract_method_desc = """extract_method_code:  
-    Retrieves possible implementations of a method by name in a file.
-    Required params:  
-    - project_name (string) 
-    - bug_index (int)
-    - file_path (string)
-    - method_name (string)"""
-
-generate_method_desc = """AI_generates_method_code:  
-    Uses an AI model to generate a method implementation.  
-    This helps see another implementation of that method given the context before it, which would help in 'probably' inferring a fix but no guarantee.  
-    Required params:  
-    - project_name (string)
-    - bug_index (string)
-    - file_path (string)
-    - method_name (string)"""
-
-
 commands_dict = {
     "classification": "\n".join(["{}. {}".format(i + 1, t) for i, t in enumerate(
         [read_sonarqube_docu_desc, read_range_desc, find_definition_desc, find_references_desc, search_for_patterns_desc, answer_question_desc, give_final_verdict_desc])]),

@@ -151,22 +151,22 @@ All scripts are expected to be run from the `code_cure_agent` folder.
     The script [code_cure_agent/experimental_setups/write_experiment_results_to_csv_file.py](code_cure_agent/experimental_setups/write_experiment_results_to_csv_file.py) can be used to extract the experiment run results from the experiment logs into a csv file.  
     By default, the evaluation results are appended to the csv file [code_cure_agent/evaluation_results/evaluation_results.csv](code_cure_agent/evaluation_results/evaluation_results.csv).  
 
-3. Create extended evaluation results file with further info  
+2. Create extended evaluation results file with further info  
     An extended version of the evaluation results file can be created by using the [code_cure_agent/experimental_setups/extend_evaluation_results_with_more_stats.py](code_cure_agent/experimental_setups/extend_evaluation_results_with_more_stats.py) script. It expects the previously created evaluation results file as input.  
     By default, the extended evaluation results are written to the csv file [code_cure_agent/evaluation_results/evaluation_results_extended.csv](code_cure_agent/evaluation_results/evaluation_results_extended.csv).  
 
-4. Aggregate results into a Markdown  
+3. Aggregate results into a Markdown  
     The evaluation results can be aggregated into a Markdown file that presents relevant stats.  
     Use the script [code_cure_agent/experimental_setups/calculate_stats_from_evaluation_results.py](code_cure_agent/experimental_setups/calculate_stats_from_evaluation_results.py) for this.  
     It expects the extended evaluation results csv file as first argument.  
     By default, the Markdown is written to `code_cure_agent/evaluation_results/analysis_results_overview.md`.  
     See an example result Markdown here: [code_cure_agent/evaluation_results/analysis_results_overview_all.md](code_cure_agent/evaluation_results/analysis_results_overview_all.md)
 
-5. Manually inspect a repaired warning  
+4. Manually inspect a repaired warning  
     We provide a further script [code_cure_agent/experimental_setups/show_next_warning_for_manual_inspection.py](code_cure_agent/experimental_setups/show_next_warning_for_manual_inspection.py) that can be used to quickly open relevant files for a specified warning, including a VS Code diff between the unfixed and fixed versions of the warning.  
     The instanceID of the warning that is to be looked at can be provided via option `--id-to-show`.  
 
-6. Create plots  
+5. Create plots  
     We provide further Jupyter notebooks for creating plots, including a Venn diagram.
 
 

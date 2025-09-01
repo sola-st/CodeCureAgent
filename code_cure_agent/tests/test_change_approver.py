@@ -701,8 +701,8 @@ java.lang.NullPointerException
 -------------------------------------------------------------------------------
 Test file with failure: agent/jvm/src/test/java/org/jolokia/jvmagent/security/DelegatingAuthenticatorTest.java
 -------------------------------------------------------------------------------
-Tests run: 11, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 4.798 sec <<< FAILURE! - in org.jolokia.jvmagent.security.DelegatingAuthenticatorTest
-Failing test method: invalidProtocol  Time elapsed: 2.046 sec  <<< FAILURE!
+Tests run: 11, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 4.804 sec <<< FAILURE! - in org.jolokia.jvmagent.security.DelegatingAuthenticatorTest
+Failing test method: invalidProtocol  Time elapsed: 2.02 sec  <<< FAILURE!
 java.lang.AssertionError: expected [401] but found [503]
 \tat agent/jvm/src/test/java/org/jolokia/jvmagent/security/DelegatingAuthenticatorTest.java Method: invalidProtocol (line 135)
 
@@ -710,79 +710,87 @@ java.lang.AssertionError: expected [401] but found [503]
 -------------------------------------------------------------------------------
 Test file with failure: agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java
 -------------------------------------------------------------------------------
-Tests run: 27, Failures: 11, Errors: 0, Skipped: 0, Time elapsed: 2.386 sec <<< FAILURE! - in org.jolokia.jvmagent.JolokiaServerTest
-Failing test method: sslWithSpecialHttpsSettings  Time elapsed: 0.092 sec  <<< FAILURE!
+Tests run: 27, Failures: 12, Errors: 0, Skipped: 0, Time elapsed: 2.506 sec <<< FAILURE! - in org.jolokia.jvmagent.JolokiaServerTest
+Failing test method: sslWithSpecialHttpsSettings  Time elapsed: 0.09 sec  <<< FAILURE!
 java.lang.AssertionError: Expected at least one connection to succeed on TLSv1.1
 \tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: sslWithSpecialHttpsSettings (line 334)
 
-Failing test method: t_22_signed_client_cert  Time elapsed: 0.072 sec  <<< FAILURE!
-java.net.SocketException: Broken pipe (Write failed)
+Failing test method: t_132_pem_with_ca  Time elapsed: 0.051 sec  <<< FAILURE!
+javax.net.ssl.SSLHandshakeException: PKIX path validation failed: java.security.cert.CertPathValidatorException: validity check failed
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: checkServer (line 498)
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: checkServer (line 456)
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: httpsRoundtrip (line 390)
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: httpsRoundtrip (line 384)
+\tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: t_132_pem_with_ca (line 133)
+
+Failing test method: t_22_signed_client_cert  Time elapsed: 0.045 sec  <<< FAILURE!
+javax.net.ssl.SSLHandshakeException: PKIX path validation failed: java.security.cert.CertPathValidatorException: validity check failed
 \tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: checkServer (line 498)
 \tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: checkServer (line 456)
 \tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: httpsRoundtrip (line 390)
 \tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: t_22_signed_client_cert (line 147)
 
-Failing test method: t_231_with_extended_client_key_usage  Time elapsed: 0.053 sec  <<< FAILURE!
-java.net.SocketException: Broken pipe (Write failed)
+Failing test method: t_231_with_extended_client_key_usage  Time elapsed: 0.039 sec  <<< FAILURE!
+javax.net.ssl.SSLHandshakeException: PKIX path validation failed: java.security.cert.CertPathValidatorException: validity check failed
 \tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: checkServer (line 498)
 \tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: checkServer (line 456)
 \tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: httpsRoundtrip (line 390)
 \tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: t_231_with_extended_client_key_usage (line 154)
 
-Failing test method: t_2331_without_extended_client_key_usage  Time elapsed: 0.05 sec  <<< FAILURE!
+Failing test method: t_2331_without_extended_client_key_usage  Time elapsed: 0.04 sec  <<< FAILURE!
 org.testng.TestException: 
-The exception was thrown with the wrong message: expected ".*403.*" but got "Broken pipe (Write failed)"
+The exception was thrown with the wrong message: expected ".*403.*" but got "PKIX path validation failed: java.security.cert.CertPathValidatorException: validity check failed"
 \tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: checkServer (line 498)
 \tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: checkServer (line 456)
 \tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: httpsRoundtrip (line 390)
 \tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: t_2331_without_extended_client_key_usage (line 168)
 
-Failing test method: t_2332_without_extended_client_key_usage_allowed  Time elapsed: 0.047 sec  <<< FAILURE!
-java.net.SocketException: Broken pipe (Write failed)
+Failing test method: t_2332_without_extended_client_key_usage_allowed  Time elapsed: 0.037 sec  <<< FAILURE!
+javax.net.ssl.SSLHandshakeException: PKIX path validation failed: java.security.cert.CertPathValidatorException: validity check failed
 \tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: checkServer (line 498)
 \tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: checkServer (line 456)
 \tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: httpsRoundtrip (line 390)
 \tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: t_2332_without_extended_client_key_usage_allowed (line 175)
 
-Failing test method: t_241_with_client_principal  Time elapsed: 0.048 sec  <<< FAILURE!
-java.net.SocketException: Broken pipe (Write failed)
+Failing test method: t_241_with_client_principal  Time elapsed: 0.038 sec  <<< FAILURE!
+javax.net.ssl.SSLHandshakeException: PKIX path validation failed: java.security.cert.CertPathValidatorException: validity check failed
 \tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: checkServer (line 498)
 \tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: checkServer (line 456)
 \tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: httpsRoundtrip (line 390)
 \tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: t_241_with_client_principal (line 189)
 
-Failing test method: t_242_with_wrong_client_principal  Time elapsed: 0.048 sec  <<< FAILURE!
+Failing test method: t_242_with_wrong_client_principal  Time elapsed: 0.038 sec  <<< FAILURE!
 org.testng.TestException: 
-The exception was thrown with the wrong message: expected ".*403.*" but got "Broken pipe (Write failed)"
+The exception was thrown with the wrong message: expected ".*403.*" but got "PKIX path validation failed: java.security.cert.CertPathValidatorException: validity check failed"
 \tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: checkServer (line 498)
 \tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: checkServer (line 456)
 \tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: httpsRoundtrip (line 390)
 \tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: t_242_with_wrong_client_principal (line 197)
 
-Failing test method: t_261_with_client_principal  Time elapsed: 0.046 sec  <<< FAILURE!
-java.net.SocketException: Broken pipe (Write failed)
+Failing test method: t_261_with_client_principal  Time elapsed: 0.038 sec  <<< FAILURE!
+javax.net.ssl.SSLHandshakeException: PKIX path validation failed: java.security.cert.CertPathValidatorException: validity check failed
 \tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: checkServer (line 498)
 \tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: checkServer (line 456)
 \tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: httpsRoundtrip (line 390)
 \tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: t_261_with_client_principal (line 215)
 
-Failing test method: t_262_with_wrong_client_principal  Time elapsed: 0.047 sec  <<< FAILURE!
+Failing test method: t_262_with_wrong_client_principal  Time elapsed: 0.038 sec  <<< FAILURE!
 org.testng.TestException: 
-The exception was thrown with the wrong message: expected ".*401.*" but got "Broken pipe (Write failed)"
+The exception was thrown with the wrong message: expected ".*401.*" but got "PKIX path validation failed: java.security.cert.CertPathValidatorException: validity check failed"
 \tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: checkServer (line 498)
 \tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: checkServer (line 456)
 \tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: httpsRoundtrip (line 390)
 \tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: t_262_with_wrong_client_principal (line 223)
 
-Failing test method: t_263_with_basic_auth  Time elapsed: 0.049 sec  <<< FAILURE!
-java.net.SocketException: Broken pipe (Write failed)
+Failing test method: t_263_with_basic_auth  Time elapsed: 0.036 sec  <<< FAILURE!
+javax.net.ssl.SSLHandshakeException: PKIX path validation failed: java.security.cert.CertPathValidatorException: validity check failed
 \tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: checkServer (line 498)
 \tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: httpsRoundtrip (line 396)
 \tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: t_263_with_basic_auth (line 231)
 
-Failing test method: t_264_with_wrong_basic_auth  Time elapsed: 0.046 sec  <<< FAILURE!
+Failing test method: t_264_with_wrong_basic_auth  Time elapsed: 0.037 sec  <<< FAILURE!
 org.testng.TestException: 
-The exception was thrown with the wrong message: expected ".*401.*" but got "Broken pipe (Write failed)"
+The exception was thrown with the wrong message: expected ".*401.*" but got "PKIX path validation failed: java.security.cert.CertPathValidatorException: validity check failed"
 \tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: checkServer (line 498)
 \tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: httpsRoundtrip (line 396)
 \tat agent/jvm/src/test/java/org/jolokia/jvmagent/JolokiaServerTest.java Method: t_264_with_wrong_basic_auth (line 240)

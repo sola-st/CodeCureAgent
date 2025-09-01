@@ -1,4 +1,4 @@
-from agent_core.commands.sonar_qube_analysis import analyze_file_and_parse_report
+from agent_core.commands.sonar_qube_analysis import AnalysisError, analyze_file_and_parse_report
 from agent_core.commands.repository_operations import checkout_project
 
 import unittest
@@ -235,9 +235,9 @@ class AnalyzeFileTestCase(unittest.TestCase):
         analysis_report_relative_path = "analysis_report.json"
 
         # Call the analyze_file function
-        with self.assertRaises(ValueError) as e:
+        with self.assertRaises(AnalysisError) as e:
             report = analyze_file_and_parse_report("main/src/main/java/net/sourceforge/argparse4j/internal/SomeNonExistingFile.java",
                                                    rules, self.agent.ai_config.warning_repository_name, analysis_report_relative_path, self.agent)
 
         self.assertEqual(str(e.exception),
-                         "The file_path main/src/main/java/net/sourceforge/argparse4j/internal/SomeNonExistingFile.java does not exist.")
+                         "Error: The provided relative file path could not be resolved by running preprocess_paths. The file_relative_path was: main/src/main/java/net/sourceforge/argparse4j/internal/SomeNonExistingFile.java and the error info of preprocess_paths: The file_path main/src/main/java/net/sourceforge/argparse4j/internal/SomeNonExistingFile.java does not exist.")

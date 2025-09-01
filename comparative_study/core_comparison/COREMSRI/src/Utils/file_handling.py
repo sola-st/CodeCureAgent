@@ -43,10 +43,8 @@ TOKENIZER_MODEL_ALIAS_MAP = {
 def count_tokens(input_str: str, model_name: str) -> tuple[int, tiktoken.Encoding]:
     if model_name in TOKENIZER_MODEL_ALIAS_MAP:
         model_name = TOKENIZER_MODEL_ALIAS_MAP[model_name]
-    if model_name.startswith("gpt-4.1"):
-        encoding = tiktoken.get_encoding("o200k_base")
-    else:
-        encoding = tiktoken.encoding_for_model(model_name)
+
+    encoding = tiktoken.encoding_for_model(model_name)
     num_tokens = len(encoding.encode(input_str))
     return num_tokens, encoding
 

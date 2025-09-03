@@ -9,11 +9,14 @@ import time
 import pandas as pd
 
 
-WARNINGS_TO_RUN_ON_FILE_NAME = "../evaluation_dataset_filled_up_to_1000_input_file_extended_with_column_numbers.csv"
+WARNINGS_TO_RUN_ON_FILE_NAME = os.path.join(os.path.dirname(
+    __file__), "../../evaluation_dataset_filled_up_to_1000_input_file_extended_with_column_numbers.csv")
 
-SORALD_JAR_PATH = "/workspaces/master-thesis-pascal-joos/code_cure_agent/sorald/sorald.jar"
+SORALD_JAR_PATH = os.path.join(os.path.dirname(
+    __file__), "../../../../code_cure_agent/sorald/sorald.jar")
 
-SONARQUBE_QUALITY_PROFILE_RULE_PARAMS = "/workspaces/master-thesis-pascal-joos/code_cure_agent/sonarqube_quality_profile/quality_profile_rule_parameters.json"
+SONARQUBE_QUALITY_PROFILE_RULE_PARAMS = os.path.join(os.path.dirname(
+    __file__), "../../../../code_cure_agent/sonarqube_quality_profile/quality_profile_rule_parameters.json")
 
 
 '''

@@ -1,11 +1,13 @@
 
+import os
 from agent_core.logs import logger
 import logging
 
 from agent_core.memory.message_history import MessageHistory
 from agent_core.llm.providers.openai import OPEN_AI_CHAT_MODELS
 
-SORALD_JAR_PATH = "/workspaces/master-thesis-pascal-joos/code_cure_agent/sorald/sorald.jar"
+SORALD_JAR_PATH = os.path.join(
+    os.path.dirname(__file__), "../../../sorald/sorald.jar")
 
 
 class Config():
@@ -32,7 +34,7 @@ class AIConfig():
 
 
 class AgentMock():
-    def __init__(self, warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message, workspace_path="/workspaces/master-thesis-pascal-joos/code_cure_agent/cca_workspace/", current_state="fix_tp", logger_level=logging.INFO, warning_ID=-1):
+    def __init__(self, warning_repository_URL, warning_repository_commit, warning_file_path, warning_repository_name, warning_rule_key, warning_start_line, warning_rule_name, warning_specific_message, workspace_path=os.path.join(os.path.dirname(__file__), "../../../cca_workspace/"), current_state="fix_tp", logger_level=logging.INFO, warning_ID=-1):
         logger.set_level(logger_level)
         warning_repository_target_java_version = "8"
         self.config = Config(workspace_path)

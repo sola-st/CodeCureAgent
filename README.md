@@ -147,7 +147,7 @@ All scripts are expected to be run from the `code_cure_agent` folder.
 
 1. Create evaluation results file  
     After running one or multiple experiments, logs are located in the folder `experimental_setups/experiment_X`.  
-    If you do not want to run your own experiments, but calculate evaluation results on the log files of our experiment runs, copy the folders from [code_cure_agent/experimental_setups/evaluation_dataset/evaluation_outputs](code_cure_agent/experimental_setups/evaluation_dataset/evaluation_outputs) to [code_cure_agent/experimental_setups](code_cure_agent/experimental_setups).  
+    If you do not want to run your own experiments, but calculate evaluation results on the log files of our experiment runs, copy all folders and files from [code_cure_agent/evaluation_results/evaluation_outputs](code_cure_agent/evaluation_results/evaluation_outputs) to [code_cure_agent/experimental_setups](code_cure_agent/experimental_setups).  
     The script [code_cure_agent/experimental_setups/write_experiment_results_to_csv_file.py](code_cure_agent/experimental_setups/write_experiment_results_to_csv_file.py) can be used to extract the experiment run results from the experiment logs into a csv file.  
     By default, the evaluation results are appended to the csv file [code_cure_agent/evaluation_results/evaluation_results.csv](code_cure_agent/evaluation_results/evaluation_results.csv).  
 
@@ -235,7 +235,7 @@ For our experiments, we utilized CodeCureAgent on a dataset of 1000 warnings, su
 The experiment input files are located in [code_cure_agent/experimental_setups/evaluation_dataset](code_cure_agent/experimental_setups/evaluation_dataset).  
 Most relevant is here the file [code_cure_agent/experimental_setups/evaluation_dataset/evaluation_dataset_filled_up_to_1000_input_file.csv](code_cure_agent/experimental_setups/evaluation_dataset/evaluation_dataset_filled_up_to_1000_input_file.csv), which is the input file to CodeCureAgent.
 
-All log files from running the experiment on the 1000 warnings are located in [code_cure_agent/experimental_setups/evaluation_dataset/evaluation_outputs](code_cure_agent/experimental_setups/evaluation_dataset/evaluation_outputs) (split into multiple batches of experiment runs).
+All log files from running the experiment on the 1000 warnings are located in [code_cure_agent/evaluation_results/evaluation_outputs](code_cure_agent/evaluation_results/evaluation_outputs) (split into multiple batches of experiment runs).
 
 The extracted and aggregated evaluation results, as described in `IV. Experiment Setup and Evaluation: 3. Scripts for Evaluation` above, are located in [code_cure_agent/evaluation_results](code_cure_agent/evaluation_results).
 

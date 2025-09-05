@@ -1,0 +1,85 @@
+Warning ID: 341
+Rule Key: S1643
+Rule Name: Strings should not be concatenated using '+' in a loop
+Specific Message: Use a StringBuilder instead.
+Warning Start Line: 338
+Repository URL: https://github.com/Wikidata/Wikidata-Toolkit.git
+Commit: 8400cdd50528f0d21eea93bacf5998ba950b30ce
+File Path: wdtk-dumpfiles/src/test/java/org/wikidata/wdtk/dumpfiles/MwDumpFileProcessingTest.java
+
+Classification (TP/FP): TP
+Classification Reasoning: The violation is correctly raised because string concatenation using '+' occurs inside loops, which is inefficient. Although it is test code and performance is less critical, the violation is likely due to oversight and can be fixed locally without breaking functionality by using StringBuilder instead. Hence, this is a True Positive that should be fixed.
+Plausible Fix (True/False): True
+Total Fix Attempts: 2
+
+
+Diff of Plausible Fix:
+diff -u --ignore-all-space -r '--exclude=.git' evaluation_results/check_correctness_workspace/ID341/Wikidata-Toolkit_unfixed/wdtk-dumpfiles/src/test/java/org/wikidata/wdtk/dumpfiles/MwDumpFileProcessingTest.java evaluation_results/check_correctness_workspace/ID341/Wikidata-Toolkit_fixed/wdtk-dumpfiles/src/test/java/org/wikidata/wdtk/dumpfiles/MwDumpFileProcessingTest.java
+--- evaluation_results/check_correctness_workspace/ID341/Wikidata-Toolkit_unfixed/wdtk-dumpfiles/src/test/java/org/wikidata/wdtk/dumpfiles/MwDumpFileProcessingTest.java	2025-09-05 17:20:49.108862075 +0000
++++ evaluation_results/check_correctness_workspace/ID341/Wikidata-Toolkit_fixed/wdtk-dumpfiles/src/test/java/org/wikidata/wdtk/dumpfiles/MwDumpFileProcessingTest.java	2025-09-05 17:20:51.530861990 +0000
+@@ -332,41 +332,33 @@
+ 
+ 		URL resourceUrl = MwDumpFileProcessingTest.class
+ 				.getResource("/mock-dump-header.xml");
+-		String dumpContents = MockStringContentFactory
+-				.getStringFromUrl(resourceUrl);
++        StringBuilder dumpContents = new StringBuilder(MockStringContentFactory.getStringFromUrl(resourceUrl));
+ 		for (int pageId = baseId; pageId < baseId + 3; pageId++) {
+-			dumpContents += "  <page>\n";
+-			dumpContents += "    <title>Q" + pageId + "</title>\n";
+-			dumpContents += "    <ns>0</ns>\n";
+-			dumpContents += "    <id>" + (pageId + 1000) + "</id>\n";
+-			for (int revId = pageId * 1000 + baseId + 1; revId < pageId * 1000
+-					+ baseId + 4; revId++) {
+-				dumpContents += "    <revision>\n";
+-				dumpContents += "      <id>" + revId + "</id>\n";
+-				dumpContents += "      <parentid>" + (revId - 1)
+-						+ "</parentid>\n";
+-				dumpContents += "      <timestamp>2014-02-19T23:34:0"
+-						+ (revId % 10) + "</timestamp>\n";
+-				dumpContents += "      <contributor>";
+-				dumpContents += "        <ip>127.0.0." + (revId % 256)
+-						+ "</ip>\n";
+-				dumpContents += "      </contributor>\n";
+-				dumpContents += "      <comment>Test comment " + revId
+-						+ "</comment>\n";
+-				dumpContents += "      <text xml:space=\"preserve\">{&quot;label&quot;:{&quot;en&quot;:&quot;Revision "
+-						+ revId + "&quot;}}</text>\n";
+-				dumpContents += "      <sha1>ignored</sha1>";
+-				dumpContents += "      <model>wikibase-item</model>";
+-				dumpContents += "      <format>application/json</format>";
+-				dumpContents += "    </revision>\n";
++            dumpContents.append("  <page>\n");
++            dumpContents.append("    <title>Q").append(pageId).append("</title>\n");
++            dumpContents.append("    <ns>0</ns>\n");
++            dumpContents.append("    <id>").append(pageId + 1000).append("</id>\n");
++            for (int revId = pageId * 1000 + baseId + 1; revId < pageId * 1000 + baseId + 4; revId++) {
++                dumpContents.append("    <revision>\n");
++                dumpContents.append("      <id>").append(revId).append("</id>\n");
++                dumpContents.append("      <parentid>").append(revId - 1).append("</parentid>\n");
++                dumpContents.append("      <timestamp>2014-02-19T23:34:0").append(revId % 10).append("</timestamp>\n");
++                dumpContents.append("      <contributor>");
++                dumpContents.append("        <ip>127.0.0.").append(revId % 256).append("</ip>\n");
++                dumpContents.append("      </contributor>\n");
++                dumpContents.append("      <comment>Test comment ").append(revId).append("</comment>\n");
++                dumpContents.append("      <text xml:space=\"preserve\">{&quot;label&quot;:{&quot;en&quot;:&quot;Revision ").append(revId).append("&quot;}}</text>\n");
++                dumpContents.append("      <sha1>ignored</sha1>");
++                dumpContents.append("      <model>wikibase-item</model>");
++                dumpContents.append("      <format>application/json</format>");
++                dumpContents.append("    </revision>\n");
+ 			}
+-			dumpContents += "  </page>\n";
++            dumpContents.append("  </page>\n");
+ 		}
+-		dumpContents += "</mediawiki>\n";
++        dumpContents.append("</mediawiki>\n");
++        Path filePath = thisDumpPath.resolve("wikidatawiki-" + dateStamp + WmfDumpFile.getDumpFilePostfix(dumpContentType));
++        dm.setFileContents(filePath, dumpContents.toString(), WmfDumpFile.getDumpFileCompressionType(filePath.toString()));
+ 
+-		Path filePath = thisDumpPath.resolve("wikidatawiki-" + dateStamp
+-				+ WmfDumpFile.getDumpFilePostfix(dumpContentType));
+-		dm.setFileContents(filePath, dumpContents, WmfDumpFile.getDumpFileCompressionType(filePath.toString()));
+ 	}
+ 
+ 	@Test
+

@@ -1,0 +1,30 @@
+Warning ID: 83
+Rule Key: S2276
+Rule Name: "wait(...)" should be used instead of "Thread.sleep(...)" when a lock is held
+Specific Message: Replace the call to "Thread.sleep(...)" with a call to "wait(...)".
+Warning Start Line: 412
+Repository URL: https://github.com/pinterest/singer.git
+Commit: 67fa012a410a849bf28c22704973a27d8b2eaadf
+File Path: singer-commons/src/main/java/com/pinterest/singer/loggingaudit/client/AuditEventKafkaSender.java
+
+Classification (TP/FP): TP
+Classification Reasoning: The Thread.sleep call occurs inside a synchronized method, meaning the thread holds the lock on 'this' during sleep, which is exactly what rule S2276 warns against. There is no evidence of intentional design to use Thread.sleep here, and the violation can be fixed by refactoring to use wait/notify without breaking functionality. Hence, this is a True Positive that should be fixed.
+Plausible Fix (True/False): True
+Total Fix Attempts: 2
+
+
+Diff of Plausible Fix:
+diff -u --ignore-all-space -r '--exclude=.git' evaluation_results/check_correctness_workspace/ID83/singer_unfixed/singer-commons/src/main/java/com/pinterest/singer/loggingaudit/client/AuditEventKafkaSender.java evaluation_results/check_correctness_workspace/ID83/singer_fixed/singer-commons/src/main/java/com/pinterest/singer/loggingaudit/client/AuditEventKafkaSender.java
+--- evaluation_results/check_correctness_workspace/ID83/singer_unfixed/singer-commons/src/main/java/com/pinterest/singer/loggingaudit/client/AuditEventKafkaSender.java	2025-09-05 16:46:56.431933455 +0000
++++ evaluation_results/check_correctness_workspace/ID83/singer_fixed/singer-commons/src/main/java/com/pinterest/singer/loggingaudit/client/AuditEventKafkaSender.java	2025-09-05 16:46:57.184933429 +0000
+@@ -409,7 +409,8 @@
+     while (queue.size() > 0 && this.thread != null && thread.isAlive() && i < numOfRounds) {
+       i += 1;
+       try {
+-        Thread.sleep(THREAD_SLEEP_IN_SECONDS * 1000);
++        // Changed from Thread.sleep to wait to release the lock while waiting as per S2276
++        wait((long) THREAD_SLEEP_IN_SECONDS * 1000);
+         CommonUtils.reportQueueUsage(queue.size(), queue.remainingCapacity(), host, stage.toString());
+         LOG.info("In {} round, [{}] waited {} seconds and the current queue size is {}", i,
+             Thread.currentThread().getName(), THREAD_SLEEP_IN_SECONDS, queue.size());
+

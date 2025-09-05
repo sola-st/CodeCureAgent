@@ -1,0 +1,77 @@
+Warning ID: 275
+Rule Key: S5042
+Rule Name: Expanding archive files without controlling resource consumption is security-sensitive
+Specific Message: Make sure that expanding this archive file is safe here.
+Warning Start Line: 82
+Repository URL: https://github.com/opentripplanner/OpenTripPlanner.git
+Commit: cc7de54e949771dca9cb7e91b1f0456ae141e9b6
+File Path: src/main/java/org/opentripplanner/datastore/file/ZipFileDataSource.java
+
+Classification (TP/FP): TP
+Classification Reasoning: The code expands zip archive entries without any validation or control of the number of entries, total uncompressed size, or compression ratio, making it vulnerable to zip bomb attacks. This is an unintentional oversight and can be fixed by adding appropriate checks during archive expansion without breaking functionality.
+Plausible Fix (True/False): True
+Total Fix Attempts: 11
+
+
+Diff of Plausible Fix:
+diff -u --ignore-all-space -r '--exclude=.git' evaluation_results/check_correctness_workspace/ID275/OpenTripPlanner_unfixed/src/main/java/org/opentripplanner/datastore/file/ZipFileDataSource.java evaluation_results/check_correctness_workspace/ID275/OpenTripPlanner_fixed/src/main/java/org/opentripplanner/datastore/file/ZipFileDataSource.java
+--- evaluation_results/check_correctness_workspace/ID275/OpenTripPlanner_unfixed/src/main/java/org/opentripplanner/datastore/file/ZipFileDataSource.java	2025-09-05 17:13:20.241877838 +0000
++++ evaluation_results/check_correctness_workspace/ID275/OpenTripPlanner_fixed/src/main/java/org/opentripplanner/datastore/file/ZipFileDataSource.java	2025-09-05 17:13:32.171877419 +0000
+@@ -13,6 +13,8 @@
+ import java.util.Enumeration;
+ import java.util.zip.ZipEntry;
+ import java.util.zip.ZipFile;
++import java.io.BufferedInputStream;
++import java.io.InputStream;
+ 
+ 
+ /**
+@@ -25,6 +27,10 @@
+     private boolean contentLoaded = false;
+     private ZipFile zipFile;
+     private final Collection<DataSource> content = new ArrayList<>();
++    private static final String ZIP_FILE_PREFIX = "Zip file ";
++    private static final int MAX_ENTRIES = 1000;
++    private static final long MAX_TOTAL_UNCOMPRESSED_SIZE = 500L * 1024L * 1024L; // 500 MB
++    private static final double MAX_COMPRESSION_RATIO = 15.0;
+ 
+     public ZipFileDataSource(File file, FileType type) {
+         super(file, type);
+@@ -79,10 +85,35 @@
+             // The get name on ZipFile returns the full path, we want just the name.
+             this.zipFile = new ZipFile(file, ZipFile.OPEN_READ);
+ 
++            int entryCount = 0;
++            long totalUncompressedSize = 0L;
++            byte[] buffer = new byte[2048];
+             Enumeration<? extends ZipEntry> entries = zipFile.entries();
+-
+             while (entries.hasMoreElements()) {
+                 ZipEntry entry = entries.nextElement();
++                entryCount++;
++                long compressedSize = entry.getCompressedSize();
++                if (compressedSize <= 0) {
++                    compressedSize = 1; // avoid division by zero or negative compressed size
++                }
++                long totalSizeEntry = 0L;
++                try (InputStream in = new BufferedInputStream(zipFile.getInputStream(entry))) {
++                    int nBytes;
++                    while ((nBytes = in.read(buffer)) > 0) {
++                        totalSizeEntry += nBytes;
++                        totalUncompressedSize += nBytes;
++                        if (totalUncompressedSize > MAX_TOTAL_UNCOMPRESSED_SIZE) {
++                            throw new IllegalStateException(ZIP_FILE_PREFIX + path() + " total uncompressed size too large: " + totalUncompressedSize + " bytes. Limit is " + MAX_TOTAL_UNCOMPRESSED_SIZE + " bytes.");
++                        }
++                        double compressionRatio = (double) totalSizeEntry / compressedSize;
++                        if (compressionRatio > MAX_COMPRESSION_RATIO) {
++                            throw new IllegalStateException(ZIP_FILE_PREFIX + path() + " entry " + entry.getName() + " has suspicious compression ratio: " + compressionRatio + ". Limit is " + MAX_COMPRESSION_RATIO);
++                        }
++                    }
++                }
++                if (entryCount > MAX_ENTRIES) {
++                    throw new IllegalStateException(ZIP_FILE_PREFIX + path() + " has too many entries: " + entryCount + ". Limit is " + MAX_ENTRIES);
++                }
+                 content.add(new ZipFileEntryDataSource(this, entry));
+             }
+         }
+

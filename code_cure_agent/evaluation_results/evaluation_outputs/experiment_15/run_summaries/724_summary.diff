@@ -1,0 +1,161 @@
+Warning ID: 724
+Rule Key: S3776
+Rule Name: Cognitive Complexity of methods should not be too high
+Specific Message: Refactor this method to reduce its Cognitive Complexity from 22 to the 15 allowed.
+Warning Start Line: 472
+Repository URL: https://github.com/kungfoo/geohash-java.git
+Commit: 57f317c6c780ddfd0c9adae3a9403eb399d44a91
+File Path: src/test/java/ch/hsr/geohash/GeoHashTest.java
+
+Classification (TP/FP): TP
+Classification Reasoning: The method testStepsBetween has a cognitive complexity of 22, exceeding the allowed 15, making it hard to maintain. The complexity is intentional for thorough testing, but refactoring by splitting the method or extracting helpers is feasible and would improve maintainability without breaking functionality. Hence, the violation is a True Positive and should be fixed.
+Plausible Fix (True/False): True
+Total Fix Attempts: 11
+
+
+Diff of Plausible Fix:
+diff -u --ignore-all-space -r '--exclude=.git' evaluation_results/check_correctness_workspace/ID724/geohash-java_unfixed/src/test/java/ch/hsr/geohash/GeoHashTest.java evaluation_results/check_correctness_workspace/ID724/geohash-java_fixed/src/test/java/ch/hsr/geohash/GeoHashTest.java
+--- evaluation_results/check_correctness_workspace/ID724/geohash-java_unfixed/src/test/java/ch/hsr/geohash/GeoHashTest.java	2025-09-05 18:38:44.996697875 +0000
++++ evaluation_results/check_correctness_workspace/ID724/geohash-java_fixed/src/test/java/ch/hsr/geohash/GeoHashTest.java	2025-09-05 18:38:46.079697837 +0000
+@@ -487,51 +487,17 @@
+ 		}
+ 		assertEquals(12875, count);
+ 
+-		int allHashes = 0;
+-		int inBbox = 1;
+-		int latMore = 0;
+-		int lonMore = 0;
+-		int bothMore = 0;
+-		int latLess = 0;
+-		int lonLess = 0;
+-		int bothLess = 0;
+-		int latLessLonMore = 0;
+-		int latMoreLonLess = 0;
+-		GeoHash idx = bl;
+-		BoundingBox iterBbox = iter.getBoundingBox().getBoundingBox();
+-		while (idx.compareTo(ur) < 0) {
+-			idx = idx.next();
+-			allHashes++;
+-			if (iterBbox.contains(idx.getOriginatingPoint())) {
+-				inBbox++;
+-			}
+-			boolean latIsMore = false;
+-			boolean latIsLess = false;
+-			if (idx.getOriginatingPoint().getLatitude() > iterBbox.getNorthLatitude()) {
+-				latIsMore = true;
+-				latMore++;
+-			} else if (idx.getOriginatingPoint().getLatitude() < iterBbox.getSouthLatitude()) {
+-				latIsLess = true;
+-				latLess++;
+-			}
+-			if (idx.getOriginatingPoint().getLongitude() > iterBbox.getEastLongitude()) {
+-				lonMore++;
+-				if (latIsMore) {
+-					bothMore++;
+-				}
+-				if (latIsLess) {
+-					latLessLonMore++;
+-				}
+-			} else if (idx.getOriginatingPoint().getLongitude() < iterBbox.getWestLongitude()) {
+-				lonLess++;
+-				if (latIsLess) {
+-					bothLess++;
+-				}
+-				if (latIsMore) {
+-					latMoreLonLess++;
+-				}
+-			}
+-		}
++        int[] counts = countGeoHashPositions(bl, ur, iter.getBoundingBox().getBoundingBox());
++        int allHashes = counts[0];
++        int inBbox = counts[1];
++        int latMore = counts[2];
++        int lonMore = counts[3];
++        int bothMore = counts[4];
++        int latLess = counts[5];
++        int lonLess = counts[6];
++        int bothLess = counts[7];
++        int latLessLonMore = counts[8];
++        int latMoreLonLess = counts[9];
+ 
+ 		// Just trying to understand where these GeoHashes are with regard to
+ 		// their bounding box.
+@@ -586,4 +552,77 @@
+ 		GeoHash hash = GeoHash.withCharacterPrecision(-36.919550434870125,174.71024582237604,7);
+ 		assertTrue(hash.ord() > 0);
+ 	}
++    private int[] countGeoHashPositions(GeoHash start, GeoHash end, BoundingBox bbox) {
++        int allHashes = 0;
++        int inBbox = 1;
++        int latMore = 0;
++        int lonMore = 0;
++        int bothMore = 0;
++        int latLess = 0;
++        int lonLess = 0;
++        int bothLess = 0;
++        int latLessLonMore = 0;
++        int latMoreLonLess = 0;
++        GeoHash idx = start;
++        while (idx.compareTo(end) < 0) {
++            idx = idx.next();
++            allHashes++;
++            if (bbox.contains(idx.getOriginatingPoint())) {
++                inBbox++;
++            }
++            double lat = idx.getOriginatingPoint().getLatitude();
++            double lon = idx.getOriginatingPoint().getLongitude();
++            int[] latCounts = countLatitude(lat, bbox);
++            latMore += latCounts[0];
++            latLess += latCounts[1];
++            int[] lonCounts = countLongitude(lon, lat, bbox);
++            lonMore += lonCounts[0];
++            bothMore += lonCounts[1];
++            latLessLonMore += lonCounts[2];
++            lonLess += lonCounts[3];
++            bothLess += lonCounts[4];
++            latMoreLonLess += lonCounts[5];
++        }
++        return new int[] { allHashes, inBbox, latMore, lonMore, bothMore, latLess, lonLess, bothLess, latLessLonMore, latMoreLonLess };
++    }
++
++    private int[] countLatitude(double lat, BoundingBox bbox) {
++        int latMore = 0;
++        int latLess = 0;
++        if (lat > bbox.getNorthLatitude()) {
++            latMore = 1;
++        }
++        if (lat < bbox.getSouthLatitude()) {
++            latLess = 1;
++        }
++        return new int[] { latMore, latLess };
++    }
++
++    private int[] countLongitude(double lon, double lat, BoundingBox bbox) {
++        int lonMore = 0;
++        int bothMore = 0;
++        int latLessLonMore = 0;
++        int lonLess = 0;
++        int bothLess = 0;
++        int latMoreLonLess = 0;
++        if (lon > bbox.getEastLongitude()) {
++            lonMore = 1;
++            if (lat > bbox.getNorthLatitude()) {
++                bothMore = 1;
++            }
++            if (lat < bbox.getSouthLatitude()) {
++                latLessLonMore = 1;
++            }
++        }
++        if (lon < bbox.getWestLongitude()) {
++            lonLess = 1;
++            if (lat < bbox.getSouthLatitude()) {
++                bothLess = 1;
++            }
++            if (lat > bbox.getNorthLatitude()) {
++                latMoreLonLess = 1;
++            }
++        }
++        return new int[] { lonMore, bothMore, latLessLonMore, lonLess, bothLess, latMoreLonLess };
++    }
+ }
+

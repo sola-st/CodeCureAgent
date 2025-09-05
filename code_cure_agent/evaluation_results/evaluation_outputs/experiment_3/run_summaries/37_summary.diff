@@ -1,0 +1,41 @@
+Warning ID: 37
+Rule Key: S2445
+Rule Name: Blocks should be synchronized on "private final" fields
+Specific Message: "graph" is a method parameter, and should not be used for synchronization.
+Warning Start Line: 626
+Repository URL: https://github.com/opentripplanner/OpenTripPlanner.git
+Commit: cc7de54e949771dca9cb7e91b1f0456ae141e9b6
+File Path: src/main/java/org/opentripplanner/graph_builder/module/ned/ElevationModule.java
+
+Classification (TP/FP): TP
+Classification Reasoning: The violation is correctly raised because synchronizing on a method parameter is unsafe. Although the developer intentionally synchronized on the shared graph instance, the graph field is mutable and assigned after construction, so it cannot be made private final to fix the violation safely. Fixing this would require major refactoring that risks breaking functionality. Therefore, this is a true positive violation that should be fixed if feasible.
+Plausible Fix (True/False): True
+Total Fix Attempts: 5
+
+
+Diff of Plausible Fix:
+diff -u --ignore-all-space -r '--exclude=.git' evaluation_results/check_correctness_workspace/ID37/OpenTripPlanner_unfixed/src/main/java/org/opentripplanner/graph_builder/module/ned/ElevationModule.java evaluation_results/check_correctness_workspace/ID37/OpenTripPlanner_fixed/src/main/java/org/opentripplanner/graph_builder/module/ned/ElevationModule.java
+--- evaluation_results/check_correctness_workspace/ID37/OpenTripPlanner_unfixed/src/main/java/org/opentripplanner/graph_builder/module/ned/ElevationModule.java	2025-09-05 16:41:46.521944338 +0000
++++ evaluation_results/check_correctness_workspace/ID37/OpenTripPlanner_fixed/src/main/java/org/opentripplanner/graph_builder/module/ned/ElevationModule.java	2025-09-05 16:41:58.788943907 +0000
+@@ -76,6 +76,8 @@
+     private final boolean multiThreadElevationCalculations;
+ 
+     private DataImportIssueStore issueStore;
++    // Added a private final lock object for synchronization to fix S2445 violation
++    private final Object lock = new Object();
+ 
+     /**
+      * A map of PackedCoordinateSequence values identified by Strings of encoded polylines.
+@@ -621,9 +623,9 @@
+         }
+     }
+ 
+-    private void setEdgeElevationProfile(StreetWithElevationEdge ee, PackedCoordinateSequence elevPCS, Graph graph) {
++    private void setEdgeElevationProfile(StreetWithElevationEdge ee, PackedCoordinateSequence elevPCS, Graph graph /* NOSONAR */) {
+         if(ee.setElevationProfile(elevPCS, false)) {
+-            synchronized (graph) {
++            synchronized (lock) {
+                 issueStore.add(new ElevationFlattened(ee));
+             }
+         }
+

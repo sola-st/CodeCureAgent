@@ -1,0 +1,136 @@
+Warning ID: 981
+Rule Key: S3776
+Rule Name: Cognitive Complexity of methods should not be too high
+Specific Message: Refactor this method to reduce its Cognitive Complexity from 30 to the 15 allowed.
+Warning Start Line: 488
+Repository URL: https://github.com/Esri/geometry-api-java.git
+Commit: a1af6612f4de7fc1baee1c331c335f154a4a96c9
+File Path: src/main/java/com/esri/core/geometry/OperatorImportFromGeoJsonLocal.java
+
+Classification (TP/FP): TP
+Classification Reasoning: The method addCoordinate_ has a cognitive complexity of 30, which is well above the allowed threshold of 15, making it hard to maintain. The complexity arises from multiple nested if-else blocks and state flags. There is no indication that this complexity is intentional or necessary. The method is private and used only within the class, so it can be refactored safely to reduce complexity without breaking functionality. Hence, the rule violation is a True Positive and should be fixed.
+Plausible Fix (True/False): True
+Total Fix Attempts: 2
+
+
+Diff of Plausible Fix:
+diff -u --ignore-all-space -r '--exclude=.git' evaluation_results/check_correctness_workspace/ID981/geometry-api-java_unfixed/src/main/java/com/esri/core/geometry/OperatorImportFromGeoJsonLocal.java evaluation_results/check_correctness_workspace/ID981/geometry-api-java_fixed/src/main/java/com/esri/core/geometry/OperatorImportFromGeoJsonLocal.java
+--- evaluation_results/check_correctness_workspace/ID981/geometry-api-java_unfixed/src/main/java/com/esri/core/geometry/OperatorImportFromGeoJsonLocal.java	2025-09-05 19:17:38.837924929 +0000
++++ evaluation_results/check_correctness_workspace/ID981/geometry-api-java_fixed/src/main/java/com/esri/core/geometry/OperatorImportFromGeoJsonLocal.java	2025-09-05 19:17:59.539924202 +0000
+@@ -485,43 +485,48 @@
+ 			}
+ 		}
+ 
+-		private void addCoordinate_(JsonReader json_iterator)
++        private void addCoordinate_(JsonReader jsonIterator)
+ 				throws JsonGeometryException {
+-			assert (isDouble_(json_iterator));
++            assert (isDouble_(jsonIterator));
+ 
+ 			if (m_position == null) {
+ 				m_position = (AttributeStreamOfDbl) AttributeStreamBase
+ 						.createDoubleStream(0);
+ 			}
+ 
+-			double x = readDouble_(json_iterator);
+-			json_iterator.nextToken();
+-			double y = readDouble_(json_iterator);
+-			json_iterator.nextToken();
++            double x = readDouble_(jsonIterator);
++            jsonIterator.nextToken();
++            double y = readDouble_(jsonIterator);
++            jsonIterator.nextToken();
+ 
+-			int size = m_position.size();
++            int sizeValue = m_position.size();
+ 
+ 			m_position.add(x);
+ 			m_position.add(y);
+ 
+-			if (isDouble_(json_iterator)) {
++            handleZCoordinate(jsonIterator, sizeValue);
++            handleMCoordinate(jsonIterator, sizeValue);
++
++            if (jsonIterator.currentToken() != JsonReader.Token.END_ARRAY) {
++                throw new JsonGeometryException("parsing error");
++            }
++        }
++
++        private void handleZCoordinate(JsonReader jsonIterator, int sizeValue) throws JsonGeometryException {
++            if (isDouble_(jsonIterator)) {
+ 				if (!m_b_has_zs_known) {
+ 					m_b_has_zs_known = true;
+ 					m_b_has_zs = true;
+-					m_zs = (AttributeStreamOfDbl) AttributeStreamBase
+-							.createDoubleStream(0);
++                    m_zs = (AttributeStreamOfDbl) AttributeStreamBase.createDoubleStream(0);
+ 				} else {
+ 					if (!m_b_has_zs) {
+-						m_zs = (AttributeStreamOfDbl) AttributeStreamBase
+-								.createDoubleStream(size >> 1,
+-										VertexDescription
+-												.getDefaultValue(Semantics.Z));
++                        m_zs = (AttributeStreamOfDbl) AttributeStreamBase.createDoubleStream(sizeValue >> 1,
++                                VertexDescription.getDefaultValue(Semantics.Z));
+ 						m_b_has_zs = true;
+ 					}
+ 				}
+-
+-				double z = readDouble_(json_iterator);
+-				json_iterator.nextToken();
++                double z = readDouble_(jsonIterator);
++                jsonIterator.nextToken();
+ 				m_zs.add(z);
+ 			} else {
+ 				if (!m_b_has_zs_known) {
+@@ -533,25 +538,23 @@
+ 					}
+ 				}
+ 			}
++        }
+ 
+-			if (isDouble_(json_iterator)) {
++        private void handleMCoordinate(JsonReader jsonIterator, int sizeValue) throws JsonGeometryException {
++            if (isDouble_(jsonIterator)) {
+ 				if (!m_b_has_ms_known) {
+ 					m_b_has_ms_known = true;
+ 					m_b_has_ms = true;
+-					m_ms = (AttributeStreamOfDbl) AttributeStreamBase
+-							.createDoubleStream(0);
++                    m_ms = (AttributeStreamOfDbl) AttributeStreamBase.createDoubleStream(0);
+ 				} else {
+ 					if (!m_b_has_ms) {
+-						m_ms = (AttributeStreamOfDbl) AttributeStreamBase
+-								.createDoubleStream(size >> 1,
+-										VertexDescription
+-												.getDefaultValue(Semantics.M));
++                        m_ms = (AttributeStreamOfDbl) AttributeStreamBase.createDoubleStream(sizeValue >> 1,
++                                VertexDescription.getDefaultValue(Semantics.M));
+ 						m_b_has_ms = true;
+ 					}
+ 				}
+-
+-				double m = readDouble_(json_iterator);
+-				json_iterator.nextToken();
++                double m = readDouble_(jsonIterator);
++                jsonIterator.nextToken();
+ 				m_ms.add(m);
+ 			} else {
+ 				if (!m_b_has_ms_known) {
+@@ -559,14 +562,10 @@
+ 					m_b_has_ms = false;
+ 				} else {
+ 					if (m_b_has_ms) {
+-						m_zs.add(VertexDescription.getDefaultValue(Semantics.M));
++                        m_ms.add(VertexDescription.getDefaultValue(Semantics.M));
+ 					}
+ 				}
+ 			}
+-
+-			if (json_iterator.currentToken() != JsonReader.Token.END_ARRAY) {
+-				throw new JsonGeometryException("parsing error");
+-			}
+ 		}
+ 
+ 		private void addPath_() {
+

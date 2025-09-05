@@ -1,0 +1,113 @@
+Warning ID: 819
+Rule Key: S3776
+Rule Name: Cognitive Complexity of methods should not be too high
+Specific Message: Refactor this method to reduce its Cognitive Complexity from 25 to the 15 allowed.
+Warning Start Line: 630
+Repository URL: https://github.com/Esri/geometry-api-java.git
+Commit: a1af6612f4de7fc1baee1c331c335f154a4a96c9
+File Path: src/main/java/com/esri/core/geometry/ogc/OGCGeometry.java
+
+Classification (TP/FP): TP
+Classification Reasoning: The method createFromEsriGeometry at line 630 has a cognitive complexity of 25, exceeding the allowed 15. This complexity is real and intentional due to the factory method design handling multiple Geometry types. However, it is feasible to refactor the method by extracting type-specific creation logic into private helper methods within the same file, reducing complexity without breaking functionality. Hence, the violation is a True Positive and should be fixed.
+Plausible Fix (True/False): True
+Total Fix Attempts: 11
+
+
+Diff of Plausible Fix:
+diff -u --ignore-all-space -r '--exclude=.git' evaluation_results/check_correctness_workspace/ID819/geometry-api-java_unfixed/src/main/java/com/esri/core/geometry/ogc/OGCGeometry.java evaluation_results/check_correctness_workspace/ID819/geometry-api-java_fixed/src/main/java/com/esri/core/geometry/ogc/OGCGeometry.java
+--- evaluation_results/check_correctness_workspace/ID819/geometry-api-java_unfixed/src/main/java/com/esri/core/geometry/ogc/OGCGeometry.java	2025-09-05 18:51:29.540671027 +0000
++++ evaluation_results/check_correctness_workspace/ID819/geometry-api-java_fixed/src/main/java/com/esri/core/geometry/ogc/OGCGeometry.java	2025-09-05 18:51:32.560670921 +0000
+@@ -621,51 +621,66 @@
+ 				mapOGCStructure.m_ogcStructure,
+ 				mapOGCStructure.m_spatialReference);
+ 	}
++	private static OGCGeometry createFromPolygon(Polygon polygon, SpatialReference sr, boolean multiType) {
++		if (!multiType && polygon.getExteriorRingCount() == 1)
++			return new OGCPolygon(polygon, sr);
++		else
++			return new OGCMultiPolygon(polygon, sr);
++	}
+ 
+ 	public static OGCGeometry createFromEsriGeometry(Geometry geom,
+ 			SpatialReference sr) {
+ 		return createFromEsriGeometry(geom, sr, false);
+ 	}
+ 
+-	public static OGCGeometry createFromEsriGeometry(Geometry geom,
+-			SpatialReference sr, boolean multiType) {
++	public static OGCGeometry createFromEsriGeometry(Geometry geom, SpatialReference sr, boolean multiType) {
++		return createFromEsriGeometryInternal(geom, sr, multiType);
++	}
++	private static OGCGeometry createFromPolyline(Polyline polyline, SpatialReference sr, boolean multiType) {
++		if (!multiType && polyline.getPathCount() == 1)
++			return new OGCLineString(polyline, 0, sr);
++		else
++			return new OGCMultiLineString(polyline, sr);
++	}
++	private static OGCGeometry createFromMultiPoint(MultiPoint multiPoint, SpatialReference sr, boolean multiType) {
++		if (!multiType && multiPoint.getPointCount() <= 1) {
++			if (multiPoint.isEmpty())
++				return new OGCPoint(new Point(), sr);
++			else
++				return new OGCPoint(multiPoint.getPoint(0), sr);
++		} else
++			return new OGCMultiPoint(multiPoint, sr);
++	}
++	private static OGCGeometry createFromPoint(Point point, SpatialReference sr, boolean multiType) {
++		if (!multiType)
++			return new OGCPoint(point, sr);
++		else
++			return new OGCMultiPoint(point, sr);
++	}
++	private static OGCGeometry createFromEnvelope(Envelope envelope, SpatialReference sr, boolean multiType) {
++		Polygon p = new Polygon();
++		p.addEnvelope(envelope, false);
++		return createFromEsriGeometryInternal(p, sr, multiType);
++	}
++	private static OGCGeometry createFromEsriGeometryInternal(Geometry geom, SpatialReference sr, boolean multiType) {
+ 		if (geom == null)
+ 			return null;
+ 		Geometry.Type t = geom.getType();
+ 		if (t == Geometry.Type.Polygon) {
+-			if (!multiType && ((Polygon) geom).getExteriorRingCount() == 1)
+-				return new OGCPolygon((Polygon) geom, sr);
+-			else
+-				return new OGCMultiPolygon((Polygon) geom, sr);
++			return createFromPolygon((Polygon) geom, sr, multiType);
+ 		}
+ 		if (t == Geometry.Type.Polyline) {
+-			if (!multiType && ((Polyline) geom).getPathCount() == 1)
+-				return new OGCLineString((Polyline) geom, 0, sr);
+-			else
+-				return new OGCMultiLineString((Polyline) geom, sr);
++			return createFromPolyline((Polyline) geom, sr, multiType);
+ 		}
+ 		if (t == Geometry.Type.MultiPoint) {
+-			if (!multiType && ((MultiPoint) geom).getPointCount() <= 1) {
+-				if (geom.isEmpty())
+-					return new OGCPoint(new Point(), sr);
+-				else
+-					return new OGCPoint(((MultiPoint) geom).getPoint(0), sr);
+-			} else
+-				return new OGCMultiPoint((MultiPoint) geom, sr);
++			return createFromMultiPoint((MultiPoint) geom, sr, multiType);
+ 		}
+ 		if (t == Geometry.Type.Point) {
+-			if (!multiType) {
+-				return new OGCPoint((Point) geom, sr);
+-			} else {
+-				return new OGCMultiPoint((Point) geom, sr);
+-			}
++			return createFromPoint((Point) geom, sr, multiType);
+ 		}
+ 		if (t == Geometry.Type.Envelope) {
+-			Polygon p = new Polygon();
+-			p.addEnvelope((Envelope) geom, false);
+-			return createFromEsriGeometry(p, sr, multiType);
++			return createFromEnvelope((Envelope) geom, sr, multiType);
+ 		}
+-
+ 		throw new UnsupportedOperationException();
+ 	}
+ 
+

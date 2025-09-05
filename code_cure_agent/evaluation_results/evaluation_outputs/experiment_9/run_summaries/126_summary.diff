@@ -1,0 +1,50 @@
+Warning ID: 126
+Rule Key: S2236
+Rule Name: Methods "wait(...)", "notify()" and "notifyAll()" should not be called on Thread instances
+Specific Message: Refactor the synchronisation mechanism to not use a Thread instance as a monitor
+Warning Start Line: 25
+Repository URL: https://github.com/CloudburstMC/Nukkit.git
+Commit: 47d54ad26109b5d89936e0d9123c591a99a2cf60
+File Path: src/main/java/cn/nukkit/utils/Watchdog.java
+
+Classification (TP/FP): TP
+Classification Reasoning: The Watchdog class extends Thread and calls notifyAll() on 'this', a Thread instance, which violates rule S2236. The developer intentionally used the Thread instance as a monitor for synchronization, but this is problematic and can corrupt JVM thread state. The violation can be fixed by refactoring the synchronization to use a dedicated monitor object instead of the Thread instance, without breaking important functionality. Hence, this is a True Positive that should be fixed.
+Plausible Fix (True/False): True
+Total Fix Attempts: 1
+
+
+Diff of Plausible Fix:
+diff -u --ignore-all-space -r '--exclude=.git' evaluation_results/check_correctness_workspace/ID126/Nukkit_unfixed/src/main/java/cn/nukkit/utils/Watchdog.java evaluation_results/check_correctness_workspace/ID126/Nukkit_fixed/src/main/java/cn/nukkit/utils/Watchdog.java
+--- evaluation_results/check_correctness_workspace/ID126/Nukkit_unfixed/src/main/java/cn/nukkit/utils/Watchdog.java	2025-09-05 16:54:19.611917892 +0000
++++ evaluation_results/check_correctness_workspace/ID126/Nukkit_fixed/src/main/java/cn/nukkit/utils/Watchdog.java	2025-09-05 16:54:22.654917785 +0000
+@@ -11,6 +11,7 @@
+     private final long time;
+     public boolean running;
+     private boolean responding = true;
++    private final Object monitor = new Object();
+ 
+     public Watchdog(Server server, long time) {
+         this.server = server;
+@@ -21,8 +22,8 @@
+ 
+     public void kill() {
+         running = false;
+-        synchronized (this) {
+-            this.notifyAll();
++        synchronized (monitor) {
++            monitor.notifyAll();
+         }
+     }
+ 
+@@ -60,8 +61,8 @@
+                 }
+             }
+             try {
+-                synchronized (this) {
+-                    this.wait(Math.max(time / 4, 1000));
++                synchronized (monitor) {
++                    monitor.wait(Math.max(time / 4, 1000));
+                 }
+             } catch (InterruptedException ignore) {}
+         }
+

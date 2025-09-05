@@ -1,0 +1,85 @@
+Warning ID: 76
+Rule Key: S5547
+Rule Name: Cipher algorithms should be robust
+Specific Message: Use a strong cipher algorithm.
+Warning Start Line: 25
+Repository URL: https://github.com/superblaubeere27/obfuscator.git
+Commit: cc4421d7afe7aead7f59435b28aaba5bc69115b3
+File Path: obfuscator-core/src/main/java/me/superblaubeere27/jobf/processors/encryption/string/DESEncryptionAlgorithm.java
+
+Classification (TP/FP): TP
+Classification Reasoning: The code uses the weak DES cipher algorithm, which the rule correctly flags. Although the use of DES is intentional, likely for legacy or compatibility reasons, the project contains a stronger AES implementation that can replace DES. Thus, the violation should be fixed to use a robust cipher algorithm to improve security.
+Plausible Fix (True/False): True
+Total Fix Attempts: 7
+
+
+Diff of Plausible Fix:
+diff -u --ignore-all-space -r '--exclude=.git' evaluation_results/check_correctness_workspace/ID76/obfuscator_unfixed/obfuscator-core/src/main/java/me/superblaubeere27/jobf/processors/encryption/string/DESEncryptionAlgorithm.java evaluation_results/check_correctness_workspace/ID76/obfuscator_fixed/obfuscator-core/src/main/java/me/superblaubeere27/jobf/processors/encryption/string/DESEncryptionAlgorithm.java
+--- evaluation_results/check_correctness_workspace/ID76/obfuscator_unfixed/obfuscator-core/src/main/java/me/superblaubeere27/jobf/processors/encryption/string/DESEncryptionAlgorithm.java	2025-09-05 16:46:13.401934966 +0000
++++ evaluation_results/check_correctness_workspace/ID76/obfuscator_fixed/obfuscator-core/src/main/java/me/superblaubeere27/jobf/processors/encryption/string/DESEncryptionAlgorithm.java	2025-09-05 16:46:14.035934944 +0000
+@@ -15,17 +15,28 @@
+ import java.nio.charset.StandardCharsets;
+ import java.security.MessageDigest;
+ import java.util.Arrays;
++import javax.crypto.spec.GCMParameterSpec;
+ import java.util.Base64;
+ 
+ public class DESEncryptionAlgorithm implements IStringEncryptionAlgorithm {
+     public static String decrypt(String obj, String key) {
+         try {
+-            SecretKeySpec keySpec = new SecretKeySpec(Arrays.copyOf(MessageDigest.getInstance("MD5").digest(key.getBytes(StandardCharsets.UTF_8)), 8), "DES");
++            // Use SHA-256 hash of the key and truncate to 16 bytes for AES key
++            byte[] keyBytes = Arrays.copyOf(MessageDigest.getInstance("SHA-256").digest(key.getBytes(StandardCharsets.UTF_8)), 16);
++            SecretKeySpec keySpec = new SecretKeySpec(keyBytes, "AES");
++
++            // Use AES cipher with GCM mode and NoPadding
++            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
++            // Decode Base64 input and extract IV and ciphertext
++            byte[] decoded = Base64.getDecoder().decode(obj.getBytes(StandardCharsets.UTF_8));
++            // GCM standard IV length is 12 bytes
++            byte[] iv = Arrays.copyOfRange(decoded, 0, 12);
++            byte[] cipherText = Arrays.copyOfRange(decoded, 12, decoded.length);
++            GCMParameterSpec gcmSpec = new GCMParameterSpec(128, iv);
++            cipher.init(Cipher.DECRYPT_MODE, keySpec, gcmSpec);
+ 
+-            Cipher des = Cipher.getInstance("DES");
+-            des.init(Cipher.DECRYPT_MODE, keySpec);
+-
+-            return new String(des.doFinal(Base64.getDecoder().decode(obj.getBytes(StandardCharsets.UTF_8))), StandardCharsets.UTF_8);
++            // Decrypt the ciphertext after removing the IV
++            return new String(cipher.doFinal(cipherText), StandardCharsets.UTF_8);
+ 
+         } catch (Exception e) {
+             e.printStackTrace();
+@@ -36,12 +47,24 @@
+     @Override
+     public String encrypt(String obj, String key) {
+         try {
+-            SecretKeySpec keySpec = new SecretKeySpec(Arrays.copyOf(MessageDigest.getInstance("MD5").digest(key.getBytes(StandardCharsets.UTF_8)), 8), "DES");
+-
+-            Cipher des = Cipher.getInstance("DES");
+-            des.init(Cipher.ENCRYPT_MODE, keySpec);
+-
+-            return new String(Base64.getEncoder().encode(des.doFinal(obj.getBytes(StandardCharsets.UTF_8))), StandardCharsets.UTF_8);
++            // Use SHA-256 hash of the key and truncate to 16 bytes for AES key
++            byte[] keyBytes = Arrays.copyOf(MessageDigest.getInstance("SHA-256").digest(key.getBytes(StandardCharsets.UTF_8)), 16);
++            SecretKeySpec keySpec = new SecretKeySpec(keyBytes, "AES");
++
++            // Use AES cipher with GCM mode and NoPadding
++            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
++            // Generate a random 12-byte IV (recommended length for GCM)
++            byte[] iv = new byte[12];
++            new java.security.SecureRandom().nextBytes(iv);
++            GCMParameterSpec gcmSpec = new GCMParameterSpec(128, iv);
++            cipher.init(Cipher.ENCRYPT_MODE, keySpec, gcmSpec);
++
++            // Encrypt and prepend IV to ciphertext before Base64 encoding
++            byte[] encrypted = cipher.doFinal(obj.getBytes(StandardCharsets.UTF_8));
++            byte[] combined = new byte[iv.length + encrypted.length];
++            System.arraycopy(iv, 0, combined, 0, iv.length);
++            System.arraycopy(encrypted, 0, combined, iv.length, encrypted.length);
++            return new String(Base64.getEncoder().encode(combined), StandardCharsets.UTF_8);
+ 
+         } catch (Exception e) {
+             e.printStackTrace();
+

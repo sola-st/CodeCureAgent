@@ -1,0 +1,77 @@
+Warning ID: 269
+Rule Key: S1141
+Rule Name: Try-catch blocks should not be nested
+Specific Message: Extract this nested try block into a separate method.
+Warning Start Line: 125
+Repository URL: https://github.com/vivo-project/Vitro.git
+Commit: 119413413a53cd6ebcbff50d3501f32f72aff6f0
+File Path: api/src/main/java/edu/cornell/mannlib/vitro/webapp/controller/freemarker/ContactMailController.java
+
+Classification (TP/FP): TP
+Classification Reasoning: The nested try-catch block at line 125 reduces readability and violates rule S1141. The inner try-catch handles email sending exceptions and uses the outer try block's PrintWriter for logging, which complicates but does not prevent extraction. The violation is not intentional and can be fixed by extracting the inner try-catch into a separate method, improving readability without breaking functionality.
+Plausible Fix (True/False): True
+Total Fix Attempts: 3
+
+
+Diff of Plausible Fix:
+diff -u --ignore-all-space -r '--exclude=.git' evaluation_results/check_correctness_workspace/ID269/Vitro_unfixed/api/src/main/java/edu/cornell/mannlib/vitro/webapp/controller/freemarker/ContactMailController.java evaluation_results/check_correctness_workspace/ID269/Vitro_fixed/api/src/main/java/edu/cornell/mannlib/vitro/webapp/controller/freemarker/ContactMailController.java
+--- evaluation_results/check_correctness_workspace/ID269/Vitro_unfixed/api/src/main/java/edu/cornell/mannlib/vitro/webapp/controller/freemarker/ContactMailController.java	2025-09-05 17:12:19.804879960 +0000
++++ evaluation_results/check_correctness_workspace/ID269/Vitro_fixed/api/src/main/java/edu/cornell/mannlib/vitro/webapp/controller/freemarker/ContactMailController.java	2025-09-05 17:12:29.658879614 +0000
+@@ -122,8 +122,32 @@
+ 	        PrintWriter outFile = new PrintWriter(fw);
+ 	        writeBackupCopy(outFile, msgText, vreq);
+ 
++            statusMsg = sendEmailMessage(vreq, webuseremail, webusername, recipients, deliveryfrom, msgText, outFile);
++
++	        outFile.close();
++	    }
++	    catch (IOException e){
++	    	log.error("Can't open file to write email backup");
++	    }
++
++	    if (statusMsg == null) {
++	    	// Message was sent successfully
++	    	return new TemplateResponseValues(TEMPLATE_CONFIRMATION);
++	    } else {
++	    	Map<String, Object> body = new HashMap<String, Object>();
++	        body.put("errorMessage", statusMsg);
++			return new TemplateResponseValues(TEMPLATE_ERROR, body);
++	    }
++	}
++
++    /**
++     * Extracted method to send email message and handle exceptions.
++     * Returns a status message if an error occurs, or null if successful.
++     */
++    private String sendEmailMessage(VitroRequest vreq, String webuseremail, String webusername, String[] recipients,
++            String deliveryfrom, String msgText, PrintWriter outFile) {
++        String statusMsg = null;
+ 	        try {
+-	        	// Send the message
+ 	        	Session s = FreemarkerEmailFactory.getEmailSession(vreq);
+ 	        	sendMessage(s, webuseremail, webusername, recipients, deliveryfrom, msgText);
+ 	        } catch (AddressException e) {
+@@ -140,21 +164,7 @@
+ 	            outFile.println( e.getMessage() );
+ 	            e.printStackTrace();
+ 	        }
+-
+-	        outFile.close();
+-	    }
+-	    catch (IOException e){
+-	    	log.error("Can't open file to write email backup");
+-	    }
+-
+-	    if (statusMsg == null) {
+-	    	// Message was sent successfully
+-	    	return new TemplateResponseValues(TEMPLATE_CONFIRMATION);
+-	    } else {
+-	    	Map<String, Object> body = new HashMap<String, Object>();
+-	        body.put("errorMessage", statusMsg);
+-			return new TemplateResponseValues(TEMPLATE_ERROR, body);
+-	    }
++        return statusMsg;
+ 	}
+ 
+ 	/**
+

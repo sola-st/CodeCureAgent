@@ -1,0 +1,56 @@
+Warning ID: 241
+Rule Key: S3078
+Rule Name: "volatile" variables should not be used with compound operators
+Specific Message: Use an "AtomicInteger" for this field; its operations are atomic.
+Warning Start Line: 154
+Repository URL: https://github.com/jhalterman/failsafe.git
+Commit: f9ddba08a7b218c0f14dc8f713709b2e28aeab65
+File Path: src/main/java/net/jodah/failsafe/RetryPolicyExecutor.java
+
+Classification (TP/FP): TP
+Classification Reasoning: The volatile int field 'failedAttempts' is incremented using a non-atomic compound operator, which violates the rule and can cause concurrency issues. There is no evidence that this was an intentional design choice. The violation can be fixed by replacing the volatile int with an AtomicInteger and using atomic increment methods, improving thread safety without breaking functionality. Hence, this is a True Positive that should be fixed.
+Plausible Fix (True/False): True
+Total Fix Attempts: 1
+
+
+Diff of Plausible Fix:
+diff -u --ignore-all-space -r '--exclude=.git' evaluation_results/check_correctness_workspace/ID241/failsafe_unfixed/src/main/java/net/jodah/failsafe/RetryPolicyExecutor.java evaluation_results/check_correctness_workspace/ID241/failsafe_fixed/src/main/java/net/jodah/failsafe/RetryPolicyExecutor.java
+--- evaluation_results/check_correctness_workspace/ID241/failsafe_unfixed/src/main/java/net/jodah/failsafe/RetryPolicyExecutor.java	2025-09-05 17:08:05.375888894 +0000
++++ evaluation_results/check_correctness_workspace/ID241/failsafe_fixed/src/main/java/net/jodah/failsafe/RetryPolicyExecutor.java	2025-09-05 17:08:06.185888866 +0000
+@@ -14,7 +14,7 @@
+  * limitations under the License
+  */
+ package net.jodah.failsafe;
+-
++import java.util.concurrent.atomic.AtomicInteger;
+ import net.jodah.failsafe.internal.EventListener;
+ import net.jodah.failsafe.util.concurrent.Scheduler;
+ 
+@@ -35,7 +35,7 @@
+  */
+ class RetryPolicyExecutor extends PolicyExecutor<RetryPolicy> {
+   // Mutable state
+-  private volatile int failedAttempts;
++  private final AtomicInteger failedAttempts = new AtomicInteger();
+   private volatile boolean retriesExceeded;
+   /** The fixed, backoff, random or computed delay time in nanoseconds. */
+   private volatile long delayNanos = -1;
+@@ -151,7 +151,7 @@
+     if (failedAttemptListener != null)
+       failedAttemptListener.handle(result, execution);
+ 
+-    failedAttempts++;
++    failedAttempts.incrementAndGet();
+     long waitNanos = delayNanos;
+ 
+     // Determine the computed delay
+@@ -170,7 +170,7 @@
+     waitNanos = adjustForMaxDuration(waitNanos, elapsedNanos);
+ 
+     // Calculate result
+-    boolean maxRetriesExceeded = policy.getMaxRetries() != -1 && failedAttempts > policy.getMaxRetries();
++    boolean maxRetriesExceeded = policy.getMaxRetries() != -1 && failedAttempts.get() > policy.getMaxRetries();
+     boolean maxDurationExceeded = policy.getMaxDuration() != null && elapsedNanos > policy.getMaxDuration().toNanos();
+     retriesExceeded = maxRetriesExceeded || maxDurationExceeded;
+     boolean isAbortable = policy.isAbortable(result.getResult(), result.getFailure());
+

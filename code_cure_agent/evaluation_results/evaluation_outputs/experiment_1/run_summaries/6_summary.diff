@@ -1,0 +1,114 @@
+Warning ID: 6
+Rule Key: S1104
+Rule Name: Class variable fields should not have public accessibility
+Specific Message: Make _number a static final constant or non-public and provide accessors if needed.
+Warning Start Line: 82
+Repository URL: https://github.com/uwolfer/gerrit-rest-java-client.git
+Commit: de49b4e19572334d60f381955b72e1aa8bbbab49
+File Path: src/main/java/com/google/gerrit/extensions/common/ChangeInfo.java
+
+Classification (TP/FP): TP
+Classification Reasoning: The field _number is public, mutable, and accessed directly in multiple files without accessors, breaking encapsulation as the rule S1104 points out. The developer intentionally designed the class with public fields for direct access, but this violates the rule. Fixing the violation by making the field private and adding accessors would require extensive changes and break existing functionality. Despite this, the violation is valid and should ideally be fixed, so it is a True Positive.
+Plausible Fix (True/False): True
+Total Fix Attempts: 4
+
+
+Diff of Plausible Fix:
+diff -u --ignore-all-space -r '--exclude=.git' evaluation_results/check_correctness_workspace/ID6/gerrit-rest-java-client_unfixed/src/main/java/com/google/gerrit/extensions/common/ChangeInfo.java evaluation_results/check_correctness_workspace/ID6/gerrit-rest-java-client_fixed/src/main/java/com/google/gerrit/extensions/common/ChangeInfo.java
+--- evaluation_results/check_correctness_workspace/ID6/gerrit-rest-java-client_unfixed/src/main/java/com/google/gerrit/extensions/common/ChangeInfo.java	2025-09-05 16:37:26.201953480 +0000
++++ evaluation_results/check_correctness_workspace/ID6/gerrit-rest-java-client_fixed/src/main/java/com/google/gerrit/extensions/common/ChangeInfo.java	2025-09-05 16:37:26.934953454 +0000
+@@ -13,6 +13,7 @@
+ // limitations under the License.
+ 
+ package com.google.gerrit.extensions.common;
++import com.google.gson.annotations.SerializedName;
+ 
+ import com.google.gerrit.extensions.client.ChangeStatus;
+ import com.google.gerrit.extensions.client.ReviewerState;
+@@ -79,7 +80,6 @@
+    */
+   public Boolean containsGitConflicts;
+ 
+-  public int _number;
+ 
+   public AccountInfo owner;
+ 
+@@ -101,4 +101,17 @@
+   public List<PluginDefinedInfo> plugins;
+   public Collection<TrackingIdInfo> trackingIds;
+   public Collection<SubmitRequirementInfo> requirements;
++  // Changed _number field to private and renamed to number to comply with S1104 and naming conventions
++  @SerializedName("_number")
++  private int number;
++
++  // Added getter for number to comply with S1104 and naming conventions
++  public int getNumber() {
++    return number;
++  }
++
++  // Added setter for number to comply with S1104 and naming conventions
++  public void setNumber(int number) {
++    this.number = number;
++  }
+ }
+diff -u --ignore-all-space -r '--exclude=.git' evaluation_results/check_correctness_workspace/ID6/gerrit-rest-java-client_unfixed/src/main/java/com/urswolfer/gerrit/client/rest/http/changes/ChangesRestClient.java evaluation_results/check_correctness_workspace/ID6/gerrit-rest-java-client_fixed/src/main/java/com/urswolfer/gerrit/client/rest/http/changes/ChangesRestClient.java
+--- evaluation_results/check_correctness_workspace/ID6/gerrit-rest-java-client_unfixed/src/main/java/com/urswolfer/gerrit/client/rest/http/changes/ChangesRestClient.java	2025-09-05 16:37:26.235953478 +0000
++++ evaluation_results/check_correctness_workspace/ID6/gerrit-rest-java-client_fixed/src/main/java/com/urswolfer/gerrit/client/rest/http/changes/ChangesRestClient.java	2025-09-05 16:37:26.935953454 +0000
+@@ -154,6 +154,6 @@
+         String changeInput = changesParser.generateChangeInput(in);
+         JsonElement result = gerritRestClient.postRequest(url, changeInput);
+         ChangeInfo info = changesParser.parseSingleChangeInfo(result);
+-        return id(info._number);
++        return id(info.getNumber());
+     }
+ }
+diff -u --ignore-all-space -r '--exclude=.git' evaluation_results/check_correctness_workspace/ID6/gerrit-rest-java-client_unfixed/src/test/java/com/urswolfer/gerrit/client/rest/http/changes/ChangesRestClientTest.java evaluation_results/check_correctness_workspace/ID6/gerrit-rest-java-client_fixed/src/test/java/com/urswolfer/gerrit/client/rest/http/changes/ChangesRestClientTest.java
+--- evaluation_results/check_correctness_workspace/ID6/gerrit-rest-java-client_unfixed/src/test/java/com/urswolfer/gerrit/client/rest/http/changes/ChangesRestClientTest.java	2025-09-05 16:37:26.238953478 +0000
++++ evaluation_results/check_correctness_workspace/ID6/gerrit-rest-java-client_fixed/src/test/java/com/urswolfer/gerrit/client/rest/http/changes/ChangesRestClientTest.java	2025-09-05 16:37:26.959953453 +0000
+@@ -180,7 +180,7 @@
+         String changeInputJsonString = "{}";
+         GerritRestClient gerritRestClient = setupGerritRestClient(testCase, changeInputJsonString);
+         ChangeInfo changeInfo = new ChangeInfo();
+-        changeInfo._number = 29;
++        changeInfo.setNumber(29);
+         ChangesParser changesParser = setupChangesParserForCreate(changeInput,
+             changeInputJsonString, changeInfo);
+ 
+@@ -190,7 +190,7 @@
+ 
+         ChangeApi changeApi = changes.create(changeInput);
+ 
+-        Truth.assertThat(changeApi.id()).isEqualTo(Integer.toString(changeInfo._number));
++        Truth.assertThat(changeApi.id()).isEqualTo(Integer.toString(changeInfo.getNumber()));
+         EasyMock.verify(gerritRestClient, changesParser);
+     }
+ 
+diff -u --ignore-all-space -r '--exclude=.git' evaluation_results/check_correctness_workspace/ID6/gerrit-rest-java-client_unfixed/src/test/java/com/urswolfer/gerrit/client/rest/http/common/ChangeInfoBuilder.java evaluation_results/check_correctness_workspace/ID6/gerrit-rest-java-client_fixed/src/test/java/com/urswolfer/gerrit/client/rest/http/common/ChangeInfoBuilder.java
+--- evaluation_results/check_correctness_workspace/ID6/gerrit-rest-java-client_unfixed/src/test/java/com/urswolfer/gerrit/client/rest/http/common/ChangeInfoBuilder.java	2025-09-05 16:37:26.213953479 +0000
++++ evaluation_results/check_correctness_workspace/ID6/gerrit-rest-java-client_fixed/src/test/java/com/urswolfer/gerrit/client/rest/http/common/ChangeInfoBuilder.java	2025-09-05 16:37:26.960953453 +0000
+@@ -149,7 +149,7 @@
+     }
+ 
+     public ChangeInfoBuilder withNumber(int number) {
+-        changeInfo._number = number;
++        changeInfo.setNumber(number);
+         return this;
+     }
+ 
+diff -u --ignore-all-space -r '--exclude=.git' evaluation_results/check_correctness_workspace/ID6/gerrit-rest-java-client_unfixed/src/test/java/com/urswolfer/gerrit/client/rest/RealServerTest.java evaluation_results/check_correctness_workspace/ID6/gerrit-rest-java-client_fixed/src/test/java/com/urswolfer/gerrit/client/rest/RealServerTest.java
+--- evaluation_results/check_correctness_workspace/ID6/gerrit-rest-java-client_unfixed/src/test/java/com/urswolfer/gerrit/client/rest/RealServerTest.java	2025-09-05 16:37:26.210953479 +0000
++++ evaluation_results/check_correctness_workspace/ID6/gerrit-rest-java-client_fixed/src/test/java/com/urswolfer/gerrit/client/rest/RealServerTest.java	2025-09-05 16:37:26.936953454 +0000
+@@ -72,10 +72,10 @@
+         Truth.assertThat(changeInfoList.size()).isLessThan(2);
+ 
+         if(changeInfoList.size() > 0) {
+-            int changeNum = changeInfoList.get(0)._number;
++            int changeNum = changeInfoList.get(0).getNumber();
+             System.out.println(String.format("Accessing details of change #%d", changeNum));
+             ChangeInfo change = gerritApi.changes().id(changeNum).get();
+-            Truth.assertThat(change._number).isEqualTo(changeNum);
++            Truth.assertThat(change.getNumber()).isEqualTo(changeNum);
+         }
+ 
+         if (authData.isLoginAndPasswordAvailable()) {
+

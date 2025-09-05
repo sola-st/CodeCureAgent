@@ -1,0 +1,63 @@
+Warning ID: 576
+Rule Key: S899
+Rule Name: Return values should not be ignored when they contain the operation status code
+Specific Message: Do something with the "boolean" value returned by "delete".
+Warning Start Line: 271
+Repository URL: https://github.com/apache/joshua.git
+Commit: 716cc81aca318f3cb6ed9bd81bd29f043db77eff
+File Path: src/main/java/org/apache/joshua/metrics/TER.java
+
+Classification (TP/FP): TP
+Classification Reasoning: The violation is correctly raised because ignoring the boolean return value of java.io.File.delete() can hide failures to delete files. Although the developer intentionally ignored the return value as a best-effort cleanup, it is possible and preferable to fix the violation by checking the return value and handling or logging failures. Thus, this is a True Positive that should be fixed.
+Plausible Fix (True/False): True
+Total Fix Attempts: 7
+
+
+Diff of Plausible Fix:
+diff -u --ignore-all-space -r '--exclude=.git' evaluation_results/check_correctness_workspace/ID576/joshua_unfixed/src/main/java/org/apache/joshua/metrics/TER.java evaluation_results/check_correctness_workspace/ID576/joshua_fixed/src/main/java/org/apache/joshua/metrics/TER.java
+--- evaluation_results/check_correctness_workspace/ID576/joshua_unfixed/src/main/java/org/apache/joshua/metrics/TER.java	2025-09-05 18:01:05.490777221 +0000
++++ evaluation_results/check_correctness_workspace/ID576/joshua_fixed/src/main/java/org/apache/joshua/metrics/TER.java	2025-09-05 18:01:18.486776764 +0000
+@@ -17,6 +17,10 @@
+  * under the License.
+  */
+ package org.apache.joshua.metrics;
++import java.nio.file.Files;
++import java.nio.file.Path;
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
+ 
+ import java.io.BufferedReader;
+ import java.io.BufferedWriter;
+@@ -41,6 +45,7 @@
+   private int maxShiftDist;
+   private String tercomJarFileName;
+   private int numScoringThreads;
++  private static final Logger LOG = LoggerFactory.getLogger(TER.class);
+ 
+   public TER(String[] Metric_options) {
+     // M_o[0]: case sensitivity, case/nocase
+@@ -268,7 +273,7 @@
+         copySS(tmpDirPrefix + "TER_out.batch" + b + ".ter", outFile);
+         File fd;
+         fd = new File(tmpDirPrefix + "TER_out.batch" + b + ".ter");
+-        if (fd.exists()) fd.delete();
++        deleteFileWithWarning(fd);
+         // .hyp. and .ref. already deleted by individual threads
+       }
+       outFile.close();
+@@ -463,4 +468,14 @@
+     writer.flush();
+   }
+ 
++  private void deleteFileWithWarning(File file) {
++    Path path = file.toPath();
++    try {
++      if (!Files.deleteIfExists(path)) {
++        LOG.warn("Could not delete file {}", file.getAbsolutePath());
++      }
++    } catch (IOException e) {
++      LOG.warn("IOException when deleting file {}: {}", file.getAbsolutePath(), e.getMessage());
++    }
++  }
+ }
+

@@ -1,0 +1,36 @@
+Warning ID: 160
+Rule Key: S2674
+Rule Name: The value returned from a stream read should be checked
+Specific Message: Check the return value of the "read" call to see how many bytes were read.
+Warning Start Line: 235
+Repository URL: https://github.com/spotify/sparkey-java.git
+Commit: c829bab45abf9cba3d017b798efe9ef5f0effbb3
+File Path: src/main/java/com/spotify/sparkey/SparkeyLogIterator.java
+
+Classification (TP/FP): TP
+Classification Reasoning: The violation is correctly raised because the return value of stream.read is ignored, which can lead to bugs if fewer bytes are read than requested. There is no indication this was intentional, so it is an oversight. The violation can be fixed by modifying readChunk to check the return value and ensure the buffer is fully read or handle EOF, improving robustness without breaking functionality.
+Plausible Fix (True/False): True
+Total Fix Attempts: 4
+
+
+Diff of Plausible Fix:
+diff -u --ignore-all-space -r '--exclude=.git' evaluation_results/check_correctness_workspace/ID160/sparkey-java_unfixed/src/main/java/com/spotify/sparkey/SparkeyLogIterator.java evaluation_results/check_correctness_workspace/ID160/sparkey-java_fixed/src/main/java/com/spotify/sparkey/SparkeyLogIterator.java
+--- evaluation_results/check_correctness_workspace/ID160/sparkey-java_unfixed/src/main/java/com/spotify/sparkey/SparkeyLogIterator.java	2025-09-05 16:57:19.705911568 +0000
++++ evaluation_results/check_correctness_workspace/ID160/sparkey-java_fixed/src/main/java/com/spotify/sparkey/SparkeyLogIterator.java	2025-09-05 16:57:20.308911547 +0000
+@@ -232,7 +232,14 @@
+ 
+     private byte[] readChunk(int size) throws IOException {
+       byte[] res = new byte[size];
+-      stream.read(res);
++    int offset = 0;
++    while (offset < size) {
++      int read = stream.read(res, offset, size - offset);
++      if (read == -1) {
++        throw new IOException("Unexpected end of stream while reading " + size + " bytes");
++      }
++      offset += read;
++    }
+       return res;
+     }
+ 
+

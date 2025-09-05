@@ -8,6 +8,21 @@ It can classify and fix arbitrary SonarQube rule violations in Java code.
 </div>
 
 ---
+## 0. Quick Overview
+
+The repository is structured as follows:
+
+- [code_cure_agent](code_cure_agent): CodeCureAgent code, experiment setup and experiment output
+  - [code_cure_agent/agent_core](code_cure_agent/agent_core): Main parts of the CodeCureAgent implementation. The implemented tools are at: [code_cure_agent/agent_core/commands](code_cure_agent/agent_core/commands)
+  - [code_cure_agent/agent_config_and_prompt_files](code_cure_agent/agent_config_and_prompt_files): Used prompt files for the two sub-agents and agent config
+  - [code_cure_agent/evaluation_results](code_cure_agent/evaluation_results): Results of our evaluation on 1000 warnings. Contains markdown files with aggregated evaluation results, csv files with data on all warning runs, plots, and all log files created during the experiment run.
+    - [code_cure_agent/evaluation_results/evaluation_outputs](code_cure_agent/evaluation_results/evaluation_outputs): This holds the log files of the full evaluation. It is split into multiple experiment batches.  
+    The most interesting files in this log output are the files in the subfolder `code_cure_agent/evaluation_results/evaluation_outputs/experiment_X/run_summaries`. These show for each warning run: details about the warning, classification and fix results including a diff of made changes for successful fixes. (Multi-File Fix Example: [code_cure_agent/evaluation_results/evaluation_outputs/experiment_1/run_summaries/6_summary.diff](code_cure_agent/evaluation_results/evaluation_outputs/experiment_1/run_summaries/6_summary.diff))
+  - [code_cure_agent/experimental_setups](code_cure_agent/experimental_setups): Contains the evaluation dataset and utility scripts for evaluating your own experiment 
+    - [code_cure_agent/experimental_setups/evaluation_dataset/evaluation_dataset_filled_up_to_1000_input_file.csv](code_cure_agent/experimental_setups/evaluation_dataset/evaluation_dataset_filled_up_to_1000_input_file.csv): This is the input file with the 1000 warnings used for running our evaluation.
+- [comparative_study](comparative_study): All files and results of the comparison to baselines [Sorald](https://github.com/ASSERT-KTH/sorald) and [CORE](https://github.com/microsoft/COREMSRI).
+
+---
 
 ## I. Requirements
 
@@ -86,7 +101,7 @@ If you only care for CodeCureAgent itself and not the comparison to baselines, y
 - It initiates the autonomous repair process, first classifying the warning as true positive or false positive and then fixing or suppressing the warning accordingly.
 - Logs detailing each step performed will be displayed in your terminal.
 
-## IV. Experiment Setup and Evaluation
+## IV. Running and Evaluating your own Experiment
 
 All utility scripts must be run from the folder [code_cure_agent](code_cure_agent).
 
@@ -131,11 +146,11 @@ Example:
 
 4. Optionally, you can sample from the input file to run only on some of the warnings using [code_cure_agent/experimental_setups/sample_rule_violations_from_input_file.py](code_cure_agent/experimental_setups/sample_rule_violations_from_input_file.py).
 
-### 2. Repair Logs
+### 2. CodeCureAgent Experiment Logs
 
 CodeCureAgent saves the output in multiple files.
 
-- The primary logs are located in the folder `experimental_setups/experiment_X`, where `experiment_X` increments automatically with each run of the command `./run_on_dataset.sh`.
+- When running CodeCureAgent the primary logs are created in the folder `code_cure_agent/experimental_setups/experiment_X`, where `experiment_X` increments automatically with each run of the command `./run_on_dataset.sh`.
 - The folder is structured into subfolders `classification`, `fix_fp`, `fix_tp` and `tasks`.
 - Most interesting are the classification_result files in the `classification` folder and the prompt_history files in the `prompt_history` subfolders of `classification`, `fix_fp` and `fix_tp`.
 
@@ -146,7 +161,7 @@ Within the [code_cure_agent/experimental_setups](code_cure_agent/experimental_se
 All scripts are expected to be run from the `code_cure_agent` folder.  
 
 1. Create evaluation results file  
-    After running one or multiple experiments, logs are located in the folder `experimental_setups/experiment_X`.  
+    After running one or multiple experiments, logs are located in the folder `code_cure_agent/experimental_setups/experiment_X`.  
     If you do not want to run your own experiments, but calculate evaluation results on the log files of our experiment runs, copy all folders and files from [code_cure_agent/evaluation_results/evaluation_outputs](code_cure_agent/evaluation_results/evaluation_outputs) to [code_cure_agent/experimental_setups](code_cure_agent/experimental_setups).  
     The script [code_cure_agent/experimental_setups/write_experiment_results_to_csv_file.py](code_cure_agent/experimental_setups/write_experiment_results_to_csv_file.py) can be used to extract the experiment run results from the experiment logs into a csv file.  
     By default, the evaluation results are appended to the csv file [code_cure_agent/evaluation_results/evaluation_results.csv](code_cure_agent/evaluation_results/evaluation_results.csv).  
@@ -162,16 +177,21 @@ All scripts are expected to be run from the `code_cure_agent` folder.
     By default, the Markdown is written to `code_cure_agent/evaluation_results/analysis_results_overview.md`.  
     See an example result Markdown here: [code_cure_agent/evaluation_results/analysis_results_overview_all.md](code_cure_agent/evaluation_results/analysis_results_overview_all.md)
 
-4. Manually inspect a repaired warning  
+4. Create summaries for each fixed/unfixed warning
+    You can create summaries that show the most important information on a CodeCureAgent run on a warning, including a diff of all made changes.
+    Use the script [code_cure_agent/experimental_setups/create_warning_summaries.py](code_cure_agent/experimental_setups/create_warning_summaries.py). It requires that the extended evaluation results csv file has been created before (2.).
+    The summaries are added to the experiment logs (`code_cure_agent/experimental_setups/experiment_X`) in a subfolder `run_summaries`.
+
+5. Manually inspect a repaired warning  
     We provide a further script [code_cure_agent/experimental_setups/show_next_warning_for_manual_inspection.py](code_cure_agent/experimental_setups/show_next_warning_for_manual_inspection.py) that can be used to quickly open relevant files for a specified warning, including a VS Code diff between the unfixed and fixed versions of the warning.  
     The instanceID of the warning that is to be looked at can be provided via option `--id-to-show`.  
 
-5. Create plots  
+6. Create plots  
     We provide further Jupyter notebooks for creating plots, including a Venn diagram.
 
 
 
-## IV. Customize CodeCureAgent
+## V. Customize CodeCureAgent
 
 ### 1. Modify `hyperparams.json`
 
@@ -228,7 +248,7 @@ Reasoning models are not supported by the used OpenAI API version.
 
 ---
 
-## V. CodeCureAgent Data
+## VI. CodeCureAgent Data
 
 For our experiments, we utilized CodeCureAgent on a dataset of 1000 warnings, successfully creating plausible fixes for 968 of them.  
 
@@ -237,17 +257,17 @@ Most relevant is here the file [code_cure_agent/experimental_setups/evaluation_d
 
 All log files from running the experiment on the 1000 warnings are located in [code_cure_agent/evaluation_results/evaluation_outputs](code_cure_agent/evaluation_results/evaluation_outputs) (split into multiple batches of experiment runs).
 
-The extracted and aggregated evaluation results, as described in `IV. Experiment Setup and Evaluation: 3. Scripts for Evaluation` above, are located in [code_cure_agent/evaluation_results](code_cure_agent/evaluation_results).
+The extracted and aggregated evaluation results, as described in `IV. Running and Evaluating your own Experiment: 3. Scripts for Evaluation` above, are located in [code_cure_agent/evaluation_results](code_cure_agent/evaluation_results).
 
 
 ---
 
-## VI. Replicate Experiments
+## VII. Replicate Experiments
 
 ### Replicate CodeCureAgent experiment on 1000 warnings dataset
 1. Run CodeCureAgent on the [code_cure_agent/experimental_setups/evaluation_dataset/evaluation_dataset_filled_up_to_1000_input_file.csv](code_cure_agent/experimental_setups/evaluation_dataset/evaluation_dataset_filled_up_to_1000_input_file.csv) input file as described in `III. Run CodeCureAgent`.
 
-2. Post-process the created log files as described in `IV. Experiment Setup and Evaluation: 3. Scripts for Evaluation` to receive aggregated results (Markdown file and plots).
+2. Post-process the created log files as described in `IV. Running and Evaluating your own Experiment: 3. Scripts for Evaluation` to receive aggregated results (Markdown file and plots).
 
 
 

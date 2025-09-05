@@ -5,7 +5,7 @@
 
 cd "$(dirname "$0")"
 
-SORALD_JAR_PATH="/workspaces/master-thesis-pascal-joos/code_cure_agent/sorald/sorald.jar"
+SORALD_JAR_PATH="/workspaces/xxxx/code_cure_agent/sorald/sorald.jar"
 
 quality_profile_rules=$(head -n 1 ./../../sonarqube_quality_profile/quality_profile_rule_keys.txt)
 

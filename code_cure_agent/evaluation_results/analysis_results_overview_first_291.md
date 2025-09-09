@@ -6,6 +6,13 @@
 ### Total rule violations
 
 291
+### Warning types
+
+Code_Smell: 197 (67.70%)  
+Bug: 71 (24.40%)  
+Security_Hotspot: 12 (4.12%)  
+Vulnerability: 11 (3.78%)  
+
 ### Classification
 
 TP: 191 (65.64%)  
@@ -16,6 +23,12 @@ Unclassified: 0 (0.00%)
 Total plausible fixes: 282/291 (96.91%)  
 TP plausible fixes: 182/191 (95.29%)  
 FP plausible fixes: 100/100 (100.00%)  
+
+Plausible fixes per warning type:  
+Code_Smell: 192/197 (97.46%)  
+Bug: 69/71 (97.18%)  
+Security_Hotspot: 10/12 (83.33%)  
+Vulnerability: 11/11 (100.00%)  
 #### Passed previous steps
 
 Total compilation step passed: 288/291 (98.97%)  

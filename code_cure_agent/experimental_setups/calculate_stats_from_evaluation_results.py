@@ -39,6 +39,15 @@ def calculate_stats_from_evaluation_results(evaluation_results_extended_file: cl
     mdFile.new_line(
         str(total_rule_violations))
 
+    # Warning type section
+    mdFile.new_header(level=3, title="Warning types",
+                      add_table_of_contents="n")
+    warning_type_counts = evaluation_results_file_df["ruleType"].value_counts()
+    for warning_type, count in warning_type_counts.items():
+        percent = 100 * count / total_rule_violations if total_rule_violations else 0
+        mdFile.new_line(f"{warning_type}: {count} ({percent:.2f}%)  ")
+    mdFile.new_line()
+
     # Classification section
 
     mdFile.new_header(level=3, title="Classification",
@@ -85,6 +94,20 @@ def calculate_stats_from_evaluation_results(evaluation_results_extended_file: cl
         f"TP plausible fixes: {tp_plausible_fix}/{classified_tp} ({percent_tp_plausible:.2f}%)  ")
     mdFile.new_line(
         f"FP plausible fixes: {fp_plausible_fix}/{classified_fp} ({percent_fp_plausible:.2f}%)  ")
+
+    # Plausible fixes per warning type
+    mdFile.new_line()
+    mdFile.new_line("Plausible fixes per warning type:  ")
+    warning_types = evaluation_results_file_df["ruleType"].unique()
+    for warning_type in warning_types:
+        type_df = evaluation_results_file_df[evaluation_results_file_df["ruleType"] == warning_type]
+        total_type = type_df["instanceID"].count()
+        plausible_type = type_df["plausibleFix"].sum()
+        percent_type = 100 * plausible_type / total_type if total_type else 0
+        mdFile.new_line(
+            f"{warning_type}: {plausible_type}/{total_type} ({percent_type:.2f}%)  ")
+
+    # Passed previous agent steps successfully section
 
     total_compilation_passed = (
         evaluation_results_file_df["compilationPassed"]).sum()

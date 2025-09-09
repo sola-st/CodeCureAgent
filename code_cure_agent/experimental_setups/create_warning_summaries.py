@@ -150,14 +150,12 @@ def create_diff_of_changes(warning_id, warning_csv_info, task_info, relative_pat
             fix_folder = None
 
         if fix_folder is not None:
-            # Copy the plausible and implausible patches files
             try:
                 plausible_patch_file_name = next(f for f in os.listdir(os.path.join(experiment_folder_rel_path, fix_folder, "plausible_patches"))
                                                  if os.path.isfile(os.path.join(
                                                      experiment_folder_rel_path, fix_folder, "plausible_patches", f)) and f.startswith(str(warning_id) + "_"))
 
             except StopIteration:
-                # happens if no plausible patches
                 print(
                     "ERROR: No plausible patches file found, but warning is marked as plausible fix in evaluation results csv.")
                 return

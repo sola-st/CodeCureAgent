@@ -141,6 +141,12 @@ def copy_relevant_files_of_warning_experiment_run(relative_path_inspection_folde
     shutil.copy2(os.path.join(experiment_folder_rel_path, "tasks", f"{str(warning_id)}.yaml"), os.path.join(
         relative_path_inspection_folder, f"ID{str(warning_id)}_task_info.yaml"))
 
+    # Copy the run summary file if exists
+    if os.path.exists(os.path.join(experiment_folder_rel_path, "run_summaries")):
+        if os.path.exists(os.path.join(experiment_folder_rel_path, "run_summaries", f"{str(warning_id)}_summary.diff")):
+            shutil.copy2(os.path.join(experiment_folder_rel_path, "run_summaries", f"{str(warning_id)}_summary.diff"), os.path.join(
+                relative_path_inspection_folder, f"ID{str(warning_id)}_summary.diff"))
+
 
 def checkout_project_unchanged_and_with_changes(relative_path_inspection_folder: str, warning_csv_info: dict) -> None:
     warning_id = warning_csv_info["instanceID"]
@@ -187,6 +193,9 @@ def open_relevant_files_and_diffs(relative_path_inspection_folder: str, warning_
             relative_path_inspection_folder, warning_csv_info)
         open_diffs_for_changed_files(
             relative_path_inspection_folder)
+
+    open_run_summary_if_exists(
+        relative_path_inspection_folder, warning_csv_info)
 
     # Go back to the first file to open
     open_evaluation_results_csv(
@@ -244,6 +253,17 @@ def open_plausible_fix_file(relative_path_inspection_folder: str, warning_csv_in
         capture_output=True,
         encoding="utf8",
         shell=False)
+
+
+def open_run_summary_if_exists(relative_path_inspection_folder: str, warning_csv_info: dict) -> None:
+    warning_id = warning_csv_info["instanceID"]
+    if os.path.exists(os.path.join(relative_path_inspection_folder, f"ID{str(warning_id)}_summary.diff")):
+        subprocess.run(
+            ["code", "-r", os.path.join(
+                relative_path_inspection_folder, f"ID{str(warning_id)}_summary.diff")],
+            capture_output=True,
+            encoding="utf8",
+            shell=False)
 
 
 def open_diffs_for_changed_files(relative_path_inspection_folder: str) -> None:

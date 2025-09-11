@@ -181,7 +181,7 @@ Within the [code_cure_agent/experimental_setups](code_cure_agent/experimental_se
 All scripts are expected to be run from the `code_cure_agent` folder.  
 
 1. Create evaluation results file  
-    After running one or multiple experiments, logs are located in the folder `code_cure_agent/experimental_setups/experiment_X`.  
+    After running one or multiple experiments, logs are located in the folders `code_cure_agent/experimental_setups/experiment_X`.  
     If you do not want to run your own experiments, but calculate evaluation results on the log files of our experiment runs, copy all folders and files from [code_cure_agent/evaluation_results/evaluation_outputs](code_cure_agent/evaluation_results/evaluation_outputs) to [code_cure_agent/experimental_setups](code_cure_agent/experimental_setups).  
     The script [code_cure_agent/experimental_setups/write_experiment_results_to_csv_file.py](code_cure_agent/experimental_setups/write_experiment_results_to_csv_file.py) can be used to extract the experiment run results from the experiment logs into a csv file.  
     By default, the evaluation results are appended to the csv file [code_cure_agent/evaluation_results/evaluation_results.csv](code_cure_agent/evaluation_results/evaluation_results.csv).  
@@ -205,6 +205,7 @@ All scripts are expected to be run from the `code_cure_agent` folder.
 5. Manually inspect a repaired warning  
     We provide a further script [code_cure_agent/experimental_setups/show_next_warning_for_manual_inspection.py](code_cure_agent/experimental_setups/show_next_warning_for_manual_inspection.py) that can be used to quickly open relevant files for a specified warning, including a VS Code diff between the unfixed and fixed versions of the warning.  
     The instanceID of the warning that is to be looked at can be provided via option `--id-to-show`.  
+    This script also requires that logs are located in the folders `code_cure_agent/experimental_setups/experiment_X`. (see 1.)
 
 6. Create plots  
     We provide further Jupyter notebooks for creating plots, including a Venn diagram.

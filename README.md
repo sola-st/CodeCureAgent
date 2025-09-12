@@ -65,20 +65,14 @@ Before you start using CodeCureAgent, ensure that your system meets the followin
 
 1. Ensure you have the **Dev Containers** extension installed in VS Code. You can install it from the [Visual Studio Code Marketplace](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers).
 
-2. Clone the CodeCureAgent repository:
+2. Open the repository folder in VS Code.
 
-   ```bash
-   git clone https://github.com/xxxx/xxxx.git
-   ```
-
-3. Open the repository folder in VS Code.
-
-4. When prompted by VS Code to "Reopen in Container," click it. If not prompted, open the Command Palette (Ctrl+Shift+P) and select "Dev Containers: Reopen in Container."  
+3. When prompted by VS Code to "Reopen in Container," click it. If not prompted, open the Command Palette (Ctrl+Shift+P) and select "Dev Containers: Reopen in Container."  
 VS Code will now build and start the Dev Container, setting up the environment for you. This will take a while.  
 After the Dev Container is built it will continue to run further setups in the terminal. Wait until this is completed too.  
 If the Dev Container opened in less than a few minutes it likely failed to create the container properly. Then rebuild the container via opening the Command Palette (Ctrl+Shift+P) and selecting "Dev Containers: Rebuild in Container."
 
-6. Within your VS Code terminal, move to the folder code_cure_agent
+4. Within your VS Code terminal, move to the folder code_cure_agent
 
     ```bash
     cd code_cure_agent
@@ -101,7 +95,7 @@ The script will prompt you to paste your API token.
 CodeCureAgent takes a csv file as input, where each line specifies a single warning of a SonarQube rule in a single Java file in a single Git repository.  
 
 For an example on how the input file has to look like see [evaluation_dataset_filled_up_to_1000_input_file.csv](code_cure_agent/experimental_setups/evaluation_dataset/evaluation_dataset_filled_up_to_1000_input_file.csv).  
-You can create your own by following the steps described further down below in this paragraph.
+You can create your own by following the steps described in `IV. Running and Evaluating your own Experiment`.
 
 To execute CodeCureAgent on an input file, run the following from the `code_cure_agent` folder:
 

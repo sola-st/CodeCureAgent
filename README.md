@@ -78,7 +78,7 @@ VS Code will now build and start the Dev Container, setting up the environment f
 After the Dev Container is built it will continue to run further setups in the terminal. Wait until this is completed too.  
 If the Dev Container opened in less than a few minutes it likely failed to create the container properly. Then rebuild the container via opening the Command Palette (Ctrl+Shift+P) and selecting "Dev Containers: Rebuild in Container."
 
-6. Within your VS Code terminal, move to the folder code_cure_agent
+5. Within your VS Code terminal, move to the folder code_cure_agent
 
     ```bash
     cd code_cure_agent
@@ -101,7 +101,7 @@ The script will prompt you to paste your API token.
 CodeCureAgent takes a csv file as input, where each line specifies a single warning of a SonarQube rule in a single Java file in a single Git repository.  
 
 For an example on how the input file has to look like see [evaluation_dataset_filled_up_to_1000_input_file.csv](code_cure_agent/experimental_setups/evaluation_dataset/evaluation_dataset_filled_up_to_1000_input_file.csv).  
-You can create your own by following the steps described further down below in this paragraph.
+You can create your own by following the steps described in `IV. Running and Evaluating your own Experiment`.
 
 To execute CodeCureAgent on an input file, run the following from the `code_cure_agent` folder:
 

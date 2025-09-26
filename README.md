@@ -48,7 +48,7 @@ Before you start using CodeCureAgent, ensure that your system meets the followin
 2. Clone the CodeCureAgent repository:
 
    ```bash
-   git clone https://github.com/sola-st/master-thesis-pascal-joos.git
+   git clone https://github.com/sola-st/CodeCureAgent.git
    ```
 
 3. Open the repository folder in VS Code.

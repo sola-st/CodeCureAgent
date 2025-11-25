@@ -43,7 +43,7 @@ def calculate_rule_types_unsampled_dataset(evaluation_dataset_file: click.File, 
     warning_type_counts = evaluation_dataset_df["ruleType"].value_counts()
     for warning_type, count in warning_type_counts.items():
         percent = 100 * count / total_rule_violations if total_rule_violations else 0
-        mdFile.new_line(f"{warning_type}: {count} ({percent:.2f}%)  ")
+        mdFile.new_line(f"{warning_type}: {count} ({percent:.3f}%)  ")
     mdFile.new_line()
 
 

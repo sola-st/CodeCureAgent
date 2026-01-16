@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 from openai import OpenAI
 import os
+import csv
 
 load_dotenv(verbose=True, override=True)
 
@@ -9,27 +10,113 @@ client = OpenAI(
     api_key=os.environ["OPENAI_API_KEY"],
 )
 
+class Warning:
+    def __init__(self, warning_id, rule_type, rule_key, rule_name, file_name, specific_message, warning_line):
+        self.warning_id = warning_id
+        self.rule_type = rule_type
+        self.rule_key = rule_key
+        self.rule_name = rule_name
+        self.file_name = file_name
+        self.specific_message = specific_message
+        self.warning_line = warning_line
+        self.rule_docu = self.__retrieve_rule_docu(warning_id)
 
-def prepare_prompt(example_java_code, java_code):
-    return f'''In computer programming, a code smell is any characteristic in the 
-                source code of a program that possibly indicates a deeper problem. I will now tell you the definition 
-                about Feature Envy. Please read the definition and refactor the code according to the target to 
-                eliminate this smell. The definition of Feature Envy is: Feature Envy occurs when a method in one 
-                class can't seem to keep its eyes off the data of another class. This sneaky behavior hints that 
-                there might be a better home for the method, where it fits in more naturally and keeps the codebase 
-                cleaner and easier to manage. Here is an example for refactoring code which has Feature Envy smell, 
-                Please read it carefully and learn to show only the most modified critical code after refactoring. 
-                You can replace functional code with comments. You do not need to keep the structure, improve the 
-                code's readability and maintainability. {example_java_code}Now based on the example, refactor the 
-                following code to eliminate the feature envy code smell. You can achieve it by dividing the method in 
-                original code into as many methods or classes as possible. Also make sure every methods you give in 
-                the refactored_godclass code should not have feature envy smell.
-                \n{java_code}
-                '''
+    def __retrieve_rule_docu(self, warning_id):
+        
+        rule_docu = ""
+        
+        rule_docu_file = "cca_dataset/metadata/java/metadata_full_sonar_way_profile.json"
+        try:
+            with open(rule_docu_file, 'r', encoding='utf-8') as file:
+                import json
+                data = json.load(file)
+                rule = data.get(self.rule_key, None)
+                if rule:
+                    rule_docu = rule.get("desc", "")
+                else:
+                    print(f"Rule with key {self.rule_key} not found in metadata.")
 
-def refactor_warning(example_java_code,java_code):
+        except FileNotFoundError:
+            print(f"Rule docu file not found: {rule_docu_file}")
+        except Exception as e:
+            print(f"Error reading rule docu file: {e}")
 
-    llm_prompt = prepare_prompt(example_java_code, java_code)
+        example = self.__ask_llm_for_example_if_docu_does_not_contain_example(rule_docu)
+        if example != "":
+            rule_docu += f"\nCode example:\n{example}"
+        return rule_docu
+    
+    def __ask_llm_for_example_if_docu_does_not_contain_example(self, rule_docu):
+        if "code example" in rule_docu.lower():
+            return ""
+        
+        prompt = f"""Provide a single concise Java code example that illustrates the SonarQube rule with ID '{self.warning_id}', 
+which is of type '{self.rule_type}' and named '{self.rule_name}'. The SonarQube rule has the following SonarQube docu: \n'{rule_docu}'\n 
+The example should clearly demonstrate the issue that this rule addresses and how it is fixed. Provide two versions: 'Noncompliant code example' and 'Compliant solution'. Don't output anything but the code examples."""
+        print("Prompt for code example:")
+        print(prompt)
+        try:
+            response = client.chat.completions.create(
+                model="gpt-4.1-mini-2025-04-14",
+                messages=[
+                    {"role": "system", "content": "You are an AI assistant that provides code examples for SonarQube warnings."},
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            # TODO: Implement prompt logging and calculating token usage stats
+
+            if response.choices:
+                example = response.choices[0].message.content if response.choices[0].message else ""
+            else:
+                example = ""
+
+            print("Generated code example:")
+            print(example)
+
+        except Exception as e:
+            print(f"Error while generating example for rule docu: {e}")
+            example = ""
+
+        return example
+    
+
+    
+
+
+def create_prompt_text(warning: Warning,  java_code):
+    llm_prompt = ""
+    if warning.rule_type == "Code_Smell":
+        llm_prompt += """In computer programming, a code smell is any characteristic in the 
+                source code of a program that possibly indicates a deeper problem."""
+    elif warning.rule_type == "Bug":
+        llm_prompt += """In computer programming, a bug is an error, flaw or fault in a computer program 
+                that causes it to produce an incorrect or unexpected result, or to behave in unintended ways."""
+    elif warning.rule_type == "Vulnerability":
+        llm_prompt += """In computer programming, a vulnerability is a weakness in a computer system or 
+                application that can be exploited by an attacker to gain unauthorized access or cause harm."""
+    elif warning.rule_type == "Security_Hotspot":
+        llm_prompt += """In computer programming, a security hotspot is a piece of code that is not 
+                necessarily a vulnerability, but it requires review and possibly refactoring to ensure that it is secure."""
+    else:
+        print(f"Unknown rule type: {warning.rule_type}")
+        llm_prompt += """In computer programming, there are various types of code issues such as 
+                code smells, bugs, vulnerabilities, and security hotspots that can affect the quality 
+                and security of the codebase."""
+
+    llm_prompt += f"""\nNow I will tell you the definition about SonarQube warning '{warning.rule_key}':'{warning.rule_name}' as given by the SonarQube docu, including an example to help you solve a similar warning:""" + \
+        f"""\n'{warning.rule_docu}'\n\n""" + \
+        f"""Now based on the example, refactor the following Java code to eliminate the '{warning.rule_key}':'{warning.rule_name}' warning, with specific warning message '{warning.specific_message}'.""" + \
+        f""" The warning is located at the line '{warning.warning_line}'. Give the changed code using: ```...```.\n""" + \
+        f"""Java code:\n```{java_code}```"""
+
+
+    return llm_prompt
+
+def refactor_warning(warning: Warning, java_code):
+
+    llm_prompt = create_prompt_text(warning, java_code)
+    print("Prompt for refactoring warning:")
+    print(llm_prompt)
 
     try:
         response = client.chat.completions.create(
@@ -73,22 +160,54 @@ def write_to_file(file_name, content):
         file.write(content)
 
 
-if __name__ == "__main__":
 
-    java_code_file = r"cca_dataset/1/before/PhraseChecker.java"
+def fix_warning(warning: Warning):
+    java_code_file = f"cca_dataset/{warning.warning_id}/before/{warning.file_name}"
     
 
     with open(java_code_file, 'r', encoding='utf-8') as file:
          java_code = file.read()
          print(f"{java_code_file} read successfully!")
 
-    #with open(example_code_file, 'r', encoding='utf-8') as file:
-    #     example_code = file.read()
-    #     print(f"{example_code_file} read successfully!")
 
-    model_response = refactor_warning("", java_code)
+    model_response = refactor_warning(warning, java_code)
+    print("Refactoring response:")
     print(model_response)
 
-    output_dir = "cca_dataset/1/after"
+    output_dir = f"cca_dataset/{warning.warning_id}/after"
     os.makedirs(output_dir, exist_ok=True)
     write_to_file(os.path.join(output_dir, "refactored.java"), clean_java_code(model_response))
+
+
+if __name__ == "__main__":
+
+    csv_file_path = 'cca_dataset/evaluation_dataset_filled_up_to_1000_input_file.csv'
+    
+    try:
+        with open(csv_file_path, 'r', encoding='utf-8') as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                if int(row['instanceID']) != 269:
+                    continue 
+
+                # Extract warning details
+                warning = Warning(
+                    warning_id=int(row['instanceID']),
+                    rule_type=row['ruleType'],
+                    rule_key=row['ruleKey'],
+                    rule_name=row['ruleName'],
+                    file_name=row['filePath'].split('/')[-1],
+                    specific_message=row['specificMessage'],
+                    warning_line=row['startLine']
+                )
+
+                fix_warning(warning)
+                
+    except FileNotFoundError:
+        raise FileNotFoundError(f"CSV file not found: {csv_file_path}")
+    except Exception as e:
+        raise Exception(f"Error reading CSV file: {e}")
+    
+
+
+

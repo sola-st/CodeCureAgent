@@ -1,27 +1,17 @@
 from dotenv import load_dotenv
-import httpx
 from openai import OpenAI
 import os
 
 load_dotenv(verbose=True, override=True)
 
 client = OpenAI(
-    base_url="https://api.xty.app/v1",
+    base_url=None,
     api_key=os.environ["OPENAI_API_KEY"],
-    http_client=httpx.Client(
-        base_url="https://api.xty.app/v1",
-        follow_redirects=True,
-    ),
 )
 
-def refactor_code_smells_FeatureEnvy(example_java_code,java_code):
 
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4-1106-preview",
-            messages=[
-                {"role": "system", "content": "I am an AI trained to refactor code smells in Java code."},
-                {"role": "user", "content": f'''In computer programming, a code smell is any characteristic in the 
+def prepare_prompt(example_java_code, java_code):
+    return f'''In computer programming, a code smell is any characteristic in the 
                 source code of a program that possibly indicates a deeper problem. I will now tell you the definition 
                 about Feature Envy. Please read the definition and refactor the code according to the target to 
                 eliminate this smell. The definition of Feature Envy is: Feature Envy occurs when a method in one 
@@ -35,10 +25,21 @@ def refactor_code_smells_FeatureEnvy(example_java_code,java_code):
                 original code into as many methods or classes as possible. Also make sure every methods you give in 
                 the refactored_godclass code should not have feature envy smell.
                 \n{java_code}
-                '''}
-            ],
-            max_tokens=1500
+                '''
+
+def refactor_warning(example_java_code,java_code):
+
+    llm_prompt = prepare_prompt(example_java_code, java_code)
+
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4.1-mini-2025-04-14",
+            messages=[
+                {"role": "system", "content": "I am an AI trained to refactor code smells and bugs in Java code."},
+                {"role": "user", "content": llm_prompt}
+            ]
         )
+        # TODO: Implement prompt logging and calculating token usage stats
         if response.choices:
             model_response = response.choices[0].message.content if response.choices[0].message else ""
         else:
@@ -74,21 +75,20 @@ def write_to_file(file_name, content):
 
 if __name__ == "__main__":
 
-    java_code_file = r"../featureEnvyExample/5/java_code.txt"  # r"C:\Users\20560\Desktop\java_code.txt"
-    example_code_file = r"../featureEnvyExample/example.txt"  # r"C:\Users\20560\Desktop\example.txt"
+    java_code_file = r"cca_dataset/1/before/PhraseChecker.java"
     
 
     with open(java_code_file, 'r', encoding='utf-8') as file:
          java_code = file.read()
          print(f"{java_code_file} read successfully!")
 
-    with open(example_code_file, 'r', encoding='utf-8') as file:
-         example_code = file.read()
-         print(f"{example_code_file} read successfully!")
+    #with open(example_code_file, 'r', encoding='utf-8') as file:
+    #     example_code = file.read()
+    #     print(f"{example_code_file} read successfully!")
 
-    model_response = refactor_code_smells_FeatureEnvy(example_code,java_code)
+    model_response = refactor_warning("", java_code)
     print(model_response)
 
-    output_dir = "../refactored_featureenvy"
+    output_dir = "cca_dataset/1/after"
     os.makedirs(output_dir, exist_ok=True)
-    write_to_file("../refactored_featureenvy/refactored.java", clean_java_code(model_response))
+    write_to_file(os.path.join(output_dir, "refactored.java"), clean_java_code(model_response))

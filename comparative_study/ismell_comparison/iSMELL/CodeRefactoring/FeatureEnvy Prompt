@@ -1,0 +1,207 @@
+In computer programming, a code smell is any characteristic in the source code of a program that possibly indicates a deeper problem. I will now tell you the definition about Feature Envy. Please read the definition and refactor the code according to the target to eliminate this smell.
+The definition of Feature Envy is: Feature Envy occurs when a method in one class can't seem to keep its eyes off the data of another class. This sneaky behavior hints that there might be a better home for the method, where it fits in more naturally and keeps the codebase cleaner and easier to manage.
+Here is an example for refactoring code which has Feature Envy smell, Please read it carefully and learn to show only the most modified critical code after refactoring. You can replace functional code with comments.
+You do not need to keep the structure, improve the code's readability and maintainability
+<example>
+
+origin code:
+```java
+void processRegionsInTransition(final RegionTransitionData data,
+      final HRegionInfo regionInfo,
+      final Map<ServerName, List<Pair<HRegionInfo, Result>>> deadServers,
+      int expectedVersion)
+  throws KeeperException {
+    String encodedRegionName = regionInfo.getEncodedName();
+    LOG.info("Processing region " + regionInfo.getRegionNameAsString() +
+      " in state " + data.getEventType());
+    List<HRegionInfo> hris = this.enablingTables.get(regionInfo.getTableNameAsString());
+    if (hris != null && !hris.isEmpty()) {
+      hris.remove(regionInfo);
+    }
+    synchronized (regionsInTransition) {
+      RegionState regionState = regionsInTransition.get(encodedRegionName);
+      if (regionState != null ||
+          failoverProcessedRegions.containsKey(encodedRegionName)) {
+        // Just return
+        return;
+      }
+      switch (data.getEventType()) {
+      case M_ZK_REGION_CLOSING:
+        // If zk node of the region was updated by a live server skip this
+        // region and just add it into RIT.
+        if (isOnDeadServer(regionInfo, deadServers) &&
+            (data.getOrigin() == null || !serverManager.isServerOnline(data.getOrigin()))) {
+          // If was on dead server, its closed now. Force to OFFLINE and this
+          // will get it reassigned if appropriate
+          forceOffline(regionInfo, data);
+        } else {
+          // Just insert region into RIT.
+          // If this never updates the timeout will trigger new assignment
+          regionsInTransition.put(encodedRegionName, new RegionState(
+            regionInfo, RegionState.State.CLOSING,
+            data.getStamp(), data.getOrigin()));
+        }
+        failoverProcessedRegions.put(encodedRegionName, regionInfo);
+        break;
+
+      case RS_ZK_REGION_CLOSED:
+      case RS_ZK_REGION_FAILED_OPEN:
+        // Region is closed, insert into RIT and handle it
+        addToRITandCallClose(regionInfo, RegionState.State.CLOSED, data);
+        failoverProcessedRegions.put(encodedRegionName, regionInfo);
+        break;
+
+      case M_ZK_REGION_OFFLINE:
+        // If zk node of the region was updated by a live server skip this
+        // region and just add it into RIT.
+        if (isOnDeadServer(regionInfo, deadServers) &&
+            (data.getOrigin() == null ||
+              !serverManager.isServerOnline(data.getOrigin()))) {
+          // Region is offline, insert into RIT and handle it like a closed
+          addToRITandCallClose(regionInfo, RegionState.State.OFFLINE, data);
+        } else if (data.getOrigin() != null &&
+            !serverManager.isServerOnline(data.getOrigin())) {
+          // to handle cases where offline node is created but sendRegionOpen
+          // RPC is not yet sent
+          addToRITandCallClose(regionInfo, RegionState.State.OFFLINE, data);
+        } else {
+          regionsInTransition.put(encodedRegionName, new RegionState(
+              regionInfo, RegionState.State.PENDING_OPEN, data.getStamp(), data
+                  .getOrigin()));
+        }
+        failoverProcessedRegions.put(encodedRegionName, regionInfo);
+        break;
+
+      case RS_ZK_REGION_OPENING:
+        // TODO: Could check if it was on deadServers.  If it was, then we could
+        // do what happens in TimeoutMonitor when it sees this condition.
+
+        // Just insert region into RIT
+        // If this never updates the timeout will trigger new assignment
+        if (regionInfo.isMetaTable()) {
+          regionsInTransition.put(encodedRegionName, new RegionState(
+              regionInfo, RegionState.State.OPENING, data.getStamp(), data
+                  .getOrigin()));
+          // If ROOT or .META. table is waiting for timeout monitor to assign
+          // it may take lot of time when the assignment.timeout.period is
+          // the default value which may be very long.  We will not be able
+          // to serve any request during this time.
+          // So we will assign the ROOT and .META. region immediately.
+          processOpeningState(regionInfo);
+          break;
+        }
+        regionsInTransition.put(encodedRegionName, new RegionState(regionInfo,
+            RegionState.State.OPENING, data.getStamp(), data.getOrigin()));
+        failoverProcessedRegions.put(encodedRegionName, regionInfo);
+        break;
+
+      case RS_ZK_REGION_OPENED:
+        // Region is opened, insert into RIT and handle it
+        regionsInTransition.put(encodedRegionName, new RegionState(
+            regionInfo, RegionState.State.OPEN,
+            data.getStamp(), data.getOrigin()));
+        ServerName sn = data.getOrigin() == null? null: data.getOrigin();
+        // sn could be null if this server is no longer online.  If
+        // that is the case, just let this RIT timeout; it'll be assigned
+        // to new server then.
+        if (sn == null) {
+          LOG.warn("Region in transition " + regionInfo.getEncodedName() +
+            " references a null server; letting RIT timeout so will be " +
+            "assigned elsewhere");
+        } else if (!serverManager.isServerOnline(sn)
+            && (isOnDeadServer(regionInfo, deadServers)
+                || regionInfo.isMetaRegion() || regionInfo.isRootRegion())) {
+          forceOffline(regionInfo, data);
+        } else {
+          new OpenedRegionHandler(master, this, regionInfo, sn, expectedVersion)
+              .process();
+        }
+        failoverProcessedRegions.put(encodedRegionName, regionInfo);
+        break;
+      }
+    }
+  }
+```
+
+refactored code:
+
+```java
+public class RegionStateManager {
+    private Map<String, RegionState> regionsInTransition;
+    private Map<ServerName, List<Pair<HRegionInfo, Result>>> deadServers;
+    private ServerManager serverManager;
+
+    public RegionStateManager(Map<String, RegionState> regionsInTransition, 
+                              Map<ServerName, List<Pair<HRegionInfo, Result>>> deadServers,
+                              ServerManager serverManager) {
+        this.regionsInTransition = regionsInTransition;
+        this.deadServers = deadServers;
+        this.serverManager = serverManager;
+    }
+    
+    public void processRegionState(HRegionInfo regionInfo, RegionTransitionData data, int expectedVersion) {
+        String encodedRegionName = regionInfo.getEncodedName();
+        RegionState regionState = regionsInTransition.get(encodedRegionName);
+
+        if (regionState != null || failoverProcessedRegions.containsKey(encodedRegionName)) {
+            return;
+        }
+
+        switch (data.getEventType()) {
+            case M_ZK_REGION_CLOSING:
+                handleRegionClosing(regionInfo, data);
+                break;
+            case RS_ZK_REGION_CLOSED:
+            case RS_ZK_REGION_FAILED_OPEN:
+                handleRegionClosed(regionInfo, data);
+                break;
+            case M_ZK_REGION_OFFLINE:
+                handleRegionOffline(regionInfo, data);
+                break;
+            case RS_ZK_REGION_OPENING:
+                handleRegionOpening(regionInfo, data);
+                break;
+            case RS_ZK_REGION_OPENED:
+                handleRegionOpened(regionInfo, data, expectedVersion);
+                break;
+        }
+    }
+
+    private void handleRegionClosing(HRegionInfo regionInfo, RegionTransitionData data) {
+        if (isOnDeadServer(regionInfo) && (data.getOrigin() == null || !serverManager.isServerOnline(data.getOrigin()))) {
+            forceOffline(regionInfo, data);
+        } else {
+            regionsInTransition.put(regionInfo.getEncodedName(), new RegionState(
+                regionInfo, RegionState.State.CLOSING, data.getStamp(), data.getOrigin()));
+        }
+        failoverProcessedRegions.put(regionInfo.getEncodedName(), regionInfo);
+    }
+
+    // Additional methods to handle other cases (handleRegionClosed, handleRegionOffline, etc.)
+    
+    private boolean isOnDeadServer(HRegionInfo regionInfo) {
+        // Check if region is on a dead server
+    }
+
+    private void forceOffline(HRegionInfo regionInfo, RegionTransitionData data) {
+        // Force region offline
+    }
+}
+public void processRegionsInTransition(final RegionTransitionData data,
+      final HRegionInfo regionInfo,
+      final Map<ServerName, List<Pair<HRegionInfo, Result>>> deadServers,
+      int expectedVersion) throws KeeperException {
+    LOG.info("Processing region " + regionInfo.getRegionNameAsString() +
+      " in state " + data.getEventType());
+    List<HRegionInfo> hris = this.enablingTables.get(regionInfo.getTableNameAsString());
+    if (hris != null && !hris.isEmpty()) {
+      hris.remove(regionInfo);
+    }
+    RegionStateManager manager = new RegionStateManager(regionsInTransition, deadServers, serverManager);
+    manager.processRegionState(regionInfo, data, expectedVersion);
+}
+```
+</example>
+Now based on the example, refactor the following code to eliminate the feature envy code smell. You can achieve it by dividing the method in original code into as many methods or classes as possible. Also make sure every methods you give in the refactored code should not have feature envy smell.
+
+```java

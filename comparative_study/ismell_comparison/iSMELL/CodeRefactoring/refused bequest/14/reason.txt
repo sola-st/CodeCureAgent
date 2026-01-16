@@ -1,0 +1,78 @@
+### Original Code Analysis
+
+In the original code, `GoDiagramToEdge` inherits from `AbstractPerspectiveRule`, but it only uses a small subset of the inherited methods and properties. This is a classic example of the "Refused Bequest" code smell, which indicates that the subclass should not inherit from the parent class if it does not use most of its inherited behavior.
+
+### Changes Made
+
+1. **Extracted `DiagramEdgeHandler` Class**:
+    ```java
+    class DiagramEdgeHandler {
+        private Diagram diagram;
+
+        public DiagramEdgeHandler(Diagram diagram) {
+            this.diagram = diagram;
+        }
+
+        public Collection getEdges() {
+            return Collections.unmodifiableCollection(diagram.getEdges());
+        }
+
+        public Set getDependencies() {
+            return Collections.singleton(diagram);
+        }
+    }
+    ```
+
+    **Explanation**:
+    - **Purpose**: This class encapsulates the logic related to managing the edges and dependencies of a `Diagram`.
+    - **Reason**: By extracting this functionality, we reduce the responsibility of `GoDiagramToEdge` and make it clearer which operations pertain to diagrams.
+    - **Benefit**: It promotes the Single Responsibility Principle (SRP), making the code easier to maintain and test.
+
+2. **Refactored `GoDiagramToEdge` Class**:
+    ```java
+    public class GoDiagramToEdge {
+        private DiagramEdgeHandler handler;
+
+        public GoDiagramToEdge(Diagram diagram) {
+            this.handler = new DiagramEdgeHandler(diagram);
+        }
+
+        public String getRuleName() {
+            return Translator.localize("misc.diagram.edge");
+        }
+
+        public Collection getChildren(Object parent) {
+            if (parent instanceof Diagram) {
+                return handler.getEdges();
+            }
+            return Collections.emptyList();
+        }
+
+        public Set getDependencies(Object parent) {
+            if (parent instanceof Diagram) {
+                return handler.getDependencies();
+            }
+            return Collections.emptySet();
+        }
+    }
+    ```
+
+    **Explanation**:
+    - **Purpose**: This class now delegates the responsibility of managing edges and dependencies to the `DiagramEdgeHandler` class.
+    - **Reason**: The primary responsibility of this class is to provide the rule name and handle the relationship between diagrams and edges.
+    - **Benefit**:
+        - **Eliminates Inheritance**: By not inheriting from `AbstractPerspectiveRule`, `GoDiagramToEdge` avoids the "Refused Bequest" smell.
+        - **Encapsulation**: Delegating to `DiagramEdgeHandler` ensures that `GoDiagramToEdge` only manages its core functionality without the burden of unused inherited methods.
+        - **Clarity**: The class is now more focused and easier to understand, making the codebase more maintainable.
+
+### Addressing the Code Smell
+
+- **Reduced Inheritance**: The refactoring removes unnecessary inheritance. `GoDiagramToEdge` no longer inherits from `AbstractPerspectiveRule`, thus adhering to the principle that classes should only inherit from another class if they use most of its behavior.
+
+- **Improved Readability and Maintainability**: By separating concerns into different classes (`DiagramEdgeHandler` for edge management and `GoDiagramToEdge` for rule handling), the code becomes more modular. This modularity makes the code easier to read, understand, and maintain.
+
+- **Adherence to SOLID Principles**:
+  - **Single Responsibility Principle (SRP)**: Each class now has a single responsibility. `DiagramEdgeHandler` manages diagram edges and dependencies, while `GoDiagramToEdge` handles rule definitions.
+  - **Encapsulation**: Each class encapsulates its behavior and data, making the system more robust and easier to change.
+
+Overall, these changes improve the design by ensuring each class has a clear and distinct responsibility, reducing coupling and enhancing cohesion.

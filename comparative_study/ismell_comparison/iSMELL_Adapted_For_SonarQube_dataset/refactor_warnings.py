@@ -25,7 +25,7 @@ class Warning:
         
         rule_docu = ""
         
-        rule_docu_file = "cca_dataset/metadata/java/metadata_full_sonar_way_profile.json"
+        rule_docu_file = "cca_dataset/sonar_qube_rule_metadata/java/metadata_full_sonar_way_profile.json"
         try:
             with open(rule_docu_file, 'r', encoding='utf-8') as file:
                 import json
@@ -181,7 +181,7 @@ def fix_warning(warning: Warning):
 
 if __name__ == "__main__":
 
-    csv_file_path = 'cca_dataset/evaluation_dataset_filled_up_to_1000_input_file.csv'
+    csv_file_path = 'evaluation_dataset_filled_up_to_1000_input_file.csv'
     
     try:
         with open(csv_file_path, 'r', encoding='utf-8') as file:

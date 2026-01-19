@@ -25,7 +25,7 @@ class Warning:
         
         rule_docu = ""
         
-        rule_docu_file = "cca_dataset/sonar_qube_rule_metadata/java/metadata_full_sonar_way_profile.json"
+        rule_docu_file = "sonar_qube_rule_metadata/java/metadata_full_sonar_way_profile.json"
         try:
             with open(rule_docu_file, 'r', encoding='utf-8') as file:
                 import json
@@ -86,26 +86,21 @@ The example should clearly demonstrate the issue that this rule addresses and ho
 def create_prompt_text(warning: Warning,  java_code):
     llm_prompt = ""
     if warning.rule_type == "Code_Smell":
-        llm_prompt += """In computer programming, a code smell is any characteristic in the 
-                source code of a program that possibly indicates a deeper problem."""
+        llm_prompt += """In computer programming, a code smell is any characteristic in the source code of a program that possibly indicates a deeper problem."""
     elif warning.rule_type == "Bug":
-        llm_prompt += """In computer programming, a bug is an error, flaw or fault in a computer program 
-                that causes it to produce an incorrect or unexpected result, or to behave in unintended ways."""
+        llm_prompt += """In computer programming, a bug is an error, flaw or fault in a computer program that causes it to produce an incorrect or unexpected result, or to behave in unintended ways."""
     elif warning.rule_type == "Vulnerability":
-        llm_prompt += """In computer programming, a vulnerability is a weakness in a computer system or 
-                application that can be exploited by an attacker to gain unauthorized access or cause harm."""
+        llm_prompt += """In computer programming, a vulnerability is a weakness in a computer system or application that can be exploited by an attacker to gain unauthorized access or cause harm."""
     elif warning.rule_type == "Security_Hotspot":
-        llm_prompt += """In computer programming, a security hotspot is a piece of code that is not 
-                necessarily a vulnerability, but it requires review and possibly refactoring to ensure that it is secure."""
+        llm_prompt += """In computer programming, a security hotspot is a piece of code that is not necessarily a vulnerability, but it requires review and possibly refactoring to ensure that it is secure."""
     else:
         print(f"Unknown rule type: {warning.rule_type}")
-        llm_prompt += """In computer programming, there are various types of code issues such as 
-                code smells, bugs, vulnerabilities, and security hotspots that can affect the quality 
-                and security of the codebase."""
+        llm_prompt += """In computer programming, there are various types of code issues such as code smells, bugs, vulnerabilities, and security hotspots that can affect the quality and security of the codebase."""
 
     llm_prompt += f"""\nNow I will tell you the definition about SonarQube warning '{warning.rule_key}':'{warning.rule_name}' as given by the SonarQube docu, including an example to help you solve a similar warning:""" + \
         f"""\n'{warning.rule_docu}'\n\n""" + \
         f"""Now based on the example, refactor the following Java code to eliminate the '{warning.rule_key}':'{warning.rule_name}' warning, with specific warning message '{warning.specific_message}'.""" + \
+        f"""Output the full refactored code.\n""" + \
         f""" The warning is located at the line '{warning.warning_line}'. Give the changed code using: ```...```.\n""" + \
         f"""Java code:\n```{java_code}```"""
 
@@ -176,7 +171,7 @@ def fix_warning(warning: Warning):
 
     output_dir = f"cca_dataset/{warning.warning_id}/after"
     os.makedirs(output_dir, exist_ok=True)
-    write_to_file(os.path.join(output_dir, "refactored.java"), clean_java_code(model_response))
+    write_to_file(os.path.join(output_dir, warning.file_name), clean_java_code(model_response))
 
 
 if __name__ == "__main__":
@@ -187,7 +182,7 @@ if __name__ == "__main__":
         with open(csv_file_path, 'r', encoding='utf-8') as file:
             reader = csv.DictReader(file)
             for row in reader:
-                if int(row['instanceID']) != 269:
+                if int(row['instanceID']) != 269 and int(row['instanceID']) != 1 and int(row['instanceID']) != 2:
                     continue 
 
                 # Extract warning details

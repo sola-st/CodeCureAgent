@@ -1,7 +1,9 @@
+import time
 from dotenv import load_dotenv
 from openai import OpenAI
 import os
 import csv
+from iSMELL_utility_scripts.llm_logger import log_llm_interaction
 
 load_dotenv(verbose=True, override=True)
 
@@ -9,6 +11,9 @@ client = OpenAI(
     base_url=None,
     api_key=os.environ["OPENAI_API_KEY"],
 )
+
+GPT_MODEL = "gpt-4.1-mini-2025-04-14"
+
 
 class Warning:
     def __init__(self, warning_id, rule_type, rule_key, rule_name, file_name, specific_message, warning_line):
@@ -55,15 +60,16 @@ which is of type '{self.rule_type}' and named '{self.rule_name}'. The SonarQube 
 The example should clearly demonstrate the issue that this rule addresses and how it is fixed. Provide two versions: 'Noncompliant code example' and 'Compliant solution'. Don't output anything but the code examples."""
         print("Prompt for code example:")
         print(prompt)
+        
+        example = ""
         try:
             response = client.chat.completions.create(
-                model="gpt-4.1-mini-2025-04-14",
+                model=GPT_MODEL,
                 messages=[
                     {"role": "system", "content": "You are an AI assistant that provides code examples for SonarQube warnings."},
                     {"role": "user", "content": prompt}
                 ]
             )
-            # TODO: Implement prompt logging and calculating token usage stats
 
             if response.choices:
                 example = response.choices[0].message.content if response.choices[0].message else ""
@@ -72,6 +78,17 @@ The example should clearly demonstrate the issue that this rule addresses and ho
 
             print("Generated code example:")
             print(example)
+            
+            output_dir = f"cca_dataset/{self.warning_id}/after"
+            log_llm_interaction(
+                warning_id=self.warning_id,
+                interaction_type="example_generation",
+                prompt=prompt,
+                response_content=example,
+                usage=response.usage if response else None,
+                output_dir=output_dir,
+                model_name=GPT_MODEL
+            )
 
         except Exception as e:
             print(f"Error while generating example for rule docu: {e}")
@@ -113,19 +130,31 @@ def refactor_warning(warning: Warning, java_code):
     print("Prompt for refactoring warning:")
     print(llm_prompt)
 
+    model_response = ""
     try:
         response = client.chat.completions.create(
-            model="gpt-4.1-mini-2025-04-14",
+            model=GPT_MODEL,
             messages=[
                 {"role": "system", "content": "I am an AI trained to refactor code smells and bugs in Java code."},
                 {"role": "user", "content": llm_prompt}
             ]
         )
-        # TODO: Implement prompt logging and calculating token usage stats
+        
         if response.choices:
             model_response = response.choices[0].message.content if response.choices[0].message else ""
         else:
             model_response = ""
+            
+        output_dir = f"cca_dataset/{warning.warning_id}/after"
+        log_llm_interaction(
+            warning_id=warning.warning_id,
+            interaction_type="refactoring",
+            prompt=llm_prompt,
+            response_content=model_response,
+            usage=response.usage if response else None,
+            output_dir=output_dir,
+            model_name=GPT_MODEL
+        )
 
     except Exception as e:
         print(f"Error while detecting code smells: {e}")
@@ -182,7 +211,7 @@ if __name__ == "__main__":
         with open(csv_file_path, 'r', encoding='utf-8') as file:
             reader = csv.DictReader(file)
             for row in reader:
-                if int(row['instanceID']) != 269 and int(row['instanceID']) != 1 and int(row['instanceID']) != 2:
+                if int(row['instanceID']) != 269 and int(row['instanceID']) != 1:
                     continue 
 
                 # Extract warning details
@@ -196,7 +225,17 @@ if __name__ == "__main__":
                     warning_line=row['startLine']
                 )
 
+                time_log_file = os.path.join("cca_dataset", str(warning.warning_id), "after", "execution_time.log")
+
+                start_time = time.time()
+                with open(time_log_file, 'w') as log_file:
+                    log_file.write(f"!! Warning {warning.warning_id} fixing startup timestamp: " + str(time.time_ns()) + "\n")
+
                 fix_warning(warning)
+
+                end_time = time.time()
+                with open(time_log_file, 'a') as log_file:
+                    log_file.write(f"!! Warning {warning.warning_id} fixing end timestamp: " + str(time.time_ns()) + "\n")
                 
     except FileNotFoundError:
         raise FileNotFoundError(f"CSV file not found: {csv_file_path}")

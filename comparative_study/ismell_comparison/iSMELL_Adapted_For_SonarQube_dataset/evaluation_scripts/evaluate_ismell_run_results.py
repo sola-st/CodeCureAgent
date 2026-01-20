@@ -40,7 +40,7 @@ def evaluate_ismell_run_results():
             csv_writer = csv.writer(
                 results_csv_file, dialect=csv.unix_dialect)
             csv_writer.writerow(["instanceID", "projectName", "ruleKey", "ruleName", "ruleType", "experimentNumber", "classification", "plausibleFix",
-                                "fixComplexity", "classificationSoundness", "fixCorrectness", "classificationSoundnessExplanation", "fixCorrectnessExplanation", "ismellFixCreated", "ismellTotalTime", "ismellBuildSuccessful", "ismellSonarCheckRemovedWarning", "ismellSonarCheckNoNewWarning", "ismellTestSuccessful", "ismellBuildAndRemovedWarning", "ismellBuildAndRemovedWarningAndNoNewWarning", "ismellBuildAndRemovedWarningAndNoNewWarningAndTest", "ismellTPAssumptionSoundness", "ismellCorrectFix", "codeSmellOutsideOfSonarQubeIntroduced", "ismellTPAssumptionSoundnessExplanation", "ismellFixCorrectnessExplanation"])
+                                "fixComplexity", "classificationSoundness", "fixCorrectness", "classificationSoundnessExplanation", "fixCorrectnessExplanation", "ismellFixCreated", "ismellTotalTime", "ismellBuildSuccessful", "ismellSonarCheckRemovedWarning", "ismellSonarCheckNoNewWarning", "ismellTestSuccessful", "ismellBuildAndRemovedWarning", "ismellBuildAndRemovedWarningAndNoNewWarning", "ismellBuildAndRemovedWarningAndNoNewWarningAndTest", "ismellUncachedInputTokens", "ismellCachedInputTokens", "ismellOutputTokens", "ismellTotalTokens", "ismellCost", "ismellTPAssumptionSoundness", "ismellCorrectFix", "codeSmellOutsideOfSonarQubeIntroduced", "ismellTPAssumptionSoundnessExplanation", "ismellFixCorrectnessExplanation"])
 
     with open(TARGET_CSV_FILE_PATH, "a+") as results_csv_file:
         csv_writer = csv.writer(
@@ -53,12 +53,58 @@ def evaluate_ismell_run_results():
             repository_name = warning_item["repositoryURL"].split(
                 "/")[-1].removesuffix(".git")
             
-
-            ismell_fix_created = False
-
             warning_after_fix_folder = os.path.join(ISMELL_DATASET_FOLDER, str(
                 warning_item['instanceID']), "after")
+            
 
+            # Calc time
+
+            ismell_total_time = 0
+
+            time_log_file_path = os.path.join(warning_after_fix_folder, "execution_time.log")
+
+            if os.path.exists(time_log_file_path):
+
+                with open(time_log_file_path, "r") as proposer_log_file:
+                    proposer_time_content = proposer_log_file.read()
+
+                pattern = r"!! Warning \d+ fixing startup timestamp: (\d+)"
+                start_time_match = re.search(
+                    pattern, proposer_time_content)
+                start_time = int(start_time_match.group(1).strip())
+
+                pattern = r"!! Warning \d+ fixing end timestamp: (\d+)"
+                end_time_match = re.search(
+                    pattern, proposer_time_content)
+                end_time = int(end_time_match.group(1).strip())
+
+                ismell_total_time = end_time - start_time
+
+            # Calc token consuption
+
+            ismell_uncached_input_tokens = 0
+            ismell_cached_input_tokens = 0
+            ismell_output_tokens = 0
+            ismell_total_tokens = 0
+            ismell_cost = 0.0
+
+            prompt_log_file_path = os.path.join(warning_after_fix_folder, "llm_interactions_log.json")
+
+            if os.path.exists(prompt_log_file_path):
+                
+                with open(prompt_log_file_path, "r") as prompt_log_file:
+                    prompt_log_content = json.load(prompt_log_file)
+
+                for interaction in prompt_log_content:
+                    ismell_uncached_input_tokens += interaction.get("token_usage", 0).get("prompt_tokens_details", 0).get("uncached_tokens", 0)
+                    ismell_cached_input_tokens += interaction.get("token_usage", 0).get("prompt_tokens_details", 0).get("cached_tokens", 0)
+                    ismell_output_tokens += interaction.get("token_usage", 0).get("completion_tokens", 0)
+                    ismell_cost += interaction.get("estimated_cost", 0.0).get("total_cost", 0.0)
+
+                ismell_total_tokens = ismell_uncached_input_tokens + ismell_cached_input_tokens + ismell_output_tokens
+
+            ismell_fix_created = False
+            
             warning_fix_file_path = os.path.join(warning_after_fix_folder, warning_item["filePath"].split('/')[-1])
             
             if not os.path.exists(warning_fix_file_path):
@@ -67,7 +113,7 @@ def evaluate_ismell_run_results():
                 ismell_fix_created = False
                 csv_writer.writerow(
                     list(
-                        cca_results_df.iloc[index]) + [ismell_fix_created, "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""]
+                        cca_results_df.iloc[index]) + [ismell_fix_created, ismell_total_time, False, False, False, False, False, False, False, ismell_uncached_input_tokens, ismell_cached_input_tokens, ismell_output_tokens, ismell_total_tokens, ismell_cost, "", "", "", "", ""]
                 )
                 continue
             
@@ -98,7 +144,7 @@ def evaluate_ismell_run_results():
             
 
             
-            ismell_total_time = 0
+            
             ismellBuildSuccessful = False
             ismellSonarCheckRemovedWarning = False
             # This has to be true for correct alg
@@ -108,25 +154,7 @@ def evaluate_ismell_run_results():
             ismellBuildAndRemovedWarningAndNoNewWarning = False
             ismellBuildAndRemovedWarningAndNoNewWarningAndTest = False
 
-            # Calc time
-
-            time_log_file_path = os.path.join(warning_after_fix_folder, "execution_time.log")
-
-            with open(time_log_file_path, "r") as proposer_log_file:
-                proposer_time_content = proposer_log_file.read()
-
-            pattern = r"!! Warning \d+ fixing startup timestamp: (\d+)"
-            start_time_match = re.search(
-                pattern, proposer_time_content)
-            start_time = int(start_time_match.group(1).strip())
-
-            pattern = r"!! Warning \d+ fixing end timestamp: (\d+)"
-            end_time_match = re.search(
-                pattern, proposer_time_content)
-            end_time = int(end_time_match.group(1).strip())
-
-            ismell_total_time = end_time - start_time
-
+            
             
 
             # apply the fixed file to the target project
@@ -281,7 +309,7 @@ def evaluate_ismell_run_results():
             # Save results in csv (including the cca results)
             csv_writer.writerow(
                 list(
-                    cca_results_df.iloc[index]) + [ismell_fix_created, ismell_total_time, ismellBuildSuccessful, ismellSonarCheckRemovedWarning, ismellSonarCheckNoNewWarning, ismellTestSuccessful, ismellBuildAndRemovedWarning, ismellBuildAndRemovedWarningAndNoNewWarning, ismellBuildAndRemovedWarningAndNoNewWarningAndTest, "", "", "", "", ""]
+                    cca_results_df.iloc[index]) + [ismell_fix_created, ismell_total_time, ismellBuildSuccessful, ismellSonarCheckRemovedWarning, ismellSonarCheckNoNewWarning, ismellTestSuccessful, ismellBuildAndRemovedWarning, ismellBuildAndRemovedWarningAndNoNewWarning, ismellBuildAndRemovedWarningAndNoNewWarningAndTest, ismell_uncached_input_tokens, ismell_cached_input_tokens, ismell_output_tokens, ismell_total_tokens, ismell_cost, "", "", "", "", ""]
             )
 
     script_end_time = time.time_ns()

@@ -120,9 +120,9 @@ def create_prompt_text(warning: Warning,  java_code):
     llm_prompt += f"""\nNow I will tell you the definition about SonarQube warning '{warning.rule_key}':'{warning.rule_name}' as given by the SonarQube docu, including an example to help you solve a similar warning:""" + \
         f"""\n'{warning.rule_docu}'\n\n""" + \
         f"""Now based on the example, refactor the following Java code to eliminate the '{warning.rule_key}':'{warning.rule_name}' warning, with specific warning message '{warning.specific_message}'.""" + \
-        f"""Output the full refactored code.\n""" + \
-        f""" The warning is located at the line '{warning.warning_line}'. Give the changed code using: ```...```.\n""" + \
-        f"""Java code:\n```{java_code}```"""
+        f"""\nOutput the full refactored code (the full file). Don't leave out any part of the code.\n""" + \
+        f"""The warning is located at the line '{warning.warning_line}'. Give the changed code using: ```...```.\n""" + \
+        f"""Java code:\n```java\n{java_code}```"""
 
 
     return llm_prompt

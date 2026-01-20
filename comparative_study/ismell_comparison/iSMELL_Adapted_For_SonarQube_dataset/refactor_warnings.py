@@ -76,8 +76,11 @@ The example should clearly demonstrate the issue that this rule addresses and ho
             else:
                 example = ""
 
-            print("Generated code example:")
-            print(example)
+            plain_prompt_file = os.path.join("cca_dataset", str(warning.warning_id), "after", str(warning.warning_id) + "_example_generation_prompt.txt")
+            write_to_file(plain_prompt_file, prompt)
+
+            plain_response_file = os.path.join("cca_dataset", str(warning.warning_id), "after", str(warning.warning_id) + "_example_generation_response.txt")
+            write_to_file(plain_response_file, example)
             
             output_dir = f"cca_dataset/{self.warning_id}/after"
             log_llm_interaction(
@@ -144,8 +147,14 @@ def refactor_warning(warning: Warning, java_code):
             model_response = response.choices[0].message.content if response.choices[0].message else ""
         else:
             model_response = ""
+
+        plain_prompt_file = os.path.join("cca_dataset", str(warning.warning_id), "after", str(warning.warning_id) + "_refactoring_prompt.txt")
+        write_to_file(plain_prompt_file, llm_prompt)
+
+        plain_response_file = os.path.join("cca_dataset", str(warning.warning_id), "after", str(warning.warning_id) + "_refactoring_response.txt")
+        write_to_file(plain_response_file, model_response)
             
-        output_dir = f"cca_dataset/{warning.warning_id}/after"
+        output_dir = os.path.join("cca_dataset", str(warning.warning_id), "after")
         log_llm_interaction(
             warning_id=warning.warning_id,
             interaction_type="refactoring",
@@ -198,7 +207,7 @@ def fix_warning(warning: Warning):
     print("Refactoring response:")
     print(model_response)
 
-    output_dir = f"cca_dataset/{warning.warning_id}/after"
+    output_dir = os.path.join("cca_dataset", str(warning.warning_id), "after")
     os.makedirs(output_dir, exist_ok=True)
     write_to_file(os.path.join(output_dir, warning.file_name), clean_java_code(model_response))
 
@@ -211,7 +220,7 @@ if __name__ == "__main__":
         with open(csv_file_path, 'r', encoding='utf-8') as file:
             reader = csv.DictReader(file)
             for row in reader:
-                if int(row['instanceID']) != 269 and int(row['instanceID']) != 1:
+                if int(row['instanceID']) > 50:
                     continue 
 
                 # Extract warning details
@@ -224,6 +233,8 @@ if __name__ == "__main__":
                     specific_message=row['specificMessage'],
                     warning_line=row['startLine']
                 )
+
+                os.makedirs(os.path.join("cca_dataset", str(warning.warning_id), "after"), exist_ok=True)
 
                 time_log_file = os.path.join("cca_dataset", str(warning.warning_id), "after", "execution_time.log")
 

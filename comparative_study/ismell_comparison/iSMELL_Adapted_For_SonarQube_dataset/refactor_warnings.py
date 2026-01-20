@@ -63,6 +63,11 @@ The example should clearly demonstrate the issue that this rule addresses and ho
         
         example = ""
         try:
+            plain_prompt_file = os.path.join("cca_dataset", str(warning.warning_id), "after", str(warning.warning_id) + "_example_generation_prompt.txt")
+            write_to_file(plain_prompt_file, prompt)
+
+            print("Sending example generation prompt to LLM...")
+
             response = client.chat.completions.create(
                 model=GPT_MODEL,
                 messages=[
@@ -76,9 +81,8 @@ The example should clearly demonstrate the issue that this rule addresses and ho
             else:
                 example = ""
 
-            plain_prompt_file = os.path.join("cca_dataset", str(warning.warning_id), "after", str(warning.warning_id) + "_example_generation_prompt.txt")
-            write_to_file(plain_prompt_file, prompt)
-
+            print("Received example generation response from LLM.")
+            
             plain_response_file = os.path.join("cca_dataset", str(warning.warning_id), "after", str(warning.warning_id) + "_example_generation_response.txt")
             write_to_file(plain_response_file, example)
             
@@ -130,11 +134,14 @@ def create_prompt_text(warning: Warning,  java_code):
 def refactor_warning(warning: Warning, java_code):
 
     llm_prompt = create_prompt_text(warning, java_code)
-    print("Prompt for refactoring warning:")
-    print(llm_prompt)
 
     model_response = ""
     try:
+        plain_prompt_file = os.path.join("cca_dataset", str(warning.warning_id), "after", str(warning.warning_id) + "_refactoring_prompt.txt")
+        write_to_file(plain_prompt_file, llm_prompt)
+        
+        print("Sending refactoring prompt to LLM...")
+
         response = client.chat.completions.create(
             model=GPT_MODEL,
             messages=[
@@ -148,8 +155,7 @@ def refactor_warning(warning: Warning, java_code):
         else:
             model_response = ""
 
-        plain_prompt_file = os.path.join("cca_dataset", str(warning.warning_id), "after", str(warning.warning_id) + "_refactoring_prompt.txt")
-        write_to_file(plain_prompt_file, llm_prompt)
+        print("Received refactoring response from LLM.")
 
         plain_response_file = os.path.join("cca_dataset", str(warning.warning_id), "after", str(warning.warning_id) + "_refactoring_response.txt")
         write_to_file(plain_response_file, model_response)
@@ -195,17 +201,16 @@ def write_to_file(file_name, content):
 
 
 def fix_warning(warning: Warning):
+    print(f"Fixing warning ID: {warning.warning_id}, Rule: {warning.rule_key}, File: {warning.file_name}")
     java_code_file = f"cca_dataset/{warning.warning_id}/before/{warning.file_name}"
     
 
     with open(java_code_file, 'r', encoding='utf-8') as file:
          java_code = file.read()
-         print(f"{java_code_file} read successfully!")
 
 
     model_response = refactor_warning(warning, java_code)
-    print("Refactoring response:")
-    print(model_response)
+    
 
     output_dir = os.path.join("cca_dataset", str(warning.warning_id), "after")
     os.makedirs(output_dir, exist_ok=True)

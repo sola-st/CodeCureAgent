@@ -9,21 +9,21 @@ import pandas as pd
 
 import sys
 from pathlib import Path
-sys.path.append(str(Path(__file__).parent.parent.parent.parent / "code_cure_agent"))
-os.chdir(str(Path(__file__).parent.parent.parent.parent / "code_cure_agent"))
+sys.path.append(str(Path(__file__).parent.parent.parent.parent.parent / "code_cure_agent"))
+os.chdir(str(Path(__file__).parent.parent.parent.parent.parent / "code_cure_agent"))
 import subprocess
 
 from agent_core.utils.agent_utils.agent_mock import AgentMock
 from agent_core.commands import repository_operations
 
-WARNINGS_TO_RUN_ON_FILE_PATH = "../comparative_study/ismell_comparison/ISMELL_Adapted_For_SonarQube_dataset/evaluation_dataset_filled_up_to_1000_input_file.csv"
+WARNINGS_TO_RUN_ON_FILE_PATH = "../comparative_study/ismell_comparison/iSMELL_Adapted_For_SonarQube_dataset/evaluation_dataset_filled_up_to_1000_input_file.csv"
 CCA_RESULTS_FILE_PATH = "evaluation_results/evaluation_results.csv"
 
-TARGET_CSV_FILE_PATH = "../comparative_study/ismell_comparison/ISMELL_Adapted_For_SonarQube_dataset/ismell_comparison_results.csv"
+TARGET_CSV_FILE_PATH = "../comparative_study/ismell_comparison/iSMELL_Adapted_For_SonarQube_dataset/ismell_comparison_results.csv"
 
 CCA_WORKSPACE = "cca_workspace"
 
-ISMELL_DATASET_FOLDER = "../comparative_study/ismell_comparison/ISMELL_Adapted_For_SonarQube_dataset/cca_dataset"
+ISMELL_DATASET_FOLDER = "../comparative_study/ismell_comparison/iSMELL_Adapted_For_SonarQube_dataset/cca_dataset"
 
 
 def evaluate_ismell_run_results():
@@ -56,6 +56,9 @@ def evaluate_ismell_run_results():
 
             ismell_fix_created = False
 
+            warning_after_fix_folder = os.path.join(ISMELL_DATASET_FOLDER, str(
+                warning_item['instanceID']), "after")
+
             warning_fix_file_path = os.path.join(warning_after_fix_folder, warning_item["filePath"].split('/')[-1])
             
             if not os.path.exists(warning_fix_file_path):
@@ -76,8 +79,7 @@ def evaluate_ismell_run_results():
 
             repository_operations.checkout_project(agent)
 
-            warning_after_fix_folder = os.path.join(ISMELL_DATASET_FOLDER, str(
-                agent.ai_config.warning_ID), "after")
+            
 
             # mine warnings before (only for the file with the warning to fix, else it takes too long)
             cmd = ["java", "-jar", agent.config.sorald_jar_path, "mine", "--source", os.path.join(CCA_WORKSPACE, agent.ai_config.warning_repository_name, agent.ai_config.warning_file_path), "--stats-output-file",
@@ -229,13 +231,17 @@ def evaluate_ismell_run_results():
                     if len(rule_key_in_after_matched_to_before) == 0:
                         ismellSonarCheckNoNewWarning = False
                         rule_keys_of_newly_introduced_warnings.append(
-                            mined_rule_after["ruleKey"])
+                            (mined_rule_after["ruleKey"], mined_rule_after["ruleName"]))
                     # Check if the number of warnings of the rule is the same or less than before (if not then there are new warnings)
                     elif len(rule_key_in_after_matched_to_before[0]["warningLocations"]) < len(mined_rule_after["warningLocations"]):
                         ismellSonarCheckNoNewWarning = False
                         rule_keys_of_newly_introduced_warnings.append(
-                            mined_rule_after["ruleKey"])
+                            (mined_rule_after["ruleKey"], mined_rule_after["ruleName"]))
 
+            if len(rule_keys_of_newly_introduced_warnings) > 0:
+                with open(os.path.join(warning_after_fix_folder, str(agent.ai_config.warning_ID) + "_new_warnings_introduced.csv"), "w") as log:
+                    for rule_key, rule_name in rule_keys_of_newly_introduced_warnings:
+                        log.write(f"{rule_key},{rule_name}\n")
 
             # Test project
             if ismellBuildSuccessful:

@@ -234,7 +234,7 @@ if __name__ == "__main__":
                 fix_warning(warning)
 
                 end_time = time.time()
-                with open(time_log_file, 'a') as log_file:
+                with open(time_log_file, 'a+') as log_file:
                     log_file.write(f"!! Warning {warning.warning_id} fixing end timestamp: " + str(time.time_ns()) + "\n")
                 
     except FileNotFoundError:

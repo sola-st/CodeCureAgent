@@ -1,0 +1,129 @@
+In computer programming, a code smell is any characteristic in the source code of a program that possibly indicates a deeper problem.
+Now I will tell you the definition about SonarQube warning 'S4977':'Type parameters should not shadow other type parameters' as given by the SonarQube docu, including an example to help you solve a similar warning:
+'Shadowing makes it impossible to use the type parameter from the outer scope. Also, it can be confusing to distinguish which type parameter is being used.
+
+This rule raises an issue when a type parameter from an inner scope uses the same name as one in an outer scope.
+
+Noncompliant Code Example
+    
+    
+     public class TypeParameterHidesAnotherType<T> {
+    
+        public class Inner<T> { // Noncompliant
+          //...
+        }
+    
+        private <T> T method() { // Noncompliant
+          return null;
+        }
+    
+      }
+    
+
+Compliant Solution
+    
+    
+    public class NoTypeParameterHiding<T> {
+    
+        public class Inner<S> { // Compliant
+          List<S> listOfS;
+        }
+    
+        private <V> V method() { // Compliant
+          return null;
+        }
+    
+      }'
+
+Now based on the example, refactor the following Java code to eliminate the 'S4977':'Type parameters should not shadow other type parameters' warning, with specific warning message 'Rename "T" which hides a type parameter from the outer scope.'.
+Output the full refactored code (the full file). Don't leave out any part of the code.
+The warning is located at the line '44'. Give the changed code using: ```...```.
+Java code:
+```java
+package io.gsonfire.gson;
+
+import com.google.gson.*;
+import com.google.gson.reflect.TypeToken;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
+import io.gsonfire.ClassConfig;
+import io.gsonfire.TypeSelector;
+import io.gsonfire.util.JsonUtils;
+
+import java.io.IOException;
+import java.util.Set;
+
+/**
+ * Creates a {@link TypeAdapter} that will run the {@link TypeSelector} and find the {@link TypeAdapter} for the selected
+ * type.
+ */
+public class TypeSelectorTypeAdapterFactory<T> implements TypeAdapterFactory{
+
+    private final ClassConfig<T> classConfig;
+    private final Set<TypeToken> alreadyResolvedTypeTokensRegistry;
+
+    public TypeSelectorTypeAdapterFactory(ClassConfig<T> classConfig, Set<TypeToken> alreadyResolvedTypeTokensRegistry) {
+        this.classConfig = classConfig;
+        this.alreadyResolvedTypeTokensRegistry = alreadyResolvedTypeTokensRegistry;
+    }
+
+    @Override
+    public <T> TypeAdapter<T> create(Gson gson, TypeToken<T> type) {
+        if(alreadyResolvedTypeTokensRegistry.contains(type)) {
+            return null;
+        }
+        if(classConfig.getConfiguredClass().isAssignableFrom(type.getRawType())){
+            TypeAdapter<T> fireTypeAdapter =
+                new NullableTypeAdapter<T>(
+                    new TypeSelectorTypeAdapter<T>(type.getRawType(), classConfig.getTypeSelector(), gson)
+                );
+            return fireTypeAdapter;
+        } else {
+            return null;
+        }
+    }
+
+    private class TypeSelectorTypeAdapter<T> extends TypeAdapter<T> {
+
+        private final Class superClass;
+        private final TypeSelector typeSelector;
+        private final Gson gson;
+
+        private TypeSelectorTypeAdapter(Class superClass, TypeSelector typeSelector, Gson gson) {
+            this.superClass = superClass;
+            this.typeSelector = typeSelector;
+            this.gson = gson;
+        }
+
+        @Override
+        public void write(JsonWriter out, T value) throws IOException {
+            TypeAdapter otherTypeAdapter = gson.getDelegateAdapter(TypeSelectorTypeAdapterFactory.this, TypeToken.get(value.getClass()));
+            otherTypeAdapter.write(out, value);
+        }
+
+        @Override
+        public T read(JsonReader in) throws IOException {
+            JsonElement json = new JsonParser().parse(in);
+            Class deserialize = this.typeSelector.getClassForElement(json);
+            if(deserialize == null) {
+                deserialize = superClass;
+            }
+
+            TypeToken typeToken = TypeToken.get(deserialize);
+            alreadyResolvedTypeTokensRegistry.add(typeToken);
+            TypeAdapter<T> otherTypeAdapter;
+            try {
+                if (deserialize != superClass) {
+                    otherTypeAdapter = gson.getAdapter(typeToken);
+                } else {
+                    otherTypeAdapter = gson.getDelegateAdapter(TypeSelectorTypeAdapterFactory.this, typeToken);
+                }
+            } finally {
+                alreadyResolvedTypeTokensRegistry.remove(typeToken);
+            }
+            return JsonUtils.fromJsonTree(otherTypeAdapter, in, json);
+        }
+    }
+
+}
+```

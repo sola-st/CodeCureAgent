@@ -1,0 +1,210 @@
+In computer programming, a bug is an error, flaw or fault in a computer program that causes it to produce an incorrect or unexpected result, or to behave in unintended ways.
+Now I will tell you the definition about SonarQube warning 'S3655':'Optional value should only be accessed after calling isPresent()' as given by the SonarQube docu, including an example to help you solve a similar warning:
+'`Optional` value can hold either a value or not. The value held in the `Optional` can be accessed using the `get()` method, but it will throw a
+
+`NoSuchElementException` if there is no value present. To avoid the exception, calling the `isPresent()` or `! isEmpty()` method should always be done before any call to `get()`.
+
+Alternatively, note that other methods such as `orElse(...)`, `orElseGet(...)` or `orElseThrow(...)` can be used to specify what to do with an empty `Optional`.
+
+Noncompliant Code Example
+    
+    
+    Optional<String> value = this.getOptionalValue();
+    
+    // ...
+    
+    String stringValue = value.get(); // Noncompliant
+    
+    
+    
+    if (methodThatReturnsOptional().isEmpty()) {
+      throw new NotFoundException();
+    }
+    String value = methodThatReturnsOptional().get(); // Noncompliant: indirect access, we consider that two consecutive calls can return different values.
+    
+
+Compliant Solution
+    
+    
+    this.getOptionalValue().ifPresent(stringValue ->
+      // Do something with stringValue
+    );
+    
+
+or
+    
+    
+    Optional<String> value = this.getOptionalValue();
+    
+    // ...
+    
+    if (value.isPresent()) {
+      String stringValue = value.get();
+    }
+    
+
+or
+    
+    
+    Optional<String> value = this.getOptionalValue();
+    
+    // ...
+    
+    String stringValue = value.orElse("default");
+    
+    
+    
+    Optional<String> optional = methodThatReturnsOptional();
+    if (optional.isEmpty()) {
+      throw new NotFoundException();
+    }
+    String value = optional.get();
+    
+
+See
+
+  * [MITRE, CWE-476](https://cwe.mitre.org/data/definitions/476) \- NULL Pointer Dereference'
+
+Now based on the example, refactor the following Java code to eliminate the 'S3655':'Optional value should only be accessed after calling isPresent()' warning, with specific warning message 'Call "bytes.isPresent()" before accessing the value.'.
+Output the full refactored code (the full file). Don't leave out any part of the code.
+The warning is located at the line '100'. Give the changed code using: ```...```.
+Java code:
+```java
+/*
+ * Copyright 2010 Henry Coles
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and limitations under the License.
+ */
+package org.pitest.mutationtest.engine.gregor;
+
+import static org.pitest.functional.prelude.Prelude.and;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Predicate;
+
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassWriter;
+import org.pitest.bytecode.FrameOptions;
+import org.pitest.bytecode.NullVisitor;
+import org.pitest.classinfo.ClassByteArraySource;
+import org.pitest.classinfo.ClassName;
+import org.pitest.classinfo.ComputeClassWriter;
+import org.pitest.functional.FCollection;
+import org.pitest.mutationtest.engine.Mutant;
+import org.pitest.mutationtest.engine.Mutater;
+import org.pitest.mutationtest.engine.MutationDetails;
+import org.pitest.mutationtest.engine.MutationIdentifier;
+
+public class GregorMutater implements Mutater {
+
+  private final Map<String, String>       computeCache   = new HashMap<>();
+  private final Predicate<MethodInfo>     filter;
+  private final ClassByteArraySource      byteSource;
+  private final Set<MethodMutatorFactory> mutators       = new HashSet<>();
+
+  public GregorMutater(final ClassByteArraySource byteSource,
+      final Predicate<MethodInfo> filter,
+      final Collection<MethodMutatorFactory> mutators) {
+    this.filter = filter;
+    this.mutators.addAll(mutators);
+    this.byteSource = byteSource;
+  }
+
+  @Override
+  public List<MutationDetails> findMutations(
+      final ClassName classToMutate) {
+
+    final ClassContext context = new ClassContext();
+    context.setTargetMutation(Optional.<MutationIdentifier> empty());
+    Optional<byte[]> bytes = GregorMutater.this.byteSource.getBytes(
+        classToMutate.asInternalName());
+    
+    return bytes.map(findMutations(context))
+        .orElse(Collections.<MutationDetails>emptyList());
+
+  }
+
+  private Function<byte[], List<MutationDetails>> findMutations(
+      final ClassContext context) {
+    return bytes -> findMutationsForBytes(context, bytes);
+  }
+
+  private List<MutationDetails> findMutationsForBytes(
+      final ClassContext context, final byte[] classToMutate) {
+
+    final ClassReader first = new ClassReader(classToMutate);
+    final NullVisitor nv = new NullVisitor();
+    final MutatingClassVisitor mca = new MutatingClassVisitor(nv, context,
+        filterMethods(), this.mutators);
+
+    first.accept(mca, ClassReader.EXPAND_FRAMES);
+
+    return new ArrayList<>(context.getCollectedMutations());
+  }
+
+  @Override
+  public Mutant getMutation(final MutationIdentifier id) {
+
+    final ClassContext context = new ClassContext();
+    context.setTargetMutation(Optional.ofNullable(id));
+
+    final Optional<byte[]> bytes = this.byteSource.getBytes(id.getClassName()
+        .asJavaName());
+
+    final ClassReader reader = new ClassReader(bytes.get());
+    final ClassWriter w = new ComputeClassWriter(this.byteSource,
+        this.computeCache, FrameOptions.pickFlags(bytes.get()));
+    final MutatingClassVisitor mca = new MutatingClassVisitor(w, context,
+        filterMethods(), FCollection.filter(this.mutators,
+            isMutatorFor(id)));
+    reader.accept(mca, ClassReader.EXPAND_FRAMES);
+
+    final List<MutationDetails> details = context.getMutationDetails(context
+        .getTargetMutation().get());
+
+    return new Mutant(details.get(0), w.toByteArray());
+
+  }
+
+  private static Predicate<MethodMutatorFactory> isMutatorFor(
+      final MutationIdentifier id) {
+    return a -> id.getMutator().equals(a.getGloballyUniqueId());
+  }
+
+  private Predicate<MethodInfo> filterMethods() {
+    return and(this.filter, filterSyntheticMethods(),
+        isGeneratedEnumMethod().negate(), isGroovyClass().negate());
+  }
+
+  private static Predicate<MethodInfo> isGroovyClass() {
+    return a -> a.isInGroovyClass();
+  }
+
+  private static Predicate<MethodInfo> filterSyntheticMethods() {
+    return a -> !a.isSynthetic() || a.getName().startsWith("lambda$");
+  }
+
+  private static Predicate<MethodInfo> isGeneratedEnumMethod() {
+    return a -> a.isGeneratedEnumMethod();
+  }
+
+}
+```

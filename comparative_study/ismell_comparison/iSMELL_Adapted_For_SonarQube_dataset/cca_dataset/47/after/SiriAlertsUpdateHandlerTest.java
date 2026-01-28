@@ -660,7 +660,7 @@ public class SiriAlertsUpdateHandlerTest extends GtfsTest {
     PtSituationElement ptSituation = createPtSituationElement(situationNumber,
         startTime,
         endTime,
-        createAffectsLine(lineRef.getId(), null)
+        createAffectsLine(lineRef.getId(), (String)(null)) // cast null explicitly to String to avoid vararg confusion
     );
 
     final ServiceDelivery serviceDelivery = createServiceDelivery(ptSituation);
@@ -735,7 +735,7 @@ public class SiriAlertsUpdateHandlerTest extends GtfsTest {
     PtSituationElement ptSituation = createPtSituationElement(situationNumber,
         startTime,
         endTime,
-        createAffectsLine(lineRef.getId(), null)
+        createAffectsLine(lineRef.getId(), (String)(null)) // explicit cast here as well
     );
 
     alertsUpdateHandler.update(createServiceDelivery(ptSituation));
@@ -753,7 +753,7 @@ public class SiriAlertsUpdateHandlerTest extends GtfsTest {
     ptSituation = createPtSituationElement(situationNumber,
         startTime,
         endTime,
-        createAffectsLine(lineRef.getId(), null)
+        createAffectsLine(lineRef.getId(), (String)(null)) // explicit cast
     );
 
     ptSituation.setProgress(WorkflowStatusEnumeration.CLOSED);
@@ -1031,13 +1031,5 @@ public class SiriAlertsUpdateHandlerTest extends GtfsTest {
   @Override
   public String getFeedName() {
     return "gtfs/interlining";
-  }
-  
-  // Refactored line to fix S5669 warning (line 738 originally):
-  // Cast this argument to 'String' to pass a single element to the vararg method
-  @Test
-  public void exampleVarargUsage() {
-    // Example usage demonstrating fix for S5669 warning:
-    alertsUpdateHandler.someVarargMethod((String) null); // corrected: cast argument to String
   }
 }

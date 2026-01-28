@@ -44,7 +44,7 @@ public class ConfigSection extends LinkedHashMap<String, Object> {
         }
     }
 
-    private List parseList(List list) {
+    private List<Object> parseList(List<?> list) {
         List<Object> newList = new ArrayList<>();
 
         for (Object o : list) {
@@ -385,7 +385,7 @@ public class ConfigSection extends LinkedHashMap<String, Object> {
      * @return
      */
     public List<String> getStringList(String key) {
-        List value = this.getList(key);
+        List<?> value = this.getList(key);
         if (value == null) {
             return new ArrayList<>(0);
         }
@@ -411,19 +411,25 @@ public class ConfigSection extends LinkedHashMap<String, Object> {
         }
         List<Integer> result = new ArrayList<>();
 
-        for (Object object : list) {
+        for (Integer object : (Iterable<Integer>) list) {
             if (object instanceof Integer) {
-                result.add((Integer) object);
-            } else if (object instanceof String) {
-                try {
-                    result.add(Integer.valueOf((String) object));
-                } catch (Exception ex) {
-                    //ignore
+                result.add(object);
+            }
+        }
+
+        for (Object object : list) {
+            if (!(object instanceof Integer)) {
+                if (object instanceof String) {
+                    try {
+                        result.add(Integer.valueOf((String) object));
+                    } catch (Exception ex) {
+                        //ignore
+                    }
+                } else if (object instanceof Character) {
+                    result.add((int) (Character) object);
+                } else if (object instanceof Number) {
+                    result.add(((Number) object).intValue());
                 }
-            } else if (object instanceof Character) {
-                result.add((int) (Character) object);
-            } else if (object instanceof Number) {
-                result.add(((Number) object).intValue());
             }
         }
         return result;
@@ -441,14 +447,20 @@ public class ConfigSection extends LinkedHashMap<String, Object> {
             return new ArrayList<>(0);
         }
         List<Boolean> result = new ArrayList<>();
-        for (Object object : list) {
+        for (Boolean object : (Iterable<Boolean>) list) {
             if (object instanceof Boolean) {
-                result.add((Boolean) object);
-            } else if (object instanceof String) {
-                if (Boolean.TRUE.toString().equals(object)) {
-                    result.add(true);
-                } else if (Boolean.FALSE.toString().equals(object)) {
-                    result.add(false);
+                result.add(object);
+            }
+        }
+
+        for (Object object : list) {
+            if (!(object instanceof Boolean)) {
+                if (object instanceof String) {
+                    if (Boolean.TRUE.toString().equals(object)) {
+                        result.add(true);
+                    } else if (Boolean.FALSE.toString().equals(object)) {
+                        result.add(false);
+                    }
                 }
             }
         }
@@ -467,19 +479,25 @@ public class ConfigSection extends LinkedHashMap<String, Object> {
             return new ArrayList<>(0);
         }
         List<Double> result = new ArrayList<>();
-        for (Object object : list) {
+        for (Double object : (Iterable<Double>) list) {
             if (object instanceof Double) {
-                result.add((Double) object);
-            } else if (object instanceof String) {
-                try {
-                    result.add(Double.valueOf((String) object));
-                } catch (Exception ex) {
-                    //ignore
+                result.add(object);
+            }
+        }
+
+        for (Object object : list) {
+            if (!(object instanceof Double)) {
+                if (object instanceof String) {
+                    try {
+                        result.add(Double.valueOf((String) object));
+                    } catch (Exception ex) {
+                        //ignore
+                    }
+                } else if (object instanceof Character) {
+                    result.add((double) (Character) object);
+                } else if (object instanceof Number) {
+                    result.add(((Number) object).doubleValue());
                 }
-            } else if (object instanceof Character) {
-                result.add((double) (Character) object);
-            } else if (object instanceof Number) {
-                result.add(((Number) object).doubleValue());
             }
         }
         return result;
@@ -497,19 +515,25 @@ public class ConfigSection extends LinkedHashMap<String, Object> {
             return new ArrayList<>(0);
         }
         List<Float> result = new ArrayList<>();
-        for (Object object : list) {
+        for (Float object : (Iterable<Float>) list) {
             if (object instanceof Float) {
-                result.add((Float) object);
-            } else if (object instanceof String) {
-                try {
-                    result.add(Float.valueOf((String) object));
-                } catch (Exception ex) {
-                    //ignore
+                result.add(object);
+            }
+        }
+
+        for (Object object : list) {
+            if (!(object instanceof Float)) {
+                if (object instanceof String) {
+                    try {
+                        result.add(Float.valueOf((String) object));
+                    } catch (Exception ex) {
+                        //ignore
+                    }
+                } else if (object instanceof Character) {
+                    result.add((float) (Character) object);
+                } else if (object instanceof Number) {
+                    result.add(((Number) object).floatValue());
                 }
-            } else if (object instanceof Character) {
-                result.add((float) (Character) object);
-            } else if (object instanceof Number) {
-                result.add(((Number) object).floatValue());
             }
         }
         return result;
@@ -527,19 +551,25 @@ public class ConfigSection extends LinkedHashMap<String, Object> {
             return new ArrayList<>(0);
         }
         List<Long> result = new ArrayList<>();
-        for (Object object : list) {
+        for (Long object : (Iterable<Long>) list) {
             if (object instanceof Long) {
-                result.add((Long) object);
-            } else if (object instanceof String) {
-                try {
-                    result.add(Long.valueOf((String) object));
-                } catch (Exception ex) {
-                    //ignore
+                result.add(object);
+            }
+        }
+
+        for (Object object : list) {
+            if (!(object instanceof Long)) {
+                if (object instanceof String) {
+                    try {
+                        result.add(Long.valueOf((String) object));
+                    } catch (Exception ex) {
+                        //ignore
+                    }
+                } else if (object instanceof Character) {
+                    result.add((long) (Character) object);
+                } else if (object instanceof Number) {
+                    result.add(((Number) object).longValue());
                 }
-            } else if (object instanceof Character) {
-                result.add((long) (Character) object);
-            } else if (object instanceof Number) {
-                result.add(((Number) object).longValue());
             }
         }
         return result;
@@ -560,19 +590,25 @@ public class ConfigSection extends LinkedHashMap<String, Object> {
 
         List<Byte> result = new ArrayList<>();
 
-        for (Object object : list) {
+        for (Byte object : (Iterable<Byte>) list) {
             if (object instanceof Byte) {
-                result.add((Byte) object);
-            } else if (object instanceof String) {
-                try {
-                    result.add(Byte.valueOf((String) object));
-                } catch (Exception ex) {
-                    //ignore
+                result.add(object);
+            }
+        }
+
+        for (Object object : list) {
+            if (!(object instanceof Byte)) {
+                if (object instanceof String) {
+                    try {
+                        result.add(Byte.valueOf((String) object));
+                    } catch (Exception ex) {
+                        //ignore
+                    }
+                } else if (object instanceof Character) {
+                    result.add((byte) ((Character) object).charValue());
+                } else if (object instanceof Number) {
+                    result.add(((Number) object).byteValue());
                 }
-            } else if (object instanceof Character) {
-                result.add((byte) ((Character) object).charValue());
-            } else if (object instanceof Number) {
-                result.add(((Number) object).byteValue());
             }
         }
 
@@ -594,17 +630,23 @@ public class ConfigSection extends LinkedHashMap<String, Object> {
 
         List<Character> result = new ArrayList<>();
 
-        for (Object object : list) {
+        for (Character object : (Iterable<Character>) list) {
             if (object instanceof Character) {
-                result.add((Character) object);
-            } else if (object instanceof String) {
-                String str = (String) object;
+                result.add(object);
+            }
+        }
 
-                if (str.length() == 1) {
-                    result.add(str.charAt(0));
+        for (Object object : list) {
+            if (!(object instanceof Character)) {
+                if (object instanceof String) {
+                    String str = (String) object;
+
+                    if (str.length() == 1) {
+                        result.add(str.charAt(0));
+                    }
+                } else if (object instanceof Number) {
+                    result.add((char) ((Number) object).intValue());
                 }
-            } else if (object instanceof Number) {
-                result.add((char) ((Number) object).intValue());
             }
         }
 
@@ -626,19 +668,25 @@ public class ConfigSection extends LinkedHashMap<String, Object> {
 
         List<Short> result = new ArrayList<>();
 
-        for (Object object : list) {
+        for (Short object : (Iterable<Short>) list) {
             if (object instanceof Short) {
-                result.add((Short) object);
-            } else if (object instanceof String) {
-                try {
-                    result.add(Short.valueOf((String) object));
-                } catch (Exception ex) {
-                    //ignore
+                result.add(object);
+            }
+        }
+
+        for (Object object : list) {
+            if (!(object instanceof Short)) {
+                if (object instanceof String) {
+                    try {
+                        result.add(Short.valueOf((String) object));
+                    } catch (Exception ex) {
+                        //ignore
+                    }
+                } else if (object instanceof Character) {
+                    result.add((short) ((Character) object).charValue());
+                } else if (object instanceof Number) {
+                    result.add(((Number) object).shortValue());
                 }
-            } else if (object instanceof Character) {
-                result.add((short) ((Character) object).charValue());
-            } else if (object instanceof Number) {
-                result.add(((Number) object).shortValue());
             }
         }
 
@@ -659,7 +707,7 @@ public class ConfigSection extends LinkedHashMap<String, Object> {
             return result;
         }
 
-        for (Map object : list) { // Change "Object" to "Map" (line 662)
+        for (Map object : list) {
             if (object instanceof Map) {
                 result.add(object);
             }

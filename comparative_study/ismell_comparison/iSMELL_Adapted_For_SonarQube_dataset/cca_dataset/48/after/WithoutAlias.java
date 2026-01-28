@@ -98,7 +98,7 @@ public final class WithoutAlias {
         public static final class CharInvalid {
             private char hash;
             public char hashCodeChar() {
-                if (hash == 0) {
+                if (hash == '\0') {
                     hash = 'a';
                 }
                 return hash;
@@ -114,12 +114,12 @@ public final class WithoutAlias {
                 initialised = false;
             }
             public char hashCodeChar() {
-                if (hash == 0) {
+                if (hash == '\0') {
                     hash = 'a';
                 }
                 return hash;
             }
-        } // class CharInvalid
+        } // class CharInvalid2
 
 
         public static final class FloatValid {
@@ -202,7 +202,7 @@ public final class WithoutAlias {
             private final Object comparativeObject = new Object();
             private Object hash = null;
             public Object hashCodeObject() {
-                if (comparativeObject == hash) {
+                if (comparativeObject.equals(hash)) {
                     hash = new Object();
                 }
                 return hash;
@@ -245,7 +245,7 @@ public final class WithoutAlias {
             private String getValue(final String input) {
                 return input;
             }
-        } // class StringValid
+        } // class StringWithInvalidValueCalculationMethod
 
 
         public static final class StringStaticValid {
@@ -427,7 +427,7 @@ public final class WithoutAlias {
         public static final class StringValid {
             private String hash = "";
             public String hashCodeString() {
-                if ("".equals(hash)) {
+                if (hash == null || hash.isEmpty()) {
                     hash = "Hash code";
                 }
                 return hash;
@@ -441,7 +441,7 @@ public final class WithoutAlias {
             }
             private String hash;
             public String hashCodeString() {
-                if ("".equals(hash)) {
+                if (hash == null || hash.isEmpty()) {
                     hash = "Hash code";
                 }
                 return hash;
@@ -452,7 +452,7 @@ public final class WithoutAlias {
         public static final class StringInvalid {
             private String hash = "abc";
             public String hashCodeString() {
-                if ("".equals(hash) && 3 == hash.length()) {
+                if ((hash == null || hash.isEmpty()) && 3 == hash.length()) {
                     hash = "Hash code";
                 }
                 return hash;

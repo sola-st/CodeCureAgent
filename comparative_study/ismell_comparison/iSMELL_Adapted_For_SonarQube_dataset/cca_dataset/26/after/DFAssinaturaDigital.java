@@ -55,7 +55,6 @@ public class DFAssinaturaDigital {
         final String providerName = System.getProperty("jsr105Provider", "org.jcp.xml.dsig.internal.dom.XMLDSigRI");
         final XMLSignatureFactory signatureFactory = XMLSignatureFactory.getInstance("DOM", (Provider) Class.forName(providerName).getDeclaredConstructor().newInstance());
         final DOMValidateContext validateContext = new DOMValidateContext(new DFKeySelector(), nodeList.item(0));
-        // Set secure validation property to true to eliminate S6377 warning
         validateContext.setProperty("org.jcp.xml.dsig.secureValidation", Boolean.TRUE);
         for (final String tag : DFAssinaturaDigital.ELEMENTOS_ASSINAVEIS) {
             final NodeList elements = document.getElementsByTagName(tag);

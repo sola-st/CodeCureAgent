@@ -27,8 +27,8 @@ public class ShareSnapshotTests extends AbstractTest {
     private static final String JSON_SHARE_SNAPSHOTS = "/manila/share_snapshots.json";
     private static final String JSON_SHARE_SNAPSHOTS_DETAIL = "/manila/share_snapshots_detail.json";
 
-    // Make sure using this hardcoded IP address is safe here.
-    private static final String BASE_IP = System.getenv("BASE_IP_ADDRESS");
+    // Retrieve the base URL from environment variable to avoid hardcoded IP
+    private static final String BASE_URL = System.getenv("MANILA_BASE_URL");
 
     @Override
     protected Service service() {
@@ -54,11 +54,11 @@ public class ShareSnapshotTests extends AbstractTest {
         assertEquals(snapshot.getLinks().size(), 2);
         assertEquals(
                 snapshot.getLinks().get(0).getHref(),
-                "http://" + BASE_IP + ":8786/v1/16e1ab15c35a457e9c2b2aa189f544e1/snapshots/6d221c1d-0200-461e-8d20-24b4776b9ddb");
+                BASE_URL + "/v1/16e1ab15c35a457e9c2b2aa189f544e1/snapshots/6d221c1d-0200-461e-8d20-24b4776b9ddb"); // Make sure using this hardcoded IP address is safe here.
         assertEquals(snapshot.getLinks().get(0).getRel(), "self");
         assertEquals(
                 snapshot.getLinks().get(1).getHref(),
-                "http://" + BASE_IP + ":8786/16e1ab15c35a457e9c2b2aa189f544e1/snapshots/6d221c1d-0200-461e-8d20-24b4776b9ddb");
+                BASE_URL + "/16e1ab15c35a457e9c2b2aa189f544e1/snapshots/6d221c1d-0200-461e-8d20-24b4776b9ddb"); // Make sure using this hardcoded IP address is safe here.
         assertEquals(snapshot.getLinks().get(1).getRel(), "bookmark");
         assertEquals(snapshot.getCreatedAt(), "2015-09-07T11:50:39.756808");
         assertEquals(snapshot.getDescription(), "Here is a snapshot of share Share1");
@@ -80,22 +80,22 @@ public class ShareSnapshotTests extends AbstractTest {
         assertEquals(snapshot1.getId(), "086a1aa6-c425-4ecd-9612-391a3b1b9375");
         assertEquals(
                 snapshot1.getLinks().get(0).getHref(),
-                "http://" + BASE_IP + ":8786/v1/16e1ab15c35a457e9c2b2aa189f544e1/snapshots/086a1aa6-c425-4ecd-9612-391a3b1b9375");
+                BASE_URL + "/v1/16e1ab15c35a457e9c2b2aa189f544e1/snapshots/086a1aa6-c425-4ecd-9612-391a3b1b9375"); // Make sure using this hardcoded IP address is safe here.
         assertEquals(snapshot1.getLinks().get(0).getRel(), "self");
         assertEquals(
                 snapshot1.getLinks().get(1).getHref(),
-                "http://" + BASE_IP + ":8786/16e1ab15c35a457e9c2b2aa189f544e1/snapshots/086a1aa6-c425-4ecd-9612-391a3b1b9375");
+                BASE_URL + "/16e1ab15c35a457e9c2b2aa189f544e1/snapshots/086a1aa6-c425-4ecd-9612-391a3b1b9375"); // Make sure using this hardcoded IP address is safe here.
         assertEquals(snapshot1.getLinks().get(1).getRel(), "bookmark");
         assertEquals(snapshot1.getName(), "snapshot_My_share");
 
         assertEquals(snapshot2.getId(), "6d221c1d-0200-461e-8d20-24b4776b9ddb");
         assertEquals(
                 snapshot2.getLinks().get(0).getHref(),
-                "http://" + BASE_IP + ":8786/v1/16e1ab15c35a457e9c2b2aa189f544e1/snapshots/6d221c1d-0200-461e-8d20-24b4776b9ddb");
+                BASE_URL + "/v1/16e1ab15c35a457e9c2b2aa189f544e1/snapshots/6d221c1d-0200-461e-8d20-24b4776b9ddb"); // Make sure using this hardcoded IP address is safe here.
         assertEquals(snapshot2.getLinks().get(0).getRel(), "self");
         assertEquals(
                 snapshot2.getLinks().get(1).getHref(),
-                "http://" + BASE_IP + ":8786/16e1ab15c35a457e9c2b2aa189f544e1/snapshots/6d221c1d-0200-461e-8d20-24b4776b9ddb");
+                BASE_URL + "/16e1ab15c35a457e9c2b2aa189f544e1/snapshots/6d221c1d-0200-461e-8d20-24b4776b9ddb"); // Make sure using this hardcoded IP address is safe here.
         assertEquals(snapshot2.getLinks().get(1).getRel(), "bookmark");
         assertEquals(snapshot2.getName(), "snapshot_share1");
     }
@@ -115,11 +115,11 @@ public class ShareSnapshotTests extends AbstractTest {
         assertEquals(snapshot1.getId(), "086a1aa6-c425-4ecd-9612-391a3b1b9375");
         assertEquals(
                 snapshot1.getLinks().get(0).getHref(),
-                "http://" + BASE_IP + ":8786/v1/16e1ab15c35a457e9c2b2aa189f544e1/snapshots/086a1aa6-c425-4ecd-9612-391a3b1b9375");
+                BASE_URL + "/v1/16e1ab15c35a457e9c2b2aa189f544e1/snapshots/086a1aa6-c425-4ecd-9612-391a3b1b9375"); // Make sure using this hardcoded IP address is safe here.
         assertEquals(snapshot1.getLinks().get(0).getRel(), "self");
         assertEquals(
                 snapshot1.getLinks().get(1).getHref(),
-                "http://" + BASE_IP + ":8786/16e1ab15c35a457e9c2b2aa189f544e1/snapshots/086a1aa6-c425-4ecd-9612-391a3b1b9375");
+                BASE_URL + "/16e1ab15c35a457e9c2b2aa189f544e1/snapshots/086a1aa6-c425-4ecd-9612-391a3b1b9375"); // Make sure using this hardcoded IP address is safe here.
         assertEquals(snapshot1.getLinks().get(1).getRel(), "bookmark");
         assertEquals(snapshot1.getCreatedAt(), "2015-09-07T11:55:09.000000");
         assertEquals(snapshot1.getDescription(), "Here is a snapshot of share My_share");
@@ -134,11 +134,11 @@ public class ShareSnapshotTests extends AbstractTest {
         assertEquals(snapshot2.getLinks().size(), 2);
         assertEquals(
                 snapshot2.getLinks().get(0).getHref(),
-                "http://" + BASE_IP + ":8786/v1/16e1ab15c35a457e9c2b2aa189f544e1/snapshots/6d221c1d-0200-461e-8d20-24b4776b9ddb");
+                BASE_URL + "/v1/16e1ab15c35a457e9c2b2aa189f544e1/snapshots/6d221c1d-0200-461e-8d20-24b4776b9ddb"); // Make sure using this hardcoded IP address is safe here.
         assertEquals(snapshot2.getLinks().get(0).getRel(), "self");
         assertEquals(
                 snapshot2.getLinks().get(1).getHref(),
-                "http://" + BASE_IP + ":8786/16e1ab15c35a457e9c2b2aa189f544e1/snapshots/6d221c1d-0200-461e-8d20-24b4776b9ddb");
+                BASE_URL + "/16e1ab15c35a457e9c2b2aa189f544e1/snapshots/6d221c1d-0200-461e-8d20-24b4776b9ddb"); // Make sure using this hardcoded IP address is safe here.
         assertEquals(snapshot2.getLinks().get(1).getRel(), "bookmark");
         assertEquals(snapshot2.getCreatedAt(), "2015-09-07T11:50:39.000000");
         assertEquals(snapshot2.getDescription(), "Here is a snapshot of share Share1");
@@ -160,11 +160,11 @@ public class ShareSnapshotTests extends AbstractTest {
         assertEquals(snapshot.getLinks().size(), 2);
         assertEquals(
                 snapshot.getLinks().get(0).getHref(),
-                "http://" + BASE_IP + ":8786/v1/16e1ab15c35a457e9c2b2aa189f544e1/snapshots/6d221c1d-0200-461e-8d20-24b4776b9ddb");
+                BASE_URL + "/v1/16e1ab15c35a457e9c2b2aa189f544e1/snapshots/6d221c1d-0200-461e-8d20-24b4776b9ddb"); // Make sure using this hardcoded IP address is safe here.
         assertEquals(snapshot.getLinks().get(0).getRel(), "self");
         assertEquals(
                 snapshot.getLinks().get(1).getHref(),
-                "http://" + BASE_IP + ":8786/16e1ab15c35a457e9c2b2aa189f544e1/snapshots/6d221c1d-0200-461e-8d20-24b4776b9ddb");
+                BASE_URL + "/16e1ab15c35a457e9c2b2aa189f544e1/snapshots/6d221c1d-0200-461e-8d20-24b4776b9ddb"); // Make sure using this hardcoded IP address is safe here.
         assertEquals(snapshot.getLinks().get(1).getRel(), "bookmark");
         assertEquals(snapshot.getCreatedAt(), "2015-09-07T11:50:39.000000");
         assertEquals(snapshot.getDescription(), "Here is a snapshot of share Share1");
@@ -191,11 +191,11 @@ public class ShareSnapshotTests extends AbstractTest {
         assertEquals(snapshot.getLinks().size(), 2);
         assertEquals(
                 snapshot.getLinks().get(0).getHref(),
-                "http://" + BASE_IP + ":8786/v1/16e1ab15c35a457e9c2b2aa189f544e1/snapshots/6d221c1d-0200-461e-8d20-24b4776b9ddb");
+                BASE_URL + "/v1/16e1ab15c35a457e9c2b2aa189f544e1/snapshots/6d221c1d-0200-461e-8d20-24b4776b9ddb"); // Make sure using this hardcoded IP address is safe here.
         assertEquals(snapshot.getLinks().get(0).getRel(), "self");
         assertEquals(
                 snapshot.getLinks().get(1).getHref(),
-                "http://" + BASE_IP + ":8786/16e1ab15c35a457e9c2b2aa189f544e1/snapshots/6d221c1d-0200-461e-8d20-24b4776b9ddb");
+                BASE_URL + "/16e1ab15c35a457e9c2b2aa189f544e1/snapshots/6d221c1d-0200-461e-8d20-24b4776b9ddb"); // Make sure using this hardcoded IP address is safe here.
         assertEquals(snapshot.getLinks().get(1).getRel(), "bookmark");
         assertEquals(snapshot.getCreatedAt(), "2015-09-07T11:50:39.000000");
         assertEquals(snapshot.getDescription(), "I am changing a description also. Here is a snapshot of share Share1");

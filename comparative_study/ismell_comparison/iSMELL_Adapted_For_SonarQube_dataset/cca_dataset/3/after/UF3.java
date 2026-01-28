@@ -49,38 +49,35 @@ public class UF3 extends AbstractDoubleProblem {
       x[i] = solution.getVariable(i) ;
     }
 
+    int count1, count2;
+    double sum1, sum2, prod1, prod2, yj, pj;
+    sum1   = sum2   = 0.0;
+    count1 = count2 = 0;
+    prod1  = prod2  = 1.0;
 
-  	int count1, count2;
-		double sum1, sum2, prod1, prod2, yj, pj;
-		sum1   = sum2   = 0.0;
-		count1 = count2 = 0;
- 		prod1  = prod2  = 1.0;
-
-    
     for (int j = 2 ; j <= getNumberOfVariables(); j++) {
-			yj = x[j-1]-Math.pow(x[0],0.5*(1.0+3.0*(j-2.0)/(getNumberOfVariables()-2.0)));
-			pj = Math.cos(20.0*yj*Math.PI/Math.sqrt(j));
-			if (j % 2 == 0) {
-				sum2  += yj*yj;
-				prod2 *= pj;
-				count2++;
-			} else {
-				sum1  += yj*yj;
-				prod1 *= pj;
-				count1++;
-			}
+      yj = x[j-1] - Math.pow(x[0], 0.5*(1.0 + 3.0*(j-2.0)/(getNumberOfVariables()-2.0)));
+      pj = Math.cos(20.0 * yj * Math.PI / Math.sqrt(j));
+      if (j % 2 == 0) {
+        sum2  += yj*yj;
+        prod2 *= pj;
+        count2++;
+      } else {
+        sum1  += yj*yj;
+        prod1 *= pj;
+        count1++;
+      }
     }
 
-    // Make sure denominators are not zero before division
-    if (count1 == 0) {
-      count1 = 1; // avoid division by zero, fallback to 1
+    solution.setObjective(0,  x[0] + 2.0 * (4.0*sum1 - 2.0*prod1 + 2.0) / (double)count1);
+
+    // Make sure count2 is not zero before division to avoid division by zero
+    if (count2 != 0) {
+      solution.setObjective(1, 1.0 - Math.sqrt(x[0]) + 2.0 * (4.0*sum2 - 2.0*prod2 + 2.0) / (double)count2);
+    } else {
+      // Handle zero count2 case, here fallback to just 1.0 - sqrt(x[0]) without division
+      solution.setObjective(1, 1.0 - Math.sqrt(x[0]));
     }
-    if (count2 == 0) {
-      count2 = 1; // avoid division by zero, fallback to 1
-    }
-    
-    solution.setObjective(0,  x[0] + 2.0*(4.0*sum1 - 2.0*prod1 + 2.0) / (double)count1);
-    solution.setObjective(1, 1.0 - Math.sqrt(x[0]) + 2.0*(4.0*sum2 - 2.0*prod2 + 2.0) / (double)count2);
 
     return solution ;
   }

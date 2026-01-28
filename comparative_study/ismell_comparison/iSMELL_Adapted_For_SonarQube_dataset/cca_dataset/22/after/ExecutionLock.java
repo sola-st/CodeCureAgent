@@ -28,7 +28,9 @@ public final class ExecutionLock
         {
             try
             {
-                while (true) {
+                // Wait inside a while loop to handle spurious wakeups
+                while (true)
+                {
                     lock.wait();
                 }
             }

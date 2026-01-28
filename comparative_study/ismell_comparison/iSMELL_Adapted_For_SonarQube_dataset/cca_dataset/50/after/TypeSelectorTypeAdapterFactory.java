@@ -26,14 +26,14 @@ public class TypeSelectorTypeAdapterFactory<T> implements TypeAdapterFactory{
     }
 
     @Override
-    public <V> TypeAdapter<V> create(Gson gson, TypeToken<V> type) {
+    public <R> TypeAdapter<R> create(Gson gson, TypeToken<R> type) {
         if(alreadyResolvedTypeTokensRegistry.contains(type)) {
             return null;
         }
         if(classConfig.getConfiguredClass().isAssignableFrom(type.getRawType())){
-            TypeAdapter<V> fireTypeAdapter =
-                new NullableTypeAdapter<V>(
-                    new TypeSelectorTypeAdapter<V>(type.getRawType(), classConfig.getTypeSelector(), gson)
+            TypeAdapter<R> fireTypeAdapter =
+                new NullableTypeAdapter<R>(
+                    new TypeSelectorTypeAdapter<R>(type.getRawType(), classConfig.getTypeSelector(), gson)
                 );
             return fireTypeAdapter;
         } else {
@@ -41,7 +41,7 @@ public class TypeSelectorTypeAdapterFactory<T> implements TypeAdapterFactory{
         }
     }
 
-    private class TypeSelectorTypeAdapter<S> extends TypeAdapter<S> {
+    private class TypeSelectorTypeAdapter<U> extends TypeAdapter<U> {
 
         private final Class superClass;
         private final TypeSelector typeSelector;
@@ -54,13 +54,13 @@ public class TypeSelectorTypeAdapterFactory<T> implements TypeAdapterFactory{
         }
 
         @Override
-        public void write(JsonWriter out, S value) throws IOException {
+        public void write(JsonWriter out, U value) throws IOException {
             TypeAdapter otherTypeAdapter = gson.getDelegateAdapter(TypeSelectorTypeAdapterFactory.this, TypeToken.get(value.getClass()));
             otherTypeAdapter.write(out, value);
         }
 
         @Override
-        public S read(JsonReader in) throws IOException {
+        public U read(JsonReader in) throws IOException {
             JsonElement json = new JsonParser().parse(in);
             Class deserialize = this.typeSelector.getClassForElement(json);
             if(deserialize == null) {
@@ -69,7 +69,7 @@ public class TypeSelectorTypeAdapterFactory<T> implements TypeAdapterFactory{
 
             TypeToken typeToken = TypeToken.get(deserialize);
             alreadyResolvedTypeTokensRegistry.add(typeToken);
-            TypeAdapter<S> otherTypeAdapter;
+            TypeAdapter<U> otherTypeAdapter;
             try {
                 if (deserialize != superClass) {
                     otherTypeAdapter = gson.getAdapter(typeToken);

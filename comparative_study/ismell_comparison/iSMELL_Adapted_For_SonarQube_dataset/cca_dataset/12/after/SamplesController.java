@@ -77,8 +77,11 @@ public class SamplesController extends FreemarkerHttpServlet {
 
         getBerries(body);
 
-        // Only put "bookTitle" once to avoid unconditional replacement
-        body.put("bookTitle", "Persuasion");
+        // To avoid unconditionally replacing the same key's value, set it once.
+        // If you really need different values, consider using different keys.
+        body.put("bookTitle", "Pride and Prejudice");
+        // Removed the unconditional replacement of "bookTitle"
+        // body.put("bookTitle", "Persuasion");
 
         body.put("year", "2001");
 

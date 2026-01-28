@@ -98,7 +98,7 @@ public class GregorMutater implements Mutater {
         .asJavaName());
 
     if (!bytes.isPresent()) {
-      throw new IllegalArgumentException("Class bytes not found for mutation id: " + id);
+      throw new IllegalStateException("Class bytes not found for " + id.getClassName().asJavaName());
     }
 
     final ClassReader reader = new ClassReader(bytes.get());

@@ -100,7 +100,7 @@ public class GerritAssert {
         Truth.assertThat(actualXml).isEqualTo(expectedXml);
     }
 
-    public static void assertRobotCommentsEquals(SortedMap<String, List<RobotCommentInfo>> actual, SortedMap<String, List<RobotCommentInfo>> expected) {
+    public static void assertRobotCommentsEquals(TreeMap<String, List<RobotCommentInfo>> actual, TreeMap<String, List<RobotCommentInfo>> expected) {
         assertXmlOutputEqual(actual, expected);
     }
 }

@@ -62,7 +62,7 @@ public class ArtifactUpdateModel implements ArtifactUpdate {
 
         @Override
         protected List<ArtifactUpdateModel> value() {
-            return Collections.emptyList();  // Return an empty collection instead of null.
+            return Collections.emptyList();
         }
     }
 

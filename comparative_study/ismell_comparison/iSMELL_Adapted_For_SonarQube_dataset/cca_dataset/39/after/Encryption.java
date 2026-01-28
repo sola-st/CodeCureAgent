@@ -11,31 +11,29 @@ import java.util.Base64;
 public class Encryption {
 
     private static final int GCM_TAG_LENGTH = 128; // in bits
-    private static final int GCM_IV_LENGTH = 12;   // in bytes
+    private static final int GCM_IV_LENGTH = 12; // in bytes
 
     public static String decrypt(String obj, String key) {
         try {
             byte[] decoded = Base64.getDecoder().decode(obj.getBytes(StandardCharsets.UTF_8));
             if (decoded.length < GCM_IV_LENGTH) {
-                throw new IllegalArgumentException("Ciphertext too short");
+                throw new IllegalArgumentException("Invalid encrypted data");
             }
 
-            // Extract IV and ciphertext
             byte[] iv = new byte[GCM_IV_LENGTH];
             System.arraycopy(decoded, 0, iv, 0, GCM_IV_LENGTH);
-            byte[] ciphertext = new byte[decoded.length - GCM_IV_LENGTH];
-            System.arraycopy(decoded, GCM_IV_LENGTH, ciphertext, 0, ciphertext.length);
+            byte[] cipherText = new byte[decoded.length - GCM_IV_LENGTH];
+            System.arraycopy(decoded, GCM_IV_LENGTH, cipherText, 0, cipherText.length);
 
             SecretKeySpec keySpec = new SecretKeySpec(
                     MessageDigest.getInstance("SHA-256").digest(key.getBytes(StandardCharsets.UTF_8)),
                     "AES");
 
             Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-            GCMParameterSpec spec = new GCMParameterSpec(GCM_TAG_LENGTH, iv);
+            GCMParameterSpec gcmSpec = new GCMParameterSpec(GCM_TAG_LENGTH, iv);
+            cipher.init(Cipher.DECRYPT_MODE, keySpec, gcmSpec);
 
-            cipher.init(Cipher.DECRYPT_MODE, keySpec, spec);
-
-            byte[] decrypted = cipher.doFinal(ciphertext);
+            byte[] decrypted = cipher.doFinal(cipherText);
             return new String(decrypted, StandardCharsets.UTF_8);
 
         } catch (Exception e) {
@@ -46,33 +44,29 @@ public class Encryption {
 
     public static String encrypt(String obj, String key) {
         try {
-            SecretKeySpec keySpec = new SecretKeySpec(
-                    MessageDigest.getInstance("SHA-256").digest(key.getBytes(StandardCharsets.UTF_8)),
-                    "AES");
-
-            // Generate random IV
             byte[] iv = new byte[GCM_IV_LENGTH];
             SecureRandom random = new SecureRandom();
             random.nextBytes(iv);
 
-            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-            GCMParameterSpec spec = new GCMParameterSpec(GCM_TAG_LENGTH, iv);
+            SecretKeySpec keySpec = new SecretKeySpec(
+                    MessageDigest.getInstance("SHA-256").digest(key.getBytes(StandardCharsets.UTF_8)),
+                    "AES");
 
-            cipher.init(Cipher.ENCRYPT_MODE, keySpec, spec);
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            GCMParameterSpec gcmSpec = new GCMParameterSpec(GCM_TAG_LENGTH, iv);
+            cipher.init(Cipher.ENCRYPT_MODE, keySpec, gcmSpec);
 
             byte[] encrypted = cipher.doFinal(obj.getBytes(StandardCharsets.UTF_8));
 
-            // Prepend IV to ciphertext for use in decryption
-            byte[] encryptedWithIv = new byte[iv.length + encrypted.length];
-            System.arraycopy(iv, 0, encryptedWithIv, 0, iv.length);
-            System.arraycopy(encrypted, 0, encryptedWithIv, iv.length, encrypted.length);
+            byte[] encryptedIVAndText = new byte[iv.length + encrypted.length];
+            System.arraycopy(iv, 0, encryptedIVAndText, 0, iv.length);
+            System.arraycopy(encrypted, 0, encryptedIVAndText, iv.length, encrypted.length);
 
-            return new String(Base64.getEncoder().encode(encryptedWithIv), StandardCharsets.UTF_8);
+            return new String(Base64.getEncoder().encode(encryptedIVAndText), StandardCharsets.UTF_8);
 
         } catch (Exception e) {
             e.printStackTrace();
         }
         return null;
     }
-
 }

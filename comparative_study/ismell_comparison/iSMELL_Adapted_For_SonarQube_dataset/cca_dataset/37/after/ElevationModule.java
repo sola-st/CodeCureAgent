@@ -116,7 +116,9 @@ public class ElevationModule implements GraphBuilderModule {
 
     private ThreadLocal<Coverage> coverageInterpolatorThreadLocal = new ThreadLocal<>();
 
-    /** Private final lock object for synchronizing on graph related updates */
+    /**
+     * Private final lock object for synchronizing on graph related operations.
+     */
     private final Object graphLock = new Object();
 
     /** used only for testing purposes */

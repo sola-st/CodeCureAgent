@@ -45,7 +45,7 @@ import java.util.zip.*;
 
 public class JObfImpl {
     public static final JObfImpl INSTANCE = new JObfImpl();
-    public static List<IClassTransformer> processors = new ArrayList<>();
+    public static final List<IClassTransformer> processors = new ArrayList<>();
     public static HashMap<String, ClassNode> classes = new HashMap<>();
     private static List<IPreClassTransformer> preProcessors;
     public JObfScript script;

@@ -1,7 +1,6 @@
 package org.zeroturnaround.process;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FileUtils;
@@ -21,7 +20,7 @@ public class Examples {
   }
 
   public static void isAliveProcess() throws Exception {
-    Process p = new ProcessBuilder("/full/path/to/my-application").start();
+    Process p = new ProcessBuilder("/usr/local/bin/my-application").start();
     JavaProcess process = Processes.newJavaProcess(p);
     boolean isAlive = process.isAlive();
     System.out.println("Process " + process + " is alive: " + isAlive);
@@ -35,7 +34,7 @@ public class Examples {
   }
 
   public static void waitForProcess() throws Exception {
-    Process p = new ProcessBuilder("/full/path/to/my-application").start();
+    Process p = new ProcessBuilder("/usr/local/bin/my-application").start();
     JavaProcess process = Processes.newJavaProcess(p);
     boolean finished = process.waitFor(10, TimeUnit.MINUTES);
     System.out.println("Process " + process + " finished on time: " + finished);
@@ -48,7 +47,7 @@ public class Examples {
   }
 
   public static void destroyProcess() throws Exception {
-    Process p = new ProcessBuilder("/full/path/to/my-application").start();
+    Process p = new ProcessBuilder("/usr/local/bin/my-application").start();
     SystemProcess process = Processes.newStandardProcess(p);
     ProcessUtil.destroyGracefullyOrForcefullyAndWait(process, 30, TimeUnit.SECONDS, 10, TimeUnit.SECONDS);
   }

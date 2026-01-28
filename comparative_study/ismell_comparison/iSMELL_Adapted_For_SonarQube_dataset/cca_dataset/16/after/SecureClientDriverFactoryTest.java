@@ -32,8 +32,9 @@ import com.github.restdriver.clientdriver.integration.SecureClientDriverTest;
 
 public class SecureClientDriverFactoryTest {
 
+    // WARNING: Revoke and change this password, as it is compromised.
+    // Password should not be hard-coded. Preferably, load it securely at runtime.
     private static final String KEYSTORE_PASSWORD = System.getenv("KEYSTORE_PASSWORD");
-    private static final String CERT_ALIAS = System.getenv("CERT_ALIAS");
 
     @Test
     public void createSecureClientDriverWithGivenPort() throws Exception {
@@ -42,8 +43,8 @@ public class SecureClientDriverFactoryTest {
         SecureClientDriverFactory factory = new SecureClientDriverFactory();
 
         // Act
-        ClientDriver driver = factory.createClientDriver(SocketUtil.getFreePort(), getKeystore(), getKeystorePassword(),
-                getCertAlias());
+        ClientDriver driver = factory.createClientDriver(SocketUtil.getFreePort(), getKeystore(), KEYSTORE_PASSWORD,
+                "certificate");
 
         // Assert
         assertThat(driver, instanceOf(ClientDriver.class));
@@ -58,7 +59,7 @@ public class SecureClientDriverFactoryTest {
         SecureClientDriverFactory factory = new SecureClientDriverFactory();
 
         // Act
-        ClientDriver driver = factory.createClientDriver(getKeystore(), getKeystorePassword(), getCertAlias());
+        ClientDriver driver = factory.createClientDriver(getKeystore(), KEYSTORE_PASSWORD, "certificate");
 
         // Assert
         assertThat(driver, instanceOf(ClientDriver.class));
@@ -73,7 +74,7 @@ public class SecureClientDriverFactoryTest {
         SecureClientDriverFactory factory = new SecureClientDriverFactory();
 
         // Act
-        ClientDriver driver = factory.keyStore(getKeystore()).password(getKeystorePassword()).certAlias(getCertAlias()).build();
+        ClientDriver driver = factory.keyStore(getKeystore()).password(KEYSTORE_PASSWORD).certAlias("certificate").build();
 
         // Assert
         assertThat(driver, instanceOf(ClientDriver.class));
@@ -88,7 +89,7 @@ public class SecureClientDriverFactoryTest {
         SecureClientDriverFactory factory = new SecureClientDriverFactory();
 
         // Act
-        ClientDriver driver = factory.keyStore(getKeystore()).password(getKeystorePassword()).certAlias(getCertAlias())
+        ClientDriver driver = factory.keyStore(getKeystore()).password(KEYSTORE_PASSWORD).certAlias("certificate")
                 .port(SocketUtil.getFreePort()).build();
 
         // Assert
@@ -101,24 +102,12 @@ public class SecureClientDriverFactoryTest {
         ClassLoader loader = SecureClientDriverTest.class.getClassLoader();
         byte[] binaryContent = IOUtils.toByteArray(loader.getResourceAsStream("keystore.jks"));
         KeyStore keyStore = KeyStore.getInstance("JKS");
-        keyStore.load(new ByteArrayInputStream(binaryContent), getKeystorePassword().toCharArray());
-        return keyStore;
-    }
-
-    private static String getKeystorePassword() {
-        String password = System.getenv("KEYSTORE_PASSWORD");
+        String password = KEYSTORE_PASSWORD;
         if (password == null || password.isEmpty()) {
-            throw new IllegalStateException("Revoke and change this password, as it is compromised. Environment variable KEYSTORE_PASSWORD is not set or empty.");
+            throw new IllegalStateException("Keystore password is not set. Please define the environment variable KEYSTORE_PASSWORD.");
         }
-        return password;
-    }
-
-    private static String getCertAlias() {
-        String alias = System.getenv("CERT_ALIAS");
-        if (alias == null || alias.isEmpty()) {
-            throw new IllegalStateException("Environment variable CERT_ALIAS is not set or empty.");
-        }
-        return alias;
+        keyStore.load(new ByteArrayInputStream(binaryContent), password.toCharArray());
+        return keyStore;
     }
 
 }

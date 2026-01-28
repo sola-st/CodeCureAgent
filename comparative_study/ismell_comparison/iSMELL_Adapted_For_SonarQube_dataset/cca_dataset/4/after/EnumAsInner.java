@@ -19,6 +19,8 @@
  */
 import com.spotify.dataenum.function.Consumer;
 import com.spotify.dataenum.function.Function;
+import java.lang.Override;
+import java.lang.String;
 import javax.annotation.Generated;
 import javax.annotation.Nonnull;
 

@@ -4,7 +4,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
 
 import amidst.documentation.GsonConstructor;
 import amidst.documentation.Immutable;
@@ -16,8 +15,8 @@ import amidst.mojangapi.world.filter.WorldFilter_Biome;
 
 @Immutable
 public class WorldFilterJson_Biome {
-	private final AtomicLong distance = new AtomicLong();
-	private volatile List<String> biomes = Collections.emptyList();
+	private volatile long distance;
+	private List<String> biomes = Collections.emptyList();
 	
 	private final BiomeList biomeList;
 
@@ -39,7 +38,7 @@ public class WorldFilterJson_Biome {
 	}
 
 	public WorldFilter_Biome createBiomeFilter() {
-		return new WorldFilter_Biome(distance.get(), createValidBiomeIndexes());
+		return new WorldFilter_Biome(distance, createValidBiomeIndexes());
 	}
 
 	private Set<Short> createValidBiomeIndexes() {

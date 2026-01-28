@@ -345,7 +345,6 @@ public abstract class NSObject implements Cloneable {
             }
         }
 
-        // Refactored here to iterate over entrySet() to eliminate 'S2864' warning at line 375
         for (Map.Entry<String, NSObject> entry : map.entrySet()) {
             Method setter = setters.get(makeFirstCharLowercase(entry.getKey()));
             Method getter = getters.get(makeFirstCharLowercase(entry.getKey()));
@@ -373,8 +372,7 @@ public abstract class NSObject implements Cloneable {
     private HashMap<String, Object> deserializeMap() {
         HashMap<String, NSObject> originalMap = ((NSDictionary)this).getHashMap();
         HashMap<String, Object> clonedMap = new HashMap<String, Object>(originalMap.size());
-        // Refactored here to iterate over entrySet() to eliminate 'S2864' warning at line 375
-        for (Map.Entry<String, NSObject> entry : originalMap.entrySet()) {
+        for(Map.Entry<String, NSObject> entry : originalMap.entrySet()) {
             clonedMap.put(entry.getKey(), entry.getValue().toJavaObject());
         }
 

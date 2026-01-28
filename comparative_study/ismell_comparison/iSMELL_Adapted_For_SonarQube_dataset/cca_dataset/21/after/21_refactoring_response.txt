@@ -5,7 +5,9 @@ import java.lang.Thread.State;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.util.ArrayList;
-import java.util.Map;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Default implementation of a IntervalLoggerModel.  The DefaultIntervalLoggerModel
@@ -38,7 +40,7 @@ import java.util.Map;
  */
 public class DefaultIntervalLoggerModel implements IntervalLoggerModel {
 	
-	// Removed ThreadGroup usage as per S3014 warning
+	// Removed ThreadGroup reference to comply with S3014 warning
 	
 	private ArrayList<IntervalProperty> list = new ArrayList<IntervalProperty>();
 	
@@ -180,31 +182,20 @@ public class DefaultIntervalLoggerModel implements IntervalLoggerModel {
 		return ct;
 		
 	}
-	
+
 	/**
-	 * Utility method to return all live threads in the JVM without using ThreadGroup.
-	 * @return Array of all threads.
+	 * Utility method to return all threads in the system.
+	 * Uses Thread.getAllStackTraces() keys instead of ThreadGroup
+	 * to avoid use of ThreadGroup, as recommended by SonarQube S3014.
+	 * @return Array of all active threads.
 	 */
 	private Thread[] getAllThreads() {
-		// Get all live threads using ThreadMXBean as a safe alternative to ThreadGroup
-		ThreadMXBean threadMXBean = java.lang.management.ManagementFactory.getThreadMXBean();
-
-		long[] threadIds = threadMXBean.getAllThreadIds();
-		Thread[] threads = new Thread[threadIds.length];
-		int count = 0;
-
-		// Java doesn't provide direct access to Thread instances from thread IDs,
-		// so we grab all threads from the thread stack traces Map's keySet.
-		Map<Thread, StackTraceElement[]> allThreadsMap = Thread.getAllStackTraces();
-		for (Thread thread : allThreadsMap.keySet()) {
-			threads[count++] = thread;
-		}
-
-		// Return an appropriately sized array
-		return java.util.Arrays.copyOf(threads, count);
+	    // Thread.getAllStackTraces().keySet() returns all live threads
+	    List<Thread> threadList = new ArrayList<>(Thread.getAllStackTraces().keySet());
+	    return threadList.toArray(new Thread[0]);
 	}
-
-	// Removed getRootThreadGroup method and rootThreadGroup field since ThreadGroup usage is eliminated
-
+	
+	// Removed getRootThreadGroup() method to remove usage of ThreadGroup as per S3014
+	
 }
 ```

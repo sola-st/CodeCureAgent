@@ -13,7 +13,7 @@
  * are made available under the terms of the Eclipse Public License 2.0
  * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
  * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v20.html
- * and the Eclipse Distribution License is not
+ * and the Eclipse Distribution License is available at
  *
  * http://www.eclipse.org/org/documents/edl-v10.php.
  */
@@ -229,6 +229,8 @@ public class OraReader
    * 
    * @param oraGeom
    *          SDO_GEOMETRY attributes being read
+   * @param coords
+   *          the coordinates of the entire geometry
    * @return GeometryCollection
    * 
    * @throws IllegalArgumentException
@@ -290,6 +292,7 @@ public class OraReader
      * Create MultiPolygon as encoded by elemInfo.
      *
      * @param oraGeom SDO_GEOMETRY attributes being read
+     * @param coords the coordinates of the entire geometry
      * @return MultiPolygon
      */
     private MultiPolygon readMultiPolygon(OraGeom oraGeom)
@@ -315,6 +318,7 @@ public class OraReader
      * Create MultiLineString as encoded by elemInfo.
      *
      * @param oraGeom SDO_GEOMETRY attributes being read
+     * @param coords the coordinates of the entire geometry
      * @return MultiLineString
      */
     private MultiLineString readMultiLine(OraGeom oraGeom) 
@@ -337,6 +341,7 @@ public class OraReader
      *
      * @param oraGeom SDO_GEOMETRY attributes being read
      * @param elemIndex the element being read
+     * @param coords the coordinates of the entire geometry
      * @return MultiPoint
      */
     private MultiPoint readMultiPoint(OraGeom oraGeom, int elemIndex) 
@@ -372,6 +377,7 @@ public class OraReader
      *
      * @param oraGeom SDO_GEOMETRY attributes being read
      * @param elemIndex the element being read
+     * @param coords the coordinates of the entire geometry
      * @return Polygon as encoded by elemInfo, or null when faced with and
      *         encoding that can not be captured by JTS
      * @throws IllegalArgumentException When faced with an invalid SDO encoding
@@ -425,6 +431,7 @@ public class OraReader
      *
      * @param oraGeom SDO_GEOMETRY attributes being read
      * @param elemIndex the element being read
+     * @param coords the coordinates of the entire geometry
      * @return LinearRing
      *
      * @throws IllegalArgumentException If circle, or curve is requested
@@ -462,6 +469,7 @@ public class OraReader
    * 
    * @param oraGeom SDO_GEOMETRY attributes being read
    * @param elemIndex the element being read
+   * @param coords the coordinates of the entire geometry
    * @return LineString
    * 
    * @throws IllegalArgumentException If asked to create a curve
@@ -485,6 +493,7 @@ public class OraReader
      *
    * @param oraGeom SDO_GEOMETRY attributes being read
    * @param elemIndex the element being read
+   * @param coords the coordinates of the entire geometry
      * @return Point
      */
     private Point readPoint(OraGeom oraGeom, int elemIndex) {
@@ -600,10 +609,10 @@ public class OraReader
     {
       int startOffset = oraGeom.startingOffset(elemIndex);
       int ordLen = oraGeom.ordinateLen();
-      checkOrdinates(oraGeom.elemInfo, elemIndex, startOffset, ordLen, geomType);
+      checkOrdinates(oraGeom.elemInfo, elemIndex, startOffset, ordLen);
     }
 
-    private static void checkOrdinates(int[] elemInfo, int elemIndex, int startOffset, int ordLen, String geomType)
+    private static void checkOrdinates(int[] elemInfo, int elemIndex, int startOffset, int ordLen)
     {
       if (startOffset > ordLen)
 		    throw new IllegalArgumentException("STARTING_OFFSET " + startOffset + " inconsistent with ORDINATES length " + ordLen

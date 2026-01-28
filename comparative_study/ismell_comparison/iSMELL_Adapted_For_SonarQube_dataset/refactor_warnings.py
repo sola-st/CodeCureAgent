@@ -24,7 +24,7 @@ class Warning:
         self.rule_name = rule_name
         self.file_name = file_name
         self.specific_message = specific_message
-        self.warning_line = warning_line
+        self.warning_line: int = warning_line
         self.rule_docu = self.__retrieve_rule_docu()
 
 
@@ -130,7 +130,7 @@ def create_prompt_text(warning: Warning,  java_code):
         f"""\n'{warning.rule_docu}'\n\n""" + \
         f"""Now based on the example, refactor the following Java code to eliminate the '{warning.rule_key}':'{warning.rule_name}' warning, with specific warning message '{warning.specific_message}'.""" + \
         f"""\nOutput the full refactored code (the full file). Don't leave out any part of the code.\n""" + \
-        f"""The warning is located at the line '{warning_line_text}' (line number {warning.warning_line}). Give the changed code using: ```...```.\n""" + \
+        f"""The warning is located at the line '{warning_line_text}' (line number {str(warning.warning_line)}). Give the changed code using: ```...```.\n""" + \
         f"""Java code:\n```java\n{java_code}```"""
 
 
@@ -235,6 +235,7 @@ def fix_warning(warning: Warning):
 @click.option(
     "--input-evaluation-dataset-csv-file",
     "-i",
+    type=click.File(),
     default="./evaluation_dataset_filled_up_to_1000_input_file.csv",
     help="Path to the input evaluation dataset CSV file."
 )
@@ -252,40 +253,34 @@ def fix_warning(warning: Warning):
 )
 def refactor_warnings(input_evaluation_dataset_csv_file, start_instance_id, end_instance_id):
     
-    try:
-        with open(input_evaluation_dataset_csv_file, 'r', encoding='utf-8') as file:
-            reader = csv.DictReader(file)
-            for row in reader:
-                if int(row['instanceID']) < start_instance_id or int(row['instanceID']) > end_instance_id:
-                    continue 
+    reader = csv.DictReader(input_evaluation_dataset_csv_file)
+    for row in reader:
+        if int(row['instanceID']) < start_instance_id or int(row['instanceID']) > end_instance_id:
+            continue 
 
-                # Extract warning details
-                warning = Warning(
-                    warning_id=int(row['instanceID']),
-                    rule_type=row['ruleType'],
-                    rule_key=row['ruleKey'],
-                    rule_name=row['ruleName'],
-                    file_name=row['filePath'].split('/')[-1],
-                    specific_message=row['specificMessage'],
-                    warning_line=row['startLine']
-                )
+        # Extract warning details
+        warning = Warning(
+            warning_id=int(row['instanceID']),
+            rule_type=row['ruleType'],
+            rule_key=row['ruleKey'],
+            rule_name=row['ruleName'],
+            file_name=row['filePath'].split('/')[-1],
+            specific_message=row['specificMessage'],
+            warning_line=int(row['startLine'])
+        )
 
-                os.makedirs(os.path.join("cca_dataset", str(warning.warning_id), "after"), exist_ok=True)
+        os.makedirs(os.path.join("cca_dataset", str(warning.warning_id), "after"), exist_ok=True)
 
-                time_log_file = os.path.join("cca_dataset", str(warning.warning_id), "after", "execution_time.log")
+        time_log_file = os.path.join("cca_dataset", str(warning.warning_id), "after", "execution_time.log")
 
-                with open(time_log_file, 'w') as log_file:
-                    log_file.write(f"!! Warning {warning.warning_id} fixing startup timestamp: " + str(time.time_ns()) + "\n")
+        with open(time_log_file, 'w') as log_file:
+            log_file.write(f"!! Warning {warning.warning_id} fixing startup timestamp: " + str(time.time_ns()) + "\n")
 
-                fix_warning(warning)
+        fix_warning(warning)
 
-                with open(time_log_file, 'a+') as log_file:
-                    log_file.write(f"!! Warning {warning.warning_id} fixing end timestamp: " + str(time.time_ns()) + "\n")
-                
-    except FileNotFoundError:
-        raise FileNotFoundError(f"CSV file not found: {input_evaluation_dataset_csv_file}")
-    except Exception as e:
-        raise Exception(f"Error reading CSV file: {e}")
+        with open(time_log_file, 'a+') as log_file:
+            log_file.write(f"!! Warning {warning.warning_id} fixing end timestamp: " + str(time.time_ns()) + "\n")
+        
 
 
 

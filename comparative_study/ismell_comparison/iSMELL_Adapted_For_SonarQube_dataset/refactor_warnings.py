@@ -1,3 +1,4 @@
+import shutil
 import time
 import click
 from dotenv import load_dotenv
@@ -268,7 +269,7 @@ def refactor_warnings(input_evaluation_dataset_csv_file, start_instance_id, end_
             specific_message=row['specificMessage'],
             warning_line=int(row['startLine'])
         )
-
+        shutil.rmtree(os.path.join("cca_dataset", str(warning.warning_id), "after"), ignore_errors=True)
         os.makedirs(os.path.join("cca_dataset", str(warning.warning_id), "after"), exist_ok=True)
 
         time_log_file = os.path.join("cca_dataset", str(warning.warning_id), "after", "execution_time.log")

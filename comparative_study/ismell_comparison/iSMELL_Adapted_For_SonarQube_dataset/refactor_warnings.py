@@ -61,8 +61,7 @@ class Warning:
         prompt = f"""Provide a single concise Java code example that illustrates the SonarQube rule with ID '{self.warning_id}', 
 which is of type '{self.rule_type}' and named '{self.rule_name}'. The SonarQube rule has the following SonarQube docu: \n'{rule_docu}'\n 
 The example should clearly demonstrate the issue that this rule addresses and how it is fixed. Provide two versions: 'Noncompliant code example' and 'Compliant solution'. Don't output anything but the code examples."""
-        print("Prompt for code example:")
-        print(prompt)
+
         
         example = ""
         try:

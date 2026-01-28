@@ -1,4 +1,5 @@
 import time
+import click
 from dotenv import load_dotenv
 from openai import OpenAI
 import os
@@ -24,9 +25,10 @@ class Warning:
         self.file_name = file_name
         self.specific_message = specific_message
         self.warning_line = warning_line
-        self.rule_docu = self.__retrieve_rule_docu(warning_id)
+        self.rule_docu = self.__retrieve_rule_docu()
 
-    def __retrieve_rule_docu(self, warning_id):
+
+    def __retrieve_rule_docu(self):
         
         rule_docu = ""
         
@@ -63,7 +65,7 @@ The example should clearly demonstrate the issue that this rule addresses and ho
         
         example = ""
         try:
-            plain_prompt_file = os.path.join("cca_dataset", str(warning.warning_id), "after", str(warning.warning_id) + "_example_generation_prompt.txt")
+            plain_prompt_file = os.path.join("cca_dataset", str(self.warning_id), "after", str(self.warning_id) + "_example_generation_prompt.txt")
             write_to_file(plain_prompt_file, prompt)
 
             print("Sending example generation prompt to LLM...")
@@ -83,7 +85,7 @@ The example should clearly demonstrate the issue that this rule addresses and ho
 
             print("Received example generation response from LLM.")
             
-            plain_response_file = os.path.join("cca_dataset", str(warning.warning_id), "after", str(warning.warning_id) + "_example_generation_response.txt")
+            plain_response_file = os.path.join("cca_dataset", str(self.warning_id), "after", str(self.warning_id) + "_example_generation_response.txt")
             write_to_file(plain_response_file, example)
             
             output_dir = f"cca_dataset/{self.warning_id}/after"
@@ -108,6 +110,9 @@ The example should clearly demonstrate the issue that this rule addresses and ho
 
 
 def create_prompt_text(warning: Warning,  java_code):
+
+    warning_line_text = retrieve_warning_line_text(warning, java_code)
+
     llm_prompt = ""
     if warning.rule_type == "Code_Smell":
         llm_prompt += """In computer programming, a code smell is any characteristic in the source code of a program that possibly indicates a deeper problem."""
@@ -125,11 +130,19 @@ def create_prompt_text(warning: Warning,  java_code):
         f"""\n'{warning.rule_docu}'\n\n""" + \
         f"""Now based on the example, refactor the following Java code to eliminate the '{warning.rule_key}':'{warning.rule_name}' warning, with specific warning message '{warning.specific_message}'.""" + \
         f"""\nOutput the full refactored code (the full file). Don't leave out any part of the code.\n""" + \
-        f"""The warning is located at the line '{warning.warning_line}'. Give the changed code using: ```...```.\n""" + \
+        f"""The warning is located at the line '{warning_line_text}' (line number {warning.warning_line}). Give the changed code using: ```...```.\n""" + \
         f"""Java code:\n```java\n{java_code}```"""
 
 
     return llm_prompt
+
+def retrieve_warning_line_text(warning: Warning, java_code):
+    lines = java_code.splitlines()
+    line_index = warning.warning_line - 1  # Convert to 0-based index
+    if 0 <= line_index < len(lines):
+        return lines[line_index].strip()
+    else:
+        return str(warning.warning_line)
 
 def refactor_warning(warning: Warning, java_code):
 
@@ -217,15 +230,33 @@ def fix_warning(warning: Warning):
     write_to_file(os.path.join(output_dir, warning.file_name), clean_java_code(model_response))
 
 
-if __name__ == "__main__":
 
-    csv_file_path = 'evaluation_dataset_filled_up_to_1000_input_file.csv'
+@click.command()
+@click.option(
+    "--input-evaluation-dataset-csv-file",
+    "-i",
+    default="./evaluation_dataset_filled_up_to_1000_input_file.csv",
+    help="Path to the input evaluation dataset CSV file."
+)
+@click.option(
+    "--start-instance-id",
+    "-s",
+    default=0,
+    help="Instance ID to start processing from."
+)
+@click.option(
+    "--end-instance-id",
+    "-e",
+    default=50,
+    help="Instance ID to stop processing at."
+)
+def refactor_warnings(input_evaluation_dataset_csv_file, start_instance_id, end_instance_id):
     
     try:
-        with open(csv_file_path, 'r', encoding='utf-8') as file:
+        with open(input_evaluation_dataset_csv_file, 'r', encoding='utf-8') as file:
             reader = csv.DictReader(file)
             for row in reader:
-                if int(row['instanceID']) > 50:
+                if int(row['instanceID']) < start_instance_id or int(row['instanceID']) > end_instance_id:
                     continue 
 
                 # Extract warning details
@@ -243,20 +274,26 @@ if __name__ == "__main__":
 
                 time_log_file = os.path.join("cca_dataset", str(warning.warning_id), "after", "execution_time.log")
 
-                start_time = time.time()
                 with open(time_log_file, 'w') as log_file:
                     log_file.write(f"!! Warning {warning.warning_id} fixing startup timestamp: " + str(time.time_ns()) + "\n")
 
                 fix_warning(warning)
 
-                end_time = time.time()
                 with open(time_log_file, 'a+') as log_file:
                     log_file.write(f"!! Warning {warning.warning_id} fixing end timestamp: " + str(time.time_ns()) + "\n")
                 
     except FileNotFoundError:
-        raise FileNotFoundError(f"CSV file not found: {csv_file_path}")
+        raise FileNotFoundError(f"CSV file not found: {input_evaluation_dataset_csv_file}")
     except Exception as e:
         raise Exception(f"Error reading CSV file: {e}")
+
+
+
+
+if __name__ == "__main__":
+    refactor_warnings()
+
+    
     
 
 

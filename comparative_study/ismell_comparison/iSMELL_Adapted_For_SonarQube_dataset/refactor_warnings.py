@@ -243,7 +243,7 @@ def fix_warning(warning: Warning):
 @click.option(
     "--start-instance-id",
     "-s",
-    default=0,
+    default=1,
     help="Instance ID to start processing from."
 )
 @click.option(

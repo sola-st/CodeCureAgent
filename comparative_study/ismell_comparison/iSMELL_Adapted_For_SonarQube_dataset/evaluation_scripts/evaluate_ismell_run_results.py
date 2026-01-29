@@ -36,13 +36,14 @@ def evaluate_ismell_run_results():
 
 
     if not os.path.exists(TARGET_CSV_FILE_PATH):
-        with open(TARGET_CSV_FILE_PATH, "w") as results_csv_file:
+        with open(TARGET_CSV_FILE_PATH, "w", buffering=1) as results_csv_file:
             csv_writer = csv.writer(
                 results_csv_file, dialect=csv.unix_dialect)
             csv_writer.writerow(["instanceID", "projectName", "ruleKey", "ruleName", "ruleType", "experimentNumber", "classification", "plausibleFix",
                                 "fixComplexity", "classificationSoundness", "fixCorrectness", "classificationSoundnessExplanation", "fixCorrectnessExplanation", "ismellFixCreated", "ismellTotalTime", "ismellBuildSuccessful", "ismellSonarCheckRemovedWarning", "ismellSonarCheckNoNewWarning", "ismellTestSuccessful", "ismellBuildAndRemovedWarning", "ismellBuildAndRemovedWarningAndNoNewWarning", "ismellBuildAndRemovedWarningAndNoNewWarningAndTest", "ismellUncachedInputTokens", "ismellCachedInputTokens", "ismellOutputTokens", "ismellTotalTokens", "ismellCost", "ismellTPAssumptionSoundness", "ismellCorrectFix", "codeSmellOutsideOfSonarQubeIntroduced", "ismellTPAssumptionSoundnessExplanation", "ismellFixCorrectnessExplanation"])
+            results_csv_file.flush()
 
-    with open(TARGET_CSV_FILE_PATH, "a+") as results_csv_file:
+    with open(TARGET_CSV_FILE_PATH, "a+", buffering=1) as results_csv_file:
         csv_writer = csv.writer(
             results_csv_file, dialect=csv.unix_dialect)
 
@@ -115,6 +116,7 @@ def evaluate_ismell_run_results():
                     list(
                         cca_results_df.iloc[index]) + [ismell_fix_created, ismell_total_time, False, False, False, False, False, False, False, ismell_uncached_input_tokens, ismell_cached_input_tokens, ismell_output_tokens, ismell_total_tokens, ismell_cost, "", "", "", "", ""]
                 )
+                results_csv_file.flush()
                 continue
             
             ismell_fix_created = True
@@ -311,6 +313,7 @@ def evaluate_ismell_run_results():
                 list(
                     cca_results_df.iloc[index]) + [ismell_fix_created, ismell_total_time, ismellBuildSuccessful, ismellSonarCheckRemovedWarning, ismellSonarCheckNoNewWarning, ismellTestSuccessful, ismellBuildAndRemovedWarning, ismellBuildAndRemovedWarningAndNoNewWarning, ismellBuildAndRemovedWarningAndNoNewWarningAndTest, ismell_uncached_input_tokens, ismell_cached_input_tokens, ismell_output_tokens, ismell_total_tokens, ismell_cost, "", "", "", "", ""]
             )
+            results_csv_file.flush()
 
     script_end_time = time.time_ns()
     print(f"End time: {str(script_end_time)}")

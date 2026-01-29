@@ -1,0 +1,187 @@
+In computer programming, a bug is an error, flaw or fault in a computer program that causes it to produce an incorrect or unexpected result, or to behave in unintended ways.
+Now I will tell you the definition about SonarQube warning 'S1764':'Identical expressions should not be used on both sides of a binary operator' as given by the SonarQube docu, including an example to help you solve a similar warning:
+'Using the same value on either side of a binary operator is almost always a mistake. In the case of logical operators, it is either a copy/paste error and therefore a bug, or it is simply wasted code, and should be simplified. In the case of bitwise operators and most binary mathematical operators, having the same value on both sides of an operator yields predictable results, and should be simplified.
+
+Noncompliant Code Example
+    
+    
+    if ( a == a ) { // always true
+      doZ();
+    }
+    if ( a != a ) { // always false
+      doY();
+    }
+    if ( a == b && a == b ) { // if the first one is true, the second one is too
+      doX();
+    }
+    if ( a == b || a == b ) { // if the first one is true, the second one is too
+      doW();
+    }
+    
+    int j = 5 / 5; //always 1
+    int k = 5 - 5; //always 0
+    
+    c.equals(c); //always true
+    
+
+Exceptions
+
+  * This rule ignores `*`, `+`, and `=`. 
+  * The specific case of testing a floating point value against itself is a valid test for `NaN` and is therefore ignored. 
+  * Similarly, left-shifting 1 onto 1 is common in the construction of bit masks, and is ignored. 
+
+
+    
+    
+    float f;
+    if(f != f) { //test for NaN value
+      System.out.println("f is NaN");
+    }
+    
+    int i = 1 << 1; // Compliant
+    int j = a << a; // Noncompliant
+    
+
+See
+
+  * [CERT, MSC12-C.](https://wiki.sei.cmu.edu/confluence/x/5dUxBQ) \- Detect and remove code that has no effect or is never executed 
+  * {rule:java:S1656} - Implements a check on `=`.'
+
+Now based on the example, refactor the following Java code to eliminate the 'S1764':'Identical expressions should not be used on both sides of a binary operator' warning, with specific warning message 'Correct one of the identical sub-expressions on both sides of operator "-"'.
+Output the full refactored code (the full file). Don't leave out any part of the code.
+The warning is located at the line 'System.arraycopy(z, head, result, head - head, tail + 1 - head);' (line number 120). Give the changed code using: ```...```.
+Java code:
+```java
+package org.uma.jmetal.problem.multiobjective.wfg;
+
+import org.uma.jmetal.problem.doubleproblem.impl.AbstractDoubleProblem;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
+/**
+ * Implements a reference abstract class for all wfg org.uma.test problem
+ * Reference: Simon Huband, Luigi Barone, Lyndon While, Phil Hingston
+ * A Scalable Multi-objective Test Problem Toolkit.
+ * Evolutionary Multi-Criterion Optimization:
+ * Third International Conference, EMO 2005.
+ * Proceedings, volume 3410 of Lecture Notes in Computer Science
+ */
+@SuppressWarnings("serial")
+public abstract class WFG extends AbstractDoubleProblem {
+
+  /**
+   * stores a epsilon default value
+   */
+  private final float epsilon = (float) 1e-7;
+
+  protected int k;
+  protected int m;
+  protected int l;
+  protected int[] a;
+  protected int[] s;
+  protected int d = 1;
+  protected Random random = new Random();
+
+  /**
+   * Constructor
+   * Creates a wfg problem
+   *
+   * @param k            position-related parameters
+   * @param l            distance-related parameters
+   * @param M            Number of objectives
+   */
+  public WFG(Integer k, Integer l, Integer M) {
+    this.k = k;
+    this.l = l;
+    this.m = M;
+
+    setNumberOfVariables(this.k + this.l);
+    setNumberOfObjectives(this.m);
+    setNumberOfConstraints(0);
+
+    List<Double> lowerLimit = new ArrayList<>(getNumberOfVariables()) ;
+    List<Double> upperLimit = new ArrayList<>(getNumberOfVariables()) ;
+
+    for (int i = 0; i < getNumberOfVariables(); i++) {
+      lowerLimit.add(0.0);
+      upperLimit.add(2.0*(i+1));
+    }
+
+    setVariableBounds(lowerLimit, upperLimit);
+  }
+
+  /**
+   * Gets the x vector
+   */
+  public float[] calculateX(float[] t) {
+    float[] x = new float[m];
+
+    for (int i = 0; i < m - 1; i++) {
+      x[i] = Math.max(t[m - 1], a[i]) * (t[i] - (float) 0.5) + (float) 0.5;
+    }
+
+    x[m - 1] = t[m - 1];
+
+    return x;
+  }
+
+  /**
+   * Normalizes a vector (consulte wfg toolkit reference)
+   */
+  public float[] normalise(float[] z) {
+    float[] result = new float[z.length];
+
+    for (int i = 0; i < z.length; i++) {
+      float bound = (float) 2.0 * (i + 1);
+      result[i] = z[i] / bound;
+      result[i] = correctTo01(result[i]);
+    }
+
+    return result;
+  }
+
+  /**
+   */
+  public float correctTo01(float a) {
+    float min = (float) 0.0;
+    float max = (float) 1.0;
+
+    float minEpsilon = min - epsilon;
+    float maxEpsilon = max + epsilon;
+
+    if ((a <= min && a >= minEpsilon) || (a >= min && a <= minEpsilon)) {
+      return min;
+    } else if ((a >= max && a <= maxEpsilon) || (a <= max && a >= maxEpsilon)) {
+      return max;
+    } else {
+      return a;
+    }
+  }
+
+  /**
+   * Gets a subvector of a given vector
+   * (Head inclusive and tail inclusive)
+   *
+   * @param z the vector
+   * @return the subvector
+   */
+  public float[] subVector(float[] z, int head, int tail) {
+    int size = tail - head + 1;
+    float[] result = new float[size];
+
+    System.arraycopy(z, head, result, head - head, tail + 1 - head);
+
+    return result;
+  }
+
+  /**
+   * Evaluates a solution
+   *
+   * @param variables The solution to evaluate
+   * @return a double [] with the evaluation results
+   */
+  abstract public float[] evaluate(float[] variables);
+}
+```

@@ -1,0 +1,142 @@
+In computer programming, a code smell is any characteristic in the source code of a program that possibly indicates a deeper problem.
+Now I will tell you the definition about SonarQube warning 'S4929':'"read(byte[],int,int)" should be overridden' as given by the SonarQube docu, including an example to help you solve a similar warning:
+'When directly subclassing `java.io.InputStream` or `java.io.FilterInputStream`, the only requirement is that you implement the method `read()`. However most uses for such streams don’t read a single byte at a time and the default implementation for `read(byte[],int,int)` will call `read(int)` for every single byte in the array which can create a lot of overhead and is utterly inefficient. It is therefore strongly recommended that subclasses provide an efficient implementation of `read(byte[],int,int)`.
+
+This rule raises an issue when a direct subclass of `java.io.InputStream` or `java.io.FilterInputStream` doesn’t provide an override of `read(byte[],int,int)`.
+
+Noncompliant Code Example
+    
+    
+    public class MyInputStream extends java.io.InputStream {
+      private FileInputStream fin;
+    
+      public MyInputStream(File file) throws IOException {
+        fin = new FileInputStream(file);
+      }
+    
+      @Override
+      public int read() throws IOException {
+        return fin.read();
+      }
+    }
+    
+
+Compliant Solution
+    
+    
+    public class MyInputStream extends java.io.InputStream {
+      private FileInputStream fin;
+    
+      public MyInputStream(File file) throws IOException {
+        fin = new FileInputStream(file);
+      }
+    
+      @Override
+      public int read() throws IOException {
+        return fin.read();
+      }
+    
+      @Override
+      public int read(byte[] b, int off, int len) throws IOException {
+        return fin.read(b, off, len);
+      }
+    }
+    
+
+Exceptions
+
+This rule doesn’t raise an issue when the class is declared `abstract`.'
+
+Now based on the example, refactor the following Java code to eliminate the 'S4929':'"read(byte[],int,int)" should be overridden' warning, with specific warning message 'Provide an override of "read(byte[],int,int)" for this class.'.
+Output the full refactored code (the full file). Don't leave out any part of the code.
+The warning is located at the line 'public class TimeoutInputStream extends InputStream {' (line number 17). Give the changed code using: ```...```.
+Java code:
+```java
+package com.github.vincentrussell.query.mongodb.sql.converter;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+/**
+ * {@link InputStream} that will time out (return -1) if no data is returned
+ * when calling read within the indicated timeout.
+ */
+public class TimeoutInputStream extends InputStream {
+
+    private ExecutorService executorService = Executors.newFixedThreadPool(1);
+
+    private final InputStream inputStream;
+    private final long timeout;
+    private final TimeUnit timeUnit;
+    private boolean receivedData = false;
+
+
+    /**
+     * Default constructor.
+     * @param inputStream the linked {@link InputStream}
+     * @param timeout the timeout amount
+     * @param timeUnit the unit for the timeout
+     */
+    public TimeoutInputStream(final InputStream inputStream, final long timeout, final TimeUnit timeUnit) {
+        this.inputStream = inputStream;
+        this.timeout = timeout;
+        this.timeUnit = timeUnit;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int read() throws IOException {
+
+        int result = -1;
+        Future<Integer> future = executorService.submit(new ReadNext(inputStream));
+        try {
+            result = getInteger(future);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            result = -1;
+        }
+
+        receivedData = true;
+        return result;
+    }
+
+    private Integer getInteger(final Future<Integer> future)
+            throws InterruptedException, ExecutionException, TimeoutException {
+        if (!receivedData) {
+            return future.get(1, TimeUnit.MINUTES);
+        } else {
+            return future.get(timeout, timeUnit);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void close() throws IOException {
+        executorService.shutdownNow();
+    }
+
+    private static final class ReadNext implements Callable<Integer> {
+
+        private final InputStream inputStream;
+
+        private ReadNext(final InputStream inputStream) {
+            this.inputStream = inputStream;
+        }
+
+        @Override
+        public Integer call() throws Exception {
+            return inputStream.read();
+        }
+    }
+}
+```

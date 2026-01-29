@@ -1,0 +1,110 @@
+In computer programming, a bug is an error, flaw or fault in a computer program that causes it to produce an incorrect or unexpected result, or to behave in unintended ways.
+Now I will tell you the definition about SonarQube warning 'S2225':'"toString()" and "clone()" methods should not return null' as given by the SonarQube docu, including an example to help you solve a similar warning:
+'Calling `toString()` or `clone()` on an object should always return a string or an object. Returning `null` instead contravenes the method’s implicit contract.
+
+Noncompliant Code Example
+    
+    
+    public String toString () {
+      if (this.collection.isEmpty()) {
+        return null; // Noncompliant
+      } else {
+        // ...
+    
+
+Compliant Solution
+    
+    
+    public String toString () {
+      if (this.collection.isEmpty()) {
+        return "";
+      } else {
+        // ...
+    
+
+See
+
+  * [MITRE, CWE-476](https://cwe.mitre.org/data/definitions/476) \- NULL Pointer Dereference 
+  * [CERT, EXP01-J.](https://wiki.sei.cmu.edu/confluence/x/aDdGBQ) \- Do not use a null in a case where an object is required'
+
+Now based on the example, refactor the following Java code to eliminate the 'S2225':'"toString()" and "clone()" methods should not return null' warning, with specific warning message 'Return a non null object.'.
+Output the full refactored code (the full file). Don't leave out any part of the code.
+The warning is located at the line 'return null;' (line number 53). Give the changed code using: ```...```.
+Java code:
+```java
+package cn.nukkit.network.protocol;
+
+import cn.nukkit.Server;
+import cn.nukkit.network.Network;
+import cn.nukkit.utils.Binary;
+import cn.nukkit.utils.BinaryStream;
+import com.nukkitx.network.raknet.RakNetReliability;
+
+/**
+ * author: MagicDroidX
+ * Nukkit Project
+ */
+public abstract class DataPacket extends BinaryStream implements Cloneable {
+
+    public boolean isEncoded = false;
+    private int channel = 0;
+
+    public RakNetReliability reliability = RakNetReliability.RELIABLE_ORDERED;
+
+    public abstract byte pid();
+
+    public abstract void decode();
+
+    public abstract void encode();
+
+    @Override
+    public DataPacket reset() {
+        super.reset();
+        this.putUnsignedVarInt(this.pid() & 0xff);
+        return this;
+    }
+
+    public void setChannel(int channel) {
+        this.channel = channel;
+    }
+
+    public int getChannel() {
+        return channel;
+    }
+
+    public DataPacket clean() {
+        this.setBuffer(null);
+        this.setOffset(0);
+        this.isEncoded = false;
+        return this;
+    }
+
+    @Override
+    public DataPacket clone() {
+        try {
+            return (DataPacket) super.clone();
+        } catch (CloneNotSupportedException e) {
+            return null;
+        }
+    }
+
+    public BatchPacket compress() {
+        return compress(Server.getInstance().networkCompressionLevel);
+    }
+
+    public BatchPacket compress(int level) {
+        BatchPacket batch = new BatchPacket();
+        byte[][] batchPayload = new byte[2][];
+        byte[] buf = getBuffer();
+        batchPayload[0] = Binary.writeUnsignedVarInt(buf.length);
+        batchPayload[1] = buf;
+        byte[] data = Binary.appendBytes(batchPayload);
+        try {
+            batch.payload = Network.deflateRaw(data, level);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return batch;
+    }
+}
+```

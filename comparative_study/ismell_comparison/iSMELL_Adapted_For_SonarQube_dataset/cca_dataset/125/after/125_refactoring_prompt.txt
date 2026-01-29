@@ -1,0 +1,153 @@
+In computer programming, a bug is an error, flaw or fault in a computer program that causes it to produce an incorrect or unexpected result, or to behave in unintended ways.
+Now I will tell you the definition about SonarQube warning 'S2259':'Null pointers should not be dereferenced' as given by the SonarQube docu, including an example to help you solve a similar warning:
+'A reference to `null` should never be dereferenced/accessed. Doing so will cause a `NullPointerException` to be thrown. At best, such an exception will cause abrupt program termination. At worst, it could expose debugging information that would be useful to an attacker, or it could allow an attacker to bypass security measures.
+
+Note that when they are present, this rule takes advantage of `@CheckForNull` and `@Nonnull` annotations defined in [JSR-305](https://jcp.org/en/jsr/detail?id=305) to understand which values are and are not nullable except when `@Nonnull` is used on the parameter to `equals`, which by contract should always work with null.
+
+Noncompliant Code Example
+    
+    
+    @CheckForNull
+    String getName(){...}
+    
+    public boolean isNameEmpty() {
+      return getName().length() == 0; // Noncompliant; the result of getName() could be null, but isn't null-checked
+    }
+    
+    
+    
+    Connection conn = null;
+    Statement stmt = null;
+    try{
+      conn = DriverManager.getConnection(DB_URL,USER,PASS);
+      stmt = conn.createStatement();
+      // ...
+    
+    }catch(Exception e){
+      e.printStackTrace();
+    }finally{
+      stmt.close();   // Noncompliant; stmt could be null if an exception was thrown in the try{} block
+      conn.close();  // Noncompliant; conn could be null if an exception was thrown
+    }
+    
+    
+    
+    private void merge(@Nonnull Color firstColor, @Nonnull Color secondColor){...}
+    
+    public  void append(@CheckForNull Color color) {
+        merge(currentColor, color);  // Noncompliant; color should be null-checked because merge(...) doesn't accept nullable parameters
+    }
+    
+    
+    
+    void paint(Color color) {
+      if(color == null) {
+        System.out.println("Unable to apply color " + color.toString());  // Noncompliant; NullPointerException will be thrown
+        return;
+      }
+      ...
+    }
+    
+
+See
+
+  * [MITRE, CWE-476](https://cwe.mitre.org/data/definitions/476) \- NULL Pointer Dereference 
+  * [CERT, EXP34-C.](https://wiki.sei.cmu.edu/confluence/x/QdcxBQ) \- Do not dereference null pointers 
+  * [CERT, EXP01-J.](https://wiki.sei.cmu.edu/confluence/x/aDdGBQ) \- Do not use a null in a case where an object is required'
+
+Now based on the example, refactor the following Java code to eliminate the 'S2259':'Null pointers should not be dereferenced' warning, with specific warning message 'A "NullPointerException" could be thrown; "result" is nullable here.'.
+Output the full refactored code (the full file). Don't leave out any part of the code.
+The warning is located at the line 'assertTrue("Found invalid geometry(s) in Voronoi result", result.isValid() );' (line number 80). Give the changed code using: ```...```.
+Java code:
+```java
+/*
+ * Copyright (c) 2016 Vivid Solutions.
+ *
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v20.html
+ * and the Eclipse Distribution License is available at
+ *
+ * http://www.eclipse.org/org/documents/edl-v10.php.
+ */
+package org.locationtech.jts.triangulate;
+
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.io.ParseException;
+import org.locationtech.jts.math.DD;
+import org.locationtech.jts.triangulate.quadedge.QuadEdgeSubdivision;
+
+import junit.textui.TestRunner;
+import test.jts.GeometryTestCase;
+
+/**
+ * Tests Voronoi diagram generation
+ * 
+ */
+public class VoronoiTest extends GeometryTestCase {
+
+  public static void main(String args[]) {
+    TestRunner.run(VoronoiTest.class);
+  }
+
+  public VoronoiTest(String name) { super(name); }
+
+  public void testSimple()
+  throws ParseException
+  {
+    String wkt = "MULTIPOINT ((10 10), (20 70), (60 30), (80 70))";
+    String expected = "GEOMETRYCOLLECTION (POLYGON ((-1162.076359832636 462.66344142259413, 50 419.375, 50 60, 27.857142857142854 37.857142857142854, -867 187, -1162.076359832636 462.66344142259413)), POLYGON ((-867 187, 27.857142857142854 37.857142857142854, 245 -505, 45 -725, -867 187)), POLYGON ((27.857142857142854 37.857142857142854, 50 60, 556.6666666666666 -193.33333333333331, 245 -505, 27.857142857142854 37.857142857142854)), POLYGON ((50 60, 50 419.375, 1289.1616314199396 481.3330815709969, 556.6666666666666 -193.33333333333331, 50 60)))";
+    runVoronoi(wkt, true, expected);
+  }
+  
+  /** 
+   * Test case taken from GEOS issue 976: https://trac.osgeo.org/geos/ticket/976
+   * 
+   * Running with original Triangle.circumcentre double-precision code caused
+   * invalid polygons to be computed, due to different circumcentres being 
+   * computed for adjacent triangles for sites in a square.
+   * Switching to {@link DD} solved the problem by computing
+   * identical circumcentres.
+   */
+  public void testSitesWithPointsOnSquareGrid() {
+    String wkt = "0104000080170000000101000080EC51B81E11A20741EC51B81E85A51C415C8FC2F528DC354001010000801F85EB5114A207415C8FC2F585A51C417B14AE47E1BA3540010100008085EB51B818A20741A8C64B3786A51C413E0AD7A3709D35400101000080000000001BA20741FED478E984A51C413E0AD7A3709D3540010100008085EB51B818A20741FED478E984A51C413E0AD7A3709D354001010000800AD7A37016A20741FED478E984A51C413E0AD7A3709D35400101000080000000001BA2074154E3A59B83A51C413E0AD7A3709D3540010100008085EB51B818A2074154E3A59B83A51C413E0AD7A3709D354001010000800AD7A37016A2074154E3A59B83A51C413E0AD7A3709D35400101000080000000001BA20741AAF1D24D82A51C413E0AD7A3709D3540010100008085EB51B818A20741AAF1D24D82A51C413E0AD7A3709D35400101000080F6285C8F12A20741EC51B81E88A51C414160E5D022DB354001010000802222222210A2074152B81EC586A51C414160E5D022DB354001010000804F1BE8B40DA2074152B81EC586A51C414160E5D022DB354001010000807B14AE470BA2074152B81EC586A51C414160E5D022DB354001010000802222222210A20741B81E856B85A51C414160E5D022DB354001010000804F1BE8B40DA20741B81E856B85A51C414160E5D022DB354001010000807B14AE470BA20741B81E856B85A51C414160E5D022DB35400101000080A70D74DA08A20741B81E856B85A51C414160E5D022DB35400101000080D4063A6D06A20741B81E856B85A51C414160E5D022DB354001010000807B14AE470BA207411F85EB1184A51C414160E5D022DB35400101000080A70D74DA08A207411F85EB1184A51C414160E5D022DB35400101000080D4063A6D06A207411F85EB1184A51C414160E5D022DB3540";
+    runVoronoi(wkt);    
+  }
+  
+  static final double COMPARISON_TOLERANCE = 1.0e-7;
+	
+	private void runVoronoi(String sitesWKT) {
+	  runVoronoi(sitesWKT, true, null);
+  }
+
+  void runVoronoi(String sitesWKT, boolean computePolys, String expectedWKT)
+  {
+  	Geometry sites = read(sitesWKT);
+  	DelaunayTriangulationBuilder builder = new DelaunayTriangulationBuilder();
+  	builder.setSites(sites);
+  	
+    QuadEdgeSubdivision subdiv = builder.getSubdivision();
+    
+  	GeometryFactory geomFact = new GeometryFactory();
+  	Geometry result = null;
+  	if (computePolys) {
+  		result = subdiv.getVoronoiDiagram(geomFact);	
+  	}
+  	else {
+  		//result = builder.getEdges(geomFact);
+  	}
+ 	
+  	assertTrue("Found invalid geometry(s) in Voronoi result", result.isValid() );
+  	
+  	if (expectedWKT == null) 
+  	  return;
+  	
+  	Geometry expected = read(expectedWKT);
+  	result.normalize();
+  	expected.normalize();
+  	assertTrue(expected.equalsExact(result, COMPARISON_TOLERANCE));
+  }
+}
+```

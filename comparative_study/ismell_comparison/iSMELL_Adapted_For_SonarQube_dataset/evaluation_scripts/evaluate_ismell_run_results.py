@@ -5,6 +5,7 @@ import os
 import re
 import shutil
 import time
+import click
 import pandas as pd
 
 import sys
@@ -19,16 +20,53 @@ from agent_core.commands import repository_operations
 WARNINGS_TO_RUN_ON_FILE_PATH = "../comparative_study/ismell_comparison/iSMELL_Adapted_For_SonarQube_dataset/evaluation_dataset_filled_up_to_1000_input_file.csv"
 CCA_RESULTS_FILE_PATH = "evaluation_results/evaluation_results.csv"
 
+ISMELL_PATH = "../comparative_study/ismell_comparison/iSMELL_Adapted_For_SonarQube_dataset"
 TARGET_CSV_FILE_PATH = "../comparative_study/ismell_comparison/iSMELL_Adapted_For_SonarQube_dataset/ismell_comparison_results.csv"
 
 CCA_WORKSPACE = "cca_workspace"
 
 ISMELL_DATASET_FOLDER = "../comparative_study/ismell_comparison/iSMELL_Adapted_For_SonarQube_dataset/cca_dataset"
 
+@click.option(
+    "--start-instance-id",
+    "-s",
+    type=int,
+    default=1,
+    help="Start instance ID for evaluation.",
+)
+@click.option(
+    "--end-instance-id",
+    "-e",
+    type=int,
+    default=1000,
+    help="End instance ID for evaluation.",
+)
+@click.option(
+    "--workspace-path",
+    "-w",
+    type=str,
+    default="cca_workspace",
+    help="Path to the workspace for checking the build etc. Needs to be unique for running multiple instances in parallel!",
+)
+@click.option(
+    "--target-csv-file-name",
+    "-t",
+    type=str,
+    default="ismell_comparison_results.csv",
+    help="Path to the target CSV file to store the results. Needs to be unique for running multiple instances in parallel!",
+)
+def evaluate_ismell_run_results(start_instance_id, end_instance_id, workspace_path, target_csv_file_name):
+    global CCA_WORKSPACE
+    CCA_WORKSPACE = workspace_path
+    global TARGET_CSV_FILE_PATH
+    TARGET_CSV_FILE_PATH = os.path.join(ISMELL_PATH, target_csv_file_name)
 
-def evaluate_ismell_run_results():
+
     script_start_time = time.time_ns()
     print(f"Start time: {str(script_start_time)}")
+
+    if not os.path.exists(CCA_WORKSPACE):
+        os.makedirs(CCA_WORKSPACE, exist_ok=True)
 
     warnings_to_run_on_df = pd.read_csv(WARNINGS_TO_RUN_ON_FILE_PATH)
 
@@ -48,6 +86,10 @@ def evaluate_ismell_run_results():
             results_csv_file, dialect=csv.unix_dialect)
 
         for index, warning_item in warnings_to_run_on_df.iterrows():
+
+            if int(warning_item["instanceID"]) < start_instance_id or int(warning_item["instanceID"]) > end_instance_id:
+                continue
+            
             print("Collecting ISMELL Evaluation on ID " +
                   str(warning_item["instanceID"]))
 

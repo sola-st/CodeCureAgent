@@ -27,6 +27,7 @@ CCA_WORKSPACE = "cca_workspace"
 
 ISMELL_DATASET_FOLDER = "../comparative_study/ismell_comparison/iSMELL_Adapted_For_SonarQube_dataset/cca_dataset"
 
+@click.command()
 @click.option(
     "--start-instance-id",
     "-s",

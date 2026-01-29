@@ -1,0 +1,334 @@
+/*
+  NfeConsultaStub.java This file was auto-generated from WSDL by the Apache Axis2 version: 1.7.4 Built on : Oct 21, 2016 (10:47:34 BST)
+ */
+package com.fincatto.documentofiscal.nfe310.webservices.nota.consulta;
+
+import org.apache.axiom.om.OMAttribute;
+import org.apache.axis2.client.Stub;
+
+import javax.xml.namespace.QName;
+
+/*
+ * NfeConsultaStub java implementation
+ */
+@SuppressWarnings({"rawtypes", "unchecked", "deprecation", "unused"})
+public class NfeConsultaStub extends org.apache.axis2.client.Stub {
+    private static int counter = 0;
+    protected org.apache.axis2.description.AxisOperation[] _operations;
+
+    // hashmaps to keep the fault mapping
+    private final java.util.HashMap faultExceptionNameMap = new java.util.HashMap();
+    private final java.util.HashMap faultExceptionClassNameMap = new java.util.HashMap();
+    private final java.util.HashMap faultMessageMap = new java.util.HashMap();
+    private final javax.xml.namespace.QName[] opNameArray = null;
+
+    /**
+     * Constructor that takes in a configContext
+     */
+    public NfeConsultaStub(final org.apache.axis2.context.ConfigurationContext configurationContext, final java.lang.String targetEndpoint) throws org.apache.axis2.AxisFault {
+        this(configurationContext, targetEndpoint, false);
+    }
+
+    /**
+     * Constructor that takes in a configContext and useseperate listner
+     */
+    public NfeConsultaStub(final org.apache.axis2.context.ConfigurationContext configurationContext, final java.lang.String targetEndpoint, final boolean useSeparateListener) throws org.apache.axis2.AxisFault {
+        // To populate AxisService
+        this.populateAxisService();
+        this.populateFaults();
+        this._serviceClient = new org.apache.axis2.client.ServiceClient(configurationContext, this._service);
+        this._serviceClient.getOptions().setTo(new org.apache.axis2.addressing.EndpointReference(targetEndpoint));
+        this._serviceClient.getOptions().setUseSeparateListener(useSeparateListener);
+        // Set the soap version
+        this._serviceClient.getOptions().setSoapVersionURI(org.apache.axiom.soap.SOAP12Constants.SOAP_ENVELOPE_NAMESPACE_URI);
+    }
+
+    /**
+     * Default Constructor
+     */
+    public NfeConsultaStub(final org.apache.axis2.context.ConfigurationContext configurationContext) throws org.apache.axis2.AxisFault {
+        this(configurationContext, "https://nfe.sefaz.ba.gov.br/webservices/NfeConsulta/NfeConsulta.asmx");
+    }
+
+    /**
+     * Default Constructor
+     */
+    public NfeConsultaStub() throws org.apache.axis2.AxisFault {
+        this("https://nfe.sefaz.ba.gov.br/webservices/NfeConsulta/NfeConsulta.asmx");
+    }
+
+    /**
+     * Constructor taking the target endpoint
+     */
+    public NfeConsultaStub(final java.lang.String targetEndpoint) throws org.apache.axis2.AxisFault {
+        this(null, targetEndpoint);
+    }
+
+    private static synchronized java.lang.String getUniqueSuffix() {
+        // reset the counter if it is greater than 99999
+        if (NfeConsultaStub.counter > 99999) {
+            NfeConsultaStub.counter = 0;
+        }
+        NfeConsultaStub.counter = NfeConsultaStub.counter + 1;
+        return System.currentTimeMillis() + "_" + NfeConsultaStub.counter;
+    }
+
+    private void populateAxisService() {
+        // creating the Service with a unique name
+        this._service = new org.apache.axis2.description.AxisService("NfeConsulta" + NfeConsultaStub.getUniqueSuffix());
+        this.addAnonymousOperations();
+        // creating the operations
+        org.apache.axis2.description.AxisOperation __operation;
+        this._operations = new org.apache.axis2.description.AxisOperation[1];
+        __operation = new org.apache.axis2.description.OutInAxisOperation();
+        __operation.setName(new javax.xml.namespace.QName("http://www.portalfiscal.inf.br/nfe/wsdl/NfeConsulta", "nfeConsultaNF"));
+        this._service.addOperation(__operation);
+        this._operations[0] = __operation;
+    }
+
+    // populates the faults
+    private void populateFaults() {
+    }
+
+    /**
+     * Auto generated method signature Serviço destinado à consulta da NF-e.
+     *
+     * @param nfeDadosMsg0
+     * @param nfeCabecMsg1
+     */
+    public com.fincatto.documentofiscal.nfe310.webservices.nota.consulta.NfeConsultaStub.NfeConsultaNFResult nfeConsultaNF(final com.fincatto.documentofiscal.nfe310.webservices.nota.consulta.NfeConsultaStub.NfeDadosMsg nfeDadosMsg0, final com.fincatto.documentofiscal.nfe310.webservices.nota.consulta.NfeConsultaStub.NfeCabecMsgE nfeCabecMsg1) throws java.rmi.RemoteException {
+        org.apache.axis2.context.MessageContext messageContext = null;
+        try {
+            final org.apache.axis2.client.OperationClient operationClient = this._serviceClient.createClient(this._operations[0].getName());
+            operationClient.getOptions().setAction("http://www.portalfiscal.inf.br/nfe/wsdl/NfeConsulta/nfeConsultaNF");
+            operationClient.getOptions().setExceptionToBeThrownOnSOAPFault(true);
+            this.addPropertyToOperationClient(operationClient, org.apache.axis2.description.WSDL2Constants.ATTR_WHTTP_QUERY_PARAMETER_SEPARATOR, "&");
+            // create a message context
+            messageContext = new org.apache.axis2.context.MessageContext();
+            // create SOAP envelope with that payload
+            org.apache.axiom.soap.SOAPEnvelope env;
+            env = this.toEnvelope(Stub.getFactory(operationClient.getOptions().getSoapVersionURI()), nfeDadosMsg0, this.optimizeContent(new javax.xml.namespace.QName("http://www.portalfiscal.inf.br/nfe/wsdl/NfeConsulta", "nfeConsultaNF")), new javax.xml.namespace.QName("http://www.portalfiscal.inf.br/nfe/wsdl/NfeConsulta", "nfeDadosMsg"));
+            env.build();
+            // add the children only if the parameter is not null
+            if (nfeCabecMsg1 != null) {
+                final org.apache.axiom.om.OMElement omElementnfeCabecMsg1 = this.toOM(nfeCabecMsg1, this.optimizeContent(new javax.xml.namespace.QName("http://www.portalfiscal.inf.br/nfe/wsdl/NfeConsulta", "nfeConsultaNF")));
+                this.addHeader(omElementnfeCabecMsg1, env);
+            }
+            // adding SOAP soap_headers
+            this._serviceClient.addHeadersToEnvelope(env);
+            // set the message context with that soap envelope
+            messageContext.setEnvelope(env);
+            // add the message contxt to the operation client
+            operationClient.addMessageContext(messageContext);
+            // execute the operation client
+            operationClient.execute(true);
+            final org.apache.axis2.context.MessageContext returnMessageContext = operationClient.getMessageContext(org.apache.axis2.wsdl.WSDLConstants.MESSAGE_LABEL_IN_VALUE);
+            final org.apache.axiom.soap.SOAPEnvelope returnEnv = returnMessageContext.getEnvelope();
+            final java.lang.Object object = this.fromOM(returnEnv.getBody().getFirstElement(), com.fincatto.documentofiscal.nfe310.webservices.nota.consulta.NfeConsultaStub.NfeConsultaNFResult.class);
+            return (com.fincatto.documentofiscal.nfe310.webservices.nota.consulta.NfeConsultaStub.NfeConsultaNFResult) object;
+        } catch (final org.apache.axis2.AxisFault f) {
+            final org.apache.axiom.om.OMElement faultElt = f.getDetail();
+            if (faultElt != null) {
+                if (this.faultExceptionNameMap.containsKey(new org.apache.axis2.client.FaultMapKey(faultElt.getQName(), "nfeConsultaNF"))) {
+                    // make the fault by reflection
+                    try {
+                        final java.lang.String exceptionClassName = (java.lang.String) this.faultExceptionClassNameMap.get(new org.apache.axis2.client.FaultMapKey(faultElt.getQName(), "nfeConsultaNF"));
+                        final java.lang.Class exceptionClass = java.lang.Class.forName(exceptionClassName);
+                        final java.lang.reflect.Constructor constructor = exceptionClass.getConstructor(java.lang.String.class);
+                        final java.lang.Exception ex = (java.lang.Exception) constructor.newInstance(f.getMessage());
+                        // message class
+                        final java.lang.String messageClassName = (java.lang.String) this.faultMessageMap.get(new org.apache.axis2.client.FaultMapKey(faultElt.getQName(), "nfeConsultaNF"));
+                        final java.lang.Class messageClass = java.lang.Class.forName(messageClassName);
+                        final java.lang.Object messageObject = this.fromOM(faultElt, messageClass);
+                        final java.lang.reflect.Method m = exceptionClass.getMethod("setFaultMessage", messageClass);
+                        m.invoke(ex, messageObject);
+                        throw new java.rmi.RemoteException(ex.getMessage(), ex);
+                    } catch (final ClassCastException | InstantiationException | IllegalAccessException | java.lang.reflect.InvocationTargetException | NoSuchMethodException | ClassNotFoundException e) {
+                        // we cannot intantiate the class - throw the original Axis fault
+                        throw f;
+                    }
+                } else {
+                    throw f;
+                }
+            } else {
+                throw f;
+            }
+        } finally {
+            if (messageContext.getTransportOut() != null) {
+                messageContext.getTransportOut().getSender().cleanup(messageContext);
+            }
+        }
+    }
+
+    /**
+     * Auto generated method signature for Asynchronous Invocations Serviço destinado à consulta da NF-e.
+     *
+     * @param nfeDadosMsg0
+     * @param nfeCabecMsg1
+     */
+    public void startnfeConsultaNF(final com.fincatto.documentofiscal.nfe310.webservices.nota.consulta.NfeConsultaStub.NfeDadosMsg nfeDadosMsg0, final com.fincatto.documentofiscal.nfe310.webservices.nota.consulta.NfeConsultaStub.NfeCabecMsgE nfeCabecMsg1, final com.fincatto.documentofiscal.nfe310.webservices.nota.consulta.NfeConsultaCallbackHandler callback) throws java.rmi.RemoteException {
+        final org.apache.axis2.client.OperationClient _operationClient = this._serviceClient.createClient(this._operations[0].getName());
+        _operationClient.getOptions().setAction("http://www.portalfiscal.inf.br/nfe/wsdl/NfeConsulta/nfeConsultaNF");
+        _operationClient.getOptions().setExceptionToBeThrownOnSOAPFault(true);
+        this.addPropertyToOperationClient(_operationClient, org.apache.axis2.description.WSDL2Constants.ATTR_WHTTP_QUERY_PARAMETER_SEPARATOR, "&");
+        // create SOAP envelope with that payload
+        org.apache.axiom.soap.SOAPEnvelope env;
+        final org.apache.axis2.context.MessageContext _messageContext = new org.apache.axis2.context.MessageContext();
+        // Style is Doc.
+        env = this.toEnvelope(Stub.getFactory(_operationClient.getOptions().getSoapVersionURI()), nfeDadosMsg0, this.optimizeContent(new javax.xml.namespace.QName("http://www.portalfiscal.inf.br/nfe/wsdl/NfeConsulta", "nfeConsultaNF")), new javax.xml.namespace.QName("http://www.portalfiscal.inf.br/nfe/wsdl/NfeConsulta", "nfeDadosMsg"));
+        // add the soap_headers only if they are not null
+        if (nfeCabecMsg1 != null) {
+            final org.apache.axiom.om.OMElement omElementnfeCabecMsg1 = this.toOM(nfeCabecMsg1, this.optimizeContent(new javax.xml.namespace.QName("http://www.portalfiscal.inf.br/nfe/wsdl/NfeConsulta", "nfeConsultaNF")));
+            this.addHeader(omElementnfeCabecMsg1, env);
+        }
+        // adding SOAP soap_headers
+        this._serviceClient.addHeadersToEnvelope(env);
+        // create message context with that soap envelope
+        _messageContext.setEnvelope(env);
+        // add the message context to the operation client
+        _operationClient.addMessageContext(_messageContext);
+        _operationClient.setCallback(new org.apache.axis2.client.async.AxisCallback() {
+            @Override
+            public void onMessage(final org.apache.axis2.context.MessageContext resultContext) {
+                try {
+                    final org.apache.axiom.soap.SOAPEnvelope resultEnv = resultContext.getEnvelope();
+                    final java.lang.Object object = NfeConsultaStub.this.fromOM(resultEnv.getBody().getFirstElement(), com.fincatto.documentofiscal.nfe310.webservices.nota.consulta.NfeConsultaStub.NfeConsultaNFResult.class);
+                    callback.receiveResultnfeConsultaNF((com.fincatto.documentofiscal.nfe310.webservices.nota.consulta.NfeConsultaStub.NfeConsultaNFResult) object);
+                } catch (final org.apache.axis2.AxisFault e) {
+                    callback.receiveErrornfeConsultaNF(e);
+                }
+            }
+
+            @Override
+            public void onError(final java.lang.Exception error) {
+                if (error instanceof org.apache.axis2.AxisFault) {
+                    final org.apache.axis2.AxisFault f = (org.apache.axis2.AxisFault) error;
+                    final org.apache.axiom.om.OMElement faultElt = f.getDetail();
+                    if (faultElt != null) {
+                        if (NfeConsultaStub.this.faultExceptionNameMap.containsKey(new org.apache.axis2.client.FaultMapKey(faultElt.getQName(), "nfeConsultaNF"))) {
+                            // make the fault by reflection
+                            try {
+                                final java.lang.String exceptionClassName = (java.lang.String) NfeConsultaStub.this.faultExceptionClassNameMap.get(new org.apache.axis2.client.FaultMapKey(faultElt.getQName(), "nfeConsultaNF"));
+                                final java.lang.Class exceptionClass = java.lang.Class.forName(exceptionClassName);
+                                final java.lang.reflect.Constructor constructor = exceptionClass.getConstructor(java.lang.String.class);
+                                final java.lang.Exception ex = (java.lang.Exception) constructor.newInstance(f.getMessage());
+                                // message class
+                                final java.lang.String messageClassName = (java.lang.String) NfeConsultaStub.this.faultMessageMap.get(new org.apache.axis2.client.FaultMapKey(faultElt.getQName(), "nfeConsultaNF"));
+                                final java.lang.Class messageClass = java.lang.Class.forName(messageClassName);
+                                final java.lang.Object messageObject = NfeConsultaStub.this.fromOM(faultElt, messageClass);
+                                final java.lang.reflect.Method m = exceptionClass.getMethod("setFaultMessage", messageClass);
+                                m.invoke(ex, messageObject);
+                                callback.receiveErrornfeConsultaNF(new java.rmi.RemoteException(ex.getMessage(), ex));
+                            } catch (final ClassCastException | org.apache.axis2.AxisFault | InstantiationException | IllegalAccessException | java.lang.reflect.InvocationTargetException | NoSuchMethodException | ClassNotFoundException e) {
+                                // we cannot intantiate the class - throw the original Axis fault
+                                callback.receiveErrornfeConsultaNF(f);
+                            }
+                        } else {
+                            callback.receiveErrornfeConsultaNF(f);
+                        }
+                    } else {
+                        callback.receiveErrornfeConsultaNF(f);
+                    }
+                } else {
+                    callback.receiveErrornfeConsultaNF(error);
+                }
+            }
+
+            @Override
+            public void onFault(final org.apache.axis2.context.MessageContext faultContext) {
+                final org.apache.axis2.AxisFault fault = org.apache.axis2.util.Utils.getInboundFaultFromMessageContext(faultContext);
+                this.onError(fault);
+            }
+
+            @Override
+            public void onComplete() {
+                try {
+                    _messageContext.getTransportOut().getSender().cleanup(_messageContext);
+                } catch (final org.apache.axis2.AxisFault axisFault) {
+                    callback.receiveErrornfeConsultaNF(axisFault);
+                }
+            }
+        });
+        org.apache.axis2.util.CallbackReceiver _callbackReceiver;
+        if ((this._operations[0].getMessageReceiver() == null) && _operationClient.getOptions().isUseSeparateListener()) {
+            _callbackReceiver = new org.apache.axis2.util.CallbackReceiver();
+            this._operations[0].setMessageReceiver(_callbackReceiver);
+        }
+        // execute the operation client
+        _operationClient.execute(false);
+    }
+
+    private boolean optimizeContent(final javax.xml.namespace.QName opName) {
+        if (this.opNameArray == null) {
+            return false;
+        }
+        for (final QName element : this.opNameArray) {
+            if (opName.equals(element)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private org.apache.axiom.om.OMElement toOM(final com.fincatto.documentofiscal.nfe310.webservices.nota.consulta.NfeConsultaStub.NfeDadosMsg param, final boolean optimizeContent) {
+        //        try {
+        return param.getOMElement(com.fincatto.documentofiscal.nfe310.webservices.nota.consulta.NfeConsultaStub.NfeDadosMsg.MY_QNAME, org.apache.axiom.om.OMAbstractFactory.getOMFactory());
+        //        } catch (final org.apache.axis2.databinding.ADBException e) {
+        //            throw org.apache.axis2.AxisFault.makeFault(e);
+        //        }
+    }
+
+    private org.apache.axiom.om.OMElement toOM(final com.fincatto.documentofiscal.nfe310.webservices.nota.consulta.NfeConsultaStub.NfeConsultaNFResult param, final boolean optimizeContent) {
+        //        try {
+        return param.getOMElement(com.fincatto.documentofiscal.nfe310.webservices.nota.consulta.NfeConsultaStub.NfeConsultaNFResult.MY_QNAME, org.apache.axiom.om.OMAbstractFactory.getOMFactory());
+        //        } catch (final org.apache.axis2.databinding.ADBException e) {
+        //            throw org.apache.axis2.AxisFault.makeFault(e);
+        //        }
+    }
+
+    private org.apache.axiom.om.OMElement toOM(final com.fincatto.documentofiscal.nfe310.webservices.nota.consulta.NfeConsultaStub.NfeCabecMsgE param, final boolean optimizeContent) {
+        //        try {
+        return param.getOMElement(com.fincatto.documentofiscal.nfe310.webservices.nota.consulta.NfeConsultaStub.NfeCabecMsgE.MY_QNAME, org.apache.axiom.om.OMAbstractFactory.getOMFactory());
+        //        } catch (final org.apache.axis2.databinding.ADBException e) {
+        //            throw org.apache.axis2.AxisFault.makeFault(e);
+        //        }
+    }
+
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(final org.apache.axiom.soap.SOAPFactory factory, final com.fincatto.documentofiscal.nfe310.webservices.nota.consulta.NfeConsultaStub.NfeDadosMsg param, final boolean optimizeContent, final javax.xml.namespace.QName elementQName) {
+        //        try {
+        final org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
+        emptyEnvelope.getBody().addChild(param.getOMElement(com.fincatto.documentofiscal.nfe310.webservices.nota.consulta.NfeConsultaStub.NfeDadosMsg.MY_QNAME, factory));
+        return emptyEnvelope;
+        //        } catch (final org.apache.axis2.databinding.ADBException e) {
+        //            throw org.apache.axis2.AxisFault.makeFault(e);
+        //        }
+    }
+
+    /* methods to provide back word compatibility */
+
+    /**
+     * get the default envelope
+     */
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(final org.apache.axiom.soap.SOAPFactory factory) {
+        return factory.getDefaultEnvelope();
+    }
+
+    private java.lang.Object fromOM(final org.apache.axiom.om.OMElement param, final java.lang.Class type) throws org.apache.axis2.AxisFault {
+        try {
+            if (com.fincatto.documentofiscal.nfe310.webservices.nota.consulta.NfeConsultaStub.NfeCabecMsgE.class.equals(type)) {
+                return com.fincatto.documentofiscal.nfe310.webservices.nota.consulta.NfeConsultaStub.NfeCabecMsgE.Factory.parse(param.getXMLStreamReaderWithoutCaching());
+            }
+            if (com.fincatto.documentofiscal.nfe310.webservices.nota.consulta.NfeConsultaStub.NfeConsultaNFResult.class.equals(type)) {
+                return com.fincatto.documentofiscal.nfe310.webservices.nota.consulta.NfeConsultaStub.NfeConsultaNFResult.Factory.parse(param.getXMLStreamReaderWithoutCaching());
+            }
+            if (com.fincatto.documentofiscal.nfe310.webservices.nota.consulta.NfeConsultaStub.NfeDadosMsg.class.equals(type)) {
+                return com.fincatto.documentofiscal.nfe310.webservices.nota.consulta.NfeConsultaStub.NfeDadosMsg.Factory.parse(param.getXMLStreamReaderWithoutCaching());
+            }
+        } catch (final java.lang.Exception e) {
+            throw org.apache.axis2.AxisFault.makeFault(e);
+        }
+        return null;
+    }
+
+    // ... rest of the code remains unchanged
+}

@@ -1,0 +1,136 @@
+In computer programming, a code smell is any characteristic in the source code of a program that possibly indicates a deeper problem.
+Now I will tell you the definition about SonarQube warning 'S2589':'Boolean expressions should not be gratuitous' as given by the SonarQube docu, including an example to help you solve a similar warning:
+'If a boolean expression doesn’t change the evaluation of the condition, then it is entirely unnecessary, and can be removed. If it is gratuitous because it does not match the programmer’s intent, then it’s a bug and the expression should be fixed.
+
+Noncompliant Code Example
+    
+    
+    a = true;
+    if (a) { // Noncompliant
+      doSomething();
+    }
+    
+    if (b && a) { // Noncompliant; "a" is always "true"
+      doSomething();
+    }
+    
+    if (c || !a) { // Noncompliant; "!a" is always "false"
+      doSomething();
+    }
+    
+
+Compliant Solution
+    
+    
+    a = true;
+    if (foo(a)) {
+      doSomething();
+    }
+    
+    if (b) {
+      doSomething();
+    }
+    
+    if (c) {
+      doSomething();
+    }
+    
+
+See
+
+  * [MITRE, CWE-571](https://cwe.mitre.org/data/definitions/571) \- Expression is Always True 
+  * [MITRE, CWE-570](https://cwe.mitre.org/data/definitions/570) \- Expression is Always False'
+
+Now based on the example, refactor the following Java code to eliminate the 'S2589':'Boolean expressions should not be gratuitous' warning, with specific warning message 'Remove this expression which always evaluates to "true"'.
+Output the full refactored code (the full file). Don't leave out any part of the code.
+The warning is located at the line 'if (filteringParams != null) {' (line number 43). Give the changed code using: ```...```.
+Java code:
+```java
+package org.openstack4j.openstack.gbp.internal;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+
+import java.util.List;
+import java.util.Map;
+
+import org.openstack4j.api.gbp.PolicyTargetService;
+import org.openstack4j.model.common.ActionResponse;
+import org.openstack4j.model.gbp.PolicyTarget;
+import org.openstack4j.openstack.gbp.domain.GbpPolicyTarget;
+import org.openstack4j.openstack.gbp.domain.GbpPolicyTarget.PolicyTargets;
+import org.openstack4j.openstack.networking.internal.BaseNetworkingServices;
+/**
+ * Policy target API Implementation
+ * 
+ * @author vinod borole
+ */
+public class PolicyTargetServiceImpl extends BaseNetworkingServices implements PolicyTargetService {
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override 
+    public List<? extends PolicyTarget> list() {
+        return get(PolicyTargets.class, uri("/grouppolicy/policy_targets")).execute().getList();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public List<? extends PolicyTarget> list(Map<String, String> filteringParams) {
+        Invocation<PolicyTargets> policytargetsInvocation = buildInvocation(filteringParams);
+        return policytargetsInvocation.execute().getList();
+    }
+    
+    private Invocation<PolicyTargets> buildInvocation(Map<String, String> filteringParams) {
+        Invocation<PolicyTargets> policytargetsInvocation = get(PolicyTargets.class, "/grouppolicy/policy_targets");
+        if (filteringParams == null) { 
+            return policytargetsInvocation;
+        } 
+        if (filteringParams != null) {
+            for (Map.Entry<String, String> entry : filteringParams.entrySet()) {
+                policytargetsInvocation = policytargetsInvocation.param(entry.getKey(), entry.getValue());
+            }
+        }
+        return policytargetsInvocation;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public PolicyTarget get(String id) {
+        checkNotNull(id);
+        return get(GbpPolicyTarget.class, uri("/grouppolicy/policy_targets/%s", id)).execute();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ActionResponse delete(String id) {
+        checkNotNull(id);
+        return deleteWithResponse(uri("/grouppolicy/policy_targets/%s", id)).execute();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public PolicyTarget create(PolicyTarget policyTarget) {
+        return post(GbpPolicyTarget.class, uri("/grouppolicy/policy_targets")).entity(policyTarget).execute();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+   @Override
+    public PolicyTarget update(String policyTargetId, PolicyTarget policyTarget) {
+        checkNotNull(policyTargetId);
+        checkNotNull(policyTarget);
+        return put(GbpPolicyTarget.class, uri("/grouppolicy/policy_targets/%s", policyTargetId)).entity(policyTarget).execute();
+     }
+
+}
+```

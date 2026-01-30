@@ -1,0 +1,109 @@
+```java
+		private void addCoordinate_(JsonReader json_iterator)
+				throws JsonGeometryException {
+			assert (isDouble_(json_iterator));
+
+			addCoordinateInternal_(json_iterator, true, true);
+		}
+
+		// Introduced helper to reduce cognitive complexity
+		private void addCoordinateInternal_(
+				JsonReader json_iterator, 
+				boolean canHaveZs,
+				boolean canHaveMs) throws JsonGeometryException {
+			if (m_position == null) {
+				m_position = (AttributeStreamOfDbl) AttributeStreamBase
+						.createDoubleStream(0);
+			}
+
+			double x = readDouble_(json_iterator);
+			json_iterator.nextToken();
+			double y = readDouble_(json_iterator);
+			json_iterator.nextToken();
+
+			int size = m_position.size();
+
+			m_position.add(x);
+			m_position.add(y);
+
+			// Process Zs
+			processZs_(json_iterator, size, canHaveZs);
+
+			// Process Ms
+			processMs_(json_iterator, size, canHaveMs);
+
+			if (json_iterator.currentToken() != JsonReader.Token.END_ARRAY) {
+				throw new JsonGeometryException("parsing error");
+			}
+		}
+
+		private void processZs_(JsonReader json_iterator, int size, boolean canHaveZs) throws JsonGeometryException {
+			if (!canHaveZs) {
+				return;
+			}
+			if (isDouble_(json_iterator)) {
+				if (!m_b_has_zs_known) {
+					m_b_has_zs_known = true;
+					m_b_has_zs = true;
+					m_zs = (AttributeStreamOfDbl) AttributeStreamBase
+							.createDoubleStream(0);
+				} else {
+					if (!m_b_has_zs) {
+						m_zs = (AttributeStreamOfDbl) AttributeStreamBase
+								.createDoubleStream(size >> 1,
+										VertexDescription
+												.getDefaultValue(Semantics.Z));
+						m_b_has_zs = true;
+					}
+				}
+
+				double z = readDouble_(json_iterator);
+				json_iterator.nextToken();
+				m_zs.add(z);
+			} else {
+				if (!m_b_has_zs_known) {
+					m_b_has_zs_known = true;
+					m_b_has_zs = false;
+				} else {
+					if (m_b_has_zs) {
+						m_zs.add(VertexDescription.getDefaultValue(Semantics.Z));
+					}
+				}
+			}
+		}
+
+		private void processMs_(JsonReader json_iterator, int size, boolean canHaveMs) throws JsonGeometryException {
+			if (!canHaveMs) {
+				return;
+			}
+			if (isDouble_(json_iterator)) {
+				if (!m_b_has_ms_known) {
+					m_b_has_ms_known = true;
+					m_b_has_ms = true;
+					m_ms = (AttributeStreamOfDbl) AttributeStreamBase
+							.createDoubleStream(0);
+				} else {
+					if (!m_b_has_ms) {
+						m_ms = (AttributeStreamOfDbl) AttributeStreamBase
+								.createDoubleStream(size >> 1,
+										VertexDescription
+												.getDefaultValue(Semantics.M));
+						m_b_has_ms = true;
+					}
+				}
+
+				double m = readDouble_(json_iterator);
+				json_iterator.nextToken();
+				m_ms.add(m);
+			} else {
+				if (!m_b_has_ms_known) {
+					m_b_has_ms_known = true;
+					m_b_has_ms = false;
+				} else {
+					if (m_b_has_ms) {
+						m_zs.add(VertexDescription.getDefaultValue(Semantics.M));
+					}
+				}
+			}
+		}
+```

@@ -1,0 +1,1024 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+package org.apache.joshua.mira;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Random;
+import java.util.Scanner;
+import java.util.TreeSet;
+import java.util.Vector;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
+
+import org.apache.joshua.corpus.Vocabulary;
+import org.apache.joshua.decoder.Decoder;
+import org.apache.joshua.decoder.JoshuaConfiguration;
+import org.apache.joshua.metrics.EvaluationMetric;
+import org.apache.joshua.util.StreamGobbler;
+import org.apache.joshua.util.io.ExistingUTF8EncodedTextFile;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * This code was originally written by Yuan Cao, who copied the MERT code to produce this file.
+ */
+public class MIRACore {
+
+  private static final Logger LOG = LoggerFactory.getLogger(MIRACore.class);
+
+  private final JoshuaConfiguration joshuaConfiguration;
+
+  private final static DecimalFormat f4 = new DecimalFormat("###0.0000");
+
+  private final static double NegInf = Double.NEGATIVE_INFINITY;
+  private final static double PosInf = Double.POSITIVE_INFINITY;
+  private final static double epsilon = 1.0 / 1000000;
+
+  private int verbosity; // anything of priority <= verbosity will be printed
+                         // (lower value for priority means more important)
+
+  private Random randGen;
+
+  private int numSentences;
+  // number of sentences in the dev set
+  // (aka the "MERT training" set)
+
+  private int numDocuments;
+  // number of documents in the dev set
+  // this should be 1, unless doing doc-level optimization
+
+  // docOfSentence[i] stores which document contains the i'th sentence.
+  // docOfSentence is 0-indexed, as are the documents (i.e. first doc is indexed 0)
+
+  private int[] docSubsetInfo;
+  // stores information regarding which subset of the documents are evaluated
+  // [0]: method (0-6)
+  // [1]: first (1-indexed)
+  // [2]: last (1-indexed)
+  // [3]: size
+  // [4]: center
+  // [5]: arg1
+  // [6]: arg2
+  // [1-6] are 0 for method 0, [6] is 0 for methods 1-4 as well
+  // only [1] and [2] are needed for optimization. The rest are only needed for an output message.
+
+  private int refsPerSen;
+  // number of reference translations per sentence
+
+  private int textNormMethod;
+  // 0: no normalization, 1: "NIST-style" tokenization, and also rejoin 'm, 're, *'s, 've, 'll, 'd,
+  // and n't,
+  // 2: apply 1 and also rejoin dashes between letters, 3: apply 1 and also drop non-ASCII
+  // characters
+  // 4: apply 1+2+3
+
+  private int numParams;
+  // total number of firing features
+  // this number may increase overtime as new n-best lists are decoded
+  // initially it is equal to the # of params in the parameter config file
+  private int numParamsOld;
+  // number of features before observing the new features fired in the current iteration
+
+  private double[] normalizationOptions;
+  // How should a lambda[] vector be normalized (before decoding)?
+  // nO[0] = 0: no normalization
+  // nO[0] = 1: scale so that parameter nO[2] has absolute value nO[1]
+  // nO[0] = 2: scale so that the maximum absolute value is nO[1]
+  // nO[0] = 3: scale so that the minimum absolute value is nO[1]
+  // nO[0] = 4: scale so that the L-nO[1] norm equals nO[2]
+
+  /* *********************************************************** */
+  /* NOTE: indexing starts at 1 in the following few arrays: */
+  /* *********************************************************** */
+
+  // private double[] lambda;
+  private ArrayList<Double> lambda = new ArrayList<>();
+  // the current weight vector. NOTE: indexing starts at 1.
+  private final ArrayList<Double> bestLambda = new ArrayList<>();
+  // the best weight vector across all iterations
+
+  private boolean[] isOptimizable;
+  // isOptimizable[c] = true iff lambda[c] should be optimized
+
+  private double[] minRandValue;
+  private double[] maxRandValue;
+  // when choosing a random value for the lambda[c] parameter, it will be
+  // chosen from the [minRandValue[c],maxRandValue[c]] range.
+  // (*) minRandValue and maxRandValue must be real values, but not -Inf or +Inf
+
+  private double[] defaultLambda;
+  // "default" parameter values; simply the values read in the parameter file
+  // USED FOR NON-OPTIMIZABLE (FIXED) FEATURES
+
+  /* *********************************************************** */
+  /* *********************************************************** */
+
+  private Decoder myDecoder;
+  // COMMENT OUT if decoder is not Joshua
+
+  // the command that runs the decoder; read from decoderCommandFileName
+
+  private int decVerbosity;
+  // verbosity level for decoder output. If 0, decoder output is ignored.
+  // If 1, decoder output is printed.
+
+  private int validDecoderExitValue;
+  // return value from running the decoder command that indicates success
+
+  // number of threads to run things in parallel
+
+  private int saveInterFiles;
+  // 0: nothing, 1: only configs, 2: only n-bests, 3: both configs and n-bests
+
+  private int compressFiles;
+  // should MIRA gzip the large files? If 0, no compression takes place.
+  // If 1, compression is performed on: decoder output files, temp sents files,
+  // and temp feats files.
+
+  private int sizeOfNBest;
+  // size of N-best list generated by decoder at each iteration
+  // (aka simply N, but N is a bad variable name)
+
+  private long seed;
+  // seed used to create random number generators
+
+  private boolean randInit;
+  // if true, parameters are initialized randomly. If false, parameters
+  // are initialized using values from parameter file.
+
+  private int maxMERTIterations, minMERTIterations, prevMERTIterations;
+  // max: maximum number of MERT iterations
+  // min: minimum number of MERT iterations before an early MERT exit
+  // prev: number of previous MERT iterations from which to consider candidates (in addition to
+  // the candidates from the current iteration)
+
+  private double stopSigValue;
+  // early MERT exit if no weight changes by more than stopSigValue
+  // (but see minMERTIterations above and stopMinIts below)
+
+  private int stopMinIts;
+  // some early stopping criterion must be satisfied in stopMinIts *consecutive* iterations
+  // before an early exit (but see minMERTIterations above)
+
+  private boolean oneModificationPerIteration;
+  // if true, each MERT iteration performs at most one parameter modification.
+  // If false, a new MERT iteration starts (i.e. a new N-best list is
+  // generated) only after the previous iteration reaches a local maximum.
+
+  private String metricName;
+  // name of evaluation metric optimized by MERT
+
+  private String metricName_display;
+  // name of evaluation metric optimized by MERT, possibly with "doc-level " prefixed
+
+  private String[] metricOptions;
+  // options for the evaluation metric (e.g. for BLEU, maxGramLength and effLengthMethod)
+
+  private EvaluationMetric evalMetric;
+  // the evaluation metric used by MERT
+
+  private int suffStatsCount;
+  // number of sufficient statistics for the evaluation metric
+
+  private String tmpDirPrefix;
+  // prefix for the MIRA.temp.* files
+
+  private boolean passIterationToDecoder;
+  // should the iteration number be passed as an argument to decoderCommandFileName?
+
+  // used by mira
+  private boolean needShuffle = true; // shuffle the training sentences or not
+  private boolean needAvg = true; // average the weihgts or not?
+  private boolean runPercep = false; // run perceptron instead of mira
+  private boolean usePseudoBleu = true; // need to use pseudo corpus to compute bleu?
+  private boolean returnBest = false; // return the best weight during tuning
+  private boolean needScale = true; // need scaling?
+
+  private int oraSelectMode = 1;
+  private int predSelectMode = 1;
+  private int miraIter = 1;
+  private int batchSize = 1;
+  private double C = 0.01; // relaxation coefficient
+  private double R = 0.99; // corpus decay when pseudo corpus is used for bleu computation
+  // private double sentForScale = 0.15; //percentage of sentences for scale factor estimation
+  private double scoreRatio = 5.0; // sclale so that model_score/metric_score = scoreratio
+  private double prevMetricScore = 0; // final metric score of the previous iteration, used only
+                                      // when returnBest = true
+
+  private String paramsFileName, docInfoFileName, finalLambdaFileName;
+  private String refFileName;
+  private String decoderOutFileName;
+  private String decoderConfigFileName, decoderCommandFileName;
+  private String fakeFileNameTemplate, fakeFileNamePrefix, fakeFileNameSuffix;
+
+  // e.g. output.it[1-x].someOldRun would be specified as:
+  // output.it?.someOldRun
+  // and we'd have prefix = "output.it" and suffix = ".sameOldRun"
+
+  // private int useDisk;
+
+  /**
+   * Custom dedicated exception for verbosity value errors
+   */
+  public static class VerbosityValueException extends RuntimeException {
+    public VerbosityValueException(String message) {
+      super(message);
+    }
+  }
+
+  public MIRACore(JoshuaConfiguration joshuaConfiguration) {
+    this.joshuaConfiguration = joshuaConfiguration;
+  }
+
+  public MIRACore(String[] args, JoshuaConfiguration joshuaConfiguration) throws IOException {
+    this.joshuaConfiguration = joshuaConfiguration;
+    EvaluationMetric.set_knownMetrics();
+    processArgsArray(args);
+    initialize(0);
+  }
+
+  public MIRACore(String configFileName, JoshuaConfiguration joshuaConfiguration) throws IOException {
+    this.joshuaConfiguration = joshuaConfiguration;
+    EvaluationMetric.set_knownMetrics();
+    processArgsArray(cfgFileToArgsArray(configFileName));
+    initialize(0);
+  }
+
+  private void initialize(int randsToSkip) throws IOException {
+    println("NegInf: " + NegInf + ", PosInf: " + PosInf + ", epsilon: " + epsilon, 4);
+
+    randGen = new Random(seed);
+    for (int r = 1; r <= randsToSkip; ++r) {
+      randGen.nextDouble();
+    }
+
+    if (randsToSkip == 0) {
+      println("----------------------------------------------------", 1);
+      println("Initializing...", 1);
+      println("----------------------------------------------------", 1);
+      println("", 1);
+
+      println("Random number generator initialized using seed: " + seed, 1);
+      println("", 1);
+    }
+
+    // count the total num of sentences to be decoded, reffilename is the combined reference file
+    // name(auto generated)
+    numSentences = new ExistingUTF8EncodedTextFile(refFileName).getNumberOfLines() / refsPerSen;
+
+    // ??
+    processDocInfo();
+    // sets numDocuments and docOfSentence[]
+
+    if (numDocuments > 1)
+      metricName_display = "doc-level " + metricName;
+
+    // ??
+    set_docSubsetInfo(docSubsetInfo);
+
+    // count the number of initial features
+    numParams = new ExistingUTF8EncodedTextFile(paramsFileName).getNumberOfNonEmptyLines() - 1;
+    numParamsOld = numParams;
+
+    // read parameter config file
+    try {
+      // read dense parameter names
+      BufferedReader inFile_names = new BufferedReader(new FileReader(paramsFileName));
+
+      for (int c = 1; c <= numParams; ++c) {
+        String line = "";
+        while (line != null && line.length() == 0) { // skip empty lines
+          line = inFile_names.readLine();
+        }
+
+        // save feature names
+        String paramName = (line.substring(0, line.indexOf("|||"))).trim();
+        Vocabulary.id(paramName);
+        // System.err.println(String.format("VOCAB(%s) = %d", paramName, id));
+      }
+
+      inFile_names.close();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+
+    // the parameter file contains one line per parameter
+    // and one line for the normalization method
+    // indexing starts at 1 in these arrays
+    for (int p = 0; p <= numParams; ++p)
+      lambda.add(0d);
+    bestLambda.add(0d);
+    // why only lambda is a list? because the size of lambda
+    // may increase over time, but other arrays are specified in
+    // the param config file, only used for initialization
+    isOptimizable = new boolean[1 + numParams];
+    minRandValue = new double[1 + numParams];
+    maxRandValue = new double[1 + numParams];
+    defaultLambda = new double[1 + numParams];
+    normalizationOptions = new double[3];
+
+    // read initial param values
+    processParamFile();
+    // sets the arrays declared just above
+
+    // SentenceInfo.createV(); // uncomment ONLY IF using vocabulary implementation of SentenceInfo
+
+    String[][] refSentences = new String[numSentences][refsPerSen];
+
+    String decoderCommand;
+    try {
+
+      // read in reference sentences
+      InputStream inStream_refs = new FileInputStream(new File(refFileName));
+      BufferedReader inFile_refs = new BufferedReader(new InputStreamReader(inStream_refs, "utf8"));
+
+      for (int i = 0; i < numSentences; ++i) {
+        for (int r = 0; r < refsPerSen; ++r) {
+          // read the rth reference translation for the ith sentence
+          refSentences[i][r] = inFile_refs.readLine();
+        }
+      }
+
+      inFile_refs.close();
+
+      // normalize reference sentences
+      for (int i = 0; i < numSentences; ++i) {
+        for (int r = 0; r < refsPerSen; ++r) {
+          // normalize the rth reference translation for the ith sentence
+          refSentences[i][r] = normalize(refSentences[i][r], textNormMethod);
+        }
+      }
+
+      // read in decoder command, if any
+      decoderCommand = null;
+      if (decoderCommandFileName != null) {
+        if (fileExists(decoderCommandFileName)) {
+          BufferedReader inFile_comm = new BufferedReader(new FileReader(decoderCommandFileName));
+          decoderCommand = inFile_comm.readLine(); // READ IN DECODE COMMAND
+          inFile_comm.close();
+        }
+      }
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+
+    // set static data members for the EvaluationMetric class
+    EvaluationMetric.set_numSentences(numSentences);
+    EvaluationMetric.set_numDocuments(numDocuments);
+    EvaluationMetric.set_refsPerSen(refsPerSen);
+    EvaluationMetric.set_refSentences(refSentences);
+    EvaluationMetric.set_tmpDirPrefix(tmpDirPrefix);
+
+    evalMetric = EvaluationMetric.getMetric(metricName, metricOptions);
+    // used only if returnBest = true
+    prevMetricScore = evalMetric.getToBeMinimized() ? PosInf : NegInf;
+
+    // length of sufficient statistics
+    // for bleu: suffstatscount=8 (2*ngram+2)
+    suffStatsCount = evalMetric.get_suffStatsCount();
+
+    // set static data members for the IntermediateOptimizer class
+    /*
+     * IntermediateOptimizer.set_MERTparams(numSentences, numDocuments, docOfSentence,
+     * docSubsetInfo, numParams, normalizationOptions, isOptimizable oneModificationPerIteration,
+     * evalMetric, tmpDirPrefix, verbosity);
+     */
+
+    // print info
+    if (randsToSkip == 0) { // i.e. first iteration
+      println("Number of sentences: " + numSentences, 1);
+      println("Number of documents: " + numDocuments, 1);
+      println("Optimizing " + metricName_display, 1);
+
+      /*
+       * print("docSubsetInfo: {", 1); for (int f = 0; f < 6; ++f) print(docSubsetInfo[f] + ", ",
+       * 1); println(docSubsetInfo[6] + "}", 1);
+       */
+
+      println("Number of initial features: " + numParams, 1);
+      print("Initial feature names: {", 1);
+
+      for (int c = 1; c <= numParams; ++c)
+        print("\"" + Vocabulary.word(c) + "\"", 1);
+      println("}", 1);
+      println("", 1);
+
+      // TODO just print the correct info
+      println("c    Default value\tOptimizable?\tRand. val. range", 1);
+
+      for (int c = 1; c <= numParams; ++c) {
+        print(c + "     " + f4.format(lambda.get(c).doubleValue()) + "\t\t", 1);
+
+        if (!isOptimizable[c]) {
+          println(" No", 1);
+        } else {
+          print(" Yes\t\t", 1);
+          print(" [" + minRandValue[c] + "," + maxRandValue[c] + "]", 1);
+          println("", 1);
+        }
+      }
+
+      println("", 1);
+      print("Weight vector normalization method: ", 1);
+      if (normalizationOptions[0] == 0) {
+        println("none.", 1);
+      } else if (normalizationOptions[0] == 1) {
+        println(
+            "weights will be scaled so that the \""
+                + Vocabulary.word((int) normalizationOptions[2])
+                + "\" weight has an absolute value of " + normalizationOptions[1] + ".", 1);
+      } else if (normalizationOptions[0] == 2) {
+        println("weights will be scaled so that the maximum absolute value is "
+            + normalizationOptions[1] + ".", 1);
+      } else if (normalizationOptions[0] == 3) {
+        println("weights will be scaled so that the minimum absolute value is "
+            + normalizationOptions[1] + ".", 1);
+      } else if (normalizationOptions[0] == 4) {
+        println("weights will be scaled so that the L-" + normalizationOptions[1] + " norm is "
+            + normalizationOptions[2] + ".", 1);
+      }
+
+      println("", 1);
+
+      println("----------------------------------------------------", 1);
+      println("", 1);
+
+      // rename original config file so it doesn't get overwritten
+      // (original name will be restored in finish())
+      renameFile(decoderConfigFileName, decoderConfigFileName + ".MIRA.orig");
+    } // if (randsToSkip == 0)
+
+    // by default, load joshua decoder
+    if (decoderCommand == null && fakeFileNameTemplate == null) {
+      println("Loading Joshua decoder...", 1);
+      myDecoder = new Decoder(joshuaConfiguration, decoderConfigFileName + ".MIRA.orig");
+      println("...finished loading @ " + (new Date()), 1);
+      println("");
+    } else {
+      myDecoder = null;
+    }
+
+    @SuppressWarnings("unchecked")
+    TreeSet<Integer>[] temp_TSA = new TreeSet[numSentences];
+    TreeSet<Integer>[] indicesOfInterest_all = temp_TSA;
+
+    for (int i = 0; i < numSentences; ++i) {
+      indicesOfInterest_all[i] = new TreeSet<>();
+    }
+  } // void initialize(...)
+
+  // -------------------------
+  
+  // In method processArgsArray, replace all lines:
+  //    throw new RuntimeException("verbosity should be between 0 and 4");
+  // by throwing dedicated exception VerbosityValueException:
+  //
+  //    throw new VerbosityValueException("verbosity should be between 0 and 4");
+  //
+  // Specifically, do this change for the line where verbosity is set.
+  private void processArgsArray(String[] args, boolean firstTime) {
+    /* set default values */
+    // Relevant files
+    String dirPrefix = null;
+    String sourceFileName = null;
+    refFileName = "reference.txt";
+    refsPerSen = 1;
+    textNormMethod = 1;
+    paramsFileName = "params.txt";
+    docInfoFileName = null;
+    finalLambdaFileName = null;
+    // MERT specs
+    metricName = "BLEU";
+    metricName_display = metricName;
+    metricOptions = new String[2];
+    metricOptions[0] = "4";
+    metricOptions[1] = "closest";
+    docSubsetInfo = new int[7];
+    docSubsetInfo[0] = 0;
+    maxMERTIterations = 20;
+    prevMERTIterations = 20;
+    minMERTIterations = 5;
+    stopMinIts = 3;
+    stopSigValue = -1;
+    //
+    // /* possibly other early stopping criteria here */
+    //
+    int numOptThreads = 1;
+    saveInterFiles = 3;
+    compressFiles = 0;
+    oneModificationPerIteration = false;
+    randInit = false;
+    seed = System.currentTimeMillis();
+    // useDisk = 2;
+    // Decoder specs
+    decoderCommandFileName = null;
+    passIterationToDecoder = false;
+    decoderOutFileName = "output.nbest";
+    validDecoderExitValue = 0;
+    decoderConfigFileName = "dec_cfg.txt";
+    sizeOfNBest = 100;
+    fakeFileNameTemplate = null;
+    fakeFileNamePrefix = null;
+    fakeFileNameSuffix = null;
+    // Output specs
+    verbosity = 1;
+    decVerbosity = 0;
+
+    int i = 0;
+
+    while (i < args.length) {
+      String option = args[i];
+      // Relevant files
+      switch (option) {
+      case "-dir":
+        dirPrefix = args[i + 1];
+        break;
+      case "-s":
+        sourceFileName = args[i + 1];
+        break;
+      case "-r":
+        refFileName = args[i + 1];
+        break;
+      case "-rps":
+        refsPerSen = Integer.parseInt(args[i + 1]);
+        if (refsPerSen < 1) {
+          throw new RuntimeException("refsPerSen must be positive.");
+        }
+        break;
+      case "-txtNrm":
+        textNormMethod = Integer.parseInt(args[i + 1]);
+        if (textNormMethod < 0 || textNormMethod > 4) {
+          throw new RuntimeException("textNormMethod should be between 0 and 4");
+        }
+        break;
+      case "-p":
+        paramsFileName = args[i + 1];
+        break;
+      case "-docInfo":
+        docInfoFileName = args[i + 1];
+        break;
+      case "-fin":
+        finalLambdaFileName = args[i + 1];
+        // MERT specs
+        break;
+      case "-m":
+        metricName = args[i + 1];
+        metricName_display = metricName;
+        if (EvaluationMetric.knownMetricName(metricName)) {
+          int optionCount = EvaluationMetric.metricOptionCount(metricName);
+          metricOptions = new String[optionCount];
+          for (int opt = 0; opt < optionCount; ++opt) {
+            metricOptions[opt] = args[i + opt + 2];
+          }
+          i += optionCount;
+        } else {
+          throw new RuntimeException("Unknown metric name " + metricName + ".");
+        }
+        break;
+      case "-docSet":
+        String method = args[i + 1];
+
+        if (method.equals("all")) {
+          docSubsetInfo[0] = 0;
+          i += 0;
+        } else if (method.equals("bottom")) {
+          String a = args[i + 2];
+          if (a.endsWith("d")) {
+            docSubsetInfo[0] = 1;
+            a = a.substring(0, a.indexOf("d"));
+          } else {
+            docSubsetInfo[0] = 2;
+            a = a.substring(0, a.indexOf("%"));
+          }
+          docSubsetInfo[5] = Integer.parseInt(a);
+          i += 1;
+        } else if (method.equals("top")) {
+          String a = args[i + 2];
+          if (a.endsWith("d")) {
+            docSubsetInfo[0] = 3;
+            a = a.substring(0, a.indexOf("d"));
+          } else {
+            docSubsetInfo[0] = 4;
+            a = a.substring(0, a.indexOf("%"));
+          }
+          docSubsetInfo[5] = Integer.parseInt(a);
+          i += 1;
+        } else if (method.equals("window")) {
+          String a1 = args[i + 2];
+          a1 = a1.substring(0, a1.indexOf("d")); // size of window
+          String a2 = args[i + 4];
+          if (a2.indexOf("p") > 0) {
+            docSubsetInfo[0] = 5;
+            a2 = a2.substring(0, a2.indexOf("p"));
+          } else {
+            docSubsetInfo[0] = 6;
+            a2 = a2.substring(0, a2.indexOf("r"));
+          }
+          docSubsetInfo[5] = Integer.parseInt(a1);
+          docSubsetInfo[6] = Integer.parseInt(a2);
+          i += 3;
+        } else {
+          throw new RuntimeException("Unknown docSet method " + method + ".");
+        }
+        break;
+      case "-maxIt":
+        maxMERTIterations = Integer.parseInt(args[i + 1]);
+        if (maxMERTIterations < 1) {
+          throw new RuntimeException("maxIt must be positive.");
+        }
+        break;
+      case "-minIt":
+        minMERTIterations = Integer.parseInt(args[i + 1]);
+        if (minMERTIterations < 1) {
+          throw new RuntimeException("minIt must be positive.");
+        }
+        break;
+      case "-prevIt":
+        prevMERTIterations = Integer.parseInt(args[i + 1]);
+        if (prevMERTIterations < 0) {
+          throw new RuntimeException("prevIt must be non-negative.");
+        }
+        break;
+      case "-stopIt":
+        stopMinIts = Integer.parseInt(args[i + 1]);
+        if (stopMinIts < 1) {
+          throw new RuntimeException("stopIts must be positive.");
+        }
+        break;
+      case "-stopSig":
+        stopSigValue = Double.parseDouble(args[i + 1]);
+        break;
+      //
+      // /* possibly other early stopping criteria here */
+      //
+      case "-thrCnt":
+        numOptThreads = Integer.parseInt(args[i + 1]);
+        if (numOptThreads < 1) {
+          throw new RuntimeException("threadCount must be positive.");
+        }
+        break;
+      case "-save":
+        saveInterFiles = Integer.parseInt(args[i + 1]);
+        if (saveInterFiles < 0 || saveInterFiles > 3) {
+          throw new RuntimeException("save should be between 0 and 3");
+        }
+        break;
+      case "-compress":
+        compressFiles = Integer.parseInt(args[i + 1]);
+        if (compressFiles < 0 || compressFiles > 1) {
+          throw new RuntimeException("compressFiles should be either 0 or 1");
+        }
+        break;
+      case "-opi":
+        int opi = Integer.parseInt(args[i + 1]);
+        if (opi == 1) {
+          oneModificationPerIteration = true;
+        } else if (opi == 0) {
+          oneModificationPerIteration = false;
+        } else {
+          throw new RuntimeException("oncePerIt must be either 0 or 1.");
+        }
+        break;
+      case "-rand":
+        int rand = Integer.parseInt(args[i + 1]);
+        if (rand == 1) {
+          randInit = true;
+        } else if (rand == 0) {
+          randInit = false;
+        } else {
+          throw new RuntimeException("randInit must be either 0 or 1.");
+        }
+        break;
+      case "-seed":
+        if (args[i + 1].equals("time")) {
+          seed = System.currentTimeMillis();
+        } else {
+          seed = Long.parseLong(args[i + 1]);
+        }
+        break;
+      /*
+       * else if (option.equals("-ud")) { useDisk = Integer.parseInt(args[i+1]); if (useDisk < 0 ||
+       * useDisk > 2) { println("useDisk should be between 0 and 2"); System.exit(10); } }
+       */
+
+      // for mira:
+      case "-needShuffle":
+        int shuffle = Integer.parseInt(args[i + 1]);
+        if (shuffle == 1)
+          needShuffle = true;
+        else if (shuffle == 0)
+          needShuffle = false;
+        else {
+          throw new RuntimeException("-needShuffle must be either 0 or 1.");
+        }
+        break;
+      // average weights after each epoch or not
+      case "-needAvg":
+        int avg = Integer.parseInt(args[i + 1]);
+        if (avg == 1)
+          needAvg = true;
+        else if (avg == 0)
+          needAvg = false;
+        else {
+          throw new RuntimeException("-needAvg must be either 0 or 1.");
+        }
+        break;
+      // return the best weight during tuning or not
+      case "-returnBest":
+        int retBest = Integer.parseInt(args[i + 1]);
+        if (retBest == 1)
+          returnBest = true;
+        else if (retBest == 0)
+          returnBest = false;
+        else {
+          throw new RuntimeException("-returnBest must be either 0 or 1.");
+        }
+        break;
+      // run perceptron or not
+      case "-runPercep":
+        int per = Integer.parseInt(args[i + 1]);
+        if (per == 1)
+          runPercep = true;
+        else if (per == 0)
+          runPercep = false;
+        else {
+          throw new RuntimeException("-runPercep must be either 0 or 1.");
+        }
+        break;
+      // oracle selection mode
+      case "-oracleSelection":
+        oraSelectMode = Integer.parseInt(args[i + 1]);
+        break;
+      // prediction selection mode
+      case "-predictionSelection":
+        predSelectMode = Integer.parseInt(args[i + 1]);
+        break;
+      // MIRA internal iterations
+      case "-miraIter":
+        miraIter = Integer.parseInt(args[i + 1]);
+        break;
+      // mini-batch size
+      case "-batchSize":
+        batchSize = Integer.parseInt(args[i + 1]);
+        break;
+      // relaxation coefficient
+      case "-C":
+        C = Double.parseDouble(args[i + 1]);
+        break;
+      // else if (option.equals("-sentForScaling")) {
+      // sentForScale = Double.parseDouble(args[i + 1]);
+      // if(sentForScale>1 || sentForScale<0) {
+      // println("-sentForScaling must be in [0,1]");
+      // System.exit(10);
+      // }
+      // }
+      case "-scoreRatio":
+        scoreRatio = Double.parseDouble(args[i + 1]);
+        if (scoreRatio <= 0) {
+          throw new RuntimeException("-scoreRatio must be positive");
+        }
+        break;
+      case "-needScaling":
+        int scale = Integer.parseInt(args[i + 1]);
+        if (scale == 1)
+          needScale = true;
+        else if (scale == 0)
+          needScale = false;
+        else {
+          throw new RuntimeException("-needScaling must be either 0 or 1.");
+        }
+        break;
+      case "-usePseudoCorpus":
+        int use = Integer.parseInt(args[i + 1]);
+        if (use == 1)
+          usePseudoBleu = true;
+        else if (use == 0)
+          usePseudoBleu = false;
+        else {
+          throw new RuntimeException("-usePseudoCorpus must be either 0 or 1.");
+        }
+        break;
+      case "-corpusDecay":
+        R = Double.parseDouble(args[i + 1]);
+        break;
+
+      // Decoder specs
+      case "-cmd":
+        decoderCommandFileName = args[i + 1];
+        break;
+      case "-passIt":
+        int val = Integer.parseInt(args[i + 1]);
+        if (val < 0 || val > 1) {
+          throw new RuntimeException("passIterationToDecoder should be either 0 or 1");
+        }
+        passIterationToDecoder = (val == 1);
+        break;
+      case "-decOut":
+        decoderOutFileName = args[i + 1];
+        break;
+      case "-decExit":
+        validDecoderExitValue = Integer.parseInt(args[i + 1]);
+        break;
+      case "-dcfg":
+        decoderConfigFileName = args[i + 1];
+        break;
+      case "-N":
+        sizeOfNBest = Integer.parseInt(args[i + 1]);
+        if (sizeOfNBest < 1) {
+          throw new RuntimeException("N must be positive.");
+        }
+        break;
+      // Output specs
+      case "-v":
+        verbosity = Integer.parseInt(args[i + 1]);
+        if (verbosity < 0 || verbosity > 4) {
+          throw new VerbosityValueException("verbosity should be between 0 and 4");
+        }
+        break;
+      case "-decV":
+        decVerbosity = Integer.parseInt(args[i + 1]);
+        if (decVerbosity < 0 || decVerbosity > 1) {
+          throw new RuntimeException("decVerbosity should be either 0 or 1");
+        }
+        break;
+      case "-fake":
+        fakeFileNameTemplate = args[i + 1];
+        int QM_i = fakeFileNameTemplate.indexOf("?");
+        if (QM_i <= 0) {
+          throw new RuntimeException(
+              "fakeFileNameTemplate must contain '?' to indicate position of iteration number");
+        }
+        fakeFileNamePrefix = fakeFileNameTemplate.substring(0, QM_i);
+        fakeFileNameSuffix = fakeFileNameTemplate.substring(QM_i + 1);
+        break;
+      default:
+        throw new RuntimeException("Unknown option " + option);
+      }
+
+      i += 2;
+
+    } // while (i)
+
+    if (maxMERTIterations < minMERTIterations) {
+
+      if (firstTime)
+        println("Warning: maxMERTIts is smaller than minMERTIts; " + "decreasing minMERTIts from "
+            + minMERTIterations + " to maxMERTIts " + "(i.e. " + maxMERTIterations + ").", 1);
+
+      minMERTIterations = maxMERTIterations;
+    }
+
+    if (dirPrefix != null) { // append dirPrefix to file names
+      refFileName = fullPath(dirPrefix, refFileName);
+      decoderOutFileName = fullPath(dirPrefix, decoderOutFileName);
+      paramsFileName = fullPath(dirPrefix, paramsFileName);
+      decoderConfigFileName = fullPath(dirPrefix, decoderConfigFileName);
+
+      if (sourceFileName != null) {
+        sourceFileName = fullPath(dirPrefix, sourceFileName);
+      }
+      if (docInfoFileName != null) {
+        docInfoFileName = fullPath(dirPrefix, docInfoFileName);
+      }
+      if (finalLambdaFileName != null) {
+        finalLambdaFileName = fullPath(dirPrefix, finalLambdaFileName);
+      }
+      if (decoderCommandFileName != null) {
+        decoderCommandFileName = fullPath(dirPrefix, decoderCommandFileName);
+      }
+      if (fakeFileNamePrefix != null) {
+        fakeFileNamePrefix = fullPath(dirPrefix, fakeFileNamePrefix);
+      }
+    }
+
+    // TODO: make this an argument
+    // TODO: also use this for the state file? could be tricky, since that file is created by
+    // ZMERT.java
+    // TODO: change name from tmpDirPrefix to tmpFilePrefix?
+    int k = decoderOutFileName.lastIndexOf("/");
+    if (k >= 0) {
+      tmpDirPrefix = decoderOutFileName.substring(0, k + 1) + "MIRA.";
+    } else {
+      tmpDirPrefix = "MIRA.";
+    }
+    println("tmpDirPrefix: " + tmpDirPrefix);
+
+    checkFile(paramsFileName);
+    checkFile(decoderConfigFileName);
+
+    boolean canRunCommand = fileExists(decoderCommandFileName);
+    if (decoderCommandFileName != null && !canRunCommand) {
+      // i.e. a decoder command file was specified, but it was not found
+      if (firstTime)
+        println("Warning: specified decoder command file " + decoderCommandFileName
+            + " was not found.", 1);
+    }
+    boolean canRunJoshua = fileExists(sourceFileName);
+    if (sourceFileName != null && !canRunJoshua) {
+      // i.e. a source file was specified, but it was not found
+      if (firstTime)
+        println("Warning: specified source file " + sourceFileName + " was not found.", 1);
+    }
+    boolean canRunFake = (fakeFileNameTemplate != null);
+
+    if (!canRunCommand && !canRunJoshua) { // can only run fake decoder
+
+      if (!canRunFake) {
+        String msg = "MIRA cannot decode; must provide one of: command file (for external decoder),"
+            + " source file (for Joshua decoder),"
+            + " or prefix for existing output files (for fake decoder).";
+        throw new RuntimeException(msg);
+      }
+
+      int lastGoodIt = 0;
+      for (int it = 1; it <= maxMERTIterations; ++it) {
+        if (fileExists(fakeFileNamePrefix + it + fakeFileNameSuffix)) {
+          lastGoodIt = it;
+        } else {
+          break; // from for (it) loop
+        }
+      }
+
+      if (lastGoodIt == 0) {
+        throw new RuntimeException("Fake decoder cannot find first output file "
+            + (fakeFileNamePrefix + 1 + fakeFileNameSuffix));
+      } else if (lastGoodIt < maxMERTIterations) {
+        if (firstTime)
+          println("Warning: can only run fake decoder; existing output files "
+              + "are only available for the first " + lastGoodIt + " iteration(s).", 1);
+      }
+
+    }
+
+    if (refsPerSen > 1) {
+      // the provided refFileName might be a prefix
+      File dummy = new File(refFileName);
+      if (!dummy.exists()) {
+        refFileName = createUnifiedRefFile(refFileName, refsPerSen);
+      }
+    } else {
+      checkFile(refFileName);
+    }
+
+    if (firstTime) {
+      println("Processed the following args array:", 1);
+      print("  ", 1);
+      for (i = 0; i < args.length; ++i) {
+        print(args[i] + " ", 1);
+      }
+      println("", 1);
+      println("", 1);
+    }
+
+  } // processArgs(String[] args)
+
+
+  // The method throwing the original RuntimeException with the generic exception
+  // is here:
+  // in processArgsArray, line:
+  // if (verbosity < 0 || verbosity > 4) {
+  //   throw new RuntimeException("verbosity should be between 0 and 4");
+  // }
+  // Refactored above to throw dedicated VerbosityValueException instead, 
+  // thus eliminating S112 warning.
+
+  // --- rest unchanged ---
+
+  // The rest code remains unchanged.
+
+}

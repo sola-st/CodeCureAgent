@@ -1,0 +1,173 @@
+In computer programming, a code smell is any characteristic in the source code of a program that possibly indicates a deeper problem.
+Now I will tell you the definition about SonarQube warning 'S1192':'String literals should not be duplicated' as given by the SonarQube docu, including an example to help you solve a similar warning:
+'Duplicated string literals make the process of refactoring error-prone, since you must be sure to update all occurrences.
+
+On the other hand, constants can be referenced from many places, but only need to be updated in a single place.
+
+Noncompliant Code Example
+
+With the default threshold of 3:
+    
+    
+    public void run() {
+      prepare("action1");                              // Noncompliant - "action1" is duplicated 3 times
+      execute("action1");
+      release("action1");
+    }
+    
+    @SuppressWarning("all")                            // Compliant - annotations are excluded
+    private void method1() { /* ... */ }
+    @SuppressWarning("all")
+    private void method2() { /* ... */ }
+    
+    public String method3(String a) {
+      System.out.println("'" + a + "'");               // Compliant - literal "'" has less than 5 characters and is excluded
+      return "";                                       // Compliant - literal "" has less than 5 characters and is excluded
+    }
+    
+
+Compliant Solution
+    
+    
+    private static final String ACTION_1 = "action1";  // Compliant
+    
+    public void run() {
+      prepare(ACTION_1);                               // Compliant
+      execute(ACTION_1);
+      release(ACTION_1);
+    }
+    
+
+Exceptions
+
+To prevent generating some false-positives, literals having less than 5 characters are excluded.'
+
+Now based on the example, refactor the following Java code to eliminate the 'S1192':'String literals should not be duplicated' warning, with specific warning message 'Define a constant instead of duplicating this literal "Cluster" 3 times.'.
+Output the full refactored code (the full file). Don't leave out any part of the code.
+The warning is located at the line 'scope.addResource("Cluster", "control-center", PatternType.LITERAL.name());' (line number 84). Give the changed code using: ```...```.
+Java code:
+```java
+package com.purbon.kafka.topology.roles.rbac;
+
+import static com.purbon.kafka.topology.api.mds.ClusterIDs.CONNECT_CLUSTER_ID_LABEL;
+
+import com.purbon.kafka.topology.api.mds.MDSApiClient;
+import com.purbon.kafka.topology.api.mds.RequestScope;
+import com.purbon.kafka.topology.model.users.Connector;
+import com.purbon.kafka.topology.roles.TopologyAclBinding;
+import java.util.Map;
+import java.util.Optional;
+import org.apache.kafka.common.resource.PatternType;
+
+public class ClusterLevelRoleBuilder {
+
+  private final String principal;
+  private final String role;
+  private final MDSApiClient client;
+  private RequestScope scope;
+
+  public ClusterLevelRoleBuilder(String principal, String role, MDSApiClient client) {
+    this.principal = principal;
+    this.role = role;
+    this.client = client;
+    this.scope = new RequestScope();
+  }
+
+  public ClusterLevelRoleBuilder forSchemaRegistry() {
+    Map<String, Map<String, String>> clusters =
+        client.withClusterIDs().forSchemaRegistry().forKafka().asMap();
+
+    scope = new RequestScope();
+    scope.setClusters(clusters);
+    scope.build();
+
+    return this;
+  }
+
+  public ClusterLevelRoleBuilder forSchemaSubject(String subject) {
+    Map<String, Map<String, String>> clusters =
+        client.withClusterIDs().forSchemaRegistry().forKafka().asMap();
+
+    scope = new RequestScope();
+    scope.setClusters(clusters);
+    scope.addResource("Subject", "Subject:" + subject, PatternType.LITERAL.name());
+    scope.build();
+
+    return this;
+  }
+
+  public ClusterLevelRoleBuilder forAKafkaConnector(String connector) {
+    Map<String, Map<String, String>> clusters =
+        client.withClusterIDs().forKafkaConnect().forKafka().asMap();
+
+    String patternType = PatternType.LITERAL.name();
+
+    scope = new RequestScope();
+    scope.setClusters(clusters);
+    scope.addResource("Connector", "Connector:" + connector, patternType);
+    scope.build();
+
+    return this;
+  }
+
+  public TopologyAclBinding apply() {
+
+    return client.bindClusterRole(principal, role, scope);
+  }
+
+  public ClusterLevelRoleBuilder forKafka() {
+    Map<String, Map<String, String>> clusters = client.withClusterIDs().forKafka().asMap();
+
+    scope = new RequestScope();
+    scope.setClusters(clusters);
+    scope.build();
+
+    return this;
+  }
+
+  public ClusterLevelRoleBuilder forControlCenter() {
+    Map<String, Map<String, String>> clusters = client.withClusterIDs().forKafka().asMap();
+
+    scope = new RequestScope();
+    scope.setClusters(clusters);
+    scope.addResource("Cluster", "control-center", PatternType.LITERAL.name());
+    scope.build();
+
+    return this;
+  }
+
+  public ClusterLevelRoleBuilder forKafkaConnect() {
+    Map<String, Map<String, String>> clusters =
+        client.withClusterIDs().forKafkaConnect().forKafka().asMap();
+
+    scope = new RequestScope();
+    scope.setClusters(clusters);
+    scope.addResource("Cluster", "kafka-connect", PatternType.LITERAL.name());
+
+    scope.build();
+
+    return this;
+  }
+
+  public ClusterLevelRoleBuilder forKafkaConnect(Connector connector) {
+    Map<String, Map<String, String>> clusters =
+        client.withClusterIDs().forKafkaConnect().forKafka().asMap();
+
+    Optional<String> connectClusterIdOptional = connector.getCluster_id();
+    connectClusterIdOptional.ifPresent(
+        s -> clusters.get("clusters").put(CONNECT_CLUSTER_ID_LABEL, s));
+
+    scope = new RequestScope();
+    scope.setClusters(clusters);
+    scope.addResource("Cluster", "kafka-connect", PatternType.LITERAL.name());
+
+    scope.build();
+
+    return this;
+  }
+
+  public RequestScope getScope() {
+    return scope;
+  }
+}
+```

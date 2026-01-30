@@ -1,0 +1,187 @@
+In computer programming, a bug is an error, flaw or fault in a computer program that causes it to produce an incorrect or unexpected result, or to behave in unintended ways.
+Now I will tell you the definition about SonarQube warning 'S2259':'Null pointers should not be dereferenced' as given by the SonarQube docu, including an example to help you solve a similar warning:
+'A reference to `null` should never be dereferenced/accessed. Doing so will cause a `NullPointerException` to be thrown. At best, such an exception will cause abrupt program termination. At worst, it could expose debugging information that would be useful to an attacker, or it could allow an attacker to bypass security measures.
+
+Note that when they are present, this rule takes advantage of `@CheckForNull` and `@Nonnull` annotations defined in [JSR-305](https://jcp.org/en/jsr/detail?id=305) to understand which values are and are not nullable except when `@Nonnull` is used on the parameter to `equals`, which by contract should always work with null.
+
+Noncompliant Code Example
+    
+    
+    @CheckForNull
+    String getName(){...}
+    
+    public boolean isNameEmpty() {
+      return getName().length() == 0; // Noncompliant; the result of getName() could be null, but isn't null-checked
+    }
+    
+    
+    
+    Connection conn = null;
+    Statement stmt = null;
+    try{
+      conn = DriverManager.getConnection(DB_URL,USER,PASS);
+      stmt = conn.createStatement();
+      // ...
+    
+    }catch(Exception e){
+      e.printStackTrace();
+    }finally{
+      stmt.close();   // Noncompliant; stmt could be null if an exception was thrown in the try{} block
+      conn.close();  // Noncompliant; conn could be null if an exception was thrown
+    }
+    
+    
+    
+    private void merge(@Nonnull Color firstColor, @Nonnull Color secondColor){...}
+    
+    public  void append(@CheckForNull Color color) {
+        merge(currentColor, color);  // Noncompliant; color should be null-checked because merge(...) doesn't accept nullable parameters
+    }
+    
+    
+    
+    void paint(Color color) {
+      if(color == null) {
+        System.out.println("Unable to apply color " + color.toString());  // Noncompliant; NullPointerException will be thrown
+        return;
+      }
+      ...
+    }
+    
+
+See
+
+  * [MITRE, CWE-476](https://cwe.mitre.org/data/definitions/476) \- NULL Pointer Dereference 
+  * [CERT, EXP34-C.](https://wiki.sei.cmu.edu/confluence/x/QdcxBQ) \- Do not dereference null pointers 
+  * [CERT, EXP01-J.](https://wiki.sei.cmu.edu/confluence/x/aDdGBQ) \- Do not use a null in a case where an object is required'
+
+Now based on the example, refactor the following Java code to eliminate the 'S2259':'Null pointers should not be dereferenced' warning, with specific warning message 'A "NullPointerException" could be thrown; "took" is nullable here.'.
+Output the full refactored code (the full file). Don't leave out any part of the code.
+The warning is located at the line 'for ( WatchEvent<?> event : took.pollEvents() ) {' (line number 96). Give the changed code using: ```...```.
+Java code:
+```java
+package com.pastdev.jsch.nio.file;
+
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardWatchEventKinds;
+import java.nio.file.WatchEvent;
+import java.nio.file.WatchKey;
+import java.nio.file.WatchService;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+
+
+import org.junit.AfterClass;
+import org.junit.Assume;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.internal.AssumptionViolatedException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+
+import com.pastdev.jsch.IOUtils;
+
+
+public class UnixSshFileSystemWatchServiceTest extends FileSystemTestUtils {
+    private static Logger logger = LoggerFactory.getLogger( UnixSshFileSystemWatchServiceTest.class );
+
+    @AfterClass
+    public static void afterClass() {
+        try {
+            closeFileSystem();
+        }
+        catch ( AssumptionViolatedException e ) {
+            Assume.assumeNoException( e );
+        }
+    }
+
+    @BeforeClass
+    public static void beforeClass() {
+        try {
+            initializeFileSystem( UnixSshFileSystemProvider.SCHEME_SSH_UNIX );
+        }
+        catch ( AssumptionViolatedException e ) {
+            Assume.assumeNoException( e );
+        }
+    }
+
+    @Test
+    public void testWatchService() {
+        final String root = UUID.randomUUID().toString();
+        UnixSshFileSystem fileSystem = (UnixSshFileSystem)FileSystems.getFileSystem( uri );
+
+        String filename = "newfile.txt";
+        Path rootFilePath = Paths.get( filesystemPath, root );
+        File rootFile = rootFilePath.toFile();
+        Path newFile = rootFilePath.resolve( filename );
+        rootFile.mkdirs();
+
+        Path rootPath = fileSystem.getPath( root );
+        WatchService watcher = null;
+        try {
+            try {
+                watcher = fileSystem.newWatchService();
+                UnixSshPathWatchKey watchKey = (UnixSshPathWatchKey)rootPath
+                        .register( watcher, StandardWatchEventKinds.ENTRY_CREATE );
+                assertEquals( rootPath, watchKey.watchable() );
+                assertTrue( watchKey.waitForInitialization( 10, TimeUnit.SECONDS ) );
+
+                String expected = "i know you expected this";
+                try (OutputStream outputStream = newFile.getFileSystem().provider().newOutputStream( newFile )) {
+                    IOUtils.copyFromString( expected, outputStream );
+                }
+
+                watchKey.runImmediately();
+                WatchKey took = null;
+                try {
+                    took = watcher.take();
+                }
+                catch ( InterruptedException e ) {
+                    fail( "interrupted during take" );
+                }
+
+                assertEquals( watchKey, took );
+                boolean first = true;
+                for ( WatchEvent<?> event : took.pollEvents() ) {
+                    assertTrue( first );
+                    assertEquals( StandardWatchEventKinds.ENTRY_CREATE, event.kind() );
+
+                    Path eventPath = (Path)event.context();
+                    assertEquals( filename, eventPath.toString() );
+
+                    try (InputStream inputStream = eventPath.getFileSystem().provider().newInputStream(
+                            rootPath.resolve( eventPath ) )) {
+                        assertEquals( expected, IOUtils.copyToString( inputStream ) );
+                    }
+                    first = false;
+                }
+            }
+            catch ( IOException e ) {
+                logger.error( "could not obtain watch service from {}: {}", fileSystem, e );
+                logger.debug( "could not obtain watch service:", e );
+                fail( "could not obtain watch service from " + fileSystem + ": " + e.getMessage() );
+            }
+
+        }
+        finally {
+            if ( watcher != null ) {
+                IOUtils.closeAndLogException( watcher );
+            }
+            IOUtils.deleteFiles( newFile.toFile(), rootFile );
+        }
+    }
+}
+```

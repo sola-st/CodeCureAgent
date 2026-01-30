@@ -1,0 +1,40 @@
+package org.opentripplanner.graph_builder.module.extra_elevation_data;
+
+public class ElevationPoint implements Comparable<ElevationPoint> {
+    private double distanceAlongShape, ele;
+
+    public ElevationPoint(double distance, double ele) {
+        this.distanceAlongShape = distance;
+        this.ele = ele;
+    }
+
+    public double getDistanceAlongShape() {
+        return distanceAlongShape;
+    }
+
+    public void setDistanceAlongShape(double distanceAlongShape) {
+        this.distanceAlongShape = distanceAlongShape;
+    }
+
+    public double getEle() {
+        return ele;
+    }
+
+    public void setEle(double ele) {
+        this.ele = ele;
+    }
+
+    public ElevationPoint fromBack(double length) {
+        return new ElevationPoint(length - distanceAlongShape, ele);
+    }
+
+    @Override
+    public int compareTo(ElevationPoint arg0) {
+        return (int) Math.signum(distanceAlongShape - arg0.distanceAlongShape);
+    }
+    
+    public String toString() {
+        return "ElevationPoint(" + distanceAlongShape + ", " + ele + ")";
+    }
+
+}

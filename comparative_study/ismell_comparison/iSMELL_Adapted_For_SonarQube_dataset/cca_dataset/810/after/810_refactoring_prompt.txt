@@ -1,0 +1,189 @@
+In computer programming, a code smell is any characteristic in the source code of a program that possibly indicates a deeper problem.
+Now I will tell you the definition about SonarQube warning 'S1104':'Class variable fields should not have public accessibility' as given by the SonarQube docu, including an example to help you solve a similar warning:
+'Public class variable fields do not respect the encapsulation principle and has three main disadvantages:
+
+  * Additional behavior such as validation cannot be added. 
+  * The internal representation is exposed, and cannot be changed afterwards. 
+  * Member values are subject to change from anywhere in the code and may not meet the programmer’s assumptions. 
+
+
+
+By using private attributes and accessor methods (set and get), unauthorized modifications are prevented.
+
+Noncompliant Code Example
+    
+    
+    public class MyClass {
+    
+      public static final int SOME_CONSTANT = 0;     // Compliant - constants are not checked
+    
+      public String firstName;                       // Noncompliant
+    
+    }
+    
+
+Compliant Solution
+    
+    
+    public class MyClass {
+    
+      public static final int SOME_CONSTANT = 0;     // Compliant - constants are not checked
+    
+      private String firstName;                      // Compliant
+    
+      public String getFirstName() {
+        return firstName;
+      }
+    
+      public void setFirstName(String firstName) {
+        this.firstName = firstName;
+      }
+    
+    }
+    
+
+Exceptions
+
+Because they are not modifiable, this rule ignores `public final` fields. Also, annotated fields, whatever the annotation(s) will be ignored, as annotations are often used by injection frameworks, which in exchange require having public fields.
+
+See
+
+  * [MITRE, CWE-493](https://cwe.mitre.org/data/definitions/493) \- Critical Public Variable Without Final Modifier'
+
+Now based on the example, refactor the following Java code to eliminate the 'S1104':'Class variable fields should not have public accessibility' warning, with specific warning message 'Make alertType a static final constant or non-public and provide accessors if needed.'.
+Output the full refactored code (the full file). Don't leave out any part of the code.
+The warning is located at the line 'public String alertType;' (line number 32). Give the changed code using: ```...```.
+Java code:
+```java
+package org.opentripplanner.routing.alertpatch;
+
+import org.opentripplanner.routing.core.State;
+import org.opentripplanner.util.I18NString;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+public class TransitAlert implements Serializable {
+    private static final long serialVersionUID = 8305126586053909836L;
+
+    private String id;
+
+    public I18NString alertHeaderText;
+    public I18NString alertDescriptionText;
+    public I18NString alertDetailText;
+    public I18NString alertAdviceText;
+
+    // TODO OTP2 we wanted to merge the GTFS single alertUrl and the SIRI multiple URLs.
+    //      However, GTFS URLs are one-per-language in a single object, and SIRI URLs are N objects with no translation.
+    public I18NString alertUrl;
+
+    private List<AlertUrl> alertUrlList = new ArrayList<>();
+
+    //null means unknown
+    public String alertType;
+
+    //null means unknown
+    public String severity;
+
+    //null means unknown
+    public int priority;
+
+    private List<TimePeriod> timePeriods = new ArrayList<>();
+
+    private String feedId;
+
+    private final Set<EntitySelector> entities = new HashSet<>();
+
+    private final Collection<StopCondition> stopConditions = new ArrayList<>();
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public List<AlertUrl> getAlertUrlList() {
+        return alertUrlList;
+    }
+
+    public void setAlertUrlList(List<AlertUrl> alertUrlList) {
+        this.alertUrlList = alertUrlList;
+    }
+
+    public boolean displayDuring(State state) {
+        return displayDuring(state.getStartTimeSeconds(), state.getTimeSeconds());
+    }
+
+    public boolean displayDuring(long startTimeSeconds, long endTimeSeconds) {
+        for (TimePeriod timePeriod : timePeriods) {
+            if (endTimeSeconds >= timePeriod.startTime) {
+                if (timePeriod.endTime == 0 || startTimeSeconds < timePeriod.endTime) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public void setTimePeriods(List<TimePeriod> periods) {
+        timePeriods = periods;
+    }
+
+    public void addEntity(EntitySelector entitySelector) {
+        entities.add(entitySelector);
+    }
+
+    public Set<EntitySelector> getEntities() {
+        return entities;
+    }
+
+    public Collection<StopCondition> getStopConditions() {
+        return stopConditions;
+    }
+
+    public String getFeedId() {
+        return feedId;
+    }
+
+    public void setFeedId(String feedId) {
+        this.feedId = feedId;
+    }
+
+    public Date getEffectiveStartDate() {
+        return timePeriods
+            .stream()
+            .map(timePeriod -> timePeriod.startTime)
+            .min(Comparator.naturalOrder())
+            .map(startTime -> new Date(startTime * 1000))
+            .orElse(null);
+    }
+
+    public Date getEffectiveEndDate() {
+        return timePeriods
+            .stream()
+            .map(timePeriod -> timePeriod.endTime)
+            .max(Comparator.naturalOrder())
+            .map(startTime -> new Date(startTime * 1000))
+            .orElse(null);
+    }
+
+    @Override
+    public String toString() {
+        return "Alert('"
+                + (alertHeaderText != null ? alertHeaderText.toString()
+                        : alertDescriptionText != null ? alertDescriptionText.toString()
+                        : alertDetailText != null ? alertDetailText.toString()
+                        : alertAdviceText != null ? alertAdviceText.toString()
+                                : "?") + "')";
+    }
+
+}
+```

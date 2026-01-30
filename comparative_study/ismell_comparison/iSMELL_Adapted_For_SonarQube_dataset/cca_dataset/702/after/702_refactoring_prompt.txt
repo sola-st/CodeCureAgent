@@ -1,0 +1,180 @@
+In computer programming, a code smell is any characteristic in the source code of a program that possibly indicates a deeper problem.
+Now I will tell you the definition about SonarQube warning 'S1172':'Unused method parameters should be removed' as given by the SonarQube docu, including an example to help you solve a similar warning:
+'Unused parameters are misleading. Whatever the values passed to such parameters, the behavior will be the same.
+
+Noncompliant Code Example
+    
+    
+    void doSomething(int a, int b) {     // "b" is unused
+      compute(a);
+    }
+    
+
+Compliant Solution
+    
+    
+    void doSomething(int a) {
+      compute(a);
+    }
+    
+
+Exceptions
+
+The rule will not raise issues for unused parameters:
+
+  * that are annotated with `@javax.enterprise.event.Observes`
+  * in overrides and implementation methods 
+  * in interface `default` methods 
+  * in non-private methods that only `throw` or that have empty bodies 
+  * in annotated methods, unless the annotation is `@SuppressWarning("unchecked")` or `@SuppressWarning("rawtypes")`, in which case the annotation will be ignored 
+  * in overridable methods (non-final, or not member of a final class, non-static, non-private), if the parameter is documented with a proper javadoc. 
+
+
+    
+    
+    @Override
+    void doSomething(int a, int b) {     // no issue reported on b
+      compute(a);
+    }
+    
+    public void foo(String s) {
+      // designed to be extended but noop in standard case
+    }
+    
+    protected void bar(String s) {
+      //open-closed principle
+    }
+    
+    public void qix(String s) {
+      throw new UnsupportedOperationException("This method should be implemented in subclasses");
+    }
+    
+    /**
+     * @param s This string may be use for further computation in overriding classes
+     */
+    protected void foobar(int a, String s) { // no issue, method is overridable and unused parameter has proper javadoc
+      compute(a);
+    }
+    
+
+See
+
+  * [CERT, MSC12-C.](https://wiki.sei.cmu.edu/confluence/x/5dUxBQ) \- Detect and remove code that has no effect or is never executed'
+
+Now based on the example, refactor the following Java code to eliminate the 'S1172':'Unused method parameters should be removed' warning, with specific warning message 'Remove this unused method parameter "somethingElse".'.
+Output the full refactored code (the full file). Don't leave out any part of the code.
+The warning is located at the line 'InnerClass(Object somethingElse) {' (line number 95). Give the changed code using: ```...```.
+Java code:
+```java
+package org.mutabilitydetector.benchmarks.escapedthis;
+
+/*
+ * #%L
+ * MutabilityDetector
+ * %%
+ * Copyright (C) 2008 - 2014 Graham Allan
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
+
+
+
+public class Unsafe {
+
+    public static final class ThisPassedToPrivateMethodWhichDoesPublishReference {
+        public ThisPassedToPrivateMethodWhichDoesPublishReference() {
+            publishThisReference(this);
+        }
+
+        private void publishThisReference(ThisPassedToPrivateMethodWhichDoesPublishReference thisReference) {
+            new GiveMeYourThisReference(thisReference);
+        }
+    }
+
+    public static final class SetThisReferenceAsStaticFieldOfOtherClass {
+        public SetThisReferenceAsStaticFieldOfOtherClass() {
+            GiveMeYourThisReference.YOUR_THIS_REFERENCE = this;
+        }
+    }
+
+    public static final class SetThisReferenceAsInstanceFieldOfOtherObject {
+        public SetThisReferenceAsInstanceFieldOfOtherObject(GiveMeYourThisReference giveMeIt) {
+            giveMeIt.instanceOfYourThis = this;
+        }
+    }
+    
+    public static final class AliasesThisReferenceBeforeLettingItEscape {
+        public AliasesThisReferenceBeforeLettingItEscape() {
+            Object alias = this;
+            new GiveMeYourThisReference(alias);
+        }
+    }
+
+    
+    public static final class PassThisReferenceToStaticObject {
+        public PassThisReferenceToStaticObject() {
+            GiveMeYourThisReference.THIS_REFERENCE_MAP.add(this);
+        }
+    }
+    
+    public static final class SaveThisReferenceAsInstanceFieldOfThisClass {
+        public final SaveThisReferenceAsInstanceFieldOfThisClass instanceThis;
+
+        public SaveThisReferenceAsInstanceFieldOfThisClass() {
+            instanceThis = this;
+        }
+    }
+
+    public static class SaveThisReferenceAsStaticFieldOfThisClass {
+        public static SaveThisReferenceAsStaticFieldOfThisClass staticThis;
+
+        public SaveThisReferenceAsStaticFieldOfThisClass() {
+            staticThis = this;
+        }
+    }
+
+    public static class PassThisReferenceToParameter {
+        public PassThisReferenceToParameter(GiveMeYourThisReference otherObject) {
+            otherObject.passReference(this);
+        }
+    }
+
+    public static class PassInnerClassWithImplicitReferenceToThis {
+        private final String maySeeMeIncomplete;
+        
+        public PassInnerClassWithImplicitReferenceToThis(GiveMeYourThisReference passTo) {
+            Object somethingElse = new Object();
+            passTo.passReference(new InnerClass(somethingElse));
+            maySeeMeIncomplete = "You might see the field with this string in it, you might not!";
+        }
+
+        private class InnerClass {
+            InnerClass(Object somethingElse) {
+                System.out.println(PassInnerClassWithImplicitReferenceToThis.this.maySeeMeIncomplete);
+            }
+        }
+    }
+
+    interface Anonymous {
+    }
+
+    public static class PassAnonymousInnerClassWithImplicitReferenceToThis {
+        public PassAnonymousInnerClassWithImplicitReferenceToThis(GiveMeYourThisReference passTo) {
+            passTo.passReference(new Anonymous() {
+                // implicit this reference is here
+            });
+        }
+    }
+}
+```

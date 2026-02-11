@@ -10,6 +10,7 @@ import os
 import click
 from agent_core.commands.write_fix import execute_write_range
 from agent_core.commands import repository_operations
+from agent_core.commands.sonar_qube_docu import read_sonarqube_docu
 from agent_core.utils.agent_utils.agent_mock import AgentMock
 
 
@@ -56,6 +57,15 @@ def show_next_warning_for_manual_inspection(evaluation_results_file: click.File,
 
     print_brief_info_about_the_warning(warning_csv_info)
 
+def add_sonarqube_rule_docu_file(relative_path_inspection_folder: str, warning_csv_info: dict, agent: AgentMock) -> None:
+    
+    rule_key = warning_csv_info["ruleKey"]
+    sonar_docu = read_sonarqube_docu(rule_key, agent)
+    
+    with open(os.path.join(relative_path_inspection_folder, f"sonar_rule_{rule_key}_docu.md"), "w") as docu_file:
+        docu_file.write(sonar_docu)
+
+    os.remove(os.path.join(relative_path_inspection_folder, f"-1_docu_tool_output_rule_{rule_key}.json"))
 
 def retrieve_info_of_next_warning_to_show(evaluation_results_file: click.File, id_to_show: int) -> tuple[dict, int]:
 
@@ -176,6 +186,20 @@ def checkout_project_unchanged_and_with_changes(relative_path_inspection_folder:
         global file_changes
         file_changes = execute_write_range(changes_dicts, agent_mock,
                                            create_analysis_reports=False, overwrite_warning_repository_name=f"{agent_mock.ai_config.warning_repository_name}_fixed")
+    
+    add_sonarqube_rule_docu_file(relative_path_inspection_folder, warning_csv_info, agent_mock)
+
+    # Additionally save the before and after version of the code file with the warning, to be able to easily open them and show them in the inspection without having to open the whole project
+    warning_repository_name = task_info["warning_repository_name"]
+    warning_file_path = task_info["warning_file_path"]
+    os.makedirs(os.path.join(relative_path_inspection_folder, "warning_file_unfixed"), exist_ok=True)
+    os.makedirs(os.path.join(relative_path_inspection_folder, "warning_file_fixed"), exist_ok=True)
+    shutil.copy2(os.path.join(relative_path_inspection_folder, f"{warning_repository_name}_unfixed", warning_file_path), os.path.join(
+        relative_path_inspection_folder, "warning_file_unfixed", os.path.basename(warning_file_path)))
+    if warning_csv_info["plausibleFix"] == "True":
+        shutil.copy2(os.path.join(relative_path_inspection_folder, f"{warning_repository_name}_fixed", warning_file_path), os.path.join(
+            relative_path_inspection_folder, "warning_file_fixed", os.path.basename(warning_file_path)))
+    
 
 
 def open_relevant_files_and_diffs(relative_path_inspection_folder: str, warning_csv_info: dict, evaluation_results_file: click.File, line_in_evaluation_results_csv: int) -> None:

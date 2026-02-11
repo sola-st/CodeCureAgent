@@ -1,12 +1,12 @@
 # Definition of Review Process
 
-(1. Run CodeCureAgent on the rule violations ([run_on_dataset.sh](../run_on_dataset.sh)))
-(2. Automatically extract relevant information from the run logs into a csv file (via [experimental_setups/write_experiment_results_to_csv_file.py](write_experiment_results_to_csv_file.py))
+1. (Run CodeCureAgent on the rule violations ([run_on_dataset.sh](../run_on_dataset.sh)))
+2. (Automatically extract relevant information from the run logs into a csv file (via [experimental_setups/write_experiment_results_to_csv_file.py](write_experiment_results_to_csv_file.py))
     - Info about the sample: ID, projectName, ruleKey, ruleName, ruleType, experimentNumber
     - Classification (by the agent)
     - Plausible fix created (passed the ChangeApprover steps)
     - Fix Complexity (Single Line, Multi Line, Multi File fix))
-(3. Automatically copy, reapply fix and open all relevant files for the next uninspected sample in the csv file (via [experimental_setups/show_next_warning_for_manual_inspection.py](show_next_warning_for_manual_inspection.py)))
+3. (Automatically copy, reapply fix and open all relevant files for the next uninspected sample in the csv file (via [experimental_setups/show_next_warning_for_manual_inspection.py](show_next_warning_for_manual_inspection.py)))
 4. Check Classification Soundness: For the sample, decide if the classification by the agent is sound by following these steps:
    1. Read the description of the violated rule (see `sonar_rule_x_docu.md`) to understand what it is about.
    2. Check the specific details of the rule violation raised (specific message, the file and line where it occurs etc. in file IDx_summary.diff or IDx_task_info.yaml).
@@ -14,7 +14,8 @@
    4. Read the IDx_classification_result file that contains the agent's answers to the questions and the final verdict with reasoning to understand the agent's rationale for its decision.
    5. If some further background knowledge is needed, look up relevant info on the web.
    6. Finally, decide whether the agent's reasoning for the different questions, and based on the reasoning the final classification, is "Sound" or "Not sound". Do this based on the gathered information about the code and the rule violation.
-   (7. Add the decision to the csv file created before (in column classificationSoundness either add "Sound" or "Not sound". You can add an explanation in column classificationSoundnessExplanation if the instance is a complicated case that needs explanation).)
+   7. (Add the decision to the csv file created before (in column classificationSoundness either add "Sound" or "Not sound". You can add an explanation in column classificationSoundnessExplanation if the instance is a complicated case that needs explanation).)
+
 5. Check Correctness of Fix (Only if the classification was sound): For the sample, decide if the created fix by the agent is correct by following these steps:
    1. If it is a TP:
       1. Inspect the diffs of all files that had changes
@@ -31,7 +32,7 @@
          1. Is a suppression inserted at the correct line, without removing any code?
       3. Optional: Check if the rule violation is removed (already checked by the ChangeApprover)
       4. Based on the previous steps, make a final decision of "Correct" or "Not correct"
-   (3. Add the decision to the csv file created before (in column fixCorrectness either add "Correct" or "Not correct". You can add an explanation in column fixCorrectnessExplanation if the instance is a complicated case that needs explanation).)
+   3. (Add the decision to the csv file created before (in column fixCorrectness either add "Correct" or "Not correct". You can add an explanation in column fixCorrectnessExplanation if the instance is a complicated case that needs explanation).)
 
 For more detailed instructions on running the scripts, see [README](../../../README.md).
 

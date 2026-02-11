@@ -1,0 +1,89 @@
+/*
+ * {{{ header & license
+ * Copyright (c) 2011 Wisconsin Court System
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * as published by the Free Software Foundation; either version 2.1
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * }}}
+ */
+package com.openhtmltopdf.css.parser.property;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import com.openhtmltopdf.css.constants.CSSName;
+import com.openhtmltopdf.css.constants.IdentValue;
+import com.openhtmltopdf.css.parser.CSSParseException;
+import com.openhtmltopdf.css.parser.CSSPrimitiveValue;
+import com.openhtmltopdf.css.parser.CSSValue;
+import com.openhtmltopdf.css.parser.PropertyValue;
+import com.openhtmltopdf.css.sheet.PropertyDeclaration;
+
+public class QuotesPropertyBuilder extends AbstractPropertyBuilder {
+
+    @Override
+    public List<PropertyDeclaration> buildDeclarations(CSSName cssName, List<PropertyValue> values, int origin, boolean important, boolean inheritAllowed) {
+        if (values.size() == 1) {
+            PropertyValue value = values.get(0);
+            if (value.getCssValueType() == CSSValue.CSS_INHERIT) {
+                return Collections.emptyList();
+            } else if (value.getPrimitiveType() == CSSPrimitiveValue.CSS_IDENT) {
+                IdentValue ident = checkIdent(CSSName.QUOTES, value);
+                if (ident == IdentValue.NONE) {
+                    return Collections.singletonList(
+                            new PropertyDeclaration(CSSName.QUOTES, value, important, origin));
+                }
+            }
+        }
+        
+        if (values.size() % 2 == 1) {
+            throw new CSSParseException(
+                    "Mismatched quotes " + values, -1);
+        }
+        
+        List<PropertyValue> resultValues = new ArrayList<>();
+        for (PropertyValue value : values) {
+            
+            if (value.getOperator() != null) {
+                throw new CSSParseException(
+                        "Found unexpected operator, " + value.getOperator().getExternalName(), -1);
+            }
+            
+            short type = value.getPrimitiveType();
+            if (type == CSSPrimitiveValue.CSS_STRING) {
+                resultValues.add(value);
+            } else if (type == CSSPrimitiveValue.CSS_URI) {
+                throw new CSSParseException(
+                        "URI is not allowed here", -1);
+            } else if (value.getPropertyValueType() == PropertyValue.VALUE_TYPE_FUNCTION) {
+                throw new CSSParseException(
+                        "Function " + value.getFunction().getName() + " is not allowed here", -1);
+            } else if (type == CSSPrimitiveValue.CSS_IDENT) {
+                throw new CSSParseException(
+                        "Identifier is not a valid value for the quotes property", -1);
+            } else {
+                throw new CSSParseException(
+                        value.getCssText() + " is not a value value for the quotes property", -1);
+            }
+        }
+        
+        if (resultValues.size() > 0) {
+            return Collections.singletonList(
+                    new PropertyDeclaration(CSSName.QUOTES, new PropertyValue(resultValues), important, origin));
+        } else {
+            return Collections.emptyList();
+        }
+    }
+}

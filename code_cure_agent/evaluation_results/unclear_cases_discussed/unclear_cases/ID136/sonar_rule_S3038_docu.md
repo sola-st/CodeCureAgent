@@ -1,0 +1,17 @@
+**Abstract methods should not be redundant**  
+
+There’s no point in redundantly defining an `abstract` method with the same signature as a method in an `interface` that the class `implements`. Any concrete child classes will have to implement the method either way.
+
+Noncompliant Code Example
+    
+    
+    public interface Reportable {
+      String getReport();
+    }
+    
+    public abstract class AbstractRuleReport implements Reportable{
+      public abstract String getReport();  // Noncompliant
+    
+      // ...
+    }
+    

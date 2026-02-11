@@ -1,0 +1,158 @@
+package org.opentripplanner.transit.raptor.api.view;
+
+
+import org.opentripplanner.transit.raptor.api.transit.RaptorTripSchedule;
+import org.opentripplanner.transit.raptor.util.TimeUtils;
+
+/**
+ * The purpose of the stop-arrival-view is to provide a common interface for stop-arrivals for
+ * different implementations. The view hide the internal Raptor specific models, like the standard
+ * and multi-criteria implementation. The internal models can be optimized for speed and/or
+ * memory consumption, while the view provide one interface for mapping back to the users domain.
+ * <p/>
+ * The view is used by the debugging functionality and mapping to raptor paths (Raptor API).
+ * <p/>
+ * The view objects are only created to construct paths to be returned as part of debugging. This is
+ * done for just a fraction of all stop arrivals, so there is no need to optimize performance nor
+ * memory consumption fo view objects, but the view is designed with the Flyweight design pattern
+ * in mind.
+ * <p/>
+ * NB! The scope of a view is only guaranteed to be valid for the duration of the method call - e.g.
+ * debug callback.
+ * <p/>
+ * There is different kind of arrivals:
+ * <ul>
+ *     <li>Access - The first stop arrival, arriving after the access leg.</li>
+ *     <li>Transit - Arrived by transit</li>
+ *     <li>Transfer - Arrived by transfer</li>
+ *     <li>Egress - Arrived at destination</li>
+ * </ul>
+ * Use the "arrivedByX" methods before accessing the {@link #accessLeg()}, {@link #transitLeg()},
+ * {@link #transferLeg()} and {@link #egressLeg()}.
+ *
+ * @param <T> The TripSchedule type defined by the user of the raptor API.
+ */
+public interface ArrivalView<T extends RaptorTripSchedule> {
+
+    /**
+     * Stop index where the arrival takes place.
+     *
+     * @throws UnsupportedOperationException if arrived at destination.
+     */
+    int stop();
+
+    /**
+     * The Range Raptor ROUND this stop is reached. Note! the destination
+     * is reached in the same round as the associated egress stop arrival.
+     */
+    int round();
+
+    /**
+     * The arrival time for when the stop is reached including alight-slack.
+     */
+    int arrivalTime();
+
+    /**
+     * The accumulated cost. 0 (zero) is returned if no cost exist.
+     */
+    default int cost() {
+        return 0;
+    }
+
+    /**
+     * The previous stop arrival state or {@code null} if first arrival (access stop arrival).
+     */
+    ArrivalView<T> previous();
+
+    /* Access stop arrival */
+
+    /**
+     * First stop arrival, arrived by a given access leg.
+     */
+    default boolean arrivedByAccessLeg() {
+        return false;
+    }
+
+    default AccessLegView accessLeg() {
+        throw new UnsupportedOperationException();
+    }
+
+
+    /* Transit */
+
+    /** @return true if transit arrival, otherwise false. */
+    default boolean arrivedByTransit() {
+        return false;
+    }
+
+    default TransitLegView<T> transitLeg() {
+        throw new UnsupportedOperationException();
+    }
+
+
+    /* Transfer */
+
+    /** @return true if transfer arrival, otherwise false. */
+    default boolean arrivedByTransfer() {
+        return false;
+    }
+
+    default TransferLegView transferLeg() {
+        throw new UnsupportedOperationException();
+    }
+
+
+    /* Egress */
+
+    /** @return true if destination arrival, otherwise false. */
+    default boolean arrivedAtDestination() {
+        return false;
+    }
+
+    default EgressLegView egressLeg() {
+        throw new UnsupportedOperationException();
+    }
+
+    /** Use this to easy create a to String implementation. */
+    default String asString() {
+        if(arrivedByAccessLeg()) {
+            return String.format(
+                "Access { stop: %d, duration: %s, arrival-time: %s, cost: %d }",
+                stop(),
+                TimeUtils.durationToStr(accessLeg().access().durationInSeconds()),
+                TimeUtils.timeToStrCompact(arrivalTime()),
+                cost()
+            );
+        }
+        if(arrivedByTransit()) {
+            return String.format(
+                "Transit { round: %d, stop: %d, pattern: %s, arrival-time: %s, cost: %d }",
+                round(),
+                stop(),
+                transitLeg().trip().pattern().debugInfo(),
+                TimeUtils.timeToStrCompact(arrivalTime()),
+                cost()
+            );
+        }
+        if(arrivedByTransfer()) {
+            return String.format(
+                "Walk { round: %d, stop: %d, arrival-time: %s, cost: %d }",
+                round(),
+                stop(),
+                TimeUtils.timeToStrCompact(arrivalTime()),
+                cost()
+            );
+        }
+        if(arrivedAtDestination()) {
+            return String.format(
+                    "Egress { round: %d, from-stop: %d, duration: %s, arrival-time: %s, cost: %d }",
+                    round(),
+                    previous().stop(),
+                    TimeUtils.durationToStr(egressLeg().egress().durationInSeconds()),
+                    TimeUtils.timeToStrCompact(arrivalTime()),
+                    cost()
+            );
+        }
+        throw new IllegalStateException("Unknown type of stop-arrival: " + getClass());
+    }
+}

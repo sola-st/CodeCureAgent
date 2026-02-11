@@ -1,0 +1,74 @@
+Warning ID: 39
+Rule Key: S5542
+Rule Name: Encryption algorithms should be used with secure mode and padding scheme
+Specific Message: Use a secure padding scheme.
+Warning Start Line: 15
+Repository URL: https://github.com/superblaubeere27/obfuscator.git
+Commit: cc4421d7afe7aead7f59435b28aaba5bc69115b3
+File Path: watermark/src/main/java/me/superblaubeere27/obfuscator/watermark/Encryption.java
+
+Classification (TP/FP): TP
+Classification Reasoning: The code uses Cipher.getInstance("AES") without specifying a secure mode and padding scheme, which defaults to insecure ECB mode and padding. This violates the rule S5542. The violation is due to developer oversight and can be fixed by specifying a secure mode such as AES/GCM/NoPadding and updating the encryption logic accordingly without breaking important functionality.
+Plausible Fix (True/False): True
+Total Fix Attempts: 3
+
+
+Diff of Plausible Fix:
+diff -u --ignore-all-space -r '--exclude=.git' evaluation_results/check_correctness_workspace/ID39/obfuscator_unfixed/watermark/src/main/java/me/superblaubeere27/obfuscator/watermark/Encryption.java evaluation_results/check_correctness_workspace/ID39/obfuscator_fixed/watermark/src/main/java/me/superblaubeere27/obfuscator/watermark/Encryption.java
+--- evaluation_results/check_correctness_workspace/ID39/obfuscator_unfixed/watermark/src/main/java/me/superblaubeere27/obfuscator/watermark/Encryption.java	2025-09-05 16:42:06.130943649 +0000
++++ evaluation_results/check_correctness_workspace/ID39/obfuscator_fixed/watermark/src/main/java/me/superblaubeere27/obfuscator/watermark/Encryption.java	2025-09-05 16:42:06.822943625 +0000
+@@ -5,6 +5,8 @@
+ import java.nio.charset.StandardCharsets;
+ import java.security.MessageDigest;
+ import java.util.Base64;
++import javax.crypto.spec.GCMParameterSpec;
++import java.security.SecureRandom;
+ 
+ public class Encryption {
+ 
+@@ -12,8 +14,19 @@
+         try {
+             SecretKeySpec keySpec = new SecretKeySpec(MessageDigest.getInstance("SHA-256").digest(key.getBytes(StandardCharsets.UTF_8)), "AES");
+ 
+-            Cipher des = Cipher.getInstance("AES");
+-            des.init(Cipher.DECRYPT_MODE, keySpec);
++            // Use AES with GCM mode and NoPadding for secure encryption and integrity
++            Cipher des = Cipher.getInstance("AES/GCM/NoPadding");
++            // Decode the Base64 input
++            byte[] decoded = Base64.getDecoder().decode(obj.getBytes(StandardCharsets.UTF_8));
++            // Extract the 12-byte IV from the beginning
++            byte[] iv = new byte[12];
++            System.arraycopy(decoded, 0, iv, 0, 12);
++            GCMParameterSpec spec = new GCMParameterSpec(128, iv);
++            // Extract the ciphertext after the IV
++            byte[] cipherText = new byte[decoded.length - 12];
++            System.arraycopy(decoded, 12, cipherText, 0, cipherText.length);
++            des.init(Cipher.DECRYPT_MODE, keySpec, spec);
++            return new String(des.doFinal(cipherText), StandardCharsets.UTF_8);
+ 
+             return new String(des.doFinal(Base64.getDecoder().decode(obj.getBytes(StandardCharsets.UTF_8))), StandardCharsets.UTF_8);
+ 
+@@ -27,8 +40,20 @@
+         try {
+             SecretKeySpec keySpec = new SecretKeySpec(MessageDigest.getInstance("SHA-256").digest(key.getBytes(StandardCharsets.UTF_8)), "AES");
+ 
+-            Cipher des = Cipher.getInstance("AES");
+-            des.init(Cipher.ENCRYPT_MODE, keySpec);
++            // Use AES with GCM mode and NoPadding for secure encryption and integrity
++            Cipher des = Cipher.getInstance("AES/GCM/NoPadding");
++            // Generate a random 12-byte IV
++            byte[] iv = new byte[12];
++            SecureRandom random = new SecureRandom();
++            random.nextBytes(iv);
++            GCMParameterSpec spec = new GCMParameterSpec(128, iv);
++            des.init(Cipher.ENCRYPT_MODE, keySpec, spec);
++            byte[] encrypted = des.doFinal(obj.getBytes(StandardCharsets.UTF_8));
++            // Prepend IV to the encrypted bytes
++            byte[] combined = new byte[iv.length + encrypted.length];
++            System.arraycopy(iv, 0, combined, 0, iv.length);
++            System.arraycopy(encrypted, 0, combined, iv.length, encrypted.length);
++            return new String(Base64.getEncoder().encode(combined), StandardCharsets.UTF_8);
+ 
+             return new String(Base64.getEncoder().encode(des.doFinal(obj.getBytes(StandardCharsets.UTF_8))), StandardCharsets.UTF_8);
+ 
+

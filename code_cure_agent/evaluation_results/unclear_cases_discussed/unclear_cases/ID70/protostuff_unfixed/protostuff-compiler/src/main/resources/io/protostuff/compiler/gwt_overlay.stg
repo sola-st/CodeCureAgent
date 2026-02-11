@@ -1,0 +1,515 @@
+group gwt_overlay : base;
+
+map_repeated_prefix ::= [
+    "Int32":  "JsArray",
+    "UInt32":  "JsArray",
+    "SInt32":  "JsArray",
+    "Fixed32":  "JsArray",
+    "SFixed32":  "JsArray",
+    "Int64":  "JsArray",
+    "UInt64":  "JsArray",
+    "SInt64":  "JsArray",
+    "Fixed64":  "JsArray",
+    "SFixed64":  "JsArray",
+    "Float":  "JsArray",
+    "Double":  "JsArray",
+    "Bool":  "JsArray",
+    "String":  "JsArray",
+    "Bytes":  "JsArray",
+    default: "JsArray\<"
+]
+
+map_repeated_value ::= [
+    "int": "Integer",
+    "long": "Number",
+    "float": "Number",
+    "double": "Number",
+    "boolean": "Boolean",
+    "ByteString": "String",
+    default: key
+]
+
+map_repeated_suffix ::= [
+    "Int32": ,
+    "UInt32": ,
+    "SInt32": ,
+    "Fixed32": ,
+    "SFixed32": ,
+    "Int64": ,
+    "UInt64": ,
+    "SInt64": ,
+    "Fixed64": ,
+    "SFixed64": ,
+    "Float": ,
+    "Double": ,
+    "Bool": ,
+    "String": ,
+    "Bytes": ,
+    default: "\>"
+]
+
+map_singular_value ::= [
+    "long": "double",
+    "float": "double",
+    "ByteString": "String",
+    default: key
+]
+
+//#enum begin
+
+enum_block(eg, module, options, nested) ::= <<
+<if(!nested)>
+<eg:enum_header(eg=it, module=module, options=options)>
+
+<endif>
+public <if(nested)>static <endif>final class <eg.name> extends JavaScriptObject {
+        
+    <eg.values:field_enum_value_declare(val=it, methodName="create"); separator="\n">
+    
+    <eg:enum_static_method_create(eg=it, options=options)>
+    
+    <eg:enum_constructor(eg=it, options=options)>
+    
+    <eg:enum_method_get_number(eg=it, options=options)>
+    
+    <if(options.dev_mode)>
+    <eg:enum_dev_mode(eg=it, options=options)>
+    <endif>
+}
+
+>>
+
+enum_header(eg, module, options) ::= <<
+<header_text(prefix="// ", module=module, proto=eg.proto)>
+
+package <eg.proto.javaPackageName>;
+
+import com.google.gwt.core.client.*;
+
+>>
+
+field_enum_value_declare(val, methodName) ::= <<
+public static final <val.enumGroup.name> <val.name> = <methodName>(<val.number>);
+>>
+
+enum_static_method_create(eg, options) ::= <<
+private static native <eg.name> create(int number) /*-{
+    <if(options.dev_mode)>
+    return [number];
+    <else>
+    return number;
+    <endif>
+}-*/;
+>>
+
+enum_constructor(eg, options) ::= <<
+protected <eg.name>() {}
+>>
+
+enum_method_get_number(eg, options) ::= <<
+public native int getNumber() /*-{
+    <if(options.dev_mode)>
+    return this[0];
+    <else>
+    return this;
+    <endif>
+}-*/;
+>>
+
+enum_dev_mode(eg, options) ::= <<
+// dev mode
+public static native JsArray\<<eg.name>\> getArray(JavaScriptObject obj, String key) /*-{
+    var v = obj[key];
+    if(v && v.length && !v[0].length) {
+        for(var i=0,l=v.length; i\<l; i++)
+            v[i] = [v[i]];
+    }
+    return v;
+}-*/;
+
+public static native <eg.name> get(JavaScriptObject obj, String key) /*-{
+    var v = obj[key];
+    if(v == null)
+        return [<eg.firstValue.number>];
+    return v.length ? v : (obj[key] = [v]);
+}-*/;
+>>
+
+//#message begin
+
+message_block(message, module, options, nested) ::= <<
+<if(!nested)>
+<message:message_header(message=it, module=module, options=options)>
+
+<endif>
+public <if(nested)>static <endif>final class <message.name> extends JavaScriptObject <message:message_impl_declaration(message=it, options=options); format=" ">{
+
+    <message.nestedMessages:message_block(message=it, module=module, options=options, nested="true"); separator="\n">
+    <message.nestedEnumGroups:enum_block(eg=it, module=module, options=options, nested="true"); separator="\n">
+    <message:message_static_method_create(message=it, options=options)>
+
+    <message:message_static_method_create_array(message=it, options=options)>
+
+    <message:message_static_method_get(message=it, options=options)>
+    
+    <message:message_static_method_get_array(message=it, options=options)>
+    
+    <message:message_static_method_parse(message=it, options=options)>
+    
+    <message:message_static_method_parse_array(message=it, options=options)>
+    
+    <message:message_static_method_stringify(message=it, options=options)>
+
+    <if(options.generate_merge_method)>
+    <message:message_static_method_merge(message=it, options=options)>
+    <endif>
+    
+    <message:message_static_method_is_initialized(message=it, options=options)>
+    
+    <message:message_constructor(message=it, options=options)>
+
+    <message:message_getters_and_setters(message=it, options=options)>
+}
+
+>>
+
+message_header(message, module, options) ::= <<
+<header_text(prefix="// ", module=module, proto=message.proto)>
+
+package <message.proto.javaPackageName>;
+
+import com.google.gwt.core.client.*;
+
+>>
+
+message_impl_declaration(message, options) ::= <<
+<if(options.(message.name + ".implements_declaration"))>
+<options.(message.name + ".implements_declaration")>
+<endif>
+>>
+
+message_static_method_create(message, options) ::= <<
+/**
+ * Creates a new <message.name> instance 
+ *
+ * @return new <message.name> instance
+ */
+public static native <message.name> create() /*-{
+    return {
+                    
+    };
+}-*/;
+>>
+
+message_static_method_create_array(message, options) ::= <<
+/**
+ * Creates a new JsArray\<<message.name>\> instance 
+ *
+ * @return new JsArray\<<message.name>\> instance
+ */
+public static native JsArray\<<message.name>\> createArray() /*-{
+    return [];
+}-*/;
+>>
+
+message_static_method_get(message, options) ::= <<
+/**
+ * Gets a <message.name> (casting) from a JavaScriptObject
+ *
+ * @param JavaScriptObject to cast
+ * @return <message.name>
+ */
+public static native <message.name> get(JavaScriptObject jso) /*-{
+    return jso;
+}-*/;
+>>
+
+message_static_method_get_array(message, options) ::= <<
+/**
+ * Gets a JsArray\<<message.name>\> (casting) from a JavaScriptObject
+ *
+ * @param JavaScriptObject to cast
+ * @return JsArray\<<message.name>\> 
+ */
+public static native JsArray\<<message.name>\> getArray(JavaScriptObject jso) /*-{
+    return jso;
+}-*/;
+>>
+
+message_static_method_parse(message, options) ::= <<
+/**
+ * Parses a <message.name> from a json string
+ *
+ * @param json string to be parsed/evaluated
+ * @return <message.name> 
+ */
+public static native <message.name> parse(String json) /*-{
+    <if(options.dev_mode)>
+    return eval("(" + json + ")");
+    <else>
+    <if(options.use_global_json)>
+    return $wnd.JSON.parse(json);
+    <else>
+    return eval("(" + json + ")");
+    <endif>
+    <endif>
+}-*/;
+>>
+
+message_static_method_parse_array(message, options) ::= <<
+/**
+ * Parses a JsArray\<<message.name>\> from a json string
+ *
+ * @param json string to be parsed/evaluated
+ * @return JsArray\<<message.name>\> 
+ */
+public static native JsArray\<<message.name>\> parseArray(String json) /*-{
+    <if(options.dev_mode)>
+    return eval("(" + json + ")");
+    <else>
+    <if(options.use_global_json)>
+    return $wnd.JSON.parse(json);
+    <else>
+    return eval("(" + json + ")");
+    <endif>
+    <endif>
+}-*/;
+>>
+
+message_static_method_stringify(message, options) ::= <<
+/**
+ * Serializes a json object to a json string.
+ *
+ * @param <message.name> the object to serialize
+ * @return String the serialized json string
+ */
+public static native String stringify(<message.name> obj) /*-{
+    <if(options.dev_mode)>
+    var buf = [];
+    <message.fields:field_stringify(field=it, options=options, obj="obj", buf="buf")>
+    return buf.length == 0 ? "{}" : "{" + buf.join(",") + "}";
+    <else>
+    <if(options.use_global_json)>
+    return $wnd.JSON.stringify(obj);
+    <else>
+    var buf = [];
+    <message.fields:field_stringify(field=it, options=options, obj="obj", buf="buf")>
+    return buf.length == 0 ? "{}" : "{" + buf.join(",") + "}";
+    <endif>
+    <endif>
+}-*/;
+>>
+
+field_stringify(field, options, obj, buf) ::= <<
+var _<field.number> = <obj>["<field:field_name_or_number(field=it,options=options)>"];
+<if(field.repeated)>
+if(_<field.number> != null && _<field.number>.length != 0) {
+    <if(field.messageField)>
+    <field:field_stringify_repeated_message(field=it, options=options, arg=buf)>
+    <else>
+    <field:field_stringify_repeated_nonmessage(field=it, options=options, arg=buf)>
+    <endif>
+}
+
+<else>
+if(_<field.number> != null)
+    <if(field.messageField)>
+    <field:field_stringify_singular_message(field=it, options=options, arg=buf)>
+    <else>
+    <field:field_stringify_singular_nonmessage(field=it, options=options, arg=buf)>
+    <endif>
+
+<endif>
+>>
+
+field_stringify_repeated_message(field, options, arg) ::= <<
+var b = [], fn = <field:field_stringify_outercall(field=it, options=options)>;
+for(var i=0,l=_<field.number>.length; i\<l; i++)
+    b.push(fn(_<field.number>[i]));
+<arg>.push("\"<field:field_name_or_number(field=it,options=options)>\":[" + b.join(",") + "]");
+>>
+
+field_stringify_repeated_nonmessage(field, options, arg) ::= <<
+<if(field.delimited)>
+<arg>.push("\"<field:field_name_or_number(field=it,options=options)>\":[\"" + _<field.number>.join("\",\"") + "\"]");
+<else>
+<arg>.push("\"<field:field_name_or_number(field=it,options=options)>\":[" + _<field.number>.join(",") + "]");
+<endif>
+>>
+
+field_stringify_singular_message(field, options, arg) ::= <<
+<arg>.push("\"<field:field_name_or_number(field=it,options=options)>\":" + <field:field_stringify_outercall(field=it, options=options, arg="(_"+field.number+")")>);
+>>
+
+field_stringify_singular_nonmessage(field, options, arg) ::= <<
+<if(field.delimited)>
+<arg>.push("\"<field:field_name_or_number(field=it,options=options)>\":\"" + _<field.number> + "\"");
+<else>
+<arg>.push("\"<field:field_name_or_number(field=it,options=options)>\":" + _<field.number>);
+<endif>
+>>
+
+field_stringify_outercall(field, options, arg) ::= <<
+@<field.message.javaFullName>::stringify(L<field.message.proto.javaPackageName; format=".==/">/<field.message.relativeName; format=".==$">;)<arg>
+>>
+
+message_static_method_is_initialized(message, options) ::= <<
+<if(message.requiredFieldPresentOnCurrent)>
+public static native boolean isInitialized(<message.name> obj) /*-{
+    return <message.fields:field_is_initialized(field=it, options=options, name="obj"); separator=" && ">;
+}-*/;
+<else>
+public static native boolean isInitialized(<message.name> obj) /*-{
+    return true;
+}-*/;
+<endif>
+>>
+
+field_is_initialized(field, options, name) ::= <<
+<if(field.required)>
+<name>["<field:field_name_or_number(field=it,options=options)>"] != null
+<endif>
+>>
+
+message_constructor(message, options) ::= <<
+protected <message.name>() {}
+>>
+
+message_getters_and_setters(message, options) ::= <<
+// getters and setters
+<message.fields:field_getters_and_setters(field=it, options=options)>
+>>
+
+field_getters_and_setters(field, options) ::= <<
+
+// <field.name; format="CC">
+<if(field.repeated)>
+
+public native <map_repeated_prefix.(field.class.simpleName)><map_repeated_value.(field.javaType)><map_repeated_suffix.(field.class.simpleName)> get<field.name; format="PC">Array() /*-{
+    <if(field.enumField)>
+    <if(options.dev_mode)>
+    return @<field.enumGroup.javaFullName>::getArray(Lcom/google/gwt/core/client/JavaScriptObject;Ljava/lang/String;)(this, "<field:field_name_or_number(field=field,options=options)>");
+    <else>
+    return this["<field:field_name_or_number(field=it,options=options)>"];
+    <endif>
+    <else>
+    return this["<field:field_name_or_number(field=it,options=options)>"];
+    <endif>
+}-*/;
+
+public native void set<field.name; format="PC">Array(<map_repeated_prefix.(field.class.simpleName)><map_repeated_value.(field.javaType)><map_repeated_suffix.(field.class.simpleName)> <var(val=field.name, fmt="CC", options=options)>) /*-{
+    this["<field:field_name_or_number(field=it,options=options)>"] = <var(val=field.name, fmt="CC", options=options)>;
+}-*/;
+
+public native <map_repeated_prefix.(field.class.simpleName)><map_repeated_value.(field.javaType)><map_repeated_suffix.(field.class.simpleName)> clear<field.name; format="PC">Array() /*-{
+    return (this["<field:field_name_or_number(field=it,options=options)>"] = []);
+}-*/;
+<if(options.generate_helper_methods)>
+
+public native <map_singular_value.(field.javaType)> get<field.name; format="PC">(int index) /*-{
+    var array = this["<field:field_name_or_number(field=it,options=options)>"];
+    return array && array.length ? array[index] : null;
+}-*/;
+
+public native int get<field.name; format="PC">Count() /*-{
+    var array = this["<field:field_name_or_number(field=it,options=options)>"];
+    return array ? array.length : 0;
+}-*/;
+
+public native void add<field.name; format="PC">(<map_singular_value.(field.javaType)> <var(val=field.name, fmt="CC", options=options)>) /*-{
+    var array = this["<field:field_name_or_number(field=it,options=options)>"];
+    if (!array) {
+        this["<field:field_name_or_number(field=it,options=options)>"] = array = [];
+    }
+    array.push(<var(val=field.name, fmt="CC", options=options)>);
+}-*/;
+
+<endif>
+<else>
+
+public native <map_singular_value.(field.javaType)> get<field.name; format="PC">() /*-{
+    <field:field_return_value(field=it,options=options)>
+}-*/;
+
+public native void set<field.name; format="PC">(<map_singular_value.(field.javaType)> <var(val=field.name, fmt="CC", options=options)>) /*-{
+    this["<field:field_name_or_number(field=it,options=options)>"] = <var(val=field.name, fmt="CC", options=options)>;
+}-*/;
+
+public native void clear<field.name; format="PC">() /*-{
+    delete this["<field:field_name_or_number(field=it,options=options)>"];
+}-*/;
+
+public native boolean has<field.name; format="PC">() /*-{
+    return this["<field:field_name_or_number(field=it,options=options)>"] != null;
+}-*/;
+
+<endif>
+>>
+
+field_name_or_number(field, options) ::= <<
+<if(options.numeric)>
+<field.number>
+<else>
+<if(options.alphanumeric)>
+f<field.number>
+<else>
+<field.name; format="CC">
+<endif>
+<endif>
+>>
+
+field_return_value(field, options) ::= <<
+<if(options.plain_overlay)>
+return this["<field:field_name_or_number(field=field,options=options)>"];
+<elseif(field.messageField)>
+return this["<field:field_name_or_number(field=field,options=options)>"];
+<elseif(field.bytesField)>
+return this["<field:field_name_or_number(field=field,options=options)>"];
+<elseif(field.stringField)>
+<if(field.defaultValue)>
+var v = this["<field:field_name_or_number(field=it,options=options)>"];
+return v == null ? "<field.defaultValueAsString>" : v;
+
+<else>
+return this["<field:field_name_or_number(field=field,options=options)>"] || "";
+
+<endif>
+<elseif(field.enumField)>
+<if(options.dev_mode)>
+return @<field.enumGroup.javaFullName>::get(Lcom/google/gwt/core/client/JavaScriptObject;Ljava/lang/String;)(this, "<field:field_name_or_number(field=field,options=options)>");
+<else>
+var v = this["<field:field_name_or_number(field=it,options=options)>"];
+return v == null ? <field.defaultValue.number> : v;
+<endif>
+
+<elseif(field.numberField)>
+<if(field.defaultValue)>
+var v = this["<field:field_name_or_number(field=it,options=options)>"];
+return v == null ? <field.defaultValue> : v;
+
+<else>
+return this["<field:field_name_or_number(field=field,options=options)>"] || 0;
+
+<endif>
+<else>
+<if(field.defaultValue)>
+var v = this["<field:field_name_or_number(field=it,options=options)>"];
+return v == null ? <field.defaultValue> : v;
+<else>
+return this["<field:field_name_or_number(field=field,options=options)>"] || false;
+<endif>
+<endif>
+>>
+
+message_static_method_merge(message, options) ::= <<
+public static native <message.name> merge(<message.name> a, <message.name> b) /*-{
+    var key, value;
+    for (key in b) {
+        value = b[key];
+        if (value != null) {
+            a[key] = value;
+        }
+    }
+    return a;
+}-*/;
+>>

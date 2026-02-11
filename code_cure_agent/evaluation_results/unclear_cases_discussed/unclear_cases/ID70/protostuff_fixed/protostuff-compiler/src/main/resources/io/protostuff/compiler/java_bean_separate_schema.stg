@@ -1,0 +1,120 @@
+group java_bean_static_schema : java_bean;
+
+message_block(message, module, options, nested) ::= <<
+<if(!nested)>
+<message:message_header(message=it, module=module, options=options)>
+<endif>
+
+public <if(nested)>static <endif>final class <message.name> <options.(message.name + ".extends_declaration"); format=" "><message:message_impl_declaration(message=it, options=options)>
+{
+    <message.nestedMessages:message_block(message=it, module=module, options=options, nested="true")>
+    <message.nestedEnumGroups:enum_block(eg=it, module=module, options=options, nested="true")>
+    <message:message_default_instance(message=it, options=options)>
+    <message.fields:field_defaults_declaration(field=it, options=options); separator="\n">
+    
+    // non-private fields
+    // see http://developer.android.com/guide/practices/design/performance.html#package_inner
+    <message.fields:field_declaration(field=it, options=options); separator="\n">
+    <message:message_constructor(message=it, options=options)>
+    <message:message_getters_and_setters(message=it, options=options)>
+    <message:message_impl_serializable(message=it, options=options)>
+    <message:message_impl_message(message=it, options=options)>
+    static final Schema\<<message.name>\> SCHEMA = new Schema\<<message.name>\>()
+    {
+        <message:message_impl_schema(message=it, options=options)>
+    };
+    
+    <if(options.generate_pipe_schema)>
+    <message:message_pipe_schema(message=it, options=options)>
+    <endif>
+}
+
+>>
+
+message_impl_declaration(message, options) ::= <<
+<if(options.(message.name + ".implements_declaration"))>
+<options.(message.name + ".implements_declaration")>, 
+<else>
+implements 
+<endif>
+Externalizable, Message\<<message.name>\>
+>>
+
+message_default_instance(message, options) ::= <<
+
+public static Schema\<<message.name>\> getSchema()
+{
+    return SCHEMA;
+}
+
+public static <message.name> getDefaultInstance()
+{
+    return DEFAULT_INSTANCE;
+}
+
+static final <message.name> DEFAULT_INSTANCE = new <message.name>();
+
+>>
+
+message_impl_serializable(message, options) ::= <<
+// java serialization
+
+public void readExternal(ObjectInput in) throws IOException
+{
+    GraphIOUtil.mergeDelimitedFrom(in, this, SCHEMA);
+}
+
+public void writeExternal(ObjectOutput out) throws IOException
+{
+    GraphIOUtil.writeDelimitedTo(out, this, SCHEMA);
+}
+
+>>
+
+message_impl_message(message, options) ::= <<
+// message method
+
+public Schema\<<message.name>\> cachedSchema()
+{
+    return SCHEMA;
+}
+
+>>
+
+message_field_map(message, options) ::= <<
+<if(options.generate_field_map)>
+public String getFieldName(int number)
+{
+    switch(number)
+    {
+        <message.fields:field_switch_case(field=it, options=options); separator="\n">
+        default: return null;
+    }
+}
+
+public int getFieldNumber(String name)
+{
+    final Integer number = fieldMap.get(name);
+    return number == null ? 0 : number.intValue();
+}
+
+final java.util.HashMap\<String,Integer\> fieldMap = new java.util.HashMap\<String,Integer\>();
+{
+    <message.fields:field_map(field=it, options=options, mapVar="fieldMap"); separator="\n">
+}
+<else>
+public String getFieldName(int number)
+{
+    return Integer.toString(number);
+}
+
+public int getFieldNumber(String name)
+{
+    return Integer.parseInt(name);
+}
+<endif>
+>>
+
+message_static_schema_ref(message, options) ::= <<
+SCHEMA
+>>

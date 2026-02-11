@@ -285,4 +285,11 @@ The scripts and results are found in [comparative_study/core_comparison](compara
 Refer to the dedicated README for more information: [comparative_study/core_comparison/README.md](comparative_study/core_comparison/README.md).  
 
 
+### Replicate Comparison to iSMELL
+We ran iSMELL on the same dataset of 1000 warnings.  
+
+The scripts and results are found in [comparative_study/ismell_comparison](comparative_study/ismell_comparison).  
+Refer to the dedicated README for more information: [comparative_study/ismell_comparison/iSMELL_Adapted_For_SonarQube_dataset/README.md](comparative_study/ismell_comparison/iSMELL_Adapted_For_SonarQube_dataset/README.md).  
+
+
 --- 

@@ -110,10 +110,17 @@ Margin of improvement from CORE's performance after oracle (all oracle steps app
 Margin of improvement from CORE's performance after oracle (all oracle steps applied) to CCA's end-to-end performance: 18.65%  
 
 CORE Only for warnings classified as TP in CCA : fix created + build successful + target warning removed + no other warning introduced + test successful: 526/696 (75.57%)  
+CORE Only for warnings classified as FP in CCA : fix created + build successful + target warning removed + no other warning introduced + test successful: 150/304 (49.34%)  
 CORE fix created + build successful + target warning removed + no other warning introduced + test successful + fix correct: 0/0 (0.00%)  
 CORE fix created + build successful + target warning removed + no other warning introduced + test successful + fix correct + no code smell outside introduced: 0/0 (0.00%)  
 
-(Margin of improvement from CORE's performance after oracle (all oracle steps applied) and correctness manual inspection to CCA's end-to-end performance: 86.25%)  
+Margin of improvement from CORE's performance after oracle (all oracle steps applied) and correctness manual inspection to CCA's end-to-end performance: 86.25%  
+### CORE Plausible Fixes per Fix Complexity
+
+Number of plausible fixes (all checks applied) created per fixComplexity:  
+Single Line: 335 / 520 (64.42%)  
+Multi Line: 335 / 444 (75.45%)  
+Multi File: 6 / 36 (16.67%)  
 ### Time Efficiency
 
 CORE prompting time: mean=112.78s, median=110.62s  

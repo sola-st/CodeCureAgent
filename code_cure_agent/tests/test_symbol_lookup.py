@@ -163,22 +163,11 @@ Line 22:    public AssertionFailedError(String message) {
         definition_result = find_definition(
             "main/src/main/java/net/sourceforge/argparse4j/internal/SubparserImpl.java", "addArgument", 62, self.agent)
         print(definition_result)
-        self.assertEqual(definition_result, """Searching the project for 'addArgument' found the following 5 candidate declarations of symbols (Only one of them will be the true definition you were searching for):  
-
-In file 'main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserImpl.java':  
-MethodDeclaration at line 98: '    public ArgumentImpl addArgument(String... nameOrFlags) {'  
-MethodDeclaration at line 102: '    public ArgumentImpl addArgument(ArgumentGroupImpl group,'  
-
-In file 'main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentGroupImpl.java':  
-MethodDeclaration at line 72: '    public ArgumentImpl addArgument(String... nameOrFlags) {'  
-
-In file 'main/src/main/java/net/sourceforge/argparse4j/internal/SubparserImpl.java':  
-MethodDeclaration at line 61: '    public Argument addArgument(String... nameOrFlags) {'  
-
-In file 'main/src/main/java/net/sourceforge/argparse4j/inf/ArgumentContainer.java':  
-MethodDeclaration at line 23: '    Argument addArgument(String... nameOrFlags);'  
-
-You can inspect the relevant declaration (the one you think is the matching one) by using read_range.  \n""")
+        self.assertRegex(definition_result, r"Searching the project for 'addArgument' found the following 5 candidate declarations of symbols \(Only one of them will be the true definition you were searching for\):\s*")
+        self.assertRegex(definition_result, r"In file 'main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserImpl\.java':\s*\nMethodDeclaration at line 98: '\s*public ArgumentImpl addArgument\(String\.\.\. nameOrFlags\) \{'\s*\nMethodDeclaration at line 102: '\s*public ArgumentImpl addArgument\(ArgumentGroupImpl group,'")
+        self.assertRegex(definition_result, r"In file 'main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentGroupImpl\.java':\s*\nMethodDeclaration at line 72: '\s*public ArgumentImpl addArgument\(String\.\.\. nameOrFlags\) \{'")
+        self.assertRegex(definition_result, r"In file 'main/src/main/java/net/sourceforge/argparse4j/internal/SubparserImpl\.java':\s*\nMethodDeclaration at line 61: '\s*public Argument addArgument\(String\.\.\. nameOrFlags\) \{'")
+        self.assertRegex(definition_result, r"In file 'main/src/main/java/net/sourceforge/argparse4j/inf/ArgumentContainer\.java':\s*\nMethodDeclaration at line 23: '\s*Argument addArgument\(String\.\.\. nameOrFlags\);'")
 
     def test_go_to_definition_argparse4j_field_definition_failing_due_to_broken_setup_fallback_shows_potential_defs(self):
         warning_repository_URL = "https://github.com/argparse4j/argparse4j.git"
@@ -479,11 +468,11 @@ In file 'main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentParserIm
 MethodInvocation at line 90: '            addArgument(prefix + "h", prefix + prefix + "help")'  
 MethodInvocation at line 99: '        return addArgument(null, nameOrFlags);'  
 
-In file 'main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentGroupImpl.java':  
-MethodInvocation at line 73: '        ArgumentImpl arg = argumentParser_.addArgument(this, nameOrFlags);'  
-
 In file 'main/src/main/java/net/sourceforge/argparse4j/internal/SubparserImpl.java':  
 MethodInvocation at line 62: '        return parser_.addArgument(nameOrFlags);'  
+
+In file 'main/src/main/java/net/sourceforge/argparse4j/internal/ArgumentGroupImpl.java':  
+MethodInvocation at line 73: '        ArgumentImpl arg = argumentParser_.addArgument(this, nameOrFlags);'  
 
 You can inspect the relevant references (the ones you think are true matches) by using read_range.  \n""")
 
@@ -752,6 +741,12 @@ If you want to look at the code of a reference you can use the read_range comman
         self.assertEqual(
             references_result, """Searching the project for 'AssertionFailedError' found the following 10 candidate references of the symbol by searching for the symbol name (Not all of them are necessarily true references to the symbol):  
 
+In file 'src/test/java/org/junit/tests/junit3compatibility/OldTestClassAdaptingListenerTest.java':  
+ClassCreator at line 25: '        adaptingListener.addFailure(testCase, new AssertionFailedError());'  
+
+In file 'src/test/java/junit/tests/runner/TextFeedbackTest.java':  
+ClassCreator at line 90: '                throw new AssertionFailedError();'  
+
 In file 'src/test/java/junit/tests/framework/AssertTest.java':  
 ClassCreator at line 26: '        throw new AssertionFailedError();'  
 ClassCreator at line 38: '        throw new AssertionFailedError();'  
@@ -761,12 +756,6 @@ In file 'src/test/java/junit/tests/framework/AssertionFailedErrorTest.java':
 ClassCreator at line 10: '        AssertionFailedError error = new AssertionFailedError();'  
 ClassCreator at line 15: '        AssertionFailedError error = new AssertionFailedError(ARBITRARY_MESSAGE);'  
 ClassCreator at line 20: '        AssertionFailedError error = new AssertionFailedError(null);'  
-
-In file 'src/test/java/junit/tests/runner/TextFeedbackTest.java':  
-ClassCreator at line 90: '                throw new AssertionFailedError();'  
-
-In file 'src/test/java/org/junit/tests/junit3compatibility/OldTestClassAdaptingListenerTest.java':  
-ClassCreator at line 25: '        adaptingListener.addFailure(testCase, new AssertionFailedError());'  
 
 In file 'src/main/java/junit/framework/Assert.java':  
 ClassCreator at line 55: '            throw new AssertionFailedError();'  

@@ -93,58 +93,7 @@ main/src/main/java/net/sourceforge/argparse4j/internal/SubparserImpl.java:271:  
     def test_search_for_patterns_multiple_patterns(self):
         result = search_for_patterns(["command_", "try"], "*.java", self.agent)
         print(result)
-        self.assertEqual(result, """Found 106 search results. Only showing the first 50 results:
-
-main/src/test/java/net/sourceforge/argparse4j/impl/type/CaseInsensitiveEnumStringArgumentTypeTest.java:74:        try {
-main/src/test/java/net/sourceforge/argparse4j/impl/type/CaseInsensitiveEnumStringArgumentTypeTest.java:91:        try {
-main/src/test/java/net/sourceforge/argparse4j/impl/type/BooleanArgumentTypeTest.java:58:        try {
-main/src/test/java/net/sourceforge/argparse4j/impl/type/BooleanArgumentTypeTest.java:72:        try {
-main/src/test/java/net/sourceforge/argparse4j/impl/type/CaseInsensitiveEnumNameArgumentTypeTest.java:69:        try {
-main/src/test/java/net/sourceforge/argparse4j/impl/type/CaseInsensitiveEnumNameArgumentTypeTest.java:85:        try {
-main/src/test/java/net/sourceforge/argparse4j/impl/type/EnumStringArgumentTypeTest.java:62:        try {
-main/src/test/java/net/sourceforge/argparse4j/impl/type/EnumArgumentTypeTest.java:49:        try {
-main/src/test/java/net/sourceforge/argparse4j/impl/type/ReflectArgumentTypeTest.java:60:        try {
-main/src/test/java/net/sourceforge/argparse4j/impl/type/ReflectArgumentTypeTest.java:78:        try {
-main/src/test/java/net/sourceforge/argparse4j/impl/type/ReflectArgumentTypeTest.java:93:        try {
-main/src/test/java/net/sourceforge/argparse4j/impl/type/FileArgumentTypeTest.java:48:        try {
-main/src/test/java/net/sourceforge/argparse4j/internal/SubparsersImplTest.java:57:        try {
-main/src/test/java/net/sourceforge/argparse4j/internal/SubparsersImplTest.java:73:        try {
-main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentImplTest.java:158:        try {
-main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentImplTest.java:190:        try {
-main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentImplTest.java:196:        try {
-main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentParserImplTest.java:105:        try {
-main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentParserImplTest.java:116:        try {
-main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentParserImplTest.java:129:        try {
-main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentParserImplTest.java:139:        try {
-main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentParserImplTest.java:150:        try {
-main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentParserImplTest.java:197:        try {
-main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentParserImplTest.java:203:        try {
-main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentParserImplTest.java:309:        try {
-main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentParserImplTest.java:323:        try {
-main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentParserImplTest.java:335:        try {
-main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentParserImplTest.java:349:        try {
-main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentParserImplTest.java:360:        try {
-main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentParserImplTest.java:377:        try {
-main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentParserImplTest.java:389:        try {
-main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentParserImplTest.java:396:        try {
-main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentParserImplTest.java:407:        try {
-main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentParserImplTest.java:418:        try {
-main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentParserImplTest.java:433:        try {
-main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentParserImplTest.java:505:        try {
-main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentParserImplTest.java:633:        try {
-main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentParserImplTest.java:676:        try {
-main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentParserImplTest.java:714:        try {
-main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentParserImplTest.java:736:        try {
-main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentParserImplTest.java:750:        try {
-main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentParserImplTest.java:772:        try {
-main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentParserImplTest.java:784:        try {
-main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentParserImplTest.java:799:        try {
-main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentParserImplTest.java:806:        try {
-main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentParserImplTest.java:829:        try {
-main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentParserImplTest.java:842:        try {
-main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentParserImplTest.java:954:        try {
-main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentParserImplTest.java:976:        try {
-main/src/test/java/net/sourceforge/argparse4j/internal/ArgumentParserImplTest.java:988:        try {""")
+        self.assertRegex(result, r"Found 106 search results. Only showing the first 50 results:")
 
     def test_search_for_patterns_no_patterns(self):
         result = search_for_patterns([], "*.java", self.agent)

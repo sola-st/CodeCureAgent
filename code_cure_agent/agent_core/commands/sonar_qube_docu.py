@@ -95,8 +95,8 @@ def parse_and_format_docu(docu_output_path: str, docu_output_file_name: str, rul
         rule_description: dict = json.load(docu_output_file)
 
     # Save to experiment folder for debugging and informational purposes
-    #shutil.copy(docu_output_path, os.path.join("experimental_setups",
-    #            agent.exps[-1], agent.current_state, "docu_tool_outputs", docu_output_file_name))
+    shutil.copy(docu_output_path, os.path.join("experimental_setups",
+                agent.exps[-1], agent.current_state, "docu_tool_outputs", docu_output_file_name))
 
     rule_name = rule_description.get("name")
     caption = ""

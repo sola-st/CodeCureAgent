@@ -1,0 +1,981 @@
+/**
+ * EBEs.java
+ *
+ * @author Gustavo R. Zavala <grzavala@gmail.com> Antonio J. Nebro <antonio@lcc.uma.es> Juan J.
+ *     Durillo <durillo@lcc.uma.es>
+ * @version 1.0
+ */
+/**
+ * Ebes.java
+ *
+ * @author Gustavo R. Zavala <grzavala@gmail.com> Antonio J. Nebro <antonio@lcc.uma.es> Juan J.
+ *     Durillo <durillo@lcc.uma.es>
+ * @version 1.0
+ */
+package org.uma.jmetal.problem.multiobjective.ebes;
+
+import org.uma.jmetal.problem.doubleproblem.impl.AbstractDoubleProblem;
+import org.uma.jmetal.solution.doublesolution.DoubleSolution;
+import org.uma.jmetal.util.errorchecking.JMetalException;
+import org.uma.jmetal.util.solutionattribute.impl.OverallConstraintViolation;
+
+import java.io.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Scanner;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+/** Class representing problem Ebes Spatial Bars Structure (Estructuras de Barras Espaciales) */
+@SuppressWarnings("serial")
+public class Ebes extends AbstractDoubleProblem {
+  /**
+   * Constructor. Creates a default instance of the Ebes problem.
+   *
+   * @param solutionType The solution type must "Real" or "BinaryReal".
+   */
+
+  /** Stores the number of Bar Groups */
+  protected int numberOfEval_;
+
+  /*
+     protected int maxEvaluations_ ;
+
+     public void setMaxEvaluations(int maxEvaluations) {
+         maxEvaluations_ = maxEvaluations;
+     } // setNumberOfElement
+
+     public int getMaxEvaluations() {
+         return maxEvaluations_;
+     } // setNumberOfElement
+  */
+
+  /*
+   * Stores the number of Nodes of the problem
+   */
+  protected int numberOfNodes;
+
+  public void setNumberOfNodes(int numberOfNodes) {
+    this.numberOfNodes = numberOfNodes;
+  } // setNumberOfNodes
+
+  public int getNumberOfNodes() {
+    return numberOfNodes;
+  } // getNumberOfNodes
+
+  /** Stores the number of Nodes of the problem */
+  protected int numberOfLibertyDegree_ = 6;
+
+  protected int numberOfNodesRestricts_;
+
+  public void numberOfNodesRestricts(int numberOfNodesRestricts) {
+    numberOfNodesRestricts_ = numberOfNodesRestricts;
+  } // set numberOfNodesRestricts
+
+  public int getNumberOfNodesRestricts() {
+    return numberOfNodesRestricts_;
+  } // get NumberOfNodes
+
+  /** Stores the number of Nodes of the problem */
+  protected double[][] nodeCheck_;
+
+  public double nodeCheck(int i, int j) {
+    return nodeCheck_[i][j];
+  } // get node check
+
+  protected int[][] geometryCheck_;
+
+  public int geometryCheck(int i, int j) {
+    return geometryCheck_[i][j];
+  } // get node check
+
+  /** Stores the number of Bar Groups */
+  protected int numberOfGroupElements_;
+
+  public void setnumberOfGroupElements(int i) {
+    numberOfGroupElements_ = i;
+  } // setNumberOfElement
+
+  public int getnumberOfGroupElements() {
+    return numberOfGroupElements_;
+  } // getNumberOfElements
+
+  /** Stores the number of Bar of the problem */
+  protected int numberOfElements_;
+
+  public void setNumberOfElements(int numberOfElements) {
+    numberOfElements_ = numberOfElements;
+  } // setNumberOfElement
+
+  public int getNumberOfElements() {
+    return numberOfElements_;
+  } // getNumberOfElements
+
+  public boolean lLoadsOwnWeight;
+
+  public boolean lSecondOrderGeometric;
+
+  public boolean lBuckling;
+
+  /** Stores the Elements Between Difference Greatest */
+  protected int elementsBetweenDiffGreat_;
+
+  public void setElementsBetweenDiffGreat(int elementsBetweenDiffGreat) {
+    elementsBetweenDiffGreat_ = elementsBetweenDiffGreat;
+  } // setNumberOfElement
+
+  public int getElementsBetweenDiffGreat() {
+    return elementsBetweenDiffGreat_;
+  } // getNumberOfElements
+
+  /** Stores the number of Load in Nodes of the problem */
+  protected int numberOfWeigthsNodes_;
+
+  public void setNumberOfWeigthsNodes(int numberOfWeigthsNodes) {
+    numberOfWeigthsNodes_ = numberOfWeigthsNodes;
+  } // setNumberOfWeigths
+
+  public int getNumberOfWeigthsNodes() {
+    return numberOfWeigthsNodes_;
+  } // getNumberOfWeigths
+
+  /** Stores the number of Load in ElementsNodes of the problem */
+  protected int numberOfWeigthsElements_;
+
+  public void setNumberOfWeigthsElements(int numberOfWeigthsElements) {
+    numberOfWeigthsElements_ = numberOfWeigthsElements;
+  } // setNumberOfWeigths
+
+  public int getNumberOfWeigthsElements() {
+    return numberOfWeigthsElements_;
+  } // getNumberOfWeigths
+
+  /** Stores the number a wide the diagonal matrix */
+  protected int matrixWidthBand_;
+
+  public void setMatrixWidthBand(int matrixWidthBand) {
+    matrixWidthBand_ = matrixWidthBand;
+  } // setMatrixWidtBand
+
+  public int getMatrixWidthBand() {
+    return matrixWidthBand_;
+  } // getMatrixWidtBand
+
+  protected int numberOfWeigthHypothesis_;
+
+  public void setNumberOfWeigthHypothesis(int numberOfWeigthHypothesis) {
+    numberOfWeigthHypothesis_ = numberOfWeigthHypothesis;
+  } // set numberOfLibertyDegree
+
+  public int getNumberOfWeigthHypothesis() {
+    return numberOfWeigthHypothesis_;
+  } // get numberOfLibertyDegree
+
+  public int numberOfConstraintsGeometric_;
+
+  public void setnumberOfConstraintsGeometric(int i) {
+    numberOfConstraintsGeometric_ = i;
+  } // set numberOfConstraintsGeometric_
+
+  public int getnumberOfConstraintsGeometric() {
+    return numberOfConstraintsGeometric_;
+  } // get numberOfConstraintsGeometric_
+
+  protected int numberOfConstraintsNodes_;
+  protected int numberOfGroupsToCheckGeometry_;
+
+  public void setNumberOfConstraintsNodes(int numberOfConstraintsNodes) {
+    numberOfConstraintsNodes_ = numberOfConstraintsNodes;
+  } // set numberOfConstraintsNodes
+
+  public int getNumberOfConstraintsNodes() {
+    return numberOfWeigthHypothesis_;
+  } // get numberOfRestrictionNodes
+
+  /** Stores the Node */
+  protected double[][] Node_;
+
+  public double getNode(int i, int j) {
+    return Node_[i][j];
+  } // getNodes
+
+  /** Stores the NodeRestrict */
+  protected double[][] NodeRestrict_;
+
+  public double getNodeRestrict(int i, int j) {
+    return NodeRestrict_[i][j];
+  } // getNodes
+
+  /** Stores the Groups */
+  protected double[][] Groups_;
+
+  public double getGroups(int i) {
+    return Groups_[i][MAX_COLUMN];
+  } // getGroups
+
+  /** Stores the Element */
+  protected double[][] Element_;
+
+  public double getElement(int i, int j) {
+    return Element_[i][j];
+  } // getElement
+
+  /** Stores the Load on Nodes */
+  protected double[][] WeightNode_;
+
+  public double getWeightNode(int i, int j) {
+    return WeightNode_[i][j];
+  } // getWeight
+
+  /** Stores the OverLoad on Elements */
+  protected double[][] OverloadInElement_;
+
+  public double getWeightElement(int i, int j) {
+    return OverloadInElement_[i][j];
+  } // getWeight
+
+  /** Stores the Load on Elements Itself */
+  protected double[][] WeightElement_;
+
+  public double getWeightElementItself(int i, int j) {
+    return WeightElement_[i][j];
+  } // getWeight
+
+  /** Stores the k */
+  protected double[] MatrixStiffness_;
+
+  public double MatrixStiffness(int i) {
+    return MatrixStiffness_[i];
+  } // get Strain i
+
+  /** Stores the k displacement */
+  protected double[][] displacementNodes_;
+
+  public double DisplacementNodes(int node, int hi) {
+    return displacementNodes_[node][hi];
+  } // get DisplacementNodes i
+
+  /** Stores the Effort in node i */
+  protected double[][][] Efforti_;
+
+  public double Efforti(int i, int element, int hypothesis) {
+    return Efforti_[i][element][hypothesis];
+  } // get Effort i
+
+  /** Stores the Effort in node j */
+  protected double[][][] Effortj_;
+
+  public double Effortj(int i, int element, int hypothesis) {
+    return Effortj_[i][element][hypothesis];
+  } // get Effort j
+
+  /** Stores the Axial force in node i */
+  protected double[] AxialForcei_;
+
+  public double AxialForcei_(int element) {
+    return AxialForcei_[element];
+  } // get Axial Force i
+
+  /** Stores the Axial force in node j */
+  protected double[] AxialForcej_;
+
+  public double AxialForcej_(int element) {
+    return AxialForcej_[element];
+  } // get Axial Force j
+
+  protected int strainAdmissibleCut_;
+
+  public void setStrainAdmissibleCut(int strainAdmissibleCut) {
+    strainAdmissibleCut_ = strainAdmissibleCut;
+  } // setStrainAdmissibleCompress
+
+  public int getStrainAdmissibleCut() {
+    return strainAdmissibleCut_;
+  } // getStrainAdmissibleCut
+
+  /** Stores the Strain in node i */
+  protected double[][][] Straini_;
+
+  public double Straini(int i, int element, int hypothesis) {
+    return Straini_[i][element][hypothesis];
+  } // get Strain i
+
+  /** Stores the Strain in node j */
+  protected double[][][] Strainj_;
+
+  public double getStrainj(int i, int element, int hypothesis) {
+    // i=0: Compression, =1: Traction, =2: Tangential
+    return Strainj_[i][element][hypothesis];
+  } // get Strain j
+
+  /** Stores the max omega for groups */
+  protected double[][] omegaMax_;
+
+  public double getOmegaMax(int group, int hypothesis) {
+    return omegaMax_[group][hypothesis];
+  } // get
+
+  /** Stores the max Nxx for groups */
+  protected double[][] NxxMax_;
+
+  public double getNxxMax(int group, int hypothesis) {
+    // normal (+)
+    return NxxMax_[group][hypothesis];
+  } // get
+
+  /** Stores the min Nxx for groups */
+  protected double[][] NxxMin_;
+
+  public double getNxxMin(int group, int hypothesis) {
+    // normal (-)
+    return NxxMin_[group][hypothesis];
+  } // get
+
+  /** Stores the max Mxz for groups */
+  protected double[][] MxzMax_;
+
+  public double getMxzMax(int group, int hypothesis) {
+    // flexor moment (+)
+    return MxzMax_[group][hypothesis];
+  } // get
+
+  /** Stores the max Mxz for groups */
+  protected double[][] MxzMin_;
+
+  public double getMxzMin(int group, int hypothesis) {
+    // flexor moment (-)
+    return MxzMin_[group][hypothesis];
+  } // get
+
+  /** Stores the max Mxy for groups */
+  protected double[][] MxyMax_;
+
+  public double getMxyMax(int group, int hypothesis) {
+    // flexor moment (+)
+    return MxyMax_[group][hypothesis];
+  } // get
+
+  /** Stores the min Mxy for groups */
+  protected double[][] MxyMin_;
+
+  public double getMxyMin(int group, int hypothesis) {
+    // flexor moment (-)
+    return MxyMin_[group][hypothesis];
+  } // get
+
+  /** Stores the max Nxx Strain for groups */
+  protected double[][] StrainNxxMax_;
+
+  public double getStrainNxxMax(int group, int hypothesis) {
+    // normal (+)
+    return StrainNxxMax_[group][hypothesis];
+  } // get Strain
+
+  protected double[][] StrainNxxMin_;
+
+  public double getStrainNxxMin(int group, int hypothesis) {
+    // normal  (-)
+    return StrainNxxMin_[group][hypothesis];
+  } // get Strain
+
+  /** Stores the max Mxz Strain for groups */
+  protected double[][] StrainMxzMax_;
+
+  public double getStrainMxzMax(int group, int hypothesis) {
+    // normal (+)
+    return StrainMxzMax_[group][hypothesis];
+  } // get Strain
+
+  /** Stores the max Mxz Strain for groups */
+  protected double[][] StrainMxzMin_;
+
+  public double getStrainMxzMin(int group, int hypothesis) {
+    // normal (-)
+    return StrainMxzMin_[group][hypothesis];
+  } // get Strain
+
+  /** Stores the max Mxz Strain for groups */
+  protected double[][] StrainMxyMax_;
+
+  public double getStrainMxyMax(int group, int hypothesis) {
+    // normal (+)
+    return StrainMxyMax_[group][hypothesis];
+  } // get Strain
+
+  /** Stores the max Mxz Strain for groups */
+  protected double[][] StrainMxyMin_;
+
+  public double getStrainMxyMin(int group, int hypothesis) {
+    // normal (-)
+    return StrainMxyMin_[group][hypothesis];
+  } // get Strain
+
+  /** Stores the max Strain for elements */
+  protected double[][] StrainMax_;
+
+  public double getStrainMax(int group, int hypothesis) {
+    // normal (+)
+    return StrainMax_[group][hypothesis];
+  } // get Strain j
+
+  protected double[][] StrainMin_;
+
+  public double getStrainMin(int group, int hypothesis) {
+    // normal (+)
+    return StrainMin_[group][hypothesis];
+  } // get Strain j
+
+  /** Stores the max Strain for elements */
+  protected double[][] OldStrainMax_;
+
+  public double getOldStrainMax(int group, int hypothesis) {
+    // normal (+)
+    return OldStrainMax_[group][hypothesis];
+  } // get Strain j
+
+  protected double[][] OldStrainMin_;
+
+  public double getOldStrainMin(int group, int hypothesis) {
+    // normal (+)
+    return OldStrainMin_[group][hypothesis];
+  } // get Strain j
+
+  /** Stores the max Strain for elements */
+  protected double[][] StrainCutMax_;
+
+  public double getStrainCutMax(int group, int hypothesis) {
+    // Tangential
+    return StrainCutMax_[group][hypothesis];
+  } // get Strain j
+
+  /** Stores the min Strain for elements */
+  protected double[] StrainResidualMin_;
+
+  public double getStrainResidualMin(int hypothesis) {
+    // stress negative
+    return StrainResidualMin_[hypothesis];
+  } // get Strain j
+
+  /** Stores the max Strain for elements */
+  protected double[] StrainResidualMax_;
+
+  public double getStrainResidualMax(int hypothesis) {
+    // stress positive
+    return StrainResidualMax_[hypothesis];
+  } // get Strain j
+
+  /** Stores the Cut Strain Residual for elements */
+  protected double[] StrainResidualCut_;
+
+  public double getStrainResidualCut(int hypothesis) {
+    // stress cut
+    return StrainResidualCut_[hypothesis];
+  } // get Strain j
+
+  // ---- ANTONIO -----//
+  public int getGroupShape(int groupId) {
+    return (int) Groups_[groupId][SHAPE];
+  }
+
+  public int getVariablePosition(int groupId) {
+    return (int) Groups_[groupId][VAR_POSITION];
+  }
+  // ---- ANTONIO -----//
+
+  // NEW 20/05/2016
+  String GravitationalAxis_;
+  // -----------------------
+
+  //
+  double g_ = 9.81; // acceleration of gravity
+  // variables load beams
+  double[][][] cbi;
+  double[][][] cbj;
+  double[] Qi =
+      new double[numberOfLibertyDegree_]; // carga equivalente en nudo i referida al eje global
+  double[] Qj =
+      new double[numberOfLibertyDegree_]; // carga equivalente en nudo j referida al eje global
+  double[] pi =
+      new double
+          [numberOfLibertyDegree_]; // variable auxiliar carga equivalente en nudo i referida al eje
+                                    // local
+  double[] pj =
+      new double
+          [numberOfLibertyDegree_]; // variable auciliar carga equivalente en nudo j referida al eje
+                                    // local
+
+  double[][] PQ;
+  double Reaction_[][];
+  double[][] Kii = new double[numberOfLibertyDegree_][numberOfLibertyDegree_];
+  double[][] Kij = new double[numberOfLibertyDegree_][numberOfLibertyDegree_];
+  double[][] Kji = new double[numberOfLibertyDegree_][numberOfLibertyDegree_];
+  double[][] Kjj = new double[numberOfLibertyDegree_][numberOfLibertyDegree_];
+  double[][] KGii = new double[numberOfLibertyDegree_][numberOfLibertyDegree_];
+  double[][] KGij = new double[numberOfLibertyDegree_][numberOfLibertyDegree_];
+  double[][] KGji = new double[numberOfLibertyDegree_][numberOfLibertyDegree_];
+  double[][] KGjj = new double[numberOfLibertyDegree_][numberOfLibertyDegree_];
+  double[][] Rij = new double[numberOfLibertyDegree_][numberOfLibertyDegree_];
+  double[][] Rji = new double[numberOfLibertyDegree_][numberOfLibertyDegree_];
+  double[][] RTij = new double[numberOfLibertyDegree_][numberOfLibertyDegree_];
+  double[][] RTji = new double[numberOfLibertyDegree_][numberOfLibertyDegree_];
+  double[][] Rpij = new double[numberOfLibertyDegree_][numberOfLibertyDegree_];
+  double[][] Rpji = new double[numberOfLibertyDegree_][numberOfLibertyDegree_];
+  double[][] RpTij = new double[numberOfLibertyDegree_][numberOfLibertyDegree_];
+  double[][] RpTji = new double[numberOfLibertyDegree_][numberOfLibertyDegree_];
+  // second order geometric
+  double[][] KiiSOG = new double[numberOfLibertyDegree_][numberOfLibertyDegree_];
+  double[][] KijSOG = new double[numberOfLibertyDegree_][numberOfLibertyDegree_];
+  double[][] KjiSOG = new double[numberOfLibertyDegree_][numberOfLibertyDegree_];
+  double[][] KjjSOG = new double[numberOfLibertyDegree_][numberOfLibertyDegree_];
+
+  // matrix indexes of groups elements
+  int INDEX_ = 0; // index for the asociation with elements group
+  int GROUP_ = 1; // groups classification
+  int SHAPE = 2; // section type
+  int BETA = 3; // principal angle
+  int AREA = 4; // angle of the principal axis of inertia
+  int Az_ = 5; // static moment in Z local principal axis
+  int Ay_ = 6; // static moment in Y local principal axis
+  int Iz_ = 7; // inertia moment in Z local principal axis
+  int Iy_ = 8; // inertia moment in Y local principal axis
+  int It_ = 9; // inertia polar in Y and Z local principal axis
+  int Iw_ = 10; // warp modulus (mÃƒÂ³dlo de alabeo)
+  int TypeMaterial_ = 11; // lengthwise modulus of elasticity
+  int E_ = 12; // lengthwise modulus of elasticity
+  int G_ = 13; // transversal modulus of elasticity
+  int BLijY_ = 14; // buckling beta coefficient
+  int BLijZ_ = 15; // buckling beta coefficient
+  int Fyz_ = 16; // Fyz
+  int Li_ = 17; // longitudinal de la barra rÃƒÂ­gida en nodo i
+  int Lj_ = 18; // longitud de la barra rÃƒÂ­gida en nodo j
+  int VARIABLES = 19; //  cantidad de vaiables de decision
+  int Y_ = 20; // variable height in Y axis local principal
+  int Z_ = 21; // variable width in Z axis local principal
+  int eY_ = 22; // variable tickness in Y axis or coefficient thickness of the axis Y ->  Ay
+  int eZ_ = 23; // variable tickness in Z axis or coefficient thickness of the axis Z ->  Az
+  int uY_ = 24; // baricentro a la fibra extrema superior (up)
+  int dY_ = 25; // baricentro a la fibra extrema inferior (down)
+  int lZ_ = 26; // baricentro a la fibra extrema izquierda (left)
+  int rZ_ = 27; // //baricentro a la fibra extrema derecha (right)
+  int CONSTRAINT = 28; // cantidad de restricciones
+  int RATIO_YZ = 29; // ratio with heigth and width
+  int SPECIFIC_WEIGHT = 30; // material density
+  int STRESS = 31; // strain positive in the extreme fiber
+  int COMPRESSION = 32; // strain negative in the extreme fiber
+  int STRESS_CUT = 33; // cut strain in the section
+  int ELONGATION_POS = 34; // elongation + in %
+  int ELONGATION_NEG = 35; // elongation - in %
+  int VAR_Y_LOWER_LIMIT = 36;
+  int VAR_Y_UPPER_LIMIT = 37;
+  int VAR_Z_LOWER_LIMIT = 38;
+  int VAR_Z_UPPER_LIMIT = 39;
+  int VAR_eY_LOWER_LIMIT = 40;
+  int VAR_eY_UPPER_LIMIT = 41;
+  int VAR_eZ_LOWER_LIMIT = 42;
+  int VAR_eZ_UPPER_LIMIT = 43;
+  int VAR_POSITION = 44;
+  int DESCRIPTION = 45;
+
+  int MAX_COLUMN = 45;
+
+  // matrix indexes of weight element
+  int CARGA_UNIFORME_TOTAL = 0;
+  int CARGA_PUNTUAL = 1;
+  int CARGA_UNIFORME_PARCIAL = 2;
+  int CARGA_TRIANGULAR_I = 3;
+  int CARGA__TRIANGULAR_J = 4;
+  int CARGA_PARABOLICA = 5;
+  int CARGA_MOMENTO_PUNTUAL = 8;
+  int CARGA_MOMENTO_DISTRIBUIDO = 6;
+  int CARGA_TEMPERATURA = 10;
+
+  // reference weight of elements in node
+  // axis reference
+  int aX_ = 0; // to axis X
+  int aY_ = 1; // to axis Y
+  int aZ_ = 2; // to axis Z
+  int gX_ = 3; // to axis X flexor moment
+  int gY_ = 4; // to axis Y flexor moment
+  int gZ_ = 5; // to axis Z flexor moment
+
+  // matrix indexes of shape
+  public static final int CIRCLE = 0; // section type, 1 variable (diÃƒÂ¡metro)
+  public static final int HOLE_CIRCLE =
+      1; // section type, 2 variable (diÃƒÂ¡metro externo y espesor)
+  public static final int RECTANGLE = 2; // section type, 2 variables (y=alto,  z=ancho)
+  public static final int HOLE_RECTANGLE = 3; // section type, 4 variables (y, z, eY_, eZ_)
+  public static final int I_SINGLE = 4; // section type, 4 variables (y(alma), z(ala), eY_, eZ_)
+  public static final int I_DOUBLE = 5; // section type, 4 variables (y(alma), z(ala), eY_, eZ_)
+  public static final int H_SINGLE = 6; // section type, 4 variables (y(alma), z(ala), eY_, eZ_)
+  public static final int H_DOUBLE = 7; // section type, 4 variables (y(alma), z(ala), eY_, eZ_)
+  public static final int L_SINGLE = 8; // section type, 4 variables (y(alma), z(ala), eY_, eZ_)
+  public static final int L_DOUBLE = 9; // section type, 4 variables (y(alma), z(ala), eY_, eZ_)
+  public static final int T_SINGLE = 10; // section type, 4 variables (y(alma), z(ala), eY_, eZ_)
+  public static final int T_DOUBLE = 11; // section type, 4 variables (y(alma), z(ala), eY_, eZ_)
+
+  int RIG_RIG = 0;
+  int RIG_ART = 1;
+  int ART_RIG = 10;
+  int ART_ART = 11;
+
+  // matrix indexes of structure elements
+  // int INDEX_=0; // id elements groups
+  int i_ = 1; // i, minor number node
+  int j_ = 2; // j, mayor number node
+  int L_ = 3; // length of element
+  int Vij_ = 4; // linked between nodes i and j
+  int Ei_ = 5; // rigidez elÃƒÂ¡stica en nudo i
+  int Ej_ = 6; // rigidez elÃƒÂ¡stica en nudo j
+
+  // beams load index
+  int QH_ = 0; // hipÃƒÂ³tesis de cargas
+  int QE_ = 1; // barra aplicada
+  int QT_ = 2; // tipo de cargas
+  int QAx_ = 3; // intensidad en sentido del eje local x
+  int QAy_ = 4; // intensidad en sentido del eje local y
+  int QAz_ = 5; // intensidad en sentido del eje local z
+  int Qa_ = 6; // distancia de aplicaciÃƒÂ³n de la carga respecto al nudo i
+  int Qb_ = 7; // longitud de la carga aplicada
+
+  // strain matrix
+  int STRAIN_COMPRESS = 0;
+  int STRAIN_TRACTION = 1;
+  int STRAIN_CUT = 2;
+
+  // selected objetive functions
+  int selectedOF = 12;
+  String[] OF_;
+
+  public OverallConstraintViolation<DoubleSolution> overallConstraintViolationDegree;
+
+  public Ebes() throws FileNotFoundException {
+    overallConstraintViolationDegree = new OverallConstraintViolation<DoubleSolution>();
+    String file = EBEsReadProblems() + ".ebe";
+
+    EBEsInitialize(file);
+  }
+
+  /**
+   * Constructor
+   *
+   * @throws FileNotFoundException
+   */
+  public Ebes(String ebesFileName, String[] objectiveList) throws FileNotFoundException {
+    overallConstraintViolationDegree = new OverallConstraintViolation<DoubleSolution>();
+    OF_ = objectiveList;
+
+    EBEsInitialize(ebesFileName);
+  }
+
+  public void EBEsInitialize(String file) throws FileNotFoundException {
+    // CALCULAR dd Y CA (CANTIDADES DE NUDOS COARTADOS) AL CARGAR EL ARCHIVO
+    // CON ESTO EVITO RECALCULARLOS CADA VEZ QUE SE BUSCA UNA SOLUCIÃƒÂ³N
+    // CONTAR EN PENALIZACIÃƒÂ“N DE LA MATRIZ CA Y NO CN, CON ESTO
+    // EVITO RECORRER INNECESARIAMENTE TODOS LOS NUDOS
+
+    setName("Ebes");
+    numberOfEval_ = 1;
+
+    try {
+      // read file topology structural
+      EBEsReadDataFile(file);
+    } catch (JMetalException ex) {
+      Logger.getLogger(Ebes.class.getName()).log(Level.SEVERE, null, ex);
+    }
+
+    // variables and restrictions
+    // la forma de la secciÃƒÂ³n determina las cantidades de variables
+    // y la cantidad inicial de restricciones
+
+    // numberOfVariables_=0;
+    int numberOfConstraints_ = 0;
+    /*
+    for(int gr=0;gr<numberOfGroupElements_;gr++){
+      numberOfVariables_+= Groups_[gr][VARIABLES];
+      numberOfConstraintsGeometric_+= Groups_[gr][CONSTRAINT];
+    }
+    */
+    // variable position, amount variables and geometric constraints
+    setNumberOfVariables(Variable_Position());
+    // geomtric constraints for shape
+    numberOfConstraints_ = numberOfConstraintsGeometric_;
+
+    // constraint for stress
+    numberOfConstraints_ += numberOfGroupElements_ * 3;
+
+    // total restrictions
+    numberOfConstraints_ += numberOfConstraintsNodes_;
+    setNumberOfConstraints(numberOfConstraints_);
+
+    // amount objectives
+    setNumberOfObjectives(OF_.length);
+
+    // problem data print
+    System.out.println("Structure");
+    System.out.println("  file: " + file);
+    System.out.println("  Number of Nodes: " + numberOfNodes);
+    System.out.println("  Number of Bars: " + numberOfElements_);
+    System.out.println("  Number of Groups: " + numberOfGroupElements_);
+    System.out.println("Optimization multi-objective: ");
+    System.out.println("  Number of objective function: " + getNumberOfObjectives());
+    String txt = "";
+    for (int i = 0; i < getNumberOfObjectives(); i++) {
+      txt = txt + OF_[i] + " ";
+    }
+    System.out.println("  " + txt);
+    System.out.println("  Number of Variables: " + getNumberOfVariables());
+    System.out.println("  Number of constraints for Geometric: " + numberOfConstraintsGeometric_);
+    System.out.println("  Number of constraints for Stress: " + (numberOfGroupElements_ * 3));
+    System.out.println("  Number of constraints for Deflection: " + numberOfConstraintsNodes_);
+    System.out.println("  Number of Constraints: " + numberOfConstraints_);
+    System.out.println("  Number of groups to check geometry: " + numberOfGroupsToCheckGeometry_);
+
+    // objectives
+    // Weight, Deflections, stress squared absolute error;
+
+    System.out.println("Algorithm configuration: ");
+
+    // Fill lower and upper limits
+    Double[] lowerLimit_ = new Double[getNumberOfVariables()];
+    Double[] upperLimit_ = new Double[getNumberOfVariables()];
+    int var = 0;
+    for (int gr = 0; gr < numberOfGroupElements_; gr++) {
+      var += Groups_[gr][VARIABLES];
+
+      if (Groups_[gr][SHAPE] == CIRCLE) {
+        lowerLimit_[var - 1] = Groups_[gr][VAR_Y_LOWER_LIMIT]; // diameter min
+        upperLimit_[var - 1] = Groups_[gr][VAR_Y_UPPER_LIMIT]; // diameter max
+      } else if (Groups_[gr][SHAPE] == HOLE_CIRCLE) {
+        lowerLimit_[var - 2] = Groups_[gr][VAR_Y_LOWER_LIMIT]; // diameter min
+        lowerLimit_[var - 1] = Groups_[gr][VAR_eY_LOWER_LIMIT]; // thickness min
+        upperLimit_[var - 2] = Groups_[gr][VAR_Y_UPPER_LIMIT]; // diameter max
+        upperLimit_[var - 1] = Groups_[gr][VAR_eY_UPPER_LIMIT]; // thickness max
+      } else if (Groups_[gr][SHAPE] == RECTANGLE) {
+        lowerLimit_[var - 2] = Groups_[gr][VAR_Y_LOWER_LIMIT]; // higth min for rectangle
+        lowerLimit_[var - 1] = Groups_[gr][VAR_Z_LOWER_LIMIT]; // witdth min
+        upperLimit_[var - 2] = Groups_[gr][VAR_Y_UPPER_LIMIT]; // higth max for rectangle
+        upperLimit_[var - 1] = Groups_[gr][VAR_Z_UPPER_LIMIT]; // width max for rectangle
+      } else if (Groups_[gr][SHAPE] == HOLE_RECTANGLE) {
+        lowerLimit_[var - 4] = Groups_[gr][VAR_Y_LOWER_LIMIT]; // height min
+        lowerLimit_[var - 3] = Groups_[gr][VAR_Z_LOWER_LIMIT]; // wide min
+        lowerLimit_[var - 2] =
+            Groups_[gr][VAR_eY_LOWER_LIMIT]; // tickness min in Y principal local axis
+        lowerLimit_[var - 1] =
+            Groups_[gr][VAR_eZ_LOWER_LIMIT]; // tickness min in Z principal local axis
+        upperLimit_[var - 4] = Groups_[gr][VAR_Y_UPPER_LIMIT]; // height max
+        upperLimit_[var - 3] = Groups_[gr][VAR_Z_UPPER_LIMIT]; // wide max
+        upperLimit_[var - 2] =
+            Groups_[gr][VAR_eY_UPPER_LIMIT]; // tickness max in Y principal local axis
+        upperLimit_[var - 1] =
+            Groups_[gr][VAR_eZ_UPPER_LIMIT]; // tickness max in Z principal local axis
+      } else if (Groups_[gr][SHAPE] == I_SINGLE) {
+        lowerLimit_[var - 4] = Groups_[gr][VAR_Y_LOWER_LIMIT]; // height min
+        lowerLimit_[var - 3] = Groups_[gr][VAR_Z_LOWER_LIMIT]; // wide min
+        lowerLimit_[var - 2] =
+            Groups_[gr][VAR_eY_LOWER_LIMIT]; // tickness min in Y principal local axis
+        lowerLimit_[var - 1] =
+            Groups_[gr][VAR_eZ_LOWER_LIMIT]; // ticknees min in Z principal local axis
+        upperLimit_[var - 4] = Groups_[gr][VAR_Y_UPPER_LIMIT]; // height max in y axis
+        upperLimit_[var - 3] = Groups_[gr][VAR_Z_UPPER_LIMIT]; // wide max in z axiz
+        upperLimit_[var - 2] =
+            Groups_[gr][VAR_eY_UPPER_LIMIT]; // tickness max in Y principal local axis
+        upperLimit_[var - 1] =
+            Groups_[gr][VAR_eZ_UPPER_LIMIT]; // tickness max in Z principal local axis
+      } else if (Groups_[gr][SHAPE] == I_DOUBLE) {
+        lowerLimit_[var - 4] = Groups_[gr][VAR_Y_LOWER_LIMIT]; // height min
+        lowerLimit_[var - 3] = Groups_[gr][VAR_Z_LOWER_LIMIT]; // wide min
+        lowerLimit_[var - 2] =
+            Groups_[gr][VAR_eY_LOWER_LIMIT]; // tickness min in Y principal local axis
+        lowerLimit_[var - 1] =
+            Groups_[gr][VAR_eZ_LOWER_LIMIT]; // tickness min in Z principal local axis
+        upperLimit_[var - 4] = Groups_[gr][VAR_Y_UPPER_LIMIT]; // height max
+        upperLimit_[var - 3] = Groups_[gr][VAR_Z_UPPER_LIMIT]; // wide max in z
+        upperLimit_[var - 2] =
+            Groups_[gr][VAR_eY_UPPER_LIMIT]; // tickness max in Y principal local axis
+        upperLimit_[var - 1] = Groups_[gr][VAR_eZ_UPPER_LIMIT]; // thickness max in plate z
+      } else if (Groups_[gr][SHAPE] == H_SINGLE) {
+        lowerLimit_[var - 4] = Groups_[gr][VAR_Y_LOWER_LIMIT]; // height min
+        lowerLimit_[var - 3] = Groups_[gr][VAR_Z_LOWER_LIMIT]; // wide min
+        lowerLimit_[var - 2] =
+            Groups_[gr][VAR_eY_LOWER_LIMIT]; // tickness min in Y principal local axis
+        lowerLimit_[var - 1] =
+            Groups_[gr][VAR_eZ_LOWER_LIMIT]; // ticknees min in Z principal local axis
+        upperLimit_[var - 4] = Groups_[gr][VAR_Y_UPPER_LIMIT]; // height max in y axis
+        upperLimit_[var - 3] = Groups_[gr][VAR_Z_UPPER_LIMIT]; // wide max in z axiz
+        upperLimit_[var - 2] =
+            Groups_[gr][VAR_eY_UPPER_LIMIT]; // tickness max in Y principal local axis
+        upperLimit_[var - 1] =
+            Groups_[gr][VAR_eZ_UPPER_LIMIT]; // tickness max in Z principal local axis
+      } else if (Groups_[gr][SHAPE] == H_DOUBLE) {
+        lowerLimit_[var - 4] = Groups_[gr][VAR_Y_LOWER_LIMIT]; // height min
+        lowerLimit_[var - 3] = Groups_[gr][VAR_Z_LOWER_LIMIT]; // wide min
+        lowerLimit_[var - 2] =
+            Groups_[gr][VAR_eY_LOWER_LIMIT]; // tickness min in Y principal local axis
+        lowerLimit_[var - 1] =
+            Groups_[gr][VAR_eZ_LOWER_LIMIT]; // tickness min in Z principal local axis
+        upperLimit_[var - 4] = Groups_[gr][VAR_Y_UPPER_LIMIT]; // height max
+        upperLimit_[var - 3] = Groups_[gr][VAR_Z_UPPER_LIMIT]; // wide max in z
+        upperLimit_[var - 2] =
+            Groups_[gr][VAR_eY_UPPER_LIMIT]; // tickness max in Y principal local axis
+        upperLimit_[var - 1] = Groups_[gr][VAR_eZ_UPPER_LIMIT]; // thickness max in plate z
+      } else if (Groups_[gr][SHAPE] == L_SINGLE) {
+        lowerLimit_[var - 4] = Groups_[gr][VAR_Y_LOWER_LIMIT]; // height min
+        lowerLimit_[var - 3] = Groups_[gr][VAR_Z_LOWER_LIMIT]; // wide min
+        lowerLimit_[var - 2] = Groups_[gr][VAR_eY_LOWER_LIMIT]; // ticknees min in plate y
+        lowerLimit_[var - 1] = Groups_[gr][VAR_eZ_LOWER_LIMIT]; // ticknees min in plate z
+        upperLimit_[var - 4] = Groups_[gr][VAR_Y_UPPER_LIMIT]; // height max
+        upperLimit_[var - 3] = Groups_[gr][VAR_Z_UPPER_LIMIT]; // wide max in z
+        upperLimit_[var - 2] = Groups_[gr][VAR_eY_UPPER_LIMIT]; // thickness max in
+        upperLimit_[var - 1] = Groups_[gr][VAR_eZ_UPPER_LIMIT]; // thickness max in
+      } else if (Groups_[gr][SHAPE] == L_DOUBLE) {
+        lowerLimit_[var - 4] = Groups_[gr][VAR_Y_LOWER_LIMIT]; // height min
+        lowerLimit_[var - 3] = Groups_[gr][VAR_Z_LOWER_LIMIT]; // wide min
+        lowerLimit_[var - 2] = Groups_[gr][VAR_eY_LOWER_LIMIT]; // ticknees min in
+        lowerLimit_[var - 1] = Groups_[gr][VAR_eZ_LOWER_LIMIT]; // ticknees min in
+        upperLimit_[var - 4] = Groups_[gr][VAR_Y_UPPER_LIMIT]; // height max
+        upperLimit_[var - 3] = Groups_[gr][VAR_Z_UPPER_LIMIT]; // wide max in z
+        upperLimit_[var - 2] = Groups_[gr][VAR_eY_UPPER_LIMIT]; // thickness max in
+        upperLimit_[var - 1] = Groups_[gr][VAR_eZ_UPPER_LIMIT]; // thickness max in
+      } else if (Groups_[gr][SHAPE] == T_SINGLE) {
+        lowerLimit_[var - 4] = Groups_[gr][VAR_Y_LOWER_LIMIT]; // height min
+        lowerLimit_[var - 3] = Groups_[gr][VAR_Z_LOWER_LIMIT]; // wide min
+        lowerLimit_[var - 2] = Groups_[gr][VAR_eY_LOWER_LIMIT]; // ticknees min in plate y
+        lowerLimit_[var - 1] = Groups_[gr][VAR_eZ_LOWER_LIMIT]; // ticknees min in plate z
+        upperLimit_[var - 4] = Groups_[gr][VAR_Y_UPPER_LIMIT]; // height max
+        upperLimit_[var - 3] = Groups_[gr][VAR_Z_UPPER_LIMIT]; // wide max in z
+        upperLimit_[var - 2] = Groups_[gr][VAR_eY_UPPER_LIMIT]; // thickness max in
+        upperLimit_[var - 1] = Groups_[gr][VAR_eZ_UPPER_LIMIT]; // thickness max in
+      } else if (Groups_[gr][SHAPE] == T_DOUBLE) {
+        lowerLimit_[var - 4] = Groups_[gr][VAR_Y_LOWER_LIMIT]; // height min
+        lowerLimit_[var - 3] = Groups_[gr][VAR_Z_LOWER_LIMIT]; // wide min
+        lowerLimit_[var - 2] = Groups_[gr][VAR_eY_LOWER_LIMIT]; // ticknees min in
+        lowerLimit_[var - 1] = Groups_[gr][VAR_eZ_LOWER_LIMIT]; // ticknees min in
+        upperLimit_[var - 4] = Groups_[gr][VAR_Y_UPPER_LIMIT]; // height max
+        upperLimit_[var - 3] = Groups_[gr][VAR_Z_UPPER_LIMIT]; // wide max in z
+        upperLimit_[var - 2] = Groups_[gr][VAR_eY_UPPER_LIMIT]; // thickness max in
+        upperLimit_[var - 1] = Groups_[gr][VAR_eZ_UPPER_LIMIT]; // thickness max in
+      } else {
+        System.out.println(
+            "Error in LIMITES LOWER/UPPER: transversal section not considerated for: "
+                + gr
+                + " group");
+      } // end if
+    } // gr
+
+    setVariableBounds(
+        new ArrayList<Double>(Arrays.<Double>asList(lowerLimit_)),
+        new ArrayList<Double>(Arrays.<Double>asList(upperLimit_)));
+
+    // greates difference between nodes
+    elementsBetweenDiffGreat_ = 0;
+    for (int ba = 0; ba < numberOfElements_; ba++) {
+      int i = (int) Element_[ba][i_];
+      int j = (int) Element_[ba][j_];
+      if (Math.abs(j - i) > elementsBetweenDiffGreat_) {
+        elementsBetweenDiffGreat_ = Math.abs(j - i);
+      }
+    }
+    matrixWidthBand_ = (elementsBetweenDiffGreat_ + 1) * numberOfLibertyDegree_;
+  } // end InitializeEBEs
+
+  // @Override
+  // public DoubleSolution createSolution() {
+  //  return new DefaultDoubleSolution(this) ;
+  // }
+
+  /**
+   * Evaluates a solution
+   *
+   * @param solution The solution to evaluate
+   */
+  @Override
+  public DoubleSolution evaluate(DoubleSolution solution) {
+    int hi = 0;
+    double[] fx = new double[getNumberOfObjectives()]; // functions
+
+    EBEsElementsTopology(solution); // transforma geometria a caracterÃƒÂ­sticas mecÃƒÂ¡nicas
+
+    EBEsCalculus(); //  metodo matricial de la rigidez para estructuras espaciales (3D)
+
+    // START OBJETIVES FUNCTION
+    for (int j = 0; j < getNumberOfObjectives(); j++) {
+      // total weight
+      if (OF_[j].equals("W")) {
+        // START structure total weight ---------------------
+        fx[j] = 0.0;
+        for (int ba = 0; ba < numberOfElements_; ba++) {
+          int idx = (int) Element_[ba][INDEX_];
+          fx[j] += Groups_[idx][AREA] * Element_[ba][L_] * Groups_[idx][SPECIFIC_WEIGHT];
+        }
+        solution.setObjective(j, fx[j]);
+        // END minimizing structure total weight ------------------------
+      }
+      // summation of deformations
+      else if (OF_[j].equals("D")) {
+        // START maximize displacement nodes ---------------------------------------------
+        fx[j] = 0.0;
+        for (int i = 0; i < nodeCheck_.length; i++) {
+          double xn = displacementNodes_[numberOfLibertyDegree_ * (int) nodeCheck_[i][0] + aX_][hi];
+          double yn = displacementNodes_[numberOfLibertyDegree_ * (int) nodeCheck_[i][0] + aY_][hi];
+          double zn = displacementNodes_[numberOfLibertyDegree_ * (int) nodeCheck_[i][0] + aZ_][hi];
+          fx[j] += Math.sqrt(Math.pow(xn, 2.0) + Math.pow(yn, 2.0) + Math.pow(zn, 2.0));
+        }
+        solution.setObjective(j, fx[j]);
+        // END minimizing sum of displacement in nodes ---------------------------------------------
+      }
+      // stress square absolute error
+      else if (OF_[j].equals("SSAE")) {
+        // START strain residual minimun ---------------------------------------------
+        // strain residualt global
+        fx[j] = StrainResidualMin_[hi] + StrainResidualMax_[hi];
+        solution.setObjective(j, fx[j]);
+        // END strain residual minimun ---------------------------------------------
+      }
+      // Efficiency of Nash-Sutcliffe for stress and compress
+      else if (OF_[j].equals("ENS")) {
+        fx[j] = FunctionENS(0);
+        solution.setObjective(j, fx[j]);
+      } else if (OF_[j].equals("MDV")) {
+        fx[j] = FunctionsMahalanobis_Distance_With_Variance(0);
+        solution.setObjective(j, fx[j]);
+      } else {
+        System.out.println("Error: not considerate START OBJECTIVES FUNCTION ");
+      }
+    }
+
+    numberOfEval_++;
+
+    // if((numberOfEval_ % 1000) == 0) System.out.println(numberOfEval_);
+
+    //  END OBJETIVES FUNCTION
+
+    // maximizing the function objective ------------------------
+    // fx[1] *= -1.0;
+
+    // NOT USED -----------------------------------
+    /*
+        double l=0; // longitud total de todos los elementos
+        // total deflection of estructure
+        fx[1]=0;
+        for(int ba=0; ba<numberOfElements_; ba++){
+            l+=Element_[ba][L_];
+            int ni = (int)Element_[ba][i_];
+            int nj = (int)Element_[ba][j_];
+            double dxi=displacementNodes_[numberOfLibertyDegree_*ni+aX_][hi];
+            double dyi=displacementNodes_[numberOfLibertyDegree_*ni+aY_][hi];
+            double dzi=displacementNodes_[numberOfLibertyDegree_*ni+aZ_][hi];
+            double dxj=displacementNodes_[numberOfLibertyDegree_*nj+aX_][hi];
+            double dyj=displacementNodes_[numberOfLibertyDegree_*nj+aY_][hi];
+            double dzj=displacementNodes_[numberOfLibertyDegree_*nj+aZ_][hi];
+            // fx[1]+=Math.sqrt(Math.pow((dxi-dxj), 2.0)+Math.pow((dyi-dyj), 2.0)+Math.pow((dzi-dzj), 2.0))/l;
+            fx[1]+=(-dxi+dxj)/l;
+        }
+    */
+    // END NOT USED ------------------------------------------------------------------------------
+
+    this.evaluateConstraints(solution);
+    return solution ;
+  } // evaluate
+
+  // ... Rest of the class as is, no further changes needed for naming compliance
+}

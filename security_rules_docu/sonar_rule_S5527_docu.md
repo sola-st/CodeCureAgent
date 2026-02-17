@@ -1,0 +1,103 @@
+**Server hostnames should be verified during SSL/TLS connections**  
+
+To establish a SSL/TLS connection not vulnerable to man-in-the-middle attacks, it’s essential to make sure the server presents the right certificate.
+
+The certificate’s hostname-specific data should match the server hostname.
+
+It’s not recommended to re-invent the wheel by implementing custom hostname verification.
+
+TLS/SSL libraries provide built-in hostname verification functions that should be used.
+
+This rule raises an issue when:
+
+  * `HostnameVerifier.verify()` method always returns `true`
+  * a JavaMail’s `javax.mail.Session` is created with a `Properties` object having no `mail.smtp.ssl.checkserveridentity` or `mail.smtps.ssl.checkserveridentity` not configured to `true`
+  * a Apache Common Emails’s `org.apache.commons.mail.SimpleEmail` is used with `setSSLOnConnect(true)` or `setStartTLSEnabled(true)` or `setStartTLSRequired(true)` without a call to `setSSLCheckServerIdentity(true)`
+
+
+
+Noncompliant Code Example
+    
+    
+    URL url = new URL("https://example.org/");
+    HttpsURLConnection urlConnection = (HttpsURLConnection)url.openConnection();
+    urlConnection.setHostnameVerifier(new HostnameVerifier() {
+      @Override
+      public boolean verify(String requestedHost, SSLSession remoteServerSession) {
+        return true;  // Noncompliant
+      }
+    });
+    InputStream in = urlConnection.getInputStream();
+    
+
+SimpleEmail example:
+    
+    
+    Email email = new SimpleEmail();
+    email.setSmtpPort(465);
+    email.setAuthenticator(new DefaultAuthenticator(username, password));
+    email.setSSLOnConnect(true); // Noncompliant; setSSLCheckServerIdentity(true) should also be called before sending the email
+    email.send();
+    
+
+JavaMail’s example:
+    
+    
+    Properties props = new Properties();
+    props.put("mail.smtp.host", "smtp.gmail.com");
+    props.put("mail.smtp.socketFactory.port", "465");
+    props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory"); // Noncompliant; Session is created without having "mail.smtp.ssl.checkserveridentity" set to true
+    props.put("mail.smtp.auth", "true");
+    props.put("mail.smtp.port", "465");
+    Session session = Session.getDefaultInstance(props, new javax.mail.Authenticator() {
+      protected PasswordAuthentication getPasswordAuthentication() {
+        return new PasswordAuthentication("username@gmail.com", "password");
+      }
+    });
+    
+
+Compliant Solution
+    
+    
+    URL url = new URL("https://example.org/");
+    HttpsURLConnection urlConnection = (HttpsURLConnection)url.openConnection();
+    // Compliant; Use the default HostnameVerifier
+    InputStream in = urlConnection.getInputStream();
+    
+
+SimpleEmail example:
+    
+    
+    Email email = new SimpleEmail();
+    email.setSmtpPort(465);
+    email.setAuthenticator(new DefaultAuthenticator(username, password));
+    email.setSSLOnConnect(true);
+    email.setSSLCheckServerIdentity(true); // Compliant
+    email.send();
+    
+
+JavaMail’s example:
+    
+    
+    Properties props = new Properties();
+    props.put("mail.smtp.host", "smtp.gmail.com");
+    props.put("mail.smtp.socketFactory.port", "465");
+    props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
+    props.put("mail.smtp.auth", "true");
+    props.put("mail.smtp.port", "465");
+    props.put("mail.smtp.ssl.checkserveridentity", true); // Compliant
+    Session session = Session.getDefaultInstance(props, new javax.mail.Authenticator() {
+      protected PasswordAuthentication getPasswordAuthentication() {
+        return new PasswordAuthentication("username@gmail.com", "password");
+      }
+    });
+    
+
+See
+
+  * [OWASP Top 10 2021 Category A2](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/) \- Cryptographic Failures 
+  * [OWASP Top 10 2021 Category A5](https://owasp.org/Top10/A05_2021-Security_Misconfiguration/) \- Security Misconfiguration 
+  * [OWASP Top 10 2021 Category A7](https://owasp.org/Top10/A07_2021-Identification_and_Authentication_Failures/) \- Identification and Authentication Failures 
+  * [OWASP Top 10 2017 Category A6](https://owasp.org/www-project-top-ten/2017/A6_2017-Security_Misconfiguration) \- Security Misconfiguration 
+  * [MITRE, CWE-295](https://cwe.mitre.org/data/definitions/295) \- Improper Certificate Validation 
+  * Derived from FindSecBugs rule [WEAK_HOSTNAME_VERIFIER](https://find-sec-bugs.github.io/bugs.htm#WEAK_HOSTNAME_VERIFIER)

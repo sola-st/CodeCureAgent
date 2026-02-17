@@ -482,6 +482,41 @@ def sorald_comparison_calculate_stats_from_evaluation_results(sorald_evaluation_
     mdFile.new_line(
         f"Margin of improvement from Sorald's performance after oracle (all oracle steps applied) to CCA's plausible fix performance: {margin_improvement:.2f}%  ")
 
+
+
+    mdFile.new_line()
+
+    # Sorald fix successful + build successful + target warning removed + no other warning introduced + test successful for only true positives for cca
+    fix_created_build_test_target_removed_no_other_introduced_only_cca_TP = (
+        (evaluation_results_file_df["soraldFixCreated"] == True) &
+        (evaluation_results_file_df["soraldBuildSuccessful"] == True) &
+        (evaluation_results_file_df["soraldNumberOfTargetWarningsRemoved"].fillna(0).astype(int) >= 1) &
+        (evaluation_results_file_df["soraldNoNewWarningIntroduced"] == True) &
+        (evaluation_results_file_df["soraldTestSuccessful"] == True) & 
+        (evaluation_results_file_df["classification"] == "TP")).sum()
+
+    percent_fix_created_build_test_target_removed_no_other_removed_only_cca_TP = 100 * fix_created_build_test_target_removed_no_other_introduced_only_cca_TP / \
+        classified_tp if classified_tp else 0
+
+    mdFile.new_line(
+        f"Sorald Only for warnings classified as TP in CCA : fix created + build successful + target warning removed + no other warning introduced + test successful: {fix_created_build_test_target_removed_no_other_introduced_only_cca_TP}/{classified_tp} ({percent_fix_created_build_test_target_removed_no_other_removed_only_cca_TP:.2f}%)  ")
+
+    # Sorald fix successful + build successful + target warning removed + no other warning introduced + test successful for only false positives for cca
+    fix_created_build_test_target_removed_no_other_introduced_only_cca_FP = (
+        (evaluation_results_file_df["soraldFixCreated"] == True) &
+        (evaluation_results_file_df["soraldBuildSuccessful"] == True) &
+        (evaluation_results_file_df["soraldNumberOfTargetWarningsRemoved"].fillna(0).astype(int) >= 1) &
+        (evaluation_results_file_df["soraldNoNewWarningIntroduced"] == True) &
+        (evaluation_results_file_df["soraldTestSuccessful"] == True) & 
+        (evaluation_results_file_df["classification"] == "FP")).sum()
+    percent_fix_created_build_test_target_removed_no_other_removed_only_cca_FP = 100 * fix_created_build_test_target_removed_no_other_introduced_only_cca_FP / \
+        classified_fp if classified_fp else 0
+    
+    mdFile.new_line(
+        f"Sorald Only for warnings classified as FP in CCA : fix created + build successful + target warning removed + no other warning introduced + test successful: {fix_created_build_test_target_removed_no_other_introduced_only_cca_FP}/{classified_fp} ({percent_fix_created_build_test_target_removed_no_other_removed_only_cca_FP:.2f}%)  ")
+
+
+
     # Calculate margin of improvement from Sorald with oracle to CCA's end-to-end performance
     margin_improvement_cca_end_to_end = percent_end_to_end_all - \
         percent_fix_created_build_test_target_removed_no_other_removed

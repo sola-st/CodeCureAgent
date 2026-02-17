@@ -1,0 +1,7 @@
+  private static void label(Collection<PolygonizeDirectedEdge> dirEdges, long label)
+  {
+    for (Iterator<PolygonizeDirectedEdge> i = dirEdges.iterator(); i.hasNext(); ) {
+      PolygonizeDirectedEdge de = i.next();
+      de.setLabel(label);
+    }
+  }

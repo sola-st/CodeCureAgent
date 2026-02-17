@@ -1,0 +1,266 @@
+```java
+// ... previous unchanged code ...
+
+void sortHalfEdgesByAngle_(int inputMode) {
+	AttributeStreamOfInt32 angleSorter = new AttributeStreamOfInt32(0);
+	angleSorter.reserve(10);
+	TopoGraphAngleComparer tgac = new TopoGraphAngleComparer(this);
+	// Now go through the clusters, sort edges in each cluster by angle, and
+	// reconnect the halfedges of sorted edges in the sorted order.
+	// Also share the parentage information between coinciding edges and
+	// remove duplicates.
+	for (int cluster = getFirstCluster(); cluster != -1; cluster = getNextCluster(cluster)) {
+		angleSorter.clear(false);
+		int first = getClusterHalfEdge(cluster);
+		if (first != -1) {
+			// 1. sort edges originating at the cluster by angle (counter -
+			// clockwise).
+			int edge = first;
+			do {
+				angleSorter.add(edge);// edges have the cluster in their
+										// origin and are directed away from
+										// it. The twin edges are directed
+										// towards the cluster.
+				edge = getHalfEdgeNext(getHalfEdgeTwin(edge));
+			} while (edge != first);
+
+			if (angleSorter.size() > 1) {
+				boolean changed_order = true;
+				if (angleSorter.size() > 2) {
+					angleSorter.Sort(0, angleSorter.size(),
+							tgac); // std::sort(angleSorter.get_ptr(),
+																// angleSorter.get_ptr()
+																// +
+																// angleSorter.size(),
+																// TopoGraphAngleComparer(this));
+					angleSorter.add(angleSorter.get(0));
+				} else {
+					//no need to sort most two edge cases. we only need to make sure that edges going up are sorted
+					if (compareEdgeAnglesForPair_(angleSorter.get(0),
+							angleSorter.get(1)) > 0) {
+						int tmp = angleSorter.get(0);
+						angleSorter.set(0, angleSorter.get(1));
+						angleSorter.set(1, tmp);
+					}
+					else {
+						changed_order = false;
+					}
+				}
+				// 2. get rid of duplicate edges by merging them (duplicate
+				// edges appear at this step because we converted all
+				// segments into the edges, including overlapping).
+				int e0 = angleSorter.get(0);
+				int ePrev = e0;
+				int ePrevTo = getHalfEdgeTo(ePrev);
+				int ePrevTwin = getHalfEdgeTwin(ePrev);
+				int prevMerged = -1;
+				for (int i = 1, n = angleSorter.size(); i < n; i++) {
+					int e = angleSorter.get(i);
+					if (e == -1)
+						continue;
+					int eTwin = getHalfEdgeTwin(e);
+					int eTo = getHalfEdgeOrigin(eTwin);
+					assert (getHalfEdgeOrigin(e) == getHalfEdgeOrigin(ePrev));// e
+																				// origin
+																				// and
+																				// ePrev
+																				// origin
+																				// are
+																				// equal
+																				// by
+																				// definition
+																				// (e
+																				// and
+																				// ePrev
+																				// emanate
+																				// from
+																				// the
+																				// same
+																				// cluster)
+					if (eTo == ePrevTo && e != ePrev)// e's To cluster and
+														// ePrev's To
+														// cluster are
+														// equal, means the
+														// edges coincide
+														// and need to be
+														// merged.
+					{// remove duplicate edge. Before removing, propagate
+						// the parentage to the remaning edge
+						if (inputMode == EnumInputMode.enumInputModeBuildGraph) {
+							int newEdgeParentage = getHalfEdgeParentageMask_(ePrev)
+									| getHalfEdgeParentageMask_(e);
+							setHalfEdgeParentage_(ePrev, newEdgeParentage);
+							setHalfEdgeParentage_(ePrevTwin,
+									newEdgeParentage);
+							assert (getHalfEdgeParentageMask_(ePrev) == getHalfEdgeParentageMask_(ePrevTwin));
+
+							setHalfEdgeUserIndex(
+									ePrev,
+									m_tmpHalfEdgeParentageIndex,
+									getHalfEdgeUserIndex(ePrev,
+											m_tmpHalfEdgeParentageIndex)
+											| getHalfEdgeUserIndex(e,
+													m_tmpHalfEdgeParentageIndex));
+							setHalfEdgeUserIndex(
+									ePrevTwin,
+									m_tmpHalfEdgeParentageIndex,
+									getHalfEdgeUserIndex(ePrevTwin,
+											m_tmpHalfEdgeParentageIndex)
+											| getHalfEdgeUserIndex(eTwin,
+													m_tmpHalfEdgeParentageIndex));
+						} else if (m_tmpHalfEdgeWindingNumberIndex != -1) {
+							// when doing simplify the
+							// m_tmpHalfEdgeWindingNumberIndex contains the
+							// winding number.
+							// When edges are merged their winding numbers
+							// are added.
+							int newHalfEdgeWinding = getHalfEdgeUserIndex(
+									ePrev, m_tmpHalfEdgeWindingNumberIndex)
+									+ getHalfEdgeUserIndex(e,
+											m_tmpHalfEdgeWindingNumberIndex);
+							int newTwinEdgeWinding = getHalfEdgeUserIndex(
+									ePrevTwin,
+									m_tmpHalfEdgeWindingNumberIndex)
+									+ getHalfEdgeUserIndex(eTwin,
+											m_tmpHalfEdgeWindingNumberIndex);
+							setHalfEdgeUserIndex(ePrev,
+									m_tmpHalfEdgeWindingNumberIndex,
+									newHalfEdgeWinding);
+							setHalfEdgeUserIndex(ePrevTwin,
+									m_tmpHalfEdgeWindingNumberIndex,
+									newTwinEdgeWinding);
+							// The winding number of an edge is a sum of the
+							// winding numbers of the half edge and its
+							// twin.
+							// To determine which half edge direction
+							// coincides with the edge direction, determine
+							// which half edge has larger abs value of
+							// winding number. If half edge and twin winding
+							// numbers cancel each other, the edge winding
+							// number is zero, meaning there are
+							// even number of edges coinciding there and
+							// half of them has opposite direction to
+							// another half.
+						} else if (inputMode == EnumInputMode.enumInputModeIsSimplePolygon) {
+							m_non_simple_result = new NonSimpleResult(NonSimpleResult.Reason.CrossOver, cluster, -1);
+							return;
+						}
+						else if (m_tmpHalfEdgeOddEvenNumberIndex != -1) {
+							int newHalfEdgeWinding = getHalfEdgeUserIndex(
+									ePrev, m_tmpHalfEdgeOddEvenNumberIndex)
+									+ getHalfEdgeUserIndex(e,
+											m_tmpHalfEdgeOddEvenNumberIndex);
+							int newTwinEdgeWinding = getHalfEdgeUserIndex(
+									ePrevTwin,
+									m_tmpHalfEdgeOddEvenNumberIndex)
+									+ getHalfEdgeUserIndex(eTwin,
+											m_tmpHalfEdgeOddEvenNumberIndex);
+							setHalfEdgeUserIndex(ePrev,
+									m_tmpHalfEdgeOddEvenNumberIndex,
+									newHalfEdgeWinding);
+							setHalfEdgeUserIndex(ePrevTwin,
+									m_tmpHalfEdgeOddEvenNumberIndex,
+									newTwinEdgeWinding);
+						}
+
+						mergeVertexListsOfEdges_(ePrev, e);
+						deleteEdgeImpl_(e);
+						assert (n < 3 || e0 == angleSorter.getLast());
+						prevMerged = ePrev;
+						angleSorter.set(i, -1);
+						if (e == e0) {
+							angleSorter.set(0, -1);
+							e0 = -1;
+						}
+
+						continue;
+					}
+					else {
+						//edges do not coincide
+					}
+
+					updateVertexToHalfEdgeConnection_(prevMerged, false);
+					prevMerged = -1;
+					ePrev = e;
+					ePrevTo = eTo;
+					ePrevTwin = eTwin;
+				}
+
+
+				updateVertexToHalfEdgeConnection_(prevMerged, false);
+				prevMerged = -1;
+
+				if (!changed_order) {
+					//small optimization to avoid reconnecting if nothing changed
+					e0 = -1;
+					for (int i = 0, n = angleSorter.size(); i < n; i++) {
+						int e = angleSorter.get(i);
+						if (e == -1)
+							continue;
+						e0 = e;
+						break;
+					}
+
+					if (first != e0)
+						setClusterHalfEdge_(cluster, e0);
+
+					continue; //next cluster
+				}
+				
+
+				// 3. Reconnect edges in the sorted order. The edges are
+				// sorted counter clockwise.
+				// We connect them such that every right turn is made in the
+				// clockwise order.
+				// This guarantees that the smallest faces are clockwise.
+				e0 = -1;
+
+				for (int i = 0, n = angleSorter.size(); i < n; i++) {
+					int e = angleSorter.get(i);
+					if (e == -1)
+						continue;
+					if (e0 == -1) {
+						e0 = e;
+						ePrev = e0;
+						ePrevTo = getHalfEdgeTo(ePrev);
+						ePrevTwin = getHalfEdgeTwin(ePrev);
+						continue;
+					}
+
+					if (e == ePrev) {
+						// This condition can only happen if all edges in
+						// the bunch coincide.
+						assert (i == n - 1);
+						continue;
+					}
+
+					int eTwin = getHalfEdgeTwin(e);
+					int eTo = getHalfEdgeOrigin(eTwin);
+					assert (getHalfEdgeOrigin(e) == getHalfEdgeOrigin(ePrev));
+					assert (eTo != ePrevTo);
+					setHalfEdgeNext_(ePrevTwin, e);
+					setHalfEdgePrev_(e, ePrevTwin);
+					ePrev = e;
+					ePrevTo = eTo;
+					ePrevTwin = eTwin;
+		            if (inputMode == EnumInputMode.enumInputModeIsSimplePolygon)
+		              {
+		                int par1 = getHalfEdgeUserIndex(e, m_tmpHalfEdgeParentageIndex) |
+		                		getHalfEdgeUserIndex(getHalfEdgePrev(e), m_tmpHalfEdgeParentageIndex);
+		                if (par1 == (m_universe_geomID | 1))
+		                {
+		                  //violation of face parentage
+		                  m_non_simple_result = new NonSimpleResult(NonSimpleResult.Reason.CrossOver, cluster, -1);
+		                  return;
+		                }
+		              }
+
+				}
+
+				setClusterHalfEdge_(cluster, e0);// smallest angle goes
+													// first.
+			}
+		}
+	}
+}
+```

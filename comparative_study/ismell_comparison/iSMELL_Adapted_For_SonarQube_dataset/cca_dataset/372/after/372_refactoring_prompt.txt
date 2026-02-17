@@ -1,0 +1,90 @@
+In computer programming, a code smell is any characteristic in the source code of a program that possibly indicates a deeper problem.
+Now I will tell you the definition about SonarQube warning 'S1604':'Anonymous inner classes containing only one method should become lambdas' as given by the SonarQube docu, including an example to help you solve a similar warning:
+'Before Java 8, the only way to partially support closures in Java was by using anonymous inner classes. But the syntax of anonymous classes may seem unwieldy and unclear.
+
+With Java 8, most uses of anonymous inner classes should be replaced by lambdas to highly increase the readability of the source code.
+
+**Note** that this rule is automatically disabled when the project’s `sonar.java.source` is lower than `8`.
+
+Noncompliant Code Example
+    
+    
+    myCollection.stream().map(new Mapper<String,String>() {
+      public String map(String input) {
+        return new StringBuilder(input).reverse().toString();
+      }
+    });
+    
+    Predicate<String> isEmpty = new Predicate<String> {
+        boolean test(String myString) {
+            return myString.isEmpty();
+        }
+    }
+    
+
+Compliant Solution
+    
+    
+    myCollection.stream().map(input -> new StringBuilder(input).reverse().toString());
+    
+    Predicate<String> isEmpty = myString -> myString.isEmpty();'
+
+Now based on the example, refactor the following Java code to eliminate the 'S1604':'Anonymous inner classes containing only one method should become lambdas' warning, with specific warning message 'Make this anonymous inner class a lambda'.
+Output the full refactored code (the full file). Don't leave out any part of the code.
+The warning is located at the line 'Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {' (line number 36). Give the changed code using: ```...```.
+Java code:
+```java
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+package io.openmessaging.samples.consumer;
+
+import io.openmessaging.MessagingAccessPoint;
+import io.openmessaging.OMS;
+import io.openmessaging.consumer.PullConsumer;
+import io.openmessaging.message.Message;
+import java.util.Arrays;
+
+public class PullConsumerApp {
+    public static void main(String[] args) {
+        //Load and start the vendor implementation from a specific OMS driver URL.
+        final MessagingAccessPoint messagingAccessPoint =
+            OMS.getMessagingAccessPoint("oms:rocketmq://alice@rocketmq.apache.org/us-east");
+
+        //Start a PullConsumer to receive messages from the specific queue.
+        final PullConsumer consumer = messagingAccessPoint.createPullConsumer();
+
+        //Register a shutdown hook to close the opened endpoints.
+        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+            @Override
+            public void run() {
+                consumer.stop();
+            }
+        }));
+
+        consumer.bindQueue(Arrays.asList("NS://HELLO_QUEUE"));
+        consumer.start();
+
+        Message message = consumer.receive(1000);
+        System.out.println("Received message: " + message);
+        //Acknowledge the consumed message
+        consumer.ack(message.getMessageReceipt());
+        consumer.stop();
+
+    }
+}
+```

@@ -1,0 +1,148 @@
+**Configuring loggers is security-sensitive**  
+
+Configuring loggers is security-sensitive. It has led in the past to the following vulnerabilities:
+
+  * [CVE-2018-0285](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2018-0285)
+  * [CVE-2000-1127](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2000-1127)
+  * [CVE-2017-15113](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2017-15113)
+  * [CVE-2015-5742](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2015-5742)
+
+
+
+Logs are useful before, during and after a security incident.
+
+  * Attackers will most of the time start their nefarious work by probing the system for vulnerabilities. Monitoring this activity and stopping it is the first step to prevent an attack from ever happening. 
+  * In case of a successful attack, logs should contain enough information to understand what damage an attacker may have inflicted. 
+
+
+
+Logs are also a target for attackers because they might contain sensitive information. Configuring loggers has an impact on the type of information logged and how they are logged.
+
+This rule flags for review code that initiates loggers configuration. The goal is to guide security code reviews.
+
+Exceptions
+
+Log4J 1.x is not covered as it has reached [end of life](https://blogs.apache.org/foundation/entry/apache_logging_services_project_announces).
+
+Ask Yourself Whether
+
+  * unauthorized users might have access to the logs, either because they are stored in an insecure location or because the application gives access to them. 
+  * the logs contain sensitive information on a production server. This can happen when the logger is in debug mode. 
+  * the log can grow without limit. This can happen when additional information is written into logs every time a user performs an action and the user can perform the action as many times as he/she wants. 
+  * the logs do not contain enough information to understand the damage an attacker might have inflicted. The loggers mode (info, warn, error) might filter out important information. They might not print contextual information like the precise time of events or the server hostname. 
+  * the logs are only stored locally instead of being backuped or replicated. 
+
+
+
+There is a risk if you answered yes to any of those questions.
+
+Sensitive Code Example
+
+This rule supports the following libraries: Log4J, `java.util.logging` and Logback
+    
+    
+    // === Log4J 2 ===
+    import org.apache.logging.log4j.core.config.builder.api.ConfigurationBuilderFactory;
+    import org.apache.logging.log4j.Level;
+    import org.apache.logging.log4j.core.*;
+    import org.apache.logging.log4j.core.config.*;
+    
+    // Sensitive: creating a new custom configuration
+    abstract class CustomConfigFactory extends ConfigurationFactory {
+        // ...
+    }
+    
+    class A {
+        void foo(Configuration config, LoggerContext context, java.util.Map<String, Level> levelMap,
+                Appender appender, java.io.InputStream stream, java.net.URI uri,
+                java.io.File file, java.net.URL url, String source, ClassLoader loader, Level level, Filter filter)
+                throws java.io.IOException {
+            // Creating a new custom configuration
+            ConfigurationBuilderFactory.newConfigurationBuilder();  // Sensitive
+    
+            // Setting loggers level can result in writing sensitive information in production
+            Configurator.setAllLevels("com.example", Level.DEBUG);  // Sensitive
+            Configurator.setLevel("com.example", Level.DEBUG);  // Sensitive
+            Configurator.setLevel(levelMap);  // Sensitive
+            Configurator.setRootLevel(Level.DEBUG);  // Sensitive
+    
+            config.addAppender(appender); // Sensitive: this modifies the configuration
+    
+            LoggerConfig loggerConfig = config.getRootLogger();
+            loggerConfig.addAppender(appender, level, filter); // Sensitive
+            loggerConfig.setLevel(level); // Sensitive
+    
+            context.setConfigLocation(uri); // Sensitive
+    
+            // Load the configuration from a stream or file
+            new ConfigurationSource(stream);  // Sensitive
+            new ConfigurationSource(stream, file);  // Sensitive
+            new ConfigurationSource(stream, url);  // Sensitive
+            ConfigurationSource.fromResource(source, loader);  // Sensitive
+            ConfigurationSource.fromUri(uri);  // Sensitive
+        }
+    }
+    
+    
+    
+    // === java.util.logging ===
+    import java.util.logging.*;
+    
+    class M {
+        void foo(LogManager logManager, Logger logger, java.io.InputStream is, Handler handler)
+                throws SecurityException, java.io.IOException {
+            logManager.readConfiguration(is); // Sensitive
+    
+            logger.setLevel(Level.FINEST); // Sensitive
+            logger.addHandler(handler); // Sensitive
+        }
+    }
+    
+    
+    
+    // === Logback ===
+    import ch.qos.logback.classic.util.ContextInitializer;
+    import ch.qos.logback.core.Appender;
+    import ch.qos.logback.classic.joran.JoranConfigurator;
+    import ch.qos.logback.classic.spi.ILoggingEvent;
+    import ch.qos.logback.classic.*;
+    
+    class M {
+        void foo(Logger logger, Appender<ILoggingEvent> fileAppender) {
+            System.setProperty(ContextInitializer.CONFIG_FILE_PROPERTY, "config.xml"); // Sensitive
+            JoranConfigurator configurator = new JoranConfigurator(); // Sensitive
+    
+            logger.addAppender(fileAppender); // Sensitive
+            logger.setLevel(Level.DEBUG); // Sensitive
+        }
+    }
+    
+
+Recommended Secure Coding Practices
+
+  * Check that your production deployment doesn’t have its loggers in "debug" mode as it might write sensitive information in logs. 
+  * Production logs should be stored in a secure location which is only accessible to system administrators. 
+  * Configure the loggers to display all warnings, info and error messages. Write relevant information such as the precise time of events and the hostname. 
+  * Choose log format which is easy to parse and process automatically. It is important to process logs rapidly in case of an attack so that the impact is known and limited. 
+  * Check that the permissions of the log files are correct. If you index the logs in some other service, make sure that the transfer and the service are secure too. 
+  * Add limits to the size of the logs and make sure that no user can fill the disk with logs. This can happen even when the user does not control the logged information. An attacker could just repeat a logged action many times. 
+
+
+
+Remember that configuring loggers properly doesn’t make them bullet-proof. Here is a list of recommendations explaining on how to use your logs:
+
+  * Don’t log any sensitive information. This obviously includes passwords and credit card numbers but also any personal information such as user names, locations, etc…​ Usually any information which is protected by law is good candidate for removal. 
+  * Sanitize all user inputs before writing them in the logs. This includes checking its size, content, encoding, syntax, etc…​ As for any user input, validate using whitelists whenever possible. Enabling users to write what they want in your logs can have many impacts. It could for example use all your storage space or compromise your log indexing service. 
+  * Log enough information to monitor suspicious activities and evaluate the impact an attacker might have on your systems. Register events such as failed logins, successful logins, server side input validation failures, access denials and any important transaction. 
+  * Monitor the logs for any suspicious activity. 
+
+
+
+See
+
+  * [OWASP Top 10 2021 Category A9](https://owasp.org/Top10/A09_2021-Security_Logging_and_Monitoring_Failures/) \- Security Logging and Monitoring Failures 
+  * [OWASP Top 10 2017 Category A3](https://www.owasp.org/www-project-top-ten/2017/A3_2017-Sensitive_Data_Exposure) \- Sensitive Data Exposure 
+  * [OWASP Top 10 2017 Category A10](https://owasp.org/www-project-top-ten/2017/A10_2017-Insufficient_Logging%2526Monitoring) \- Insufficient Logging & Monitoring 
+  * [MITRE, CWE-117](https://cwe.mitre.org/data/definitions/117) \- Improper Output Neutralization for Logs 
+  * [MITRE, CWE-532](https://cwe.mitre.org/data/definitions/532) \- Information Exposure Through Log Files 
+  * [SANS Top 25](https://www.sans.org/top25-software-errors/#cat3) \- Porous Defenses 

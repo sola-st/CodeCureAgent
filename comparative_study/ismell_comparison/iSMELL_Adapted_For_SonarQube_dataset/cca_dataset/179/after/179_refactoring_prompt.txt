@@ -1,0 +1,118 @@
+In computer programming, a security hotspot is a piece of code that is not necessarily a vulnerability, but it requires review and possibly refactoring to ensure that it is secure.
+Now I will tell you the definition about SonarQube warning 'S2068':'Hard-coded passwords are security-sensitive' as given by the SonarQube docu, including an example to help you solve a similar warning:
+'Because it is easy to extract strings from an application source code or binary, passwords should not be hard-coded. This is particularly true for applications that are distributed or that are open-source.
+
+In the past, it has led to the following vulnerabilities:
+
+  * [CVE-2019-13466](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2019-13466)
+  * [CVE-2018-15389](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2018-15389)
+
+
+
+Passwords should be stored outside of the code in a configuration file, a database, or a password management service.
+
+This rule flags instances of hard-coded passwords used in database and LDAP connections. It looks for hard-coded passwords in connection strings, and for variable names that match any of the patterns from the provided list.
+
+Ask Yourself Whether
+
+  * The password allows access to a sensitive component like a database, a file storage, an API, or a service. 
+  * The password is used in production environments. 
+  * Application re-distribution is required before updating the password. 
+
+
+
+There would be a risk if you answered yes to any of those questions.
+
+Sensitive Code Example
+    
+    
+    String username = "steve";
+    String password = "blue";
+    Connection conn = DriverManager.getConnection("jdbc:mysql://localhost/test?" +
+                      "user=" + uname + "&password=" + password); // Sensitive
+    
+
+Recommended Secure Coding Practices
+
+  * Store the credentials in a configuration file that is not pushed to the code repository. 
+  * Store the credentials in a database. 
+  * Use your cloud provider’s service for managing secrets. 
+  * If a password has been disclosed through the source code: change it. 
+
+
+
+Compliant Solution
+    
+    
+    String username = getEncryptedUser();
+    String password = getEncryptedPassword();
+    Connection conn = DriverManager.getConnection("jdbc:mysql://localhost/test?" +
+                      "user=" + uname + "&password=" + password);
+    
+
+See
+
+  * [OWASP Top 10 2021 Category A7](https://owasp.org/Top10/A07_2021-Identification_and_Authentication_Failures/) \- Identification and Authentication Failures 
+  * [OWASP Top 10 2017 Category A2](https://owasp.org/www-project-top-ten/2017/A2_2017-Broken_Authentication) \- Broken Authentication 
+  * [MITRE, CWE-798](https://cwe.mitre.org/data/definitions/798) \- Use of Hard-coded Credentials 
+  * [MITRE, CWE-259](https://cwe.mitre.org/data/definitions/259) \- Use of Hard-coded Password 
+  * [CERT, MSC03-J.](https://wiki.sei.cmu.edu/confluence/x/OjdGBQ) \- Never hard code sensitive information 
+  * Derived from FindSecBugs rule [Hard Coded Password](https://h3xstream.github.io/find-sec-bugs/bugs.htm#HARD_CODE_PASSWORD)'
+
+Now based on the example, refactor the following Java code to eliminate the 'S2068':'Hard-coded passwords are security-sensitive' warning, with specific warning message ''password' detected in this expression, review this potentially hard-coded password.'.
+Output the full refactored code (the full file). Don't leave out any part of the code.
+The warning is located at the line 'final String originalStr = "User{username='脱敏君', idCard='123456190001011234', password='1234567', email='12345@qq.com', phone='18888888888'}";' (line number 31). Give the changed code using: ```...```.
+Java code:
+```java
+package com.github.houbb.sensitive.test.bs;
+
+import com.github.houbb.sensitive.core.bs.SensitiveBs;
+import com.github.houbb.sensitive.core.support.deepcopy.DeepCopies;
+import com.github.houbb.sensitive.test.core.DataPrepareTest;
+import com.github.houbb.sensitive.test.model.sensitive.User;
+import org.junit.Assert;
+import org.junit.Test;
+
+/**
+ * @author binbin.hou
+ * @since 0.0.9
+ */
+public class SensitiveBsTest {
+
+    @Test
+    public void desCopyTest() {
+        final String originalStr = "User{username='脱敏君', idCard='123456190001011234', password='1234567', email='12345@qq.com', phone='18888888888'}";
+        final String sensitiveStr = "User{username='脱*君', idCard='123456**********34', password='null', email='123**@qq.com', phone='188****8888'}";
+
+        User user = DataPrepareTest.buildUser();
+        Assert.assertEquals(originalStr, user.toString());
+
+        User sensitiveUser = SensitiveBs.newInstance().desCopy(user);
+        Assert.assertEquals(sensitiveStr, sensitiveUser.toString());
+        Assert.assertEquals(originalStr, user.toString());
+    }
+
+    @Test
+    public void desJsonTest() {
+        final String originalStr = "User{username='脱敏君', idCard='123456190001011234', password='1234567', email='12345@qq.com', phone='18888888888'}";
+        final String sensitiveStr = "{\"email\":\"123**@qq.com\",\"idCard\":\"123456**********34\",\"phone\":\"188****8888\",\"username\":\"脱*君\"}";
+
+        User user = DataPrepareTest.buildUser();
+        Assert.assertEquals(originalStr, user.toString());
+
+        String sensitiveUserJson = SensitiveBs.newInstance().desJson(user);
+        Assert.assertEquals(sensitiveStr, sensitiveUserJson);
+        Assert.assertEquals(originalStr, user.toString());
+    }
+
+    @Test
+    public void configTest() {
+        User user = DataPrepareTest.buildUser();
+
+        SensitiveBs.newInstance()
+                .deepCopy(DeepCopies.json())
+                .desJson(user);
+    }
+
+}
+```

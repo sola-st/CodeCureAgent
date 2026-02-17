@@ -1,0 +1,136 @@
+In computer programming, a code smell is any characteristic in the source code of a program that possibly indicates a deeper problem.
+Now I will tell you the definition about SonarQube warning 'S100':'Method names should comply with a naming convention' as given by the SonarQube docu, including an example to help you solve a similar warning:
+'Shared naming conventions allow teams to collaborate efficiently. This rule checks that all method names match a provided regular expression.
+
+Noncompliant Code Example
+
+With default provided regular expression `^[a-z][a-zA-Z0-9]*$`:
+    
+    
+    public int DoSomething(){...}
+    
+
+Compliant Solution
+    
+    
+    public int doSomething(){...}
+    
+
+Exceptions
+
+Overriding methods are excluded.
+    
+    
+    @Override
+    public int Do_Something(){...}'
+
+Now based on the example, refactor the following Java code to eliminate the 'S100':'Method names should comply with a naming convention' warning, with specific warning message 'Rename this method name to match the regular expression '^[a-z][a-zA-Z0-9]*$'.'.
+Output the full refactored code (the full file). Don't leave out any part of the code.
+The warning is located at the line 'public void IriTermGenerator_withRelativeIRI_usesBaseIRI() throws Exception {' (line number 37). Give the changed code using: ```...```.
+Java code:
+```java
+package com.taxonic.carml.engine;
+
+import static org.junit.Assert.assertThrows;
+import static org.mockito.Mockito.when;
+
+import java.util.List;
+import java.util.Optional;
+
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.model.ValueFactory;
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
+import org.junit.Assert;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import com.taxonic.carml.engine.template.TemplateParser;
+import com.taxonic.carml.model.TermType;
+import com.taxonic.carml.model.impl.CarmlObjectMap;
+
+public class TermGeneratorCreatorTest {
+
+
+	@Test
+	public void getGenerator_withReferenceAndTemplate_throwsRuntimeException() throws Exception {
+
+		TermGeneratorCreator tgc = new TermGeneratorCreator(null, "foo", null, TemplateParser.build(), null);
+
+		RuntimeException exception = assertThrows(RuntimeException.class, () ->
+				tgc.getObjectGenerator(new CarmlObjectMap("foo.bar", null, "foo{foo.bar}",
+						TermType.LITERAL, null, null, null, null)));
+		Assert.assertNotNull(exception);
+		Assert.assertTrue(exception.getMessage().startsWith("2 value generators were created for term map"));
+	}
+
+	@Test
+	public void IriTermGenerator_withRelativeIRI_usesBaseIRI() throws Exception {
+
+		ValueFactory f = SimpleValueFactory.getInstance();
+
+		String baseIri = "http://base.iri";
+		TermGeneratorCreator tgc = new TermGeneratorCreator(f, baseIri, null, TemplateParser.build(), null);
+
+		String ref = "ref";
+		TermGenerator<Value> generator = tgc.getObjectGenerator(new CarmlObjectMap(ref, null, null, TermType.IRI, null, null, null, null));
+
+		String relativeIriPart = "/relativeIriPortion";
+		EvaluateExpression evaluator = Mockito.mock(EvaluateExpression.class);
+		when(evaluator.apply(ref)).thenReturn(Optional.of(relativeIriPart));
+		List<Value> result = generator.apply(evaluator);
+
+		Assert.assertTrue(!result.isEmpty());
+		Assert.assertTrue(result.get(0) instanceof IRI);
+		Assert.assertEquals(result.get(0), f.createIRI(baseIri + relativeIriPart));
+	}
+
+	@Test
+	public void IriTermGenerator_withAbsoluteIRI_usesBaseIRI() throws Exception {
+
+		ValueFactory f = SimpleValueFactory.getInstance();
+
+		String baseIri = "http://base.iri";
+		TermGeneratorCreator tgc = new TermGeneratorCreator(f, baseIri, null, TemplateParser.build(), null);
+
+		String ref = "ref";
+		TermGenerator<Value> generator = tgc.getObjectGenerator(new CarmlObjectMap(ref, null, null, TermType.IRI, null, null, null, null));
+
+		String absoluteIri = "http://foo.bar/absoluteIri";
+		EvaluateExpression evaluator = Mockito.mock(EvaluateExpression.class);
+		when(evaluator.apply(ref)).thenReturn(Optional.of(absoluteIri));
+		List<Value> result = generator.apply(evaluator);
+
+		Assert.assertTrue(!result.isEmpty());
+		Assert.assertTrue(result.get(0) instanceof IRI);
+		Assert.assertEquals(result.get(0), f.createIRI(absoluteIri));
+	}
+
+	@Test
+	public void IriTermGenerator_withFaultyIRI_throwsException() throws Exception {
+
+		ValueFactory f = SimpleValueFactory.getInstance();
+
+		String baseIri = "?";
+		TermGeneratorCreator tgc = new TermGeneratorCreator(f, baseIri, null, TemplateParser.build(), null);
+
+		String ref = "ref";
+		TermGenerator<Value> generator = tgc.getObjectGenerator(new CarmlObjectMap(ref, null, null, TermType.IRI, null, null, null, null));
+
+		String relativeIriPart = "/relativeIriPortion";
+		EvaluateExpression evaluator = Mockito.mock(EvaluateExpression.class);
+		when(evaluator.apply(ref)).thenReturn(Optional.of(relativeIriPart));
+
+		RuntimeException exception = null;
+		try {
+			generator.apply(evaluator);
+			Assert.assertTrue("This code should be unreachable", false);
+		} catch (RuntimeException e) {
+			exception = e;
+		}
+
+		Assert.assertNotNull(exception);
+		Assert.assertTrue(exception.getMessage().startsWith("Could not generate a valid iri"));
+	}
+
+}```

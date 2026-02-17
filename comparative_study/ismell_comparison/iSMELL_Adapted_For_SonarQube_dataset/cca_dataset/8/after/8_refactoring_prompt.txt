@@ -1,0 +1,113 @@
+In computer programming, a security hotspot is a piece of code that is not necessarily a vulnerability, but it requires review and possibly refactoring to ensure that it is secure.
+Now I will tell you the definition about SonarQube warning 'S4036':'Searching OS commands in PATH is security-sensitive' as given by the SonarQube docu, including an example to help you solve a similar warning:
+'When executing an OS command and unless you specify the full path to the executable, then the locations in your application’s `PATH` environment variable will be searched for the executable. That search could leave an opening for an attacker if one of the elements in `PATH` is a directory under his control.
+
+Ask Yourself Whether
+
+  * The directories in the PATH environment variable may be defined by not trusted entities. 
+
+
+
+There is a risk if you answered yes to this question.
+
+Sensitive Code Example
+
+The full path of the command is not specified and thus the executable will be searched in all directories listed in the `PATH` environment variable:
+    
+    
+    Runtime.getRuntime().exec("make");  // Sensitive
+    Runtime.getRuntime().exec(new String[]{"make"});  // Sensitive
+    
+    ProcessBuilder builder = new ProcessBuilder("make");  // Sensitive
+    builder.command("make");  // Sensitive
+    
+
+Recommended Secure Coding Practices
+
+Fully qualified/absolute path should be used to specify the OS command to execute.
+
+Compliant Solution
+
+The command is defined by its full path:
+    
+    
+    Runtime.getRuntime().exec("/usr/bin/make");  // Compliant
+    Runtime.getRuntime().exec(new String[]{"~/bin/make"});  // Compliant
+    
+    ProcessBuilder builder = new ProcessBuilder("./bin/make");  // Compliant
+    builder.command("../bin/make");  // Compliant
+    builder.command(Arrays.asList("..\bin\make", "-j8")); // Compliant
+    
+    builder = new ProcessBuilder(Arrays.asList(".\make"));  // Compliant
+    builder.command(Arrays.asList("C:\bin\make", "-j8"));  // Compliant
+    builder.command(Arrays.asList("\\SERVER\bin\make"));  // Compliant
+    
+
+See
+
+  * [OWASP Top 10 2021 Category A8](https://owasp.org/Top10/A08_2021-Software_and_Data_Integrity_Failures/) \- Software and Data Integrity Failures 
+  * [OWASP Top 10 2017 Category A1](https://owasp.org/www-project-top-ten/2017/A1_2017-Injection) \- Injection 
+  * [MITRE, CWE-426](https://cwe.mitre.org/data/definitions/426) \- Untrusted Search Path 
+  * [MITRE, CWE-427](https://cwe.mitre.org/data/definitions/427) \- Uncontrolled Search Path Element'
+
+Now based on the example, refactor the following Java code to eliminate the 'S4036':'Searching OS commands in PATH is security-sensitive' warning, with specific warning message 'Make sure the "PATH" used to find this command includes only what you intend.'.
+Output the full refactored code (the full file). Don't leave out any part of the code.
+The warning is located at the line 'Process p = new ProcessBuilder("my-application").start();' (line number 37). Give the changed code using: ```...```.
+Java code:
+```java
+package org.zeroturnaround.process;
+
+import java.io.File;
+import java.util.concurrent.TimeUnit;
+
+import org.apache.commons.io.FileUtils;
+
+public class Examples {
+
+  public static void getMyPid() {
+    int pid = PidUtil.getMyPid();
+    System.out.println("My PID is " + pid);
+  }
+
+  public static void isAlivePid() throws Exception {
+    int pid = Integer.parseInt(FileUtils.readFileToString(new File("pidfile")));
+    PidProcess process = Processes.newPidProcess(pid);
+    boolean isAlive = process.isAlive();
+    System.out.println("PID " + pid + " is alive: " + isAlive);
+  }
+
+  public static void isAliveProcess() throws Exception {
+    Process p = new ProcessBuilder("my-application").start();
+    JavaProcess process = Processes.newJavaProcess(p);
+    boolean isAlive = process.isAlive();
+    System.out.println("Process " + process + " is alive: " + isAlive);
+  }
+
+  public static void waitForPid() throws Exception {
+    int pid = Integer.parseInt(FileUtils.readFileToString(new File("pidfile")));
+    PidProcess process = Processes.newPidProcess(pid);
+    boolean finished = process.waitFor(10, TimeUnit.MINUTES);
+    System.out.println("PID " + pid + " finished on time: " + finished);
+  }
+
+  public static void waitForProcess() throws Exception {
+    Process p = new ProcessBuilder("my-application").start();
+    JavaProcess process = Processes.newJavaProcess(p);
+    boolean finished = process.waitFor(10, TimeUnit.MINUTES);
+    System.out.println("Process " + process + " finished on time: " + finished);
+  }
+
+  public static void destroyPid() throws Exception {
+    int pid = Integer.parseInt(FileUtils.readFileToString(new File("pidfile")));
+    PidProcess process = Processes.newPidProcess(pid);
+    ProcessUtil.destroyGracefullyOrForcefullyAndWait(process, 30, TimeUnit.SECONDS, 10, TimeUnit.SECONDS);
+  }
+
+  public static void destroyProcess() throws Exception {
+    Process p = new ProcessBuilder("my-application").start();
+    SystemProcess process = Processes.newStandardProcess(p);
+    ProcessUtil.destroyGracefullyOrForcefullyAndWait(process, 30, TimeUnit.SECONDS, 10, TimeUnit.SECONDS);
+  }
+
+}
+```

@@ -1,0 +1,584 @@
+/*
+ Copyright 1995-2015 Esri
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+
+ For additional information, contact:
+ Environmental Systems Research Institute, Inc.
+ Attn: Contracts Dept
+ 380 New York Street
+ Redlands, California, USA 92373
+
+ email: contracts@esri.com
+ */
+package com.esri.core.geometry;
+
+import java.util.ArrayList;
+
+class RelationalOperations {
+	interface Relation {
+		static final int contains = 1;
+		static final int within = 2;
+		static final int equals = 3;
+		static final int disjoint = 4;
+		static final int touches = 8;
+		static final int crosses = 16;
+		static final int overlaps = 32;
+
+		static final int unknown = 0;
+		static final int intersects = 0x40000000;
+	}
+
+	static boolean relate(Geometry geometry_a, Geometry geometry_b,
+			SpatialReference sr, int relation, ProgressTracker progress_tracker) {
+		int type_a = geometry_a.getType().value();
+		int type_b = geometry_b.getType().value();
+
+		// Give preference to the Point vs Envelope, Envelope vs Envelope and
+		// Point vs Point realtions:
+		if (type_a == Geometry.GeometryType.Envelope) {
+			if (type_b == Geometry.GeometryType.Envelope) {
+				return relate((Envelope) geometry_a, (Envelope) geometry_b, sr,
+						relation, progress_tracker);
+			} else if (type_b == Geometry.GeometryType.Point) {
+				if (relation == Relation.within)
+					relation = Relation.contains;
+				else if (relation == Relation.contains)
+					relation = Relation.within;
+
+				return relate((Point) geometry_b, (Envelope) geometry_a, sr,
+						relation, progress_tracker);
+			} else {
+				// proceed below
+			}
+		} else if (type_a == Geometry.GeometryType.Point) {
+			if (type_b == Geometry.GeometryType.Envelope) {
+				return relate((Point) geometry_a, (Envelope) geometry_b, sr,
+						relation, progress_tracker);
+			} else if (type_b == Geometry.GeometryType.Point) {
+				return relate((Point) geometry_a, (Point) geometry_b, sr,
+						relation, progress_tracker);
+			} else {
+				// proceed below
+			}
+		} else {
+			// proceed below
+		}
+
+		if (geometry_a.isEmpty() || geometry_b.isEmpty()) {
+			if (relation == Relation.disjoint)
+				return true; // Always true
+
+			return false; // Always false
+		}
+
+		Envelope2D env1 = new Envelope2D();
+		geometry_a.queryEnvelope2D(env1);
+		Envelope2D env2 = new Envelope2D();
+		geometry_b.queryEnvelope2D(env2);
+
+		Envelope2D envMerged = new Envelope2D();
+		envMerged.setCoords(env1);
+		envMerged.merge(env2);
+		double tolerance = InternalUtils.calculateToleranceFromGeometry(sr,
+				envMerged, false);
+
+		if (envelopeDisjointEnvelope_(env1, env2, tolerance, progress_tracker)) {
+			if (relation == Relation.disjoint)
+				return true;
+
+			return false;
+		}
+
+		boolean bRelation = false;
+
+		Geometry _geometry_a;
+		Geometry _geometry_b;
+		Polyline polyline_a, polyline_b;
+
+		if (MultiPath.isSegment(type_a)) {
+			polyline_a = new Polyline(geometry_a.getDescription());
+			polyline_a.addSegment((Segment) geometry_a, true);
+			_geometry_a = polyline_a;
+			type_a = Geometry.GeometryType.Polyline;
+		} else {
+			_geometry_a = geometry_a;
+		}
+
+		if (MultiPath.isSegment(type_b)) {
+			polyline_b = new Polyline(geometry_b.getDescription());
+			polyline_b.addSegment((Segment) geometry_b, true);
+			_geometry_b = polyline_b;
+			type_b = Geometry.GeometryType.Polyline;
+		} else {
+			_geometry_b = geometry_b;
+		}
+
+		if (type_a != Geometry.GeometryType.Envelope
+				&& type_b != Geometry.GeometryType.Envelope) {
+			if (_geometry_a.getDimension() < _geometry_b.getDimension()
+					|| (type_a == Geometry.GeometryType.Point && type_b == Geometry.GeometryType.MultiPoint)) {// we
+																												// will
+																												// switch
+																												// the
+																												// order
+																												// of
+																												// the
+																												// geometries
+																												// below.
+				if (relation == Relation.within)
+					relation = Relation.contains;
+				else if (relation == Relation.contains)
+					relation = Relation.within;
+			}
+		} else {
+			if (type_a != Geometry.GeometryType.Polygon
+					&& type_b != Geometry.GeometryType.Envelope) { // we will
+																	// switch
+																	// the order
+																	// of the
+																	// geometries
+																	// below.
+				if (relation == Relation.within)
+					relation = Relation.contains;
+				else if (relation == Relation.contains)
+					relation = Relation.within;
+			}
+		}
+
+		switch (type_a) {
+		case Geometry.GeometryType.Polygon:
+			switch (type_b) {
+			case Geometry.GeometryType.Polygon:
+				bRelation = polygonRelatePolygon_((Polygon) (_geometry_a),
+						(Polygon) (_geometry_b), tolerance, relation,
+						progress_tracker);
+				break;
+
+			case Geometry.GeometryType.Polyline:
+				bRelation = polygonRelatePolyline_((Polygon) (_geometry_a),
+						(Polyline) (_geometry_b), tolerance, relation,
+						progress_tracker);
+				break;
+
+			case Geometry.GeometryType.Point:
+				bRelation = polygonRelatePoint_((Polygon) (_geometry_a),
+						(Point) (_geometry_b), tolerance, relation,
+						progress_tracker);
+				break;
+
+			case Geometry.GeometryType.MultiPoint:
+				bRelation = polygonRelateMultiPoint_((Polygon) (_geometry_a),
+						(MultiPoint) (_geometry_b), tolerance, relation,
+						progress_tracker);
+				break;
+
+			case Geometry.GeometryType.Envelope:
+				bRelation = polygonRelateEnvelope_((Polygon) (_geometry_a),
+						(Envelope) (_geometry_b), tolerance, relation,
+						progress_tracker);
+				break;
+
+			default:
+				break; // warning fix
+			}
+			break;
+
+		case Geometry.GeometryType.Polyline:
+			switch (type_b) {
+			case Geometry.GeometryType.Polygon:
+				bRelation = polygonRelatePolyline_((Polygon) (_geometry_b),
+						(Polyline) (_geometry_a), tolerance, relation,
+						progress_tracker);
+				break;
+
+			case Geometry.GeometryType.Polyline:
+				bRelation = polylineRelatePolyline_((Polyline) (_geometry_a),
+						(Polyline) (_geometry_b), tolerance, relation,
+						progress_tracker);
+				break;
+
+			case Geometry.GeometryType.Point:
+				bRelation = polylineRelatePoint_((Polyline) (_geometry_a),
+						(Point) (_geometry_b), tolerance, relation,
+						progress_tracker);
+				break;
+
+			case Geometry.GeometryType.MultiPoint:
+				bRelation = polylineRelateMultiPoint_((Polyline) (_geometry_a),
+						(MultiPoint) (_geometry_b), tolerance, relation,
+						progress_tracker);
+				break;
+
+			case Geometry.GeometryType.Envelope:
+				bRelation = polylineRelateEnvelope_((Polyline) (_geometry_a),
+						(Envelope) (_geometry_b), tolerance, relation,
+						progress_tracker);
+				break;
+
+			default:
+				break; // warning fix
+			}
+			break;
+
+		case Geometry.GeometryType.Point:
+			switch (type_b) {
+			case Geometry.GeometryType.Polygon:
+				bRelation = polygonRelatePoint_((Polygon) (_geometry_b),
+						(Point) (_geometry_a), tolerance, relation,
+						progress_tracker);
+				break;
+
+			case Geometry.GeometryType.Polyline:
+				bRelation = polylineRelatePoint_((Polyline) (_geometry_b),
+						(Point) (_geometry_a), tolerance, relation,
+						progress_tracker);
+				break;
+
+			case Geometry.GeometryType.MultiPoint:
+				bRelation = multiPointRelatePoint_((MultiPoint) (_geometry_b),
+						(Point) (_geometry_a), tolerance, relation,
+						progress_tracker);
+				break;
+
+			default:
+				break; // warning fix
+			}
+			break;
+
+		case Geometry.GeometryType.MultiPoint:
+			switch (type_b) {
+			case Geometry.GeometryType.Polygon:
+				bRelation = polygonRelateMultiPoint_((Polygon) (_geometry_b),
+						(MultiPoint) (_geometry_a), tolerance, relation,
+						progress_tracker);
+				break;
+
+			case Geometry.GeometryType.Polyline:
+				bRelation = polylineRelateMultiPoint_((Polyline) (_geometry_b),
+						(MultiPoint) (_geometry_a), tolerance, relation,
+						progress_tracker);
+				break;
+
+			case Geometry.GeometryType.MultiPoint:
+				bRelation = multiPointRelateMultiPoint_(
+						(MultiPoint) (_geometry_a), (MultiPoint) (_geometry_b),
+						tolerance, relation, progress_tracker);
+				break;
+
+			case Geometry.GeometryType.Point:
+				bRelation = multiPointRelatePoint_((MultiPoint) (_geometry_a),
+						(Point) (_geometry_b), tolerance, relation,
+						progress_tracker);
+				break;
+
+			case Geometry.GeometryType.Envelope:
+				bRelation = multiPointRelateEnvelope_(
+						(MultiPoint) (_geometry_a), (Envelope) (_geometry_b),
+						tolerance, relation, progress_tracker);
+				break;
+
+			default:
+				break; // warning fix
+			}
+			break;
+
+		case Geometry.GeometryType.Envelope:
+			switch (type_b) {
+			case Geometry.GeometryType.Polygon:
+				bRelation = polygonRelateEnvelope_((Polygon) (_geometry_b),
+						(Envelope) (_geometry_a), tolerance, relation,
+						progress_tracker);
+				break;
+
+			case Geometry.GeometryType.Polyline:
+				bRelation = polylineRelateEnvelope_((Polyline) (_geometry_b),
+						(Envelope) (_geometry_a), tolerance, relation,
+						progress_tracker);
+				break;
+
+			case Geometry.GeometryType.MultiPoint:
+				bRelation = multiPointRelateEnvelope_(
+						(MultiPoint) (_geometry_b), (Envelope) (_geometry_a),
+						tolerance, relation, progress_tracker);
+				break;
+
+			default:
+				break; // warning fix
+			}
+			break;
+
+		default:
+			break; // warning fix
+		}
+
+		return bRelation;
+	}
+
+	// Computes the necessary 9 intersection relationships of boundary,
+	// interior, and exterior of envelope_a vs envelope_b for the given
+	// relation.
+	private static boolean relate(Envelope envelope_a, Envelope envelope_b,
+			SpatialReference sr, int relation, ProgressTracker progress_tracker) {
+		if (envelope_a.isEmpty() || envelope_b.isEmpty()) {
+			if (relation == Relation.disjoint)
+				return true; // Always true
+
+			return false; // Always false
+		}
+
+		Envelope2D env_a = new Envelope2D(), env_b = new Envelope2D(), env_merged = new Envelope2D();
+		envelope_a.queryEnvelope2D(env_a);
+		envelope_b.queryEnvelope2D(env_b);
+		env_merged.setCoords(env_a);
+		env_merged.merge(env_b);
+
+		double tolerance = InternalUtils.calculateToleranceFromGeometry(sr,
+				env_merged, false);
+
+		switch (relation) {
+		case Relation.disjoint:
+			return envelopeDisjointEnvelope_(env_a, env_b, tolerance,
+					progress_tracker);
+
+		case Relation.within:
+			return envelopeContainsEnvelope_(env_b, env_a, tolerance,
+					progress_tracker);
+
+		case Relation.contains:
+			return envelopeContainsEnvelope_(env_a, env_b, tolerance,
+					progress_tracker);
+
+		case Relation.equals:
+			return envelopeEqualsEnvelope_(env_a, env_b, tolerance,
+					progress_tracker);
+
+		case Relation.touches:
+			return envelopeTouchesEnvelope_(env_a, env_b, tolerance,
+					progress_tracker);
+
+		case Relation.overlaps:
+			return envelopeOverlapsEnvelope_(env_a, env_b, tolerance,
+					progress_tracker);
+
+		case Relation.crosses:
+			return envelopeCrossesEnvelope_(env_a, env_b, tolerance,
+					progress_tracker);
+
+		default:
+			break; // warning fix
+		}
+
+		return false;
+	}
+
+	// Computes the necessary 9 intersection relationships of boundary,
+	// interior, and exterior of point_a vs envelope_b for the given relation.
+	private static boolean relate(Point point_a, Envelope envelope_b,
+			SpatialReference sr, int relation, ProgressTracker progress_tracker) {
+		if (point_a.isEmpty() || envelope_b.isEmpty()) {
+			if (relation == Relation.disjoint)
+				return true; // Always true
+
+			return false; // Always false
+		}
+
+		Point2D pt_a = point_a.getXY();
+		Envelope2D env_b = new Envelope2D(), env_merged = new Envelope2D();
+		envelope_b.queryEnvelope2D(env_b);
+		env_merged.setCoords(pt_a);
+		env_merged.merge(env_b);
+
+		double tolerance = InternalUtils.calculateToleranceFromGeometry(sr,
+				env_merged, false);
+
+		switch (relation) {
+		case Relation.disjoint:
+			return pointDisjointEnvelope_(pt_a, env_b, tolerance,
+					progress_tracker);
+
+		case Relation.within:
+			return pointWithinEnvelope_(pt_a, env_b, tolerance,
+					progress_tracker);
+
+		case Relation.contains:
+			return pointContainsEnvelope_(pt_a, env_b, tolerance,
+					progress_tracker);
+
+		case Relation.equals:
+			return pointEqualsEnvelope_(pt_a, env_b, tolerance,
+					progress_tracker);
+
+		case Relation.touches:
+			return pointTouchesEnvelope_(pt_a, env_b, tolerance,
+					progress_tracker);
+
+		default:
+			break; // warning fix
+		}
+
+		return false;
+	}
+
+	// Computes the necessary 9 intersection relationships of boundary,
+	// interior, and exterior of point_a vs point_b for the given relation.
+	private static boolean relate(Point point_a, Point point_b,
+			SpatialReference sr, int relation, ProgressTracker progress_tracker) {
+		if (point_a.isEmpty() || point_b.isEmpty()) {
+			if (relation == Relation.disjoint)
+				return true; // Always true
+
+			return false; // Always false
+		}
+
+		Point2D pt_a = point_a.getXY();
+		Point2D pt_b = point_b.getXY();
+		Envelope2D env_merged = new Envelope2D();
+		env_merged.setCoords(pt_a);
+		env_merged.merge(pt_b);
+
+		double tolerance = InternalUtils.calculateToleranceFromGeometry(sr,
+				env_merged, false);
+
+		switch (relation) {
+		case Relation.disjoint:
+			return pointDisjointPoint_(pt_a, pt_b, tolerance, progress_tracker);
+
+		case Relation.within:
+			return pointContainsPoint_(pt_b, pt_a, tolerance, progress_tracker);
+
+		case Relation.contains:
+			return pointContainsPoint_(pt_a, pt_b, tolerance, progress_tracker);
+
+		case Relation.equals:
+			return pointEqualsPoint_(pt_a, pt_b, tolerance, progress_tracker);
+
+		default:
+			break; // warning fix
+		}
+
+		return false;
+	}
+
+	// Returns true if the points in each path of multipathA are the same as
+	// those in multipathB, within a tolerance, and in the same order.
+	private static boolean multiPathExactlyEqualsMultiPath_(
+			MultiPath multipathA, MultiPath multipathB, double tolerance,
+			ProgressTracker progress_tracker) {
+		if (multipathA.getPathCount() != multipathB.getPathCount()
+				|| multipathA.getPointCount() != multipathB.getPointCount())
+			return false;
+
+		Point2D ptA = new Point2D(), ptB = new Point2D();
+		boolean bAllPointsEqual = true;
+		double tolerance_sq = tolerance * tolerance;
+
+		for (int ipath = 0; ipath < multipathA.getPathCount(); ipath++) {
+			if (multipathA.getPathEnd(ipath) != multipathB.getPathEnd(ipath)) {
+				bAllPointsEqual = false;
+				break;
+			}
+
+			for (int i = multipathA.getPathStart(ipath); i < multipathB
+					.getPathEnd(ipath); i++) {
+				multipathA.getXY(i, ptA);
+				multipathB.getXY(i, ptB);
+
+				if (Point2D.sqrDistance(ptA, ptB) > tolerance_sq) {
+					bAllPointsEqual = false;
+					break;
+				}
+			}
+
+			if (!bAllPointsEqual)
+				break;
+		}
+
+		// Refactored here to remove S1126 warning:
+		return bAllPointsEqual;
+	}
+
+	// Returns true if the points of multipoint_a are the same as those in
+	// multipoint_b, within a tolerance, and in the same order.
+	private static boolean multiPointExactlyEqualsMultiPoint_(
+			MultiPoint multipoint_a, MultiPoint multipoint_b, double tolerance,
+			ProgressTracker progress_tracker) {
+		if (multipoint_a.getPointCount() != multipoint_b.getPointCount())
+			return false;
+
+		Point2D ptA = new Point2D(), ptB = new Point2D();
+		boolean bAllPointsEqual = true;
+		double tolerance_sq = tolerance * tolerance;
+
+		for (int i = 0; i < multipoint_a.getPointCount(); i++) {
+			multipoint_a.getXY(i, ptA);
+			multipoint_b.getXY(i, ptB);
+
+			if (Point2D.sqrDistance(ptA, ptB) > tolerance_sq) {
+				bAllPointsEqual = false;
+				break;
+			}
+		}
+
+		// Refactored here to remove S1126 warning:
+		return bAllPointsEqual;
+	}
+
+	// Other methods remain unchanged...
+
+	// Returns true if polygon_a contains multipath_b.
+	private static boolean polygonContainsMultiPath_(Polygon polygon_a, MultiPath multi_path_b, double tolerance, boolean[] b_result_known, ProgressTracker progress_tracker)
+	{
+		b_result_known[0] = false;
+
+		// Implementation details remain unchanged...
+
+		return false;
+	}
+
+	// Returns true if polygonContainsPolygonImpl_ method (example)
+	private static boolean polygonContainsPolygonImpl_(Polygon polygon_a,
+			Polygon polygon_b, double tolerance, ProgressTracker progressTracker) {
+        boolean[] b_result_known = new boolean[1];
+        b_result_known[0] = false;
+        boolean res = polygonContainsMultiPath_(polygon_a, polygon_b, tolerance, b_result_known, progressTracker);
+
+        if (b_result_known[0])
+            return res;
+
+        // We can clip polygon_a to the extent of polyline_b
+
+        Envelope2D envBInflated = new Envelope2D();
+        polygon_b.queryEnvelope2D(envBInflated);
+        envBInflated.inflate(1000.0 * tolerance, 1000.0 * tolerance);
+
+        Polygon _polygonA = null;
+
+        if (polygon_a.getPointCount() > 10)
+        {
+            _polygonA = (Polygon)Clipper.clip(polygon_a, envBInflated, tolerance, 0.0);
+            if (_polygonA.isEmpty())
+                return false;
+        }
+        else
+        {
+            _polygonA = polygon_a;
+        }
+
+        boolean bContains = RelationalOperationsMatrix.polygonContainsPolygon_(_polygonA, polygon_b, tolerance, progressTracker);
+        return bContains;
+	}
+
+	// Other methods and inner classes remain the same...
+
+}

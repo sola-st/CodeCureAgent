@@ -1,0 +1,149 @@
+In computer programming, a code smell is any characteristic in the source code of a program that possibly indicates a deeper problem.
+Now I will tell you the definition about SonarQube warning 'S1130':'"throws" declarations should not be superfluous' as given by the SonarQube docu, including an example to help you solve a similar warning:
+'An exception in a `throws` declaration in Java is superfluous if it is:
+
+  * listed multiple times 
+  * a subclass of another listed exception 
+  * completely unnecessary because the declared exception type cannot actually be thrown 
+
+
+
+Noncompliant Code Example
+    
+    
+    void foo() throws MyException, MyException {}  // Noncompliant; should be listed once
+    void bar() throws Throwable, Exception {}  // Noncompliant; Exception is a subclass of Throwable
+    
+
+Compliant Solution
+    
+    
+    void foo() throws MyException {}
+    void bar() throws Throwable {}
+    
+
+Exceptions
+
+The rule will not raise any issue for exceptions that cannot be thrown from the method body:
+
+  * in overriding and implementation methods 
+  * in interface `default` methods 
+  * in non-private methods that only `throw`, have empty bodies, or a single return statement. 
+  * in overridable methods (non-final, or not member of a final class, non-static, non-private), if the exception is documented with a proper JavaDoc 
+
+
+
+Also, the rule won’t raise issues on `RuntimeException`, or one of its descendants, because explicating runtime exceptions which could be thrown can ultimately help the method’s users, and can even be considered as good practice.
+    
+    
+    class A extends B {
+      @Override
+      void doSomething() throws IOException {
+        compute(a);
+      }
+    
+      public void foo() throws IOException {}
+    
+      public void qix() throws MyRuntimeException {}
+    
+      protected void bar() throws IOException {
+        throw new UnsupportedOperationException("This method should be implemented in subclasses");
+      }
+    
+      Object foobar(String s) throws IOException {
+        return null;
+      }
+    
+      /**
+       * @throws IOException Overriding classes may throw this exception if they print values into a file
+       */
+      protected void print() throws IOException { // no issue, method is overridable and the exception has proper javadoc
+        System.out.println("foo");
+      }
+    }'
+
+Now based on the example, refactor the following Java code to eliminate the 'S1130':'"throws" declarations should not be superfluous' warning, with specific warning message 'Remove the declaration of thrown exception 'java.io.IOException', as it cannot be thrown from constructor's body.'.
+Output the full refactored code (the full file). Don't leave out any part of the code.
+The warning is located at the line 'public RepeatingInputStream(byte[] buf) throws IOException {' (line number 18). Give the changed code using: ```...```.
+Java code:
+```java
+package com.spotify.sparkey;
+
+import org.junit.Test;
+
+import java.io.*;
+
+import static org.junit.Assert.assertEquals;
+
+/**
+ * Tests CompressedReader
+ */
+public class CompressedReaderTest {
+    // A stream that reads the same array repeatedly, forever.
+    private class RepeatingInputStream extends InputStream {
+        private byte[] buffer;
+        private int pos = 0;
+
+        public RepeatingInputStream(byte[] buf) throws IOException {
+            buffer = buf;
+        }
+
+        public int read() throws IOException {
+            int ret = buffer[pos];
+            skip(1);
+            return ret;
+        }
+
+        public int read(byte[] b, int off, int len) throws IOException {
+            int remain = len;
+            while (remain > 0) {
+                int avail = buffer.length - pos;
+                int copy = Math.min(avail, remain);
+                System.arraycopy(buffer, pos, b, off, copy);
+                skip(copy);
+                off += copy;
+                remain -= copy;
+            }
+            return len;
+        }
+
+        public long skip(long n) throws IOException {
+            pos = (int)((n + pos) % buffer.length);
+            return n;
+        }
+    }
+
+    private CompressedReader reader(CompressorType compressor) throws IOException {
+        byte[] uncompressed = new byte[10];
+        for (int i = 0; i < uncompressed.length; ++i) {
+            uncompressed[i] = (byte)i;
+        }
+
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        byte[] compressed = new byte[compressor.maxCompressedLength(uncompressed.length)];
+        int length = compressor.compress(uncompressed, uncompressed.length, compressed);
+        Util.writeUnsignedVLQ(length, bytes);
+        bytes.write(compressed, 0, length);
+
+        InputStream buf = new RepeatingInputStream(bytes.toByteArray());
+        return new CompressedReader(compressor, buf, uncompressed.length, 0);
+    }
+
+    @Test
+    public void testLargeSkip() throws IOException {
+        for (CompressorType compressor : CompressorType.values()) {
+            long ret = reader(compressor).skip(1000 * 1000);
+            assertEquals(1000 * 1000, ret);
+        }
+    }
+
+    @Test
+    public void testLargeRead() throws IOException {
+        for (CompressorType compressor : CompressorType.values()) {
+            byte[] buf = new byte[1000 * 1000];
+            int ret = reader(compressor).read(buf);
+            assertEquals(1000 * 1000, ret);
+        }
+    }
+}
+```

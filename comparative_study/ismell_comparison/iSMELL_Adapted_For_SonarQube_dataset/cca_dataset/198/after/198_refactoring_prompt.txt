@@ -1,0 +1,145 @@
+In computer programming, a code smell is any characteristic in the source code of a program that possibly indicates a deeper problem.
+Now I will tell you the definition about SonarQube warning 'S3416':'Loggers should be named for their enclosing classes' as given by the SonarQube docu, including an example to help you solve a similar warning:
+'It is convention to name each class’s logger for the class itself. Doing so allows you to set up clear, communicative logger configuration. Naming loggers by some other convention confuses configuration, and using the same class name for multiple class loggers prevents the granular configuration of each class' logger. Some libraries, such as SLF4J warn about this, but not all do.
+
+This rule raises an issue when a logger is not named for its enclosing class.
+
+Noncompliant Code Example
+    
+    
+    public class MyClass {
+      private final static Logger LOG = LoggerFactory.getLogger(WrongClass.class);  // Noncompliant; multiple classes using same logger
+    }
+    
+
+Compliant Solution
+    
+    
+    public class MyClass {
+      private final static Logger LOG = LoggerFactory.getLogger(MyClass.class);
+    }'
+
+Now based on the example, refactor the following Java code to eliminate the 'S3416':'Loggers should be named for their enclosing classes' warning, with specific warning message 'Update this logger to use "SyncCollectionReport.class".'.
+Output the full refactored code (the full file). Don't leave out any part of the code.
+The warning is located at the line 'private static final Logger log = Logger.getLogger(SardineReport.class.getName());' (line number 22). Give the changed code using: ```...```.
+Java code:
+```java
+package com.github.sardine.report;
+
+import com.github.sardine.DavResource;
+import com.github.sardine.model.Limit;
+import com.github.sardine.model.Multistatus;
+import com.github.sardine.model.Prop;
+import com.github.sardine.model.Response;
+import com.github.sardine.model.SyncCollection;
+import com.github.sardine.util.SardineUtil;
+import org.w3c.dom.Element;
+
+import javax.xml.namespace.QName;
+import java.math.BigInteger;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.logging.Logger;
+
+public class SyncCollectionReport extends SardineReport<SyncCollectionReport.Result>
+{
+	private static final Logger log = Logger.getLogger(SardineReport.class.getName());
+
+	public enum SyncLevel
+	{
+		LEVEL_1("1"),
+		LEVEL_INFINITY("infinite");
+
+		private final String value;
+
+		SyncLevel(String value)
+		{
+			this.value = value;
+		}
+
+		public String toString()
+		{
+			return value;
+		}
+	}
+
+	private final String syncToken;
+	private final SyncLevel syncLevel;
+	private final Set<QName> properties;
+	private final Integer limit;
+
+	public SyncCollectionReport(String syncToken, SyncLevel syncLevel, Set<QName> properties, Integer limit)
+	{
+		this.syncToken = syncToken;
+		this.syncLevel = syncLevel;
+		this.properties = properties;
+		this.limit = limit;
+	}
+
+	@Override
+	public Object toJaxb()
+	{
+		Prop prop = new Prop();
+		List<Element> any = prop.getAny();
+		for (QName entry : properties)
+		{
+			any.add(SardineUtil.createElement(entry));
+		}
+
+		SyncCollection syncCollection = new SyncCollection();
+		syncCollection.setSyncToken(syncToken == null ? "" : syncToken);
+		syncCollection.setSyncLevel(syncLevel.toString());
+		syncCollection.setProp(prop);
+		if (limit != null && limit > 0)
+		{
+			Limit l = new Limit();
+			l.setNresults(BigInteger.valueOf(limit));
+			syncCollection.setLimit(l);
+		}
+		return syncCollection;
+	}
+
+	@Override
+	public Result fromMultistatus(Multistatus multistatus)
+	{
+		List<Response> responses = multistatus.getResponse();
+		List<DavResource> resources = new ArrayList<DavResource>(responses.size());
+		for (Response response : responses)
+		{
+			try
+			{
+				resources.add(new DavResource(response));
+			}
+			catch (URISyntaxException e)
+			{
+				log.warning(String.format("Ignore resource with invalid URI %s", response.getHref().get(0)));
+			}
+		}
+		return new Result(resources, multistatus.getSyncToken());
+	}
+
+	public static class Result
+	{
+		private final List<DavResource> resources;
+		private final String syncToken;
+
+		Result(List<DavResource> resources, String syncToken)
+		{
+			this.resources = resources;
+			this.syncToken = syncToken;
+		}
+
+		public List<DavResource> getResources()
+		{
+			return resources;
+		}
+
+		public String getSyncToken()
+		{
+			return syncToken;
+		}
+	}
+}
+```

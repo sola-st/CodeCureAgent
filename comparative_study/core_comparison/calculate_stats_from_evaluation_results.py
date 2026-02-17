@@ -541,6 +541,16 @@ def calculate_stats_from_evaluation_results(core_evaluation_results_file: click.
     mdFile.new_line(
         f"CORE Only for warnings classified as TP in CCA : fix created + build successful + target warning removed + no other warning introduced + test successful: {fix_created_build_test_target_removed_no_other_introduced_only_cca_TP}/{classified_tp} ({percent_fix_created_build_test_target_removed_no_other_removed_only_cca_TP:.2f}%)  ")
 
+    # CORE fix successful + build successful + target warning removed + no other warning introduced + test successful for only false positives for cca
+    fix_created_build_test_target_removed_no_other_introduced_only_cca_FP = (
+        (evaluation_results_file_df["coreNumberBuildAndRemovedWarningAndNoNewWarningAndTest"] > 0) & (evaluation_results_file_df["classification"] == "FP")).sum()  
+    percent_fix_created_build_test_target_removed_no_other_removed_only_cca_FP = 100 * fix_created_build_test_target_removed_no_other_introduced_only_cca_FP / \
+        classified_fp if classified_fp else 0
+    
+    mdFile.new_line(
+        f"CORE Only for warnings classified as FP in CCA : fix created + build successful + target warning removed + no other warning introduced + test successful: {fix_created_build_test_target_removed_no_other_introduced_only_cca_FP}/{classified_fp} ({percent_fix_created_build_test_target_removed_no_other_removed_only_cca_FP:.2f}%)  ")
+
+
     # Sorald fix successful + build successful + target warning removed + no other warning introduced + test successful + fix correct
 
     percent_fix_created_build_test_target_removed_no_other_introduced_fix_correct = 100 * fix_correct / \
@@ -569,6 +579,23 @@ def calculate_stats_from_evaluation_results(core_evaluation_results_file: click.
         percent_fix_created_build_test_target_removed_no_other_introduced_fix_correct
     mdFile.new_line(
         f"Margin of improvement from CORE's performance after oracle (all oracle steps applied) and correctness manual inspection to CCA's end-to-end performance: {margin_improvement_with_man_insepction_cca_end_to_end:.2f}%  ")
+
+    # CORE plausible fixes per fix complexity
+    mdFile.new_header(level=3, title="CORE Plausible Fixes per Fix Complexity",
+                      add_table_of_contents="n")
+
+    # Number of plausible fixes created per fixComplexity (all checks applied)
+    core_plausible_fixes_per_complexity = evaluation_results_file_df[evaluation_results_file_df["coreNumberBuildAndRemovedWarningAndNoNewWarningAndTest"] > 0]["fixComplexity"].value_counts()
+    
+    mdFile.new_line("Number of plausible fixes (all checks applied) created per fixComplexity:  ")
+    mdFile.new_line(
+        f"Single Line: {core_plausible_fixes_per_complexity.get('Single Line', 0)} / {single_line_count} ({100 * core_plausible_fixes_per_complexity.get('Single Line', 0) / single_line_count:.2f}%)  " if single_line_count else "Single Line: 0 / 0 (0.00%)  ")
+    mdFile.new_line(
+        f"Multi Line: {core_plausible_fixes_per_complexity.get('Multi Line', 0)} / {multi_line_count} ({100 * core_plausible_fixes_per_complexity.get('Multi Line', 0) / multi_line_count:.2f}%)  " if multi_line_count else "Multi Line: 0 / 0 (0.00%)  ")
+    mdFile.new_line(
+        f"Multi File: {core_plausible_fixes_per_complexity.get('Multi File', 0)} / {multi_file_count} ({100 * core_plausible_fixes_per_complexity.get('Multi File', 0) / multi_file_count:.2f}%)  " if multi_file_count else "Multi File: 0 / 0 (0.00%)  ")
+
+
 
     mdFile.new_header(level=3, title="Time Efficiency",
                       add_table_of_contents="n")

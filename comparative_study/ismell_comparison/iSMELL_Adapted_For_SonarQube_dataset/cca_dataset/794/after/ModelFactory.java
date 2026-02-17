@@ -1,0 +1,8 @@
+                    Set<Object> referenceModelSet = null;
+                    if (!erector.getCommands(modelField).contains(Command.SKIP_INJECTION)) {
+                        try {
+                            referenceModelSet = (Set<Object>) erector.getTemplate().get(nonNullReferenceModel, setField.getName());
+                        } catch (BlueprintTemplateException e) {
+                            throw new CreateModelException(e);
+                        }
+                    }

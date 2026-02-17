@@ -10,6 +10,25 @@ It can classify and fix arbitrary SonarQube rule violations in Java code.
 ---
 ## 0. Quick Overview
 
+First start by downloading the anonymous repo via "Download Repository".
+
+To save space, some folders in the repo are tar archived.
+To get you started first extract them:
+
+```bash
+tar xzf code_cure_agent/evaluation_results.tar.gz -C code_cure_agent/
+```
+
+```bash
+tar xzf code_cure_agent/experimental_setups.tar.gz -C code_cure_agent/
+```
+
+The following is only needed for the comparison to baselines:
+
+```bash
+tar xzf comparative_study.tar.gz
+```
+
 The repository is structured as follows:
 
 - [code_cure_agent](code_cure_agent): CodeCureAgent code, experiment setup and experiment output

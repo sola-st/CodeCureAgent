@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -423,6 +424,8 @@ def process_go_to_definition_lsp_result(lookup_result: dict, symbol: str, lsp_su
     full_file_path = "/" + full_file_path
     repo_path = os.path.join(agent.config.workspace_path, lsp_sub_workspace,
                              agent.ai_config.warning_repository_name)
+    # Make the repo_path absolute
+    repo_path = Path(repo_path).resolve()
 
     file_found_definition = full_file_path.replace(f"{repo_path}/", "").replace(os.path.join(agent.config.workspace_path, lsp_sub_workspace), "").replace(
         f"{agent.config.workspace_path}/", "").replace(f"{lsp_sub_workspace}/", "").replace(f"{agent.config.workspace_path}", "").replace(f"{lsp_sub_workspace}", "")
@@ -531,6 +534,8 @@ def process_go_to_references_lsp_result(lookup_result: dict, symbol: str, lsp_su
         full_file_path = "/" + full_file_path
         repo_path = os.path.join(agent.config.workspace_path, lsp_sub_workspace,
                                  agent.ai_config.warning_repository_name)
+        # Make the repo_path absolute
+        repo_path = Path(repo_path).resolve()
 
         start_line = reference["range"]["start"]["line"] + 1
         if show_code_context:

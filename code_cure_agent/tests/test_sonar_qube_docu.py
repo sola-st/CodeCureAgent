@@ -16,7 +16,6 @@ class SonarQubeDocuTestCase(unittest.TestCase):
             shutil.rmtree("experimental_setups/experiment_test")
         os.mkdir("experimental_setups/experiment_test")
         os.mkdir("experimental_setups/experiment_test/fix_tp")
-        os.mkdir("experimental_setups/experiment_test/fix_tp/docu_tool_outputs")
         os.mkdir("experimental_setups/experiment_test/fix_tp/execution_info")
 
         warning_repository_URL = "https://github.com/argparse4j/argparse4j.git"

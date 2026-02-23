@@ -8,7 +8,7 @@
     - Fix Complexity (Single Line, Multi Line, Multi File fix)
 3. Automatically copy, reapply fix and open all relevant files for the next uninspected sample in the csv file (via [experimental_setups/show_next_warning_for_manual_inspection.py](show_next_warning_for_manual_inspection.py))
 4. Check Classification Soundness: For the sample, decide if the classification by the agent is sound by following these steps:
-   1. Read the description of the violated rule (see [https://rules.sonarsource.com/java/](https://rules.sonarsource.com/java/)) to understand what it is about.
+   1. Read the description of the violated rule (see sonar_rule_{rule_key}_docu.md) to understand what it is about.
    2. Check the specific details of the rule violation raised (specific message, the file and line where it occurs etc. in file ID_x_task_info.yaml).
    3. Inspect the code file and the relevant lines where the rule was raised to understand the specific rule violation and its context.
    4. Read the IDx_classification_result file that contains the agent's answers to the questions and the final verdict with reasoning to understand the agent's rationale for its decision.

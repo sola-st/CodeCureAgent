@@ -39,8 +39,6 @@ with open(experiments_list, "r+") as expl:
     os.mkdir(
         "experimental_setups/experiment_{}/classification/analysis_reports".format(last_exp + 1))
     os.mkdir(
-        "experimental_setups/experiment_{}/classification/docu_tool_outputs".format(last_exp + 1))
-    os.mkdir(
         "experimental_setups/experiment_{}/classification/execution_info".format(last_exp + 1))
 
     os.mkdir(
@@ -55,8 +53,6 @@ with open(experiments_list, "r+") as expl:
         "experimental_setups/experiment_{}/fix_tp/implausible_patches".format(last_exp + 1))
     os.mkdir(
         "experimental_setups/experiment_{}/fix_tp/analysis_reports".format(last_exp + 1))
-    os.mkdir(
-        "experimental_setups/experiment_{}/fix_tp/docu_tool_outputs".format(last_exp + 1))
     os.mkdir(
         "experimental_setups/experiment_{}/fix_tp/execution_info".format(last_exp + 1))
 

@@ -35,8 +35,6 @@ def add_rule_descriptions_to_metadata_file():
         os.mkdir("experimental_setups/experiment_test")
     if not os.path.exists("experimental_setups/experiment_test/fix_tp"):
         os.mkdir("experimental_setups/experiment_test/fix_tp")
-    if not os.path.exists("experimental_setups/experiment_test/fix_tp/docu_tool_outputs"):
-        os.mkdir("experimental_setups/experiment_test/fix_tp/docu_tool_outputs")
 
     rule_meta_json = {}
     for rule_key in rule_keys:

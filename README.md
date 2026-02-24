@@ -21,7 +21,7 @@ The repository is structured as follows:
   - [code_cure_agent/experimental_setups](code_cure_agent/experimental_setups): Contains the evaluation dataset and utility scripts for evaluating your own experiment 
     - [code_cure_agent/experimental_setups/evaluation_dataset/evaluation_dataset_filled_up_to_1000_input_file.csv](code_cure_agent/experimental_setups/evaluation_dataset/evaluation_dataset_filled_up_to_1000_input_file.csv): This is the input file with the 1000 warnings used for running our evaluation.
 - [comparative_study](comparative_study): All files and results of the comparison to baselines [Sorald](https://github.com/ASSERT-KTH/sorald), [iSMELL](https://github.com/iSMELL2024/iSMELL), and [CORE](https://github.com/microsoft/COREMSRI).
-- [security_rules.md](security_rules): Gives an overview of the security-related SonarQube rules that are included in the evaluation dataset (uses [security_rules_docu](security_rules_docu)).
+- [security_rules.md](security_rules.md): Gives an overview of the security-related SonarQube rules that are included in the evaluation dataset (uses [security_rules_docu](security_rules_docu)).
 
 ---
 

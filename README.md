@@ -29,7 +29,7 @@ The repository is structured as follows:
 Before you start using CodeCureAgent, ensure that your system meets the following requirements:
 
 - **Docker**: Version 20.04 or higher. For installation instructions, see the [Docker documentation](https://docs.docker.com/get-docker).
-- **VS Code**: VS Code provides an easy way to interact with CodeCureAgent using Dev Containers (see the instructions below).
+- **VS Code**: VS Code provides an easy way to interact with CodeCureAgent using Dev Containers (see the instructions below). Alternatively, you can use the pre-built Docker container without VS Code.
 - **OpenAI Token and Credits**:
   - Create an account on the OpenAI website and purchase credits to use the API.
   - Generate an API token on the same website.

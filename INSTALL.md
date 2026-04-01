@@ -1,0 +1,1 @@
+Refer to `II. Setup CodeCureAgent` and `III. Run CodeCureAgent` in [`README.md`](README.md).

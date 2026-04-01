@@ -101,7 +101,8 @@ You can open the `hyperparams.json` file to review or customize its parameters (
 - CodeCureAgent goes through the input file line by line
 - For each line CodeCureAgent checks out the project with the given URL and commit.
 - It initiates the autonomous repair process, first classifying the warning as true positive or false positive and then fixing or suppressing the warning accordingly.
-- Logs detailing each step performed will be displayed in your terminal.
+- The terminal output shows detailed live logs of the process.
+- Log output of the runs is saved in the folder `code_cure_agent/experimental_setups/experiment_X`, where `experiment_X` increments automatically with each run of the command `./run_on_dataset.sh`.
 
 ## IV. Results from Experiment on 1000 Warnings (RQ1, RQ2, RQ4)
 

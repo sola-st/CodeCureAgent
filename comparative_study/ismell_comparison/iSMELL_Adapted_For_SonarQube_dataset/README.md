@@ -4,13 +4,19 @@
 
 
 1. (Optional) Create the iSMELL comparison dataset with [evaluation_scripts/create_ismell_comparison_dataset.py](evaluation_scripts/create_ismell_comparison_dataset.py) (requires the CodeCureAgent python environment (via the `requirements.txt` in the `code_cure_agent` folder)). Run it from here.  
+2. Add a file `.env` to this folder with the following content:  
 
-2. Run iSMELL on the dataset using the script [refactor_warnings.py](refactor_warnings.py) (this requires the python environment of iSMELL (the `requirements.txt` in this folder))  
+    ```env
+    OPENAI_API_KEY=your_api_key_here
+    ```  
+
+    Replace `your_api_key_here` with your actual OpenAI API key.
+3. Run iSMELL on the dataset using the script [refactor_warnings.py](refactor_warnings.py) (this requires the python environment of iSMELL (the `requirements.txt` in this folder))  
     Run this script from here.  
     Logs are saved to the dataset folder `cca_dataset`.  
-3. Evaluate the results (apply the three CodeCureAgent oracle steps to all created fixes) using [evaluation_scripts/evaluate_ismell_run_results.py](evaluation_scripts/evaluate_ismell_run_results.py) (requires the CodeCureAgent environment (the requirements.txt in the code_cure_agent folder)). Run it from here.  
+4. Evaluate the results (apply the three CodeCureAgent oracle steps to all created fixes) using [evaluation_scripts/evaluate_ismell_run_results.py](evaluation_scripts/evaluate_ismell_run_results.py) (requires the CodeCureAgent environment (the requirements.txt in the code_cure_agent folder)). Run it from here.  
     Results are appended to file [ismell_comparison_results.csv](ismell_comparison_results.csv) per default. Delete or rename it first if you want to write a new file.
-4. Summarize stats from the created results csv file via [evaluation_scripts/calculate_ismell_stats_from_evaluation_results.py](evaluation_scripts/calculate_ismell_stats_from_evaluation_results.py) by passing the [ismell_comparison_results.csv](ismell_comparison_results.csv) file as argument.  
+5. Summarize stats from the created results csv file via [evaluation_scripts/calculate_ismell_stats_from_evaluation_results.py](evaluation_scripts/calculate_ismell_stats_from_evaluation_results.py) by passing the [ismell_comparison_results.csv](ismell_comparison_results.csv) file as argument.  
     Run this script from this folder.
 
 ## Relevant Comparison Result Files

@@ -42,20 +42,20 @@ Before you start using CodeCureAgent, ensure that your system meets the followin
 
 ## II. Setup CodeCureAgent
 
-### **STEP 1: Open CodeCureAgent in a Dev Container**
+You have two options. Either set up CodeCureAgent using the provided Dev Container (requires VS Code), or use the pre-built Docker container.
+
+### Option 1: Dev Container
+
+#### STEP 1: Open CodeCureAgent in a Dev Container
 
 1. Ensure you have the **Dev Containers** extension installed in VS Code. You can install it from the [Visual Studio Code Marketplace](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers).
 
-2. Clone the CodeCureAgent repository:
-
-   ```bash
-   git clone https://github.com/sola-st/CodeCureAgent.git
-   ```
+2. Download the CodeCureAgent repository and unpack it.
 
 3. Open the repository folder in VS Code.
 
 4. When prompted by VS Code to "Reopen in Container," click it. If not prompted, open the Command Palette (Ctrl+Shift+P) and select "Dev Containers: Reopen in Container."  
-VS Code will now build and start the Dev Container, setting up the environment for you. This will take a while.  
+VS Code will now build and start the Dev Container, setting up the environment for you. This will take a few minutes.  
 After the Dev Container is built it will continue to run further setups in the terminal. Wait until this is completed too.  
 If the Dev Container opened in less than a few minutes it likely failed to create the container properly. Then rebuild the container via opening the Command Palette (Ctrl+Shift+P) and selecting "Dev Containers: Rebuild in Container."
 
@@ -65,7 +65,7 @@ If the Dev Container opened in less than a few minutes it likely failed to creat
     cd code_cure_agent
     ```
 
-### **STEP 2: Set the OpenAI API Key**
+#### STEP 2: Set the OpenAI API Key
 
 Inside the Dev Container terminal, configure your OpenAI API key by running:
 
@@ -75,25 +75,26 @@ python3.10 set_api_key.py
 
 The script will prompt you to paste your API token.
 
+### Option 2: Pre-built Docker Container
+
+TODO: Add instructions
+
+
 ---
 
 ## III. Run CodeCureAgent
 
-CodeCureAgent takes a csv file as input, where each line specifies a single warning of a SonarQube rule in a single Java file in a single Git repository.  
+Run all commands from the `code_cure_agent` folder!
 
-For an example on how the input file has to look like see [evaluation_dataset_filled_up_to_1000_input_file.csv](code_cure_agent/experimental_setups/evaluation_dataset/evaluation_dataset_filled_up_to_1000_input_file.csv).  
-You can create your own by following the steps described in `IV. Running and Evaluating your own Experiment`.
+Running CodeCureAgent on a small example batch of 5 warnings:
 
-To execute CodeCureAgent on an input file, run the following from the `code_cure_agent` folder:
+```bash
+./run_on_dataset.sh ./experimental_setups/!!!CORRECT PATH!!! hyperparams.json
+```
 
-  ```bash
-   ./run_on_dataset.sh ./experimental_setups/evaluation_dataset/evaluation_dataset_filled_up_to_1000_input_file.csv hyperparams.json
-   ```
-
-The first argument is the csv input file to run on. The second argument specifies hyperparameter settings.  
+The first argument is the csv input file to run on, where each line specifies a single SonarQube warning in a single Java file in a single Git repository.  
+The second argument specifies hyperparameter settings.  
 You can open the `hyperparams.json` file to review or customize its parameters (explained further in the customization section).  
-
-If you only care for CodeCureAgent itself and not the comparison to baselines, you can delete the [comparative_study](comparative_study) folder to improve VS Code responsiveness.  
 
 ### What Happens When You Start CodeCureAgent?
 
@@ -102,9 +103,61 @@ If you only care for CodeCureAgent itself and not the comparison to baselines, y
 - It initiates the autonomous repair process, first classifying the warning as true positive or false positive and then fixing or suppressing the warning accordingly.
 - Logs detailing each step performed will be displayed in your terminal.
 
-## IV. Running and Evaluating your own Experiment
+## IV. Results from Experiment on 1000 Warnings (RQ1, RQ2, RQ4)
+
+For our experiments, we utilized CodeCureAgent on a dataset of 1000 warnings, successfully creating plausible fixes for 968 of them.  
+
+The experiment input files are located in [code_cure_agent/experimental_setups/evaluation_dataset](code_cure_agent/experimental_setups/evaluation_dataset).  
+Most relevant is here the file [code_cure_agent/experimental_setups/evaluation_dataset/evaluation_dataset_filled_up_to_1000_input_file.csv](code_cure_agent/experimental_setups/evaluation_dataset/evaluation_dataset_filled_up_to_1000_input_file.csv), which is the full input file to CodeCureAgent.
+
+All log files from running the experiment on the 1000 warnings are located in [code_cure_agent/evaluation_results/evaluation_outputs](code_cure_agent/evaluation_results/evaluation_outputs) (split into multiple batches of experiment runs).
+
+The extracted and aggregated evaluation results are located in [code_cure_agent/evaluation_results](code_cure_agent/evaluation_results).  
+Important evaluation result files:
+
+- [code_cure_agent/evaluation_results/analysis_results_overview_all.csv](code_cure_agent/evaluation_results/analysis_results_overview_all.csv): Aggregated results for all 1000 warnings. Includes effectiveness stats (with manual inspection) (RQ1), efficiency stats (RQ2), and ablation stats (RQ4).
+- [code_cure_agent/evaluation_results/analysis_results_overview_first_291.csv](code_cure_agent/evaluation_results/analysis_results_overview_first_291.csv): Aggregated results for the subset of 291 warnings with distinct SonarQube rules.
+- [code_cure_agent/evaluation_results/analysis_results_overview_random_samples.csv](code_cure_agent/evaluation_results/analysis_results_overview_random_samples.csv): Aggregated results for the subset of 709 random samples.
+- [code_cure_agent/evaluation_results/plots](code_cure_agent/evaluation_results/plots): Plots visualizing the evaluation results.
+
+---
+
+## V. Replicate Experiments
+
+### Replicate CodeCureAgent experiment on 1000 warnings dataset
+
+1. Run CodeCureAgent on the [code_cure_agent/experimental_setups/evaluation_dataset/evaluation_dataset_filled_up_to_1000_input_file.csv](code_cure_agent/experimental_setups/evaluation_dataset/evaluation_dataset_filled_up_to_1000_input_file.csv) input file as described in `III. Run CodeCureAgent`.
+
+2. Post-process the created log files as described in `VI. Running and Evaluating your own Experiment: 3. Scripts for Evaluation` to receive aggregated results (Markdown file and plots).
+
+### Replicate Comparison to Sorald (RQ3)
+
+We ran Sorald on the same dataset of 1000 warnings, of which Sorald supports 62 warnings.  
+
+The scripts and results are found in [comparative_study/sorald_comparison](comparative_study/sorald_comparison).  
+Refer to the dedicated README for more information: [comparative_study/sorald_comparison/README.md](comparative_study/sorald_comparison/README.md).  
+
+### Replicate Comparison to CORE (RQ3)
+
+We ran CORE on the same dataset of 1000 warnings.  
+
+The scripts and results are found in [comparative_study/core_comparison](comparative_study/core_comparison).  
+Refer to the dedicated README for more information: [comparative_study/core_comparison/README.md](comparative_study/core_comparison/README.md).  
+
+### Replicate Comparison to iSMELL (RQ3)
+
+We ran iSMELL on the same dataset of 1000 warnings.  
+
+The scripts and results are found in [comparative_study/ismell_comparison](comparative_study/ismell_comparison).  
+Refer to the dedicated README for more information: [comparative_study/ismell_comparison/iSMELL_Adapted_For_SonarQube_dataset/README.md](comparative_study/ismell_comparison/iSMELL_Adapted_For_SonarQube_dataset/README.md).  
+
+---
+
+## VI. Running and Evaluating your own Experiment
 
 All utility scripts must be run from the folder [code_cure_agent](code_cure_agent).
+
+If you want to rerun the experiment from the paper, skip 1. and run on the provided input file [code_cure_agent/experimental_setups/evaluation_dataset/evaluation_dataset_filled_up_to_1000_input_file.csv](code_cure_agent/experimental_setups/evaluation_dataset/evaluation_dataset_filled_up_to_1000_input_file.csv).
 
 ### 1. Creating your own csv input file, based on repositories you want to run CodeCureAgent on
 
@@ -149,11 +202,15 @@ Example:
 
 ### 2. CodeCureAgent Experiment Logs
 
-CodeCureAgent saves the output in multiple files.
+Run CodeCureAgent on your created input file as described in `III. Run CodeCureAgent`.
 
-- When running CodeCureAgent the primary logs are created in the folder `code_cure_agent/experimental_setups/experiment_X`, where `experiment_X` increments automatically with each run of the command `./run_on_dataset.sh`.
-- The folder is structured into subfolders `classification`, `fix_fp`, `fix_tp` and `tasks`.
-- Most interesting are the classification_result files in the `classification` folder and the prompt_history files in the `prompt_history` subfolders of `classification`, `fix_fp` and `fix_tp`.
+When running CodeCureAgent the output is saved in multiple files.
+
+The primary logs are created in the folder `code_cure_agent/experimental_setups/experiment_X`, where `experiment_X` increments automatically with each run of the command `./run_on_dataset.sh`.
+
+The folder is structured into subfolders `classification`, `fix_fp`, `fix_tp` and `tasks`.
+
+Most interesting are the `classification_result` files in the `classification` folder and the `prompt_history` files in the `prompt_history` subfolders of `classification`, `fix_fp` and `fix_tp`.
 
 
 ### 3. Scripts for Evaluation
@@ -191,9 +248,7 @@ All scripts are expected to be run from the `code_cure_agent` folder.
 6. Create plots  
     We provide further Jupyter notebooks for creating plots, including a Venn diagram.
 
-
-
-## V. Customize CodeCureAgent
+## VI. Customize CodeCureAgent
 
 ### 1. Modify `hyperparams.json`
 
@@ -249,48 +304,3 @@ Change the model_version to one of the following supported models:
 Reasoning models are not supported by the used OpenAI API version.
 
 ---
-
-## VI. CodeCureAgent Data
-
-For our experiments, we utilized CodeCureAgent on a dataset of 1000 warnings, successfully creating plausible fixes for 968 of them.  
-
-The experiment input files are located in [code_cure_agent/experimental_setups/evaluation_dataset](code_cure_agent/experimental_setups/evaluation_dataset).  
-Most relevant is here the file [code_cure_agent/experimental_setups/evaluation_dataset/evaluation_dataset_filled_up_to_1000_input_file.csv](code_cure_agent/experimental_setups/evaluation_dataset/evaluation_dataset_filled_up_to_1000_input_file.csv), which is the input file to CodeCureAgent.
-
-All log files from running the experiment on the 1000 warnings are located in [code_cure_agent/evaluation_results/evaluation_outputs](code_cure_agent/evaluation_results/evaluation_outputs) (split into multiple batches of experiment runs).
-
-The extracted and aggregated evaluation results, as described in `IV. Running and Evaluating your own Experiment: 3. Scripts for Evaluation` above, are located in [code_cure_agent/evaluation_results](code_cure_agent/evaluation_results).
-
-
----
-
-## VII. Replicate Experiments
-
-### Replicate CodeCureAgent experiment on 1000 warnings dataset
-1. Run CodeCureAgent on the [code_cure_agent/experimental_setups/evaluation_dataset/evaluation_dataset_filled_up_to_1000_input_file.csv](code_cure_agent/experimental_setups/evaluation_dataset/evaluation_dataset_filled_up_to_1000_input_file.csv) input file as described in `III. Run CodeCureAgent`.
-
-2. Post-process the created log files as described in `IV. Running and Evaluating your own Experiment: 3. Scripts for Evaluation` to receive aggregated results (Markdown file and plots).
-
-
-
-### Replicate Comparison to Sorald
-We ran Sorald on the same dataset of 1000 warnings, of which Sorald supports 62 warnings.  
-
-The scripts and results are found in [comparative_study/sorald_comparison](comparative_study/sorald_comparison).  
-Refer to the dedicated README for more information: [comparative_study/sorald_comparison/README.md](comparative_study/sorald_comparison/README.md).  
-
-### Replicate Comparison to CORE
-We ran CORE on the same dataset of 1000 warnings.  
-
-The scripts and results are found in [comparative_study/core_comparison](comparative_study/core_comparison).  
-Refer to the dedicated README for more information: [comparative_study/core_comparison/README.md](comparative_study/core_comparison/README.md).  
-
-
-### Replicate Comparison to iSMELL
-We ran iSMELL on the same dataset of 1000 warnings.  
-
-The scripts and results are found in [comparative_study/ismell_comparison](comparative_study/ismell_comparison).  
-Refer to the dedicated README for more information: [comparative_study/ismell_comparison/iSMELL_Adapted_For_SonarQube_dataset/README.md](comparative_study/ismell_comparison/iSMELL_Adapted_For_SonarQube_dataset/README.md).  
-
-
---- 

@@ -10,7 +10,7 @@ Run all scripts from this folder.
 2. (Optional) Run the script [add_violation_specifier_to_sorald_input_file.py](add_violation_specifier_to_sorald_input_file.py) to create an augmented version of the csv file that contains the violation_specifier needed as input to Sorald.  
     Adapt the constants in the file as needed.
 
-3. Run Sorald on the 1000 warning dataset and automatically check the results with the three oracle steps of CodeCureAgent and save the results to a csv file via the script [run_sorald_comparison.py](run_sorald_comparison.py).  
+3. Run Sorald on the 62 warnings supported by Sorald and automatically check the results with the three oracle steps of CodeCureAgent and save the results to a csv file via the script [run_sorald_comparison.py](run_sorald_comparison.py).  
     Logs of the Sorald runs are saved to [sorald_run_outputs](sorald_run_outputs). Empty the sub-folders inside this folder first if you want to do a fresh run.  
     Adds the results to the csv file [sorald_comparison_results.csv](sorald_comparison_results.csv). Delete or rename the file first for a fresh run.
 

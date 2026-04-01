@@ -82,7 +82,7 @@ The script will prompt you to paste your API token.
 Pull the pre-built image from Docker Hub:
 
 ```bash
-docker pull pascaljoos/codecureagent:latest
+docker pull pascaljoos12d/codecureagent:latest
 ```
 
 #### STEP 2: Start the Container
@@ -93,7 +93,7 @@ Run the container from your local copy of the repository root, so that the `expe
 docker run -it --rm \
   -v "$(pwd)/code_cure_agent/experimental_setups:/workspace/CodeCureAgent/code_cure_agent/experimental_setups" \
   -v "$(pwd)/code_cure_agent/evaluation_results:/workspace/CodeCureAgent/code_cure_agent/evaluation_results" \
-  pascaljoos/codecureagent:latest
+  pascaljoos12d/codecureagent:latest
 ```
 
 Any experiment logs written inside the container are immediately visible on the host (and vice versa).  

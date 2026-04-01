@@ -86,10 +86,10 @@ TODO: Add instructions
 
 Run all commands from the `code_cure_agent` folder!
 
-Running CodeCureAgent on a small example batch of 5 warnings:
+Running CodeCureAgent on a small example batch of 4 warnings:
 
 ```bash
-./run_on_dataset.sh ./experimental_setups/!!!CORRECT PATH!!! hyperparams.json
+./run_on_dataset.sh ./experimental_setups/example_dataset/example_dataset_input_file.csv hyperparams.json
 ```
 
 The first argument is the csv input file to run on, where each line specifies a single SonarQube warning in a single Java file in a single Git repository.  

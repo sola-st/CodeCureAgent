@@ -49,7 +49,11 @@ You have two options. Either set up CodeCureAgent using the provided Dev Contain
 
 1. Ensure you have the **Dev Containers** extension installed in VS Code. You can install it from the [Visual Studio Code Marketplace](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers).
 
-2. Download the CodeCureAgent repository and unpack it.
+2. Clone the CodeCureAgent repository:
+
+    ```bash
+    git clone https://github.com/sola-st/CodeCureAgent.git
+    ```
 
 3. Open the repository folder in VS Code.
 
@@ -78,7 +82,19 @@ The script will prompt you to paste your API token.
 
 #### STEP 1: Pull the Docker Image
 
-Pull the pre-built image from Docker Hub:
+1. Clone the CodeCureAgent repository:
+
+    ```bash
+    git clone https://github.com/sola-st/CodeCureAgent.git
+    ```
+
+2. Move into the repository root:
+
+    ```bash
+    cd CodeCureAgent
+    ```
+
+3. Pull the pre-built image from Docker Hub:
 
 ```bash
 docker pull pascaljoos12d/codecureagent:latest

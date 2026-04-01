@@ -106,6 +106,7 @@ Run the container from your local copy of the repository root, so that the `expe
 
 ```bash
 docker run -it --rm \
+  --user "$(id -u):$(id -g)" \
   -v "$(pwd)/code_cure_agent/experimental_setups:/workspace/CodeCureAgent/code_cure_agent/experimental_setups" \
   -v "$(pwd)/code_cure_agent/evaluation_results:/workspace/CodeCureAgent/code_cure_agent/evaluation_results" \
   pascaljoos12d/codecureagent:latest

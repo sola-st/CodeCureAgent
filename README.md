@@ -220,16 +220,31 @@ Within the [code_cure_agent/experimental_setups](code_cure_agent/experimental_se
 All scripts are expected to be run from the `code_cure_agent` folder.  
 
 1. Create evaluation results file  
+    TL;DR:
+    ```bash
+    python3 experimental_setups/write_experiment_results_to_csv_file.py -t evaluation_results/new_experiment_results.csv
+    ```
+
     After running one or multiple experiments, logs are located in the folders `code_cure_agent/experimental_setups/experiment_X`.  
     If you do not want to run your own experiments, but calculate evaluation results on the log files of our experiment runs, copy all folders and files from [code_cure_agent/evaluation_results/evaluation_outputs](code_cure_agent/evaluation_results/evaluation_outputs) to [code_cure_agent/experimental_setups](code_cure_agent/experimental_setups).  
     The script [code_cure_agent/experimental_setups/write_experiment_results_to_csv_file.py](code_cure_agent/experimental_setups/write_experiment_results_to_csv_file.py) can be used to extract the experiment run results from the experiment logs into a csv file.  
     By default, the evaluation results are appended to the csv file [code_cure_agent/evaluation_results/evaluation_results.csv](code_cure_agent/evaluation_results/evaluation_results.csv).  
 
 2. Create extended evaluation results file with further info  
+    TL;DR:
+    ```bash
+    python3 experimental_setups/extend_evaluation_results_with_more_stats.py evaluation_results/new_experiment_results.csv -t evaluation_results/new_experiment_results_extended.csv
+    ```
+
     An extended version of the evaluation results file can be created by using the [code_cure_agent/experimental_setups/extend_evaluation_results_with_more_stats.py](code_cure_agent/experimental_setups/extend_evaluation_results_with_more_stats.py) script. It expects the previously created evaluation results file as input.  
     By default, the extended evaluation results are written to the csv file [code_cure_agent/evaluation_results/evaluation_results_extended.csv](code_cure_agent/evaluation_results/evaluation_results_extended.csv).  
 
 3. Aggregate results into a Markdown  
+    TL;DR:
+    ```bash
+    python3 experimental_setups/calculate_stats_from_evaluation_results.py evaluation_results/new_experiment_results_extended.csv -t evaluation_results/new_experiment_results_analysis.md
+    ```
+
     The evaluation results can be aggregated into a Markdown file that presents relevant stats.  
     Use the script [code_cure_agent/experimental_setups/calculate_stats_from_evaluation_results.py](code_cure_agent/experimental_setups/calculate_stats_from_evaluation_results.py) for this.  
     It expects the extended evaluation results csv file as first argument.  
@@ -237,11 +252,21 @@ All scripts are expected to be run from the `code_cure_agent` folder.
     See an example result Markdown here: [code_cure_agent/evaluation_results/analysis_results_overview_all.md](code_cure_agent/evaluation_results/analysis_results_overview_all.md)
 
 4. Create summaries for each fixed/unfixed warning
+    TL;DR:
+    ```bash
+    python3 experimental_setups/create_warning_summaries.py -e evaluation_results/new_experiment_results_extended.csv
+    ```
+
     You can create summaries that show the most important information on a CodeCureAgent run on a warning, including a diff of all made changes.
     Use the script [code_cure_agent/experimental_setups/create_warning_summaries.py](code_cure_agent/experimental_setups/create_warning_summaries.py). It requires that the extended evaluation results csv file has been created before (2.).
     The summaries are added to the experiment logs (`code_cure_agent/experimental_setups/experiment_X`) in a subfolder `run_summaries`.
 
 5. Manually inspect a repaired warning  
+    TL;DR:
+    ```bash
+    python3 experimental_setups/show_next_warning_for_manual_inspection.py -e evaluation_results/new_experiment_results.csv --id-to-show 1
+    ```
+
     We provide a further script [code_cure_agent/experimental_setups/show_next_warning_for_manual_inspection.py](code_cure_agent/experimental_setups/show_next_warning_for_manual_inspection.py) that can be used to quickly open relevant files for a specified warning, including a VS Code diff between the unfixed and fixed versions of the warning.  
     The instanceID of the warning that is to be looked at can be provided via option `--id-to-show`.  
     This script also requires that logs are located in the folders `code_cure_agent/experimental_setups/experiment_X`. (see 1.)

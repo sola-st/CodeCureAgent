@@ -77,7 +77,43 @@ The script will prompt you to paste your API token.
 
 ### Option 2: Pre-built Docker Container
 
-TODO: Add instructions
+#### STEP 1: Pull the Docker Image
+
+Pull the pre-built image from Docker Hub:
+
+```bash
+docker pull pascaljoos/codecureagent:latest
+```
+
+#### STEP 2: Start the Container
+
+Run the container from your local copy of the repository root, so that the `experimental_setups` and `evaluation_results` folders are kept in sync between host and container:
+
+```bash
+docker run -it --rm \
+  -v "$(pwd)/code_cure_agent/experimental_setups:/workspace/CodeCureAgent/code_cure_agent/experimental_setups" \
+  -v "$(pwd)/code_cure_agent/evaluation_results:/workspace/CodeCureAgent/code_cure_agent/evaluation_results" \
+  pascaljoos/codecureagent:latest
+```
+
+Any experiment logs written inside the container are immediately visible on the host (and vice versa).  
+The container starts a bash shell inside the repository root.  
+
+Move into `code_cure_agent` before running any commands (as described in Section III):
+
+```bash
+cd code_cure_agent
+```
+
+#### STEP 3: Set the OpenAI API Key
+
+Inside the container shell, configure your OpenAI API key by running:
+
+```bash
+python3.10 set_api_key.py
+```
+
+The script will prompt you to paste your API token.
 
 
 ---

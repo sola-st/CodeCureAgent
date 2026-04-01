@@ -1,7 +1,8 @@
 # CodeCureAgent
 
 CodeCureAgent is an autonomous LLM-based agent designed for automated static analysis warning repair.  
-It can classify and fix arbitrary SonarQube rule violations in Java code.
+It can classify and fix arbitrary SonarQube rule violations in Java code.  
+The public GitHub repository is located at <https://github.com/sola-st/CodeCureAgent>.
 
 <div style="text-align: left;">
   <img src="./code_cure_agent/code_cure_agent_project_image.png" alt="Alt text" width="300" height="300">

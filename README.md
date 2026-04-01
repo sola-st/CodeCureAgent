@@ -79,7 +79,15 @@ The script will prompt you to paste your API token.
 
 #### STEP 1: Pull the Docker Image
 
-Pull the pre-built image from Docker Hub:
+1. Download the CodeCureAgent repository and unpack it.
+
+2. Move into the repository root:
+
+    ```bash
+    cd CodeCureAgent
+    ```
+
+3. Pull the pre-built image from Docker Hub:
 
 ```bash
 docker pull pascaljoos12d/codecureagent:latest

@@ -2,6 +2,7 @@ import os
 import re
 import click
 import mdutils
+from numpy import NaN
 import pandas as pd
 import csv
 
@@ -394,8 +395,7 @@ def calculate_stats_from_evaluation_results(evaluation_results_extended_file: cl
     ].median(
     )
     median_total_iterations = median_iterations_classification + \
-        median_iterations_fix_tp + median_iterations_fix_fp
-
+        median_iterations_fix_tp + (median_iterations_fix_fp if median_iterations_fix_fp is not NaN else 0)
     mdFile.new_header(level=3, title="Iterations", add_table_of_contents="n")
     mdFile.new_line(f"Total iterations: {total_iterations}  ")
     mdFile.new_line(f"Iterations by sub-agent:  ")

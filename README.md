@@ -86,7 +86,7 @@ TODO: Add instructions
 
 Run all commands from the `code_cure_agent` folder!
 
-Running CodeCureAgent on a small example batch of 4 warnings:
+Running CodeCureAgent on a small example batch of 3 warnings:
 
 ```bash
 ./run_on_dataset.sh ./experimental_setups/example_dataset/example_dataset_input_file.csv hyperparams.json

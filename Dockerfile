@@ -24,6 +24,9 @@ RUN mkdir CodeCureAgent
 WORKDIR /workspace/CodeCureAgent
 COPY . .
 
+# Upgrade pip to avoid a resolver bug present in the apt-installed version
+RUN python3.10 -m pip install --upgrade pip
+
 # Run setup equivalent to the devcontainer postCreateCommand:
 # install Python deps and build the bundled Sorald jar
 RUN cd code_cure_agent \

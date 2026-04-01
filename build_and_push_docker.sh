@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # Build the CodeCureAgent Docker image and push it to a registry.
 #
+# CAVEAT: BE CAREFUL. NEVER USE THIS SCRIPT, IF YOU HAVE SET THE API KEY IN THE .ENV FILES.
+#
+#
 # Usage:
 #   ./build_and_push_docker.sh <image-name> [tag]
 #

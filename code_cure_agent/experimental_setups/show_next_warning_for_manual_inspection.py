@@ -20,6 +20,7 @@ import yaml
 @click.command(help="This command collects info on the next uninspected warning in the evaluation results csv for manual inspection. Then the relevant files are opened and displayed for inspection.")
 @click.option(
     "--evaluation-results-file",
+    "-e",
     type=click.File(),
     default="evaluation_results/evaluation_results.csv",
     help="The csv file with the evaluation results, created via 'write_experiment_results_to_csv_file.py'"

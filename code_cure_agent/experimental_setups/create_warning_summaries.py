@@ -20,6 +20,7 @@ from agent_core.utils.agent_utils.agent_mock import AgentMock
 @click.command(help="This command creates summaries for each warning, that shows the warning input, results and a diff of any plausible fix.")
 @click.option(
     "--evaluation-results-extended-file",
+    "-e",
     type=click.File(),
     default="evaluation_results/evaluation_results_extended.csv",
     help="The csv file with the extended evaluation results, created via 'write_experiment_results_to_csv_file.py' + 'extend_evaluation_results_with_more_stats.py'.",

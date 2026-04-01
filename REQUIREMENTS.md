@@ -1,1 +1,0 @@
-Refer to `I. Requirements` in [`README.md`](README.md).

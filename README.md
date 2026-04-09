@@ -293,7 +293,7 @@ Use the same script chain from Section 4.2 to create:
     - Run from `code_cure_agent`.
     - Remove `--handled-rules` to mine all supported rules.
     - Filter by rule IDs with `--rule-keys` or by rule type with `--rule-types`.
-    - SonarWay quality profile used in our experiments:
+    - SonarWay quality profile used in our experiments (pass to `--rule-keys`):
       - [code_cure_agent/sonarqube_quality_profile/quality_profile_rule_keys.txt](code_cure_agent/sonarqube_quality_profile/quality_profile_rule_keys.txt)
 
 3. Convert mining JSON to CodeCureAgent input CSV:

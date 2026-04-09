@@ -37,7 +37,8 @@ You have two options. Either set up CodeCureAgent using the provided Dev Contain
 
 1. Ensure you have the **Dev Containers** extension installed in VS Code. You can install it from the [Visual Studio Code Marketplace](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers).
 2. Open this repository in VS Code.
-3. Reopen in Container: When prompted by VS Code to "Reopen in Container," click it. If not prompted, open the Command Palette (Ctrl+Shift+P) and select "Dev Containers: Reopen in Container."  
+3. Reopen in Container: When prompted by VS Code to "Reopen in Container," click it.  
+If not prompted, open the Command Palette (Ctrl+Shift+P) and select "Dev Containers: Reopen in Container."  
 VS Code will now build and start the Dev Container, setting up the environment for you. This will take roughly 4 minutes.  
 After the Dev Container is built it will continue to run further setups in the terminal. Wait until this is completed too (roughly 2 more minutes).  
 If the Dev Container opened in less than a few minutes it likely failed to create the container properly. Then rebuild the container via opening the Command Palette (Ctrl+Shift+P) and selecting "Dev Containers: Rebuild in Container."
@@ -101,7 +102,7 @@ If the Dev Container opened in less than a few minutes it likely failed to creat
 
     The script will prompt you to paste your API token.
 
-All commands in Sections 2-6 must be run from `code_cure_agent`.
+All commands in the following sections 2 to 6 must be run from the folder `code_cure_agent`.
 
 ---
 

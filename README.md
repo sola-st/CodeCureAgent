@@ -180,7 +180,7 @@ Important evaluation result files:
 
 ## V. Replicate Experiments
 
-### Replicate CodeCureAgent experiment on 1000 warnings dataset
+### Replicate CodeCureAgent experiment on 1000 warnings dataset (RQ1, RQ2, RQ4)
 
 1. Run CodeCureAgent on the [code_cure_agent/experimental_setups/evaluation_dataset/evaluation_dataset_filled_up_to_1000_input_file.csv](code_cure_agent/experimental_setups/evaluation_dataset/evaluation_dataset_filled_up_to_1000_input_file.csv) input file as described in `III. Run CodeCureAgent`.
 

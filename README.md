@@ -16,7 +16,7 @@ It classifies and fixes SonarQube rule violations in Java projects.
 
 You have two options. Either set up CodeCureAgent using the provided Dev Container (requires VS Code), or use the pre-built Docker image.
 
-### Requirements
+### 1.1 Requirements
 
 - User requirements:
   - Basic Docker and/or VS Code Dev Container familiarity.
@@ -30,7 +30,7 @@ You have two options. Either set up CodeCureAgent using the provided Dev Contain
   - Docker 20.10+.
   - VS Code (optional, for Dev Container workflow).
 
-### Setup Option A: VS Code Dev Container
+### 1.2 Setup Option A: VS Code Dev Container
 
 1. Ensure you have the **Dev Containers** extension installed in VS Code. You can install it from the [Visual Studio Code Marketplace](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers).
 2. Open this repository in VS Code.
@@ -55,7 +55,7 @@ If the Dev Container opened in less than a few minutes it likely failed to creat
 
     The script will prompt you to paste your API token.
 
-### Setup Option B: Pre-built Docker Image
+### 1.3 Setup Option B: Pre-built Docker Image
 
 1. Move into the repository root:
 
@@ -156,18 +156,18 @@ AUTHORISED COMMANDS LEFT:   19
 
 Review the included logs, summaries, CSVs, Markdown files, and plots from our 1000-warning evaluation.
 
-### Experiment Input Files
+### 3.1 Experiment Input Files
 
 The experiment input files are located in [code_cure_agent/experimental_setups/evaluation_dataset](code_cure_agent/experimental_setups/evaluation_dataset).  
 Most relevant is here the file [code_cure_agent/experimental_setups/evaluation_dataset/evaluation_dataset_filled_up_to_1000_input_file.csv](code_cure_agent/experimental_setups/evaluation_dataset/evaluation_dataset_filled_up_to_1000_input_file.csv), which is the full input file to CodeCureAgent.
 
-### Experiment Logs
+### 3.2 Experiment Logs
 
 All log files from running the experiment on the 1000 warnings are located in [code_cure_agent/evaluation_results/evaluation_outputs](code_cure_agent/evaluation_results/evaluation_outputs) (split into multiple batches of experiment runs).
 
 The most interesting files in this log output are the files in the subfolder `code_cure_agent/evaluation_results/evaluation_outputs/experiment_X/run_summaries`. These show for each warning run: details about the warning, classification and fix results including a diff of made changes for successful fixes. (Multi-File Fix Example: [code_cure_agent/evaluation_results/evaluation_outputs/experiment_1/run_summaries/6_summary.diff](code_cure_agent/evaluation_results/evaluation_outputs/experiment_1/run_summaries/6_summary.diff))
 
-### Aggregated Evaluation Outputs (RQ1, RQ2, RQ4)
+### 3.3 Aggregated Evaluation Outputs (RQ1, RQ2, RQ4)
 
 The extracted and aggregated evaluation results are located in [code_cure_agent/evaluation_results](code_cure_agent/evaluation_results).  
 Important evaluation result files:
@@ -178,7 +178,7 @@ Important evaluation result files:
 - [code_cure_agent/evaluation_results/plots](code_cure_agent/evaluation_results/plots): Plots visualizing the evaluation results.
 - [code_cure_agent/evaluation_results/evaluation_results.csv](code_cure_agent/evaluation_results/evaluation_results.csv): CSV file with extracted evaluation results for all 1000 warnings (used to create the aggregated Markdown files and plots). This file includes the manual inspection results and reasoning for each warning.
 
-### Aggregated Evaluation Outputs for Baseline Comparisons (RQ3)
+### 3.4 Aggregated Evaluation Outputs for Baseline Comparisons (RQ3)
 
 The baseline comparisons are located in the `comparative_study` folder. Each baseline has its own subfolder with README and assets.
 - Sorald comparison assets:

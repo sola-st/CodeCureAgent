@@ -203,7 +203,7 @@ The baseline comparisons are located in the `comparative_study` folder. Each bas
 
 This section details how to regenerate result files and plots from included experiment outputs (via scripts).
 
-### 4.1 Prepare logs for processing
+### 4.1 Prepare Logs for Processing
 
 If you want to recompute metrics from the provided full logs, copy all folders/files from:
 
@@ -213,7 +213,7 @@ into:
 
 - [code_cure_agent/experimental_setups](code_cure_agent/experimental_setups)
 
-### 4.2 Run evaluation scripts (from `code_cure_agent`)
+### 4.2 Run Evaluation Scripts (from `code_cure_agent`)
 
 1. Create evaluation results CSV:
 
@@ -255,7 +255,7 @@ into:
 
 ## 5. Run a Large-Scale Experiment Like Ours
 
-### 5.1 Re-run CodeCureAgent on the 1000-warning dataset
+### 5.1 Re-run CodeCureAgent on the 1000-Warning Dataset
 
 Run:
 
@@ -263,7 +263,7 @@ Run:
 ./run_on_dataset.sh ./experimental_setups/evaluation_dataset/evaluation_dataset_filled_up_to_1000_input_file.csv hyperparams.json
 ```
 
-### 5.2 Evaluate the generated logs
+### 5.2 Evaluate the Generated Logs
 
 Use the same script chain from Section 4.2 to create:
 
@@ -328,7 +328,7 @@ Current limitation:
 
 ## 7. Customize CodeCureAgent
 
-### 7.1 Modify hyperparameters in: [code_cure_agent/hyperparams.json](code_cure_agent/hyperparams.json)
+### 7.1 Modify Hyperparameters in: [code_cure_agent/hyperparams.json](code_cure_agent/hyperparams.json)
 
 - **Budget Control Strategy**:  
   Defines how the agent views the remaining cycles, suggested fixes, and minimum required fixes:
@@ -364,14 +364,14 @@ Current limitation:
   "fix_cycles_limit": 40 
   ```
 
-- **Prioritize `write_fix` when few cycles are left**:  
+- **Prioritize `write_fix` When Few Cycles Are Left**:  
     Default for our experiment:
 
     ```json
     "prioritize_write_fix_cycle_threshold": 5
     ```
 
-### 7.2. Switching the used GPT model
+### 7.2 Switching the Used GPT Model
 
 In the [code_cure_agent/run_on_dataset.sh](code_cure_agent/run_on_dataset.sh) file, locate the line:
 

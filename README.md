@@ -14,7 +14,8 @@ The public GitHub repository is located at <https://github.com/sola-st/CodeCureA
 The repository is structured as follows:
 
 - [code_cure_agent](code_cure_agent): CodeCureAgent code, experiment setup and experiment output
-  - [code_cure_agent/agent_core](code_cure_agent/agent_core): Main parts of the CodeCureAgent implementation. The implemented tools are at: [code_cure_agent/agent_core/commands](code_cure_agent/agent_core/commands)
+  - [code_cure_agent/agent_core](code_cure_agent/agent_core): Main parts of the CodeCureAgent implementation
+    - [code_cure_agent/agent_core/commands](code_cure_agent/agent_core/commands): CodeCureAgent's agent-tools
   - [code_cure_agent/agent_config_and_prompt_files](code_cure_agent/agent_config_and_prompt_files): Used prompt files for the two sub-agents and agent config
   - [code_cure_agent/evaluation_results](code_cure_agent/evaluation_results): Results of our evaluation on 1000 warnings. Contains markdown files with aggregated evaluation results, csv files with data on all warning runs, plots, and all log files created during the experiment run.
     - [code_cure_agent/evaluation_results/evaluation_outputs](code_cure_agent/evaluation_results/evaluation_outputs): This holds the log files of the full evaluation. It is split into multiple experiment batches.  
@@ -27,16 +28,25 @@ The repository is structured as follows:
 
 ## I. Requirements
 
-Before you start using CodeCureAgent, ensure that your system meets the following requirements:
+Before you start using CodeCureAgent, ensure that you and your system meet the following requirements:
 
-- **Docker**: Version 20.10 or higher. For installation instructions, see the [Docker documentation](https://docs.docker.com/get-docker).
-- **VS Code**: VS Code provides an easy way to interact with CodeCureAgent using Dev Containers. Alternatively, you can use the pre-built Docker image without VS Code.
-- **OpenAI Token and Credits**:
-  - Create an account on the OpenAI website and purchase credits to use the API.
-  - Generate an API token on the same website.
-- **Disk Space**:
-  - At least 40GB of available disk space on your machine. The code itself does not take 40GB. However, the dependencies might take up to 8GB, and files generated from running on different instances may use more. 40GB is a safe estimate.
-- **Internet Access**: Required while running CodeCureAgent to connect to OpenAI's API.
+- **User Requirements**
+
+  - **Docker and/or VS Code Dev Container familiarity**: Basic knowledge of Docker or VS Code Dev Containers for setting up the environment.
+  - **OpenAI API key**: OpenAI API key with credits, which CodeCureAgent requires for querying the LLM. Create an account on the OpenAI website and purchase credits to use the API. Generate an API token on the same website.
+
+- **Hardware Requirements**
+
+  - **Disk Space**: At least 40GB of available disk space (safe estimate).
+  - **RAM**: At least 8GB of free memory, 16GB+ is recommended.
+  - **Internet Access**: Required to connect to OpenAI's API.
+
+- **Software Requirements**
+
+  - **Operating System**: Linux, macOS, or Windows with WSL2.
+  - **Docker**: Version 20.10 or higher. For installation instructions, see the [Docker documentation](https://docs.docker.com/get-docker).
+  - **VS Code (optional)**: For users who prefer to set up the environment using a Dev Container. VS Code Dev Containers provide an easy way to interact with CodeCureAgent. Alternatively, you can use the pre-built Docker image without VS Code.
+  - **Python**: Version 3.10 pre-installed in the Docker/DevContainer environment.
 
 ---
 

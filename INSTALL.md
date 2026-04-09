@@ -1,8 +1,10 @@
-Refer to `II. Setup CodeCureAgent` and `III. Run CodeCureAgent` in [`README.md`](README.md) for the detailed instructions.
+Refer to the [`README.md`](README.md) for the detailed instructions.
 
-This file provides a quick start guide to get CodeCureAgent up and running on a small example batch of 3 warnings, using the pre-built Docker image.
+This file provides a quick start guide to get CodeCureAgent up and running on a small example batch of 3 warnings, using the pre-built Docker image. For the Dev Container workflow, refer to the instructions in the [`README.md`](README.md).
 
-Start from the root of the downloaded repository:
+First, satisfy the requirements as described in [`REQUIREMENTS.md`](REQUIREMENTS.md).
+
+Then, start from the root of the downloaded repository:
 
 ```bash
 # Pull the pre-built Docker image from Docker Hub
@@ -29,9 +31,9 @@ python3 set_api_key.py
 ./run_on_dataset.sh ./experimental_setups/example_dataset/example_dataset_input_file.csv hyperparams.json
 ```
 
-Expected displayed output, if setup was successful (shortened):
+Expected terminal output (shortened):
 
-```
+```text
 Creating experiment folder: 1
 dos2unix: converting file ./experimental_setups/example_dataset/example_dataset_input_file.csv to Unix format...
 Current run input:  1, https://github.com/simplenlg/simplenlg.git, ...
@@ -47,16 +49,13 @@ LEGAL:
 ...
 Project checkout procedure starting.  
 ...
-CodeCureAgent is now running the Classification-Sub-Agent.  This is the sub-agent dealing with the task of classifying the violation as TP or FP.
+CodeCureAgent is now running the Classification-Sub-Agent.
 AUTHORISED COMMANDS LEFT:   20
 CODECUREAGENT THOUGHTS:  <Some agent thoughts>
   
-
 NEXT ACTION:   COMMAND = <Some command selected by the agent>  ARGUMENTS = {<Arguments to the command>}
   
-  
 SYSTEM:   Command `<command_name>` returned:  
-
 <Output from the command>
     
 AUTHORISED COMMANDS LEFT:   19

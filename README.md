@@ -98,7 +98,7 @@ If the Dev Container opened in less than a few minutes it likely failed to creat
 
     The script will prompt you to paste your API token.
 
-All commands in Sections 2-5 must be run from `code_cure_agent`.
+All commands in Sections 2-6 must be run from `code_cure_agent`.
 
 ---
 
@@ -121,16 +121,6 @@ What happens:
 Expected terminal output (shortened):
 
 ```text
-Creating experiment folder: 1
-dos2unix: converting file ./experimental_setups/example_dataset/example_dataset_input_file.csv to Unix format...
-Current run input:  1, https://github.com/simplenlg/simplenlg.git, ...
-All packages are installed.
-LLM set to  gpt-4.1-mini-2025-04-14
-Using AI Settings File:  agent_config_and_prompt_files/ai_settings.yaml
-LEGAL:  
-LEGAL:  DISCLAIMER AND INDEMNIFICATION AGREEMENT
-LEGAL:  ...
-LEGAL:              
 ...
 <Info on the configuration of the run>
 ...
@@ -326,6 +316,8 @@ Current limitation:
 
 - Only Maven projects are supported that build with `mvn clean package` using Maven 3.6.3.
 
+---
+
 ## 7. Customize CodeCureAgent
 
 ### 7.1 Modify Hyperparameters in: [code_cure_agent/hyperparams.json](code_cure_agent/hyperparams.json)
@@ -390,6 +382,8 @@ Replace `--model-version` with one of:
 - `gpt-4.1-2025-04-14`
 
 Reasoning models are not supported by the API version currently used in this project.
+
+---
 
 ## 8. CodeCureAgent Implementation
 

@@ -159,7 +159,7 @@ Most relevant is here the file [code_cure_agent/experimental_setups/evaluation_d
 
 All log files from running the experiment on the 1000 warnings are located in [code_cure_agent/evaluation_results/evaluation_outputs](code_cure_agent/evaluation_results/evaluation_outputs) (split into multiple batches of experiment runs).
 
-The most interesting files in this log output are the files in the subfolder `code_cure_agent/evaluation_results/evaluation_outputs/experiment_X/run_summaries`. These show for each warning run: details about the warning, classification and fix results including a diff of made changes for successful fixes. (Multi-File Fix Example: [code_cure_agent/evaluation_results/evaluation_outputs/experiment_1/run_summaries/6_summary.diff](code_cure_agent/evaluation_results/evaluation_outputs/experiment_1/run_summaries/6_summary.diff))
+The most interesting files in this log output are the files in the subfolders `code_cure_agent/evaluation_results/evaluation_outputs/experiment_X/run_summaries`. These show for each warning run: details about the warning, classification and fix results including a diff of made changes for successful fixes. (Multi-File Fix Example: [code_cure_agent/evaluation_results/evaluation_outputs/experiment_1/run_summaries/6_summary.diff](code_cure_agent/evaluation_results/evaluation_outputs/experiment_1/run_summaries/6_summary.diff))
 
 ### 3.3 Aggregated Evaluation Outputs (RQ1, RQ2, RQ4)
 
@@ -181,7 +181,7 @@ The baseline comparisons are located in the `comparative_study` folder. Each bas
   - [Original repo](https://github.com/ASSERT-KTH/sorald)
   - [Sorald paper](https://ieeexplore.ieee.org/document/9756950)
 - iSMELL comparison assets:
-  - [comparative_study/ismell_comparison](comparative_study/ismell_comparison)
+  - [comparative_study/ismell_comparison/iSMELL_Adapted_For_SonarQube_dataset](comparative_study/ismell_comparison/iSMELL_Adapted_For_SonarQube_dataset)
   - [comparative_study/ismell_comparison/iSMELL_Adapted_For_SonarQube_dataset/README.md](comparative_study/ismell_comparison/iSMELL_Adapted_For_SonarQube_dataset/README.md)
   - [Original repo](https://github.com/iSMELL2024/iSMELL/tree/main)
   - [iSMELL paper](https://dl.acm.org/doi/10.1145/3691620.3695508)
@@ -199,13 +199,10 @@ This section details how to regenerate result files and plots from included expe
 
 ### 4.1 Prepare Logs for Processing
 
-If you want to recompute metrics from the provided full logs, copy all folders/files from:
-
-- [code_cure_agent/evaluation_results/evaluation_outputs](code_cure_agent/evaluation_results/evaluation_outputs)
-
-into:
-
-- [code_cure_agent/experimental_setups](code_cure_agent/experimental_setups)
+If you want to recompute metrics from the provided full logs, copy all folders/files from:  
+[code_cure_agent/evaluation_results/evaluation_outputs](code_cure_agent/evaluation_results/evaluation_outputs)  
+into:  
+[code_cure_agent/experimental_setups](code_cure_agent/experimental_setups)
 
 ### 4.2 Run Evaluation Scripts (from `code_cure_agent`)
 
@@ -241,9 +238,7 @@ into:
 
     Provide the ID of the warning to inspect via `--id-to-show`.
 
-6. Regenerate plots via notebooks in:
-
-- [code_cure_agent/experimental_setups](code_cure_agent/experimental_setups)
+6. Regenerate plots via notebooks in [code_cure_agent/experimental_setups](code_cure_agent/experimental_setups)
 
 ---
 

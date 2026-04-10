@@ -35,7 +35,7 @@ You have two options. Either set up CodeCureAgent using the provided Dev Contain
   - Docker 20.10+.
   - VS Code (optional, for Dev Container workflow).
 
-### 1.2 Setup Option A: VS Code Dev Container
+### 1.2 Setup Option A: VS Code Dev Container (Recommended)
 
 1. Ensure you have the **Dev Containers** extension installed in VS Code. You can install it from the [Visual Studio Code Marketplace](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers).
 2. Open this repository in VS Code.

@@ -215,7 +215,9 @@ If you want to recompute metrics from the provided full logs, copy all folders/f
 into:  
 [code_cure_agent/experimental_setups](code_cure_agent/experimental_setups)
 
-### 4.2 Run Evaluation Scripts (from `code_cure_agent`)
+### 4.2 Run Evaluation Scripts
+
+Run all the following scripts from `code_cure_agent`.
 
 1. Create evaluation results CSV:
 
@@ -235,7 +237,10 @@ into:
     python3 experimental_setups/calculate_stats_from_evaluation_results.py evaluation_results/new_experiment_results_extended.csv -t evaluation_results/new_experiment_results_analysis.md
     ```
 
-4. Create per-warning run-summaries (the `x_summary.diff` files):
+4. Re-create per-warning run-summaries (the `x_summary.diff` files):
+
+    If you want to see an effect, first delete the existing summary files in the `run_summaries` folders.  
+    This command is long-running, so skip it if you just want to regenerate the aggregated stats and plots.  
 
     ```bash
     python3 experimental_setups/create_warning_summaries.py -e evaluation_results/new_experiment_results_extended.csv

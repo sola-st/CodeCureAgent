@@ -363,22 +363,17 @@ def check_openai_api_key(config: Config) -> None:
         openai_api_key = input(
             "If you do have the key, please enter your OpenAI API key now:\n"
         )
-        key_pattern = r"^sk-\w{48}"
         openai_api_key = openai_api_key.strip()
-        if re.search(key_pattern, openai_api_key):
-            os.environ["OPENAI_API_KEY"] = openai_api_key
-            config.openai_api_key = openai_api_key
-            print(
-                Fore.GREEN
-                + "OpenAI API key successfully set!\n"
-                + Fore.YELLOW
-                + "NOTE: The API key you've set is only temporary.\n"
-                + "For longer sessions, please set it in .env file"
-                + Fore.RESET
+        os.environ["OPENAI_API_KEY"] = openai_api_key
+        config.openai_api_key = openai_api_key
+        print(
+            Fore.GREEN
+            + "OpenAI API key successfully set!\n"
+            + Fore.YELLOW
+            + "NOTE: The API key you've set is only temporary.\n"
+            + "For longer sessions, please set it in .env file"
+            + Fore.RESET
             )
-        else:
-            print("Invalid OpenAI API key!")
-            exit(1)
 
 
 def _safe_split(s: Union[str, None], sep: str = ",") -> list[str]:

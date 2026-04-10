@@ -66,7 +66,8 @@ def add_sonarqube_rule_docu_file(relative_path_inspection_folder: str, warning_c
     with open(os.path.join(relative_path_inspection_folder, f"sonar_rule_{rule_key}_docu.md"), "w") as docu_file:
         docu_file.write(sonar_docu)
 
-    os.remove(os.path.join(relative_path_inspection_folder, f"-1_docu_tool_output_rule_{rule_key}.json"))
+    if os.path.exists(os.path.join(relative_path_inspection_folder, f"-1_docu_tool_output_rule_{rule_key}.json")):
+        os.remove(os.path.join(relative_path_inspection_folder, f"-1_docu_tool_output_rule_{rule_key}.json"))
 
 def retrieve_info_of_next_warning_to_show(evaluation_results_file: click.File, id_to_show: int) -> tuple[dict, int]:
 

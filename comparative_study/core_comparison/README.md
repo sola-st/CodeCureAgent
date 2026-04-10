@@ -11,7 +11,8 @@
     ```  
 
     Replace `your_api_key_here` with your actual OpenAI API key.
-3. Run CORE on the dataset using the script [COREMSRI/scripts/run_CORE_pipeline.sh](COREMSRI/scripts/run_CORE_pipeline.sh) (this requires the python environment of CORE (the `requirements.txt` in `COREMSRI`))  
+3. Run CORE on the dataset using the script [COREMSRI/scripts/run_CORE_pipeline.sh](COREMSRI/scripts/run_CORE_pipeline.sh)
+    This requires the python environment of CORE (the `requirements.txt` in `COREMSRI`) Uninstall the CodeCureAgent python environment first, then install the CORE environment. Ignore the pip error when installing.  
     Run this script from [COREMSRI](COREMSRI).  
     This runs all stages of CORE including the stage 4 that we needed to implement to map from the prompter to the ranker stages for SonarQube.  
     Logs are saved to [COREMSRI/comparison_output/cca_dataset_results](COREMSRI/comparison_output/cca_dataset_results).  

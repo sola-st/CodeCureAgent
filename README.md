@@ -33,7 +33,7 @@ You have two options. Either set up CodeCureAgent using the provided Dev Contain
   - Docker 20.10+.
   - VS Code (optional, for Dev Container workflow).
 
-### 1.2 Setup Option A: VS Code Dev Container
+### 1.2 Setup Option A: VS Code Dev Container (Recommended)
 
 1. Ensure you have the **Dev Containers** extension installed in VS Code. You can install it from the [Visual Studio Code Marketplace](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers).
 
@@ -221,6 +221,8 @@ If you want to recompute metrics from the provided full logs, copy all folders/f
 into:  
 [code_cure_agent/experimental_setups](code_cure_agent/experimental_setups)
 
+(make sure that no experiment folders are left from previous runs in `code_cure_agent/experimental_setups` before copying)
+
 ### 4.2 Run Evaluation Scripts
 
 Run all the following scripts from `code_cure_agent`.
@@ -252,7 +254,7 @@ Run all the following scripts from `code_cure_agent`.
     python3 experimental_setups/create_warning_summaries.py -e evaluation_results/new_experiment_results_extended.csv
     ```
 
-5. Open all relevant resources for a repaired warning to perform a manual inspection (Requires VS Code):
+5. Quickly open all relevant resources for a repaired warning to perform a manual inspection (Requires Dev Container workflow to open resources):
 
     ```bash
     python3 experimental_setups/show_next_warning_for_manual_inspection.py -e evaluation_results/new_experiment_results.csv --id-to-show 1
@@ -260,7 +262,7 @@ Run all the following scripts from `code_cure_agent`.
 
     Provide the ID of the warning to inspect via `--id-to-show`.
 
-6. Regenerate plots via notebooks in [code_cure_agent/experimental_setups](code_cure_agent/experimental_setups)
+6. Regenerate plots via notebooks in [code_cure_agent/experimental_setups](code_cure_agent/experimental_setups) (Dev Container workflow recommended)
 
 ---
 

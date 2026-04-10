@@ -499,6 +499,10 @@ def get_ablation_no_change_approver_is_still_plausible(instance_id: int, experim
     if not plausible_fix:
         # If there is no plausible_fix with ChangeApprover then there also isn't one without ChangeApprover (plausible_fix means it passed/can pass all three steps)
         return False
+    
+    if not os.path.exists(os.path.join("experimental_setups", "experiment_" + str(experiment_number), "fix_" + str(classification).lower(), "implausible_patches")):
+        # If there is no implausible_patches folder then there also isn't an implausible patch that would have been wrongly accepted without ChangeApprover. So return True in this case.
+        return True
     try:
         implausible_patch_file_name = next(f for f in os.listdir(os.path.join("experimental_setups", "experiment_" + str(experiment_number), "fix_" + str(classification).lower(), "implausible_patches"))
                                            if os.path.isfile(os.path.join("experimental_setups", "experiment_" + str(experiment_number), "fix_" + str(classification).lower(), "implausible_patches", f)) and f.startswith(str(instance_id) + "_"))
@@ -514,6 +518,10 @@ def get_ablation_only_build_step_is_still_plausible(instance_id: int, experiment
     if not plausible_fix:
         # If there is no plausible_fix with ChangeApprover then there also isn't one without ChangeApprover
         return False
+    
+    if not os.path.exists(os.path.join("experimental_setups", "experiment_" + str(experiment_number), "fix_" + str(classification).lower(), "implausible_patches")):
+        # If there is no implausible_patches folder then there also isn't an implausible patch that would have been wrongly accepted without ChangeApprover. So return True in this case.
+        return True
     try:
         implausible_patch_file_name = next(f for f in os.listdir(os.path.join("experimental_setups", "experiment_" + str(experiment_number), "fix_" + str(classification).lower(), "implausible_patches"))
                                            if os.path.isfile(os.path.join("experimental_setups", "experiment_" + str(experiment_number), "fix_" + str(classification).lower(), "implausible_patches", f)) and f.startswith(str(instance_id) + "_"))
@@ -545,6 +553,10 @@ def get_ablation_build_step_and_sonar_qube_check_is_still_plausible(instance_id:
     if not plausible_fix:
         # If there is no plausible_fix with ChangeApprover then there also isn't one without ChangeApprover
         return False
+    
+    if not os.path.exists(os.path.join("experimental_setups", "experiment_" + str(experiment_number), "fix_" + str(classification).lower(), "implausible_patches")):
+        # If there is no implausible_patches folder then there also isn't an implausible patch that would have been wrongly accepted without ChangeApprover. So return True in this case.
+        return True
     try:
         implausible_patch_file_name = next(f for f in os.listdir(os.path.join("experimental_setups", "experiment_" + str(experiment_number), "fix_" + str(classification).lower(), "implausible_patches"))
                                            if os.path.isfile(os.path.join("experimental_setups", "experiment_" + str(experiment_number), "fix_" + str(classification).lower(), "implausible_patches", f)) and f.startswith(str(instance_id) + "_"))
@@ -692,6 +704,8 @@ def get_iterations_in_classification(instance_id, experiment_number) -> int:
 
 
 def get_implausible_fixes_count(instance_id, experiment_number, classification) -> int:
+    if not os.path.exists(os.path.join("experimental_setups", "experiment_" + str(experiment_number), "fix_" + str(classification).lower(), "implausible_patches")):
+        return 0
     try:
         implausible_patch_file_name = next(f for f in os.listdir(os.path.join("experimental_setups", "experiment_" + str(experiment_number), "fix_" + str(classification).lower(), "implausible_patches"))
                                            if os.path.isfile(os.path.join("experimental_setups", "experiment_" + str(experiment_number), "fix_" + str(classification).lower(), "implausible_patches", f)) and f.startswith(str(instance_id) + "_"))
@@ -710,6 +724,8 @@ def get_implausible_fixes_count(instance_id, experiment_number, classification) 
 
 
 def get_plausible_fixes_count(instance_id, experiment_number, classification) -> int:
+    if not os.path.exists(os.path.join("experimental_setups", "experiment_" + str(experiment_number), "fix_" + str(classification).lower(), "plausible_patches")):
+        return 0
     try:
         plausible_patch_file_name = next(f for f in os.listdir(os.path.join("experimental_setups", "experiment_" + str(experiment_number), "fix_" + str(classification).lower(), "plausible_patches"))
                                          if os.path.isfile(os.path.join("experimental_setups", "experiment_" + str(experiment_number), "fix_" + str(classification).lower(), "plausible_patches", f)) and f.startswith(str(instance_id) + "_"))

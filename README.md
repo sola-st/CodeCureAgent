@@ -210,6 +210,8 @@ If you want to recompute metrics from the provided full logs, copy all folders/f
 into:  
 [code_cure_agent/experimental_setups](code_cure_agent/experimental_setups)
 
+(make sure that no experiment folders are left from previous runs in `code_cure_agent/experimental_setups` before copying)
+
 ### 4.2 Run Evaluation Scripts
 
 Run all the following scripts from `code_cure_agent`.

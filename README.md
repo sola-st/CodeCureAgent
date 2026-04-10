@@ -241,7 +241,7 @@ Run all the following scripts from `code_cure_agent`.
     python3 experimental_setups/create_warning_summaries.py -e evaluation_results/new_experiment_results_extended.csv
     ```
 
-5. Open all relevant resources for a repaired warning to perform a manual inspection (Requires VS Code):
+5. Quickly open all relevant resources for a repaired warning to perform a manual inspection (Requires Dev Container workflow to open resources):
 
     ```bash
     python3 experimental_setups/show_next_warning_for_manual_inspection.py -e evaluation_results/new_experiment_results.csv --id-to-show 1
@@ -249,7 +249,7 @@ Run all the following scripts from `code_cure_agent`.
 
     Provide the ID of the warning to inspect via `--id-to-show`.
 
-6. Regenerate plots via notebooks in [code_cure_agent/experimental_setups](code_cure_agent/experimental_setups)
+6. Regenerate plots via notebooks in [code_cure_agent/experimental_setups](code_cure_agent/experimental_setups) (Dev Container workflow recommended)
 
 ---
 

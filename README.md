@@ -21,13 +21,15 @@ You have two options. Either set up CodeCureAgent using the provided Dev Contain
 
 - User requirements:
   - Basic Docker and/or VS Code Dev Container familiarity.
-  - OpenAI API key with credits. Create an account on the OpenAI website and purchase credits to use the API. Generate an API token on the same website.
+  - OpenAI API key with credits (for running CodeCureAgent).   
+    Create an account on the OpenAI website and purchase credits to use the API. Generate an API token on the same website.  
+    Lightweight reproduction of the results based on the provided logs does not require API access (see Section 4).
 - Hardware requirements:
   - At least 40 GB free disk space.
   - At least 8 GB free RAM (16 GB+ recommended).
   - Internet access.
 - Software requirements:
-  - Linux, macOS, or Windows with WSL2.
+  - Any host system where you can run Docker (we tested it on Ubuntu and Windows with WSL2).
   - Docker 20.10+.
   - VS Code (optional, for Dev Container workflow).
 
@@ -64,6 +66,8 @@ If the Dev Container opened in less than a few minutes it likely failed to creat
     ```
 
     The script will prompt you to paste your API token.
+
+    If you only want to do a lightweight reproduction of the results based on the provided logs no API access is required (see Section 4).
 
 ### 1.3 Setup Option B: Pre-built Docker Image
 
@@ -112,6 +116,8 @@ If the Dev Container opened in less than a few minutes it likely failed to creat
     ```
 
     The script will prompt you to paste your API token.
+
+    If you only want to do a lightweight reproduction of the results based on the provided logs no API access is required (see Section 4).
 
 All commands in the following sections 2 to 6 must be run from the folder `code_cure_agent`.
 

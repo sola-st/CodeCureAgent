@@ -5,8 +5,8 @@ import pandas as pd
 
 import sys
 from pathlib import Path
-sys.path.append(str(Path(__file__).parent.parent.parent.parent / "code_cure_agent"))
-os.chdir(str(Path(__file__).parent.parent.parent.parent / "code_cure_agent"))
+sys.path.append(str(Path(__file__).parent.parent.parent.parent.parent / "code_cure_agent"))
+os.chdir(str(Path(__file__).parent.parent.parent.parent.parent / "code_cure_agent"))
 import subprocess
 
 from agent_core.utils.agent_utils.agent_mock import AgentMock

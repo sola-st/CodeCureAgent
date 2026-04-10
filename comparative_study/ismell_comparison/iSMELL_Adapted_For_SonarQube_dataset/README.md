@@ -11,7 +11,8 @@
     ```  
 
     Replace `your_api_key_here` with your actual OpenAI API key.
-3. Run iSMELL on the dataset using the script [refactor_warnings.py](refactor_warnings.py) (this requires the python environment of iSMELL (the `requirements.txt` in this folder))  
+3. Run iSMELL on the dataset using the script [refactor_warnings.py](refactor_warnings.py).
+    This requires the python environment of iSMELL (the `requirements.txt` in this folder). Uninstall the CodeCureAgent python environment first, then install the iSMELL environment. Ignore the pip error when installing.  
     Run this script from here.  
     Logs are saved to the dataset folder `cca_dataset`.  
 4. Evaluate the results (apply the three CodeCureAgent oracle steps to all created fixes) using [evaluation_scripts/evaluate_ismell_run_results.py](evaluation_scripts/evaluate_ismell_run_results.py) (requires the CodeCureAgent environment (the requirements.txt in the code_cure_agent folder)). Run it from here.  

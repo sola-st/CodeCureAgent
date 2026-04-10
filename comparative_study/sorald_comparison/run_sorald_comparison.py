@@ -21,6 +21,8 @@ TARGET_CSV_FILE_PATH = "../comparative_study/sorald_comparison/sorald_comparison
 
 CCA_WORKSPACE = "cca_workspace"
 
+RUN_OUTPUTS_FOLDER = "../comparative_study/sorald_comparison/sorald_run_outputs"
+
 REPAIR_OUTPUT_FOLDER = "../comparative_study/sorald_comparison/sorald_run_outputs/repair_output"
 MINING_OUTPUT_FOLDER = "../comparative_study/sorald_comparison/sorald_run_outputs/mining_output"
 
@@ -32,6 +34,19 @@ def run_sorald_comparison():
     warnings_to_run_on_df = pd.read_csv(WARNINGS_TO_RUN_ON_FILE_PATH)
 
     cca_relevant_results_df = pd.read_csv(CCA_RELEVANT_RESULTS_FILE_PATH)
+
+    if not os.path.exists(RUN_OUTPUTS_FOLDER):
+        os.mkdir(RUN_OUTPUTS_FOLDER)
+    if not os.path.exists(REPAIR_OUTPUT_FOLDER):
+        os.mkdir(REPAIR_OUTPUT_FOLDER)
+    if not os.path.exists(MINING_OUTPUT_FOLDER):
+        os.mkdir(MINING_OUTPUT_FOLDER)
+    if not os.path.exists(PROJECTS_BEFORE_AFTER_FOLDER):
+        os.mkdir(PROJECTS_BEFORE_AFTER_FOLDER)
+    if not os.path.exists(os.path.join(RUN_OUTPUTS_FOLDER, "build_errors")):
+        os.mkdir(os.path.join(RUN_OUTPUTS_FOLDER, "build_errors"))
+    if not os.path.exists(os.path.join(RUN_OUTPUTS_FOLDER, "test_errors")):
+        os.mkdir(os.path.join(RUN_OUTPUTS_FOLDER, "test_errors"))
 
     if not os.path.exists(TARGET_CSV_FILE_PATH):
         with open(TARGET_CSV_FILE_PATH, "w") as results_csv_file:

@@ -16,22 +16,98 @@ import logging
 __FILE_PATH = Path(__file__).resolve()
 __FILE_DIR = __FILE_PATH.parent
 
-Language.build_library(
-    str(__FILE_DIR / "build/my-languages.so"),
-    [
-        str(__FILE_DIR / "tree-sitter-python"),
-        str(__FILE_DIR / "tree-sitter-java"),
-    ],
-)
+
+def _build_tree_sitter_library_with_compilers(output_library: Path) -> None:
+    """Fallback builder for environments where Language.build_library links incorrectly."""
+    build_dir = output_library.parent
+    build_dir.mkdir(parents=True, exist_ok=True)
+
+    subprocess.run(
+        [
+            "gcc",
+            "-fPIC",
+            "-I",
+            str(__FILE_DIR / "tree-sitter-python/src"),
+            "-c",
+            str(__FILE_DIR / "tree-sitter-python/src/parser.c"),
+            "-o",
+            str(build_dir / "python-parser.o"),
+        ],
+        check=True,
+    )
+    subprocess.run(
+        [
+            "g++",
+            "-fPIC",
+            "-I",
+            str(__FILE_DIR / "tree-sitter-python/src"),
+            "-c",
+            str(__FILE_DIR / "tree-sitter-python/src/scanner.cc"),
+            "-o",
+            str(build_dir / "python-scanner.o"),
+        ],
+        check=True,
+    )
+    subprocess.run(
+        [
+            "gcc",
+            "-fPIC",
+            "-I",
+            str(__FILE_DIR / "tree-sitter-java/src"),
+            "-c",
+            str(__FILE_DIR / "tree-sitter-java/src/parser.c"),
+            "-o",
+            str(build_dir / "java-parser.o"),
+        ],
+        check=True,
+    )
+    subprocess.run(
+        [
+            "g++",
+            "-shared",
+            str(build_dir / "python-parser.o"),
+            str(build_dir / "python-scanner.o"),
+            str(build_dir / "java-parser.o"),
+            "-o",
+            str(output_library),
+        ],
+        check=True,
+    )
+
+
+def ensure_tree_sitter_library() -> Path:
+    output_library = __FILE_DIR / "build/my-languages.so"
+    if output_library.exists():
+        return output_library
+
+    try:
+        Language.build_library(
+            str(output_library),
+            [
+                str(__FILE_DIR / "tree-sitter-python"),
+                str(__FILE_DIR / "tree-sitter-java"),
+            ],
+        )
+    except Exception as exc:
+        logging.warning(
+            "Language.build_library failed (%s); using compiler fallback.",
+            exc,
+        )
+        _build_tree_sitter_library_with_compilers(output_library)
+
+    return output_library
+
+
+_LANGUAGE_LIBRARY_PATH = ensure_tree_sitter_library()
 
 python_parser = Parser()
 python_parser.set_language(
-    Language(str(__FILE_DIR / "build/my-languages.so"), "python")
+    Language(str(_LANGUAGE_LIBRARY_PATH), "python")
 )
 
 java_parser = Parser()
 java_parser.set_language(
-    Language(str(__FILE_DIR / "build/my-languages.so"), "java"))
+    Language(str(_LANGUAGE_LIBRARY_PATH), "java"))
 
 
 TOKENIZER_MODEL_ALIAS_MAP = {

@@ -86,13 +86,13 @@ If the Dev Container opened in less than a few minutes it likely failed to creat
 3. Pull the pre-built image from Docker Hub:
 
     ```bash
-    docker pull pascaljoos12d/codecureagent:latest
+    docker pull --platform linux/amd64 pascaljoos12d/codecureagent:latest
     ```
 
 4. Start container with mounted experiment folders:
 
     ```bash
-    docker run -it --rm \
+    docker run --platform linux/amd64 -it --rm \
       -v "$(pwd)/code_cure_agent/experimental_setups:/workspace/CodeCureAgent/code_cure_agent/experimental_setups" \
       -v "$(pwd)/code_cure_agent/evaluation_results:/workspace/CodeCureAgent/code_cure_agent/evaluation_results" \
       pascaljoos12d/codecureagent:latest
@@ -100,6 +100,8 @@ If the Dev Container opened in less than a few minutes it likely failed to creat
 
     Any experiment logs written inside the container are immediately visible on the host (and vice versa).  
     The container starts a bash shell inside the repository root.  
+
+    If you are running on an arm64 host, use the Rosetta emulator for running the image.
 
 5. From the container shell, move into `code_cure_agent` before running any commands :
 

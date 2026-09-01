@@ -3,13 +3,29 @@
 </p>
 <p align="center">
 
-CodeCureAgent is an autonomous LLM-based agent for automated static analysis warning repair.
-It classifies and fixes SonarQube rule violations in Java projects.  
-Please find our paper describing CodeCureAgent and its evaluation here: <https://arxiv.org/abs/2509.11787>.
-
-<div style="text-align: center;">
+<div align="center">
   <img src="./code_cure_agent/code_cure_agent_project_image.png" alt="CodeCureAgent" width="300" height="300">
 </div>
+
+CodeCureAgent is an autonomous LLM-based agent for automated static analysis warning repair.
+It classifies and fixes SonarQube rule violations in Java projects.  
+You can find our paper describing CodeCureAgent and its evaluation here: <https://doi.org/10.1145/3808140>.
+
+Please cite the paper if you use CodeCureAgent in your research:
+
+```bibtex
+@article{joos2026codecureagent,
+    title={CodeCureAgent: Automatic Classification and Repair of Static Analysis Warnings},
+    author={Joos, Pascal and Bouzenia, Islem and Pradel, Michael},
+    journal={Proceedings of the ACM on Software Engineering},
+    volume={3},
+    number={FSE},
+    pages={3000--3022},
+    year={2026},
+    publisher={ACM New York, NY, USA}
+}
+```
+
 
 ---
 
